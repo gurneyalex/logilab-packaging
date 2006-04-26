@@ -1,0 +1,2 @@
+recursive-include bin *.bat
+include bad_file.rst

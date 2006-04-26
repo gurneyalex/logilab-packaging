@@ -1,0 +1,25 @@
+I'm pleased to announce the %VERSION% release of %DISTNAME%.
+
+What's new ?
+------------
+%CHANGELOG%
+
+
+What is %DISTNAME% ?
+------------------------
+%LONG_DESC%
+
+
+Home page
+---------
+%WEB%
+
+Download
+--------
+%FTP%
+
+Mailing list
+------------
+%MAILINGLIST%
+
+%ADDITIONAL_DESCR%

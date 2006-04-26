@@ -1,0 +1,40 @@
+include bin/cvstatus
+include bin/cvslog
+include bin/changelog
+include bin/checkpackage
+include bin/debianize
+include bin/dos2unix
+include bin/preparedistrib
+include bin/makedistrib
+include bin/mkproj
+include bin/buildpackage
+include bin/buildeb
+include bin/stp
+include bin/update_gettext.sh
+include bin/pkginfo
+include bin/tagpackage
+include bin/pycoverage
+
+include elisp/*.el
+include elisp/startup
+
+include doc/*.xml
+include doc/*.txt
+include doc/makefile
+
+recursive-include templates *.txt *.py 
+recursive-include templates *.postinst *.prerm *.config *.templates control copyright rules debhelper watch * 
+
+recursive-include test/data *
+
+include README
+include TODO 
+include ChangeLog
+include DEPENDS
+include RECOMMENDS
+include logging.conf
+include doc/*.html
+
+include man/debianize.1
+include man/pycoverage.1
+

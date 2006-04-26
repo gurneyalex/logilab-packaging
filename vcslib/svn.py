@@ -1,0 +1,308 @@
+# This module uses some of meld source code :
+#      Copyright (C) 2002-2003 Stephen Kennedy <stevek@gnome.org>
+#      http://meld.sourceforge.net
+#
+# Copyright (c) 2004-2005 LOGILAB S.A. (Paris, FRANCE).
+# http://www.logilab.fr/ -- mailto:contact@logilab.fr
+#
+# This program is free software; you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the Free Software
+# Foundation; either version 2 of the License, or (at your option) any later
+# version.
+#
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details
+#
+# You should have received a copy of the GNU General Public License along with
+# this program; if not, write to the Free Software Foundation, Inc.,
+# 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+"""this module contains SVN vcs system mangagement implementation
+for OoBrother
+"""
+
+from __future__ import generators
+
+__revision__ = '$Id: svn.py,v 1.10 2005-07-28 10:02:19 syt Exp $'
+__metaclass__ = type
+__all__ = ['SVNAgent']
+
+import os
+import re
+from os.path import isdir, join, dirname, basename, exists, split
+from xml.sax import make_parser, ContentHandler
+
+from logilab.common import Execute
+
+from logilab.devtools.vcslib import VCS_UPTODATE, VCS_MODIFIED, \
+     VCS_MISSING, VCS_NEW, VCS_CONFLICT, VCS_NOVERSION, VCS_IGNORED, \
+     VCS_REMOVED, VCS_NEEDSPATCH, IVCSAgent
+
+# This one is for when the svn '-u' option will work ...
+# ENTRY_SRE = re.compile("^(.)......(.)\s*\d*\s*(\d*)\s*[^ ]*\s*(.*)$(?m)")
+ENTRY_SRE = re.compile("^(.)....\s*\d*\s*(\d*)\s*[^ ]*\s*(.*)$(?m)")
+
+SVN_CODES =  {
+    "?" : VCS_NOVERSION,
+    "A" : VCS_NEW,
+    " " : VCS_UPTODATE,
+    "!" : VCS_MISSING,
+    "I" : VCS_IGNORED,
+    "M" : VCS_MODIFIED,
+    "C" : VCS_CONFLICT,
+    "D" : VCS_REMOVED,
+    "*" : VCS_NEEDSPATCH,
+    }
+
+REM_LOCAL_DATE_RGX = re.compile(r' \(\w\w\w, \d\d \w\w\w \d\d\d\d\)')
+        
+
+def get_info(path):
+    """read the result of "svn status" command and returns a dictionnary
+    with filenames as keys and a corresponding tuple as values :
+    ('isdir', 'path', 'state', 'rev', 'tag', 'options').
+    
+    If 'path' points to a directory, the dict will contain infos on each
+    entry recorded by the VC System. If it points to a file, its
+    parent directory will be used
+
+    This code is adapted from meld source code (meld/svnview.py)
+    http://meld.sourceforge.net/    
+    """
+    if not isdir(path):
+        directory = dirname(path)
+    else:
+        directory = path
+    svn_info = {}
+    # FIXME: understand why the '-u' option fails most of time
+    entries = os.popen("svn status -Nv " + directory).read()
+    # if not entries:
+    #     entries = os.popen("svn status -Nv " + directory).read()
+    matches = ENTRY_SRE.findall( entries)
+    matches.sort()
+    for match in matches:
+        name = match[2]
+        if(match[0] == "!" or match[0] == "A"):
+            # for new or missing files, the findall expression
+            # does not supply the correct name 
+            name = re.sub(r'^[?]\s*(.*)$', r'\1', name)
+        is_dir = isdir(name)
+        path = join(path, name)
+        base = basename(name)
+        rev = match[1]
+        options = ""
+        tag = ""
+        if tag:
+            tag = tag[1:]
+        if is_dir:
+            if exists(path):
+                state = VCS_UPTODATE
+            else:
+                state = VCS_MISSING
+            # svn adds the path reported to the status list we get.
+            if basename(name) != basename(directory):
+                svn_info[base] = (state, rev, tag, options)
+        else:
+            state = SVN_CODES.get(match[0], VCS_NOVERSION)
+            svn_info[base] = (state, rev, tag, options)
+    return svn_info
+
+class SVNAgent:
+    """A SVN specific agent"""
+    __implements__ = IVCSAgent,
+
+    def __call__(self):
+        return self
+    
+    def not_up_to_date(self, filepath):
+        """get a list describing files which are not up to date under the
+        given path
+
+        :type filepath: str
+        :param filepath: starting path
+        
+        :rtype: list(tuple(str, str))
+        :return:
+          a list of tuple (file, status) describing files which are not up to date
+        """
+        raise NotImplementedError()
+        
+    def edited(self, filepath):
+        """get a list describing files which are currentlyedited under
+        the given path
+        
+        :type filepath: str
+        :param filepath: starting path
+        
+        :rtype: list(tuple(str, str))
+        :return:
+          a list of tuple (file, locked by) describing files which are in edition
+        """
+        raise NotImplementedError()
+        
+    def update(self, filepath):
+        """
+        :type filepath: str
+        :param filepath: the file or directory to update
+        
+        :rtype: str
+        :return:
+          a shell command string to update the given file from the vc
+          repository
+        """
+        return 'svn update %s' % filepath
+
+    def commit(self, filepath, message):
+        """
+        :type filepath: str
+        :param filepath: the file or directory to commit
+
+        :type message: str
+        :param message: the message used to commit
+        
+        :rtype: str
+        :return:
+          a shell command string to commit the given file to the vc
+          repository
+        """
+        return 'svn ci -m "%s" %s' % (message, filepath)
+
+    def add(self, filepath):
+        """
+        :type filepath: str
+        :param filepath: the file or directory to add
+        
+        :rtype: str
+        :return:
+          a shell command string to add the given file to the vc
+          repository
+        """
+        return 'svn add %s' % filepath
+
+    def remove(self, filepath):
+        """
+        :type filepath: str
+        :param filepath: the file or directory to remove
+        
+        :rtype: str
+        :return:
+          a shell command string to remove the given file from the vc
+          repository
+        """
+        cmd = 'svn rm -f %s' % filepath
+        return cmd
+
+    def tag(self, filepath, tagname):
+        """
+        :type filepath: str
+        :param filepath: the file or directory to commit
+
+        :type tagname: str
+        :param tagname: the name of the tag to add to the file
+        
+        :rtype: str
+        :return:
+          a shell command string to tag the given file in the vc
+          repository using the given tag name
+        """
+        url = get_url(filepath)
+        tag_url = url.split('/')
+        for special in ('trunk', 'tags', 'branches'):
+            if special in tag_url:
+                #rel_path = tag_url[tag_url.index(special)+1:]
+                #tag_url = tag_url[:tag_url.index(special)]
+                #
+                #tag_url.append('tags/%s' % tagname)
+                special_index = tag_url.index(special)
+                tag_url = tag_url[:special_index]
+                tag_url.append('tags/%s' % tagname)
+                tag_url = '/'.join(tag_url)
+                break
+        else:
+            raise Exception('Unable to compute file path in the repository')
+        cmd = 'svn rm -m "moving tag" %s ; svn copy -m "tagging" %s %s' % (
+            tag_url, filepath, tag_url)
+        print cmd
+        return cmd
+
+    def checkout(self, repository, path, tag=None):
+        """
+        :type repository: str
+        :param repository: the CVS repository address
+        
+        :type filepath: str
+        :param filepath:
+          the path of the file or directory to check out *in the
+          repository*
+        
+        :rtype: str
+        :return:
+          a shell command string to check out the given file or
+          directory from the vc repository
+        """
+        tag = tag or 'HEAD'
+        svn_dir = tag == 'HEAD' and 'trunk' or tag
+        return 'svn checkout --non-interactive -q -r %s %s/%s/%s' % (
+            tag, repository, svn_dir, path)
+
+    # FIXME: fix docstring and add to interface
+    def log_info(self, path, from_date, to_date, repository=None, tag=None):
+        """get log messages between <from_date> and <to_date>
+        Both date should be local time (ie 9-sequence) or epoch time (ie float)
+        
+        a log information is a tuple
+        (file, revision_info_as_string, added_lines, removed_lines)
+        """
+        command = 'svn log -r {%s}:{%s} %s %s' % (from_date, to_date,
+                                                  repository or '', path)
+        separator = '-' * 72
+        status, msg, rev, author, date = None, '', None, None, None
+        for line in Execute(command).out.splitlines():
+            if not line.strip():
+                continue
+            if line == separator:
+                if status is not None:
+                    # FIXME: fix line information
+                    msg = '%s by %s on %s: %s' % (rev, author, date, msg)
+                    yield '', msg, 1, 0
+                status, msg = 'new', ''
+            elif status == 'new':
+                rev, author, date, added = [part.strip()
+                                            for part in line.split('|')]
+                date = REM_LOCAL_DATE_RGX.sub('', date)
+                status = 'content'
+            elif status == 'content':
+                msg = '%s\n%s' % (msg, line)
+
+
+# SVNAgent is a stateless object, transparent singleton thanks to its __call__
+# method
+SVNAgent = SVNAgent()
+
+class ElementURLNotFound(Exception): pass
+class ElementURLFound(Exception): pass
+
+class SVNSAXHandler(ContentHandler):
+    def __init__(self, name):
+        self._look_for = name
+
+    def startElement(self, name, attrs):
+        if name == 'entry' and attrs['name'] == self._look_for:
+            raise ElementURLFound(attrs['url'])
+
+def get_url(path):
+    if isdir(path):
+        dirpath, filename = path, ''
+    else:
+        dirpath, filename = split(path)
+    p = make_parser()
+    print 'looking for', filename, 'in', dirpath
+    p.setContentHandler(SVNSAXHandler(filename))
+    try:
+        p.parse(file(join(dirpath, '.svn', 'entries')))
+    except ElementURLFound, ex:
+        return ex.args[0]
+    except KeyError:
+        assert filename
+        return '%s/%s' % (get_url(dirpath), filename)
+    raise ElementURLNotFound()

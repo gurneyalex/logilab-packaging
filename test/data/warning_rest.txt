@@ -1,0 +1,13 @@
+==============================
+SIMPLE ReST FILE WITH WARNINGS
+==============================
+
+A sentence ...
+
+::
+
+ separator:
+        condition1
+        condition2
+        ...
+        conditionN

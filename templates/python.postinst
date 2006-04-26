@@ -1,0 +1,16 @@
+%CONTENT%
+
+# precompile python files
+VERSION=%PYVER%
+PACKAGEDIR=%PACKAGEDIR%
+case "$1" in
+    configure|abort-upgrade|abort-remove|abort-deconfigure)
+	python$VERSION -O /usr/lib/python$VERSION/compileall.py -q $PACKAGEDIR
+	python$VERSION /usr/lib/python$VERSION/compileall.py -q $PACKAGEDIR
+    ;;
+
+    *)
+        echo "postinst called with unknown argument \`$1'" >&2
+        exit 1
+    ;;
+esac

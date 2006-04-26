@@ -1,0 +1,8 @@
+TODO list for devtools
+======================
+
+* améliorer vérification package
+
+* debianize : créer un paquet contenant la doc et les fichiers partagés
+  (données, elisp, dtd, xslt...) au lieu de mettre la doc dans chaque
+  paquet python et les autres trucs dans leur paquet perso ?

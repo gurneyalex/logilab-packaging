@@ -1,0 +1,138 @@
+#!/usr/bin/make -f
+# Sample debian/rules that uses debhelper.
+# GNU copyright 1997 to 1999 by Joey Hess.
+#
+# adapted by Logilab for automatic generation by debianize
+# (part of the devtools project, http://www.logilab.org/projects/devtools)
+#
+# Copyright (c) 2003-2005 LOGILAB S.A. (Paris, FRANCE).
+# http://www.logilab.fr/ -- mailto:contact@logilab.fr
+
+# Uncomment this to turn on verbose mode.
+#export DH_VERBOSE=1
+
+# This is the debhelper compatability version to use.
+export DH_COMPAT=4
+
+
+
+build: build-stamp
+build-stamp: 
+	dh_testdir
+	python setup.py -q build
+	touch build-stamp
+
+clean: 
+	dh_testdir
+	dh_testroot
+	rm -f build-stamp configure-stamp
+	rm -rf build
+	find . -name "*.pyc" | xargs rm -f
+	rm -f changelog.gz
+	dh_clean
+
+install: build
+	dh_testdir
+	dh_testroot
+	dh_clean -k
+	dh_installdirs
+	python setup.py -q install_lib --no-compile --install-dir=debian/devtools/usr/lib/site-python
+	python setup.py -q install_headers --install-dir=debian/devtools/usr/include/
+	python setup.py -q install_scripts --install-dir=debian/devtools/usr/bin/
+	# remove sub-package __init__ file (created by another package)
+	rm debian/devtools/usr/lib/site-python/logilab/__init__.py
+	# remove test directory (installed in in the doc directory)
+	rm -rf debian/devtools/usr/lib/site-python/logilab/devtools/test
+	if head -1 debian/devtools/usr/bin/buildeb | grep "^#! */usr/bin" | grep "python" >/dev/null ; then \
+		sed -i "s@^#! */usr/bin/env \+python\$$@#!/usr/bin/python@" debian/devtools/usr/bin/buildeb; \
+	fi
+	chmod a+x debian/devtools/usr/bin/buildeb
+	if head -1 debian/devtools/usr/bin/buildpackage | grep "^#! */usr/bin" | grep "python" >/dev/null ; then \
+		sed -i "s@^#! */usr/bin/env \+python\$$@#!/usr/bin/python@" debian/devtools/usr/bin/buildpackage; \
+	fi
+	chmod a+x debian/devtools/usr/bin/buildpackage
+	if head -1 debian/devtools/usr/bin/dos2unix | grep "^#! */usr/bin" | grep "python" >/dev/null ; then \
+		sed -i "s@^#! */usr/bin/env \+python\$$@#!/usr/bin/python@" debian/devtools/usr/bin/dos2unix; \
+	fi
+	chmod a+x debian/devtools/usr/bin/dos2unix
+	if head -1 debian/devtools/usr/bin/cvslog | grep "^#! */usr/bin" | grep "python" >/dev/null ; then \
+		sed -i "s@^#! */usr/bin/env \+python\$$@#!/usr/bin/python@" debian/devtools/usr/bin/cvslog; \
+	fi
+	chmod a+x debian/devtools/usr/bin/cvslog
+	if head -1 debian/devtools/usr/bin/mkproj | grep "^#! */usr/bin" | grep "python" >/dev/null ; then \
+		sed -i "s@^#! */usr/bin/env \+python\$$@#!/usr/bin/python@" debian/devtools/usr/bin/mkproj; \
+	fi
+	chmod a+x debian/devtools/usr/bin/mkproj
+	if head -1 debian/devtools/usr/bin/tagpackage | grep "^#! */usr/bin" | grep "python" >/dev/null ; then \
+		sed -i "s@^#! */usr/bin/env \+python\$$@#!/usr/bin/python@" debian/devtools/usr/bin/tagpackage; \
+	fi
+	chmod a+x debian/devtools/usr/bin/tagpackage
+	if head -1 debian/devtools/usr/bin/changelog | grep "^#! */usr/bin" | grep "python" >/dev/null ; then \
+		sed -i "s@^#! */usr/bin/env \+python\$$@#!/usr/bin/python@" debian/devtools/usr/bin/changelog; \
+	fi
+	chmod a+x debian/devtools/usr/bin/changelog
+	if head -1 debian/devtools/usr/bin/cvstatus | grep "^#! */usr/bin" | grep "python" >/dev/null ; then \
+		sed -i "s@^#! */usr/bin/env \+python\$$@#!/usr/bin/python@" debian/devtools/usr/bin/cvstatus; \
+	fi
+	chmod a+x debian/devtools/usr/bin/cvstatus
+	if head -1 debian/devtools/usr/bin/pkginfo | grep "^#! */usr/bin" | grep "python" >/dev/null ; then \
+		sed -i "s@^#! */usr/bin/env \+python\$$@#!/usr/bin/python@" debian/devtools/usr/bin/pkginfo; \
+	fi
+	chmod a+x debian/devtools/usr/bin/pkginfo
+	if head -1 debian/devtools/usr/bin/pycoverage | grep "^#! */usr/bin" | grep "python" >/dev/null ; then \
+		sed -i "s@^#! */usr/bin/env \+python\$$@#!/usr/bin/python@" debian/devtools/usr/bin/pycoverage; \
+	fi
+	chmod a+x debian/devtools/usr/bin/pycoverage
+	if head -1 debian/devtools/usr/bin/update_gettext.sh | grep "^#! */usr/bin" | grep "python" >/dev/null ; then \
+		sed -i "s@^#! */usr/bin/env \+python\$$@#!/usr/bin/python@" debian/devtools/usr/bin/update_gettext.sh; \
+	fi
+	chmod a+x debian/devtools/usr/bin/update_gettext.sh
+	if head -1 debian/devtools/usr/bin/checkpackage | grep "^#! */usr/bin" | grep "python" >/dev/null ; then \
+		sed -i "s@^#! */usr/bin/env \+python\$$@#!/usr/bin/python@" debian/devtools/usr/bin/checkpackage; \
+	fi
+	chmod a+x debian/devtools/usr/bin/checkpackage
+	if head -1 debian/devtools/usr/bin/debianize | grep "^#! */usr/bin" | grep "python" >/dev/null ; then \
+		sed -i "s@^#! */usr/bin/env \+python\$$@#!/usr/bin/python@" debian/devtools/usr/bin/debianize; \
+	fi
+	chmod a+x debian/devtools/usr/bin/debianize
+	if head -1 debian/devtools/usr/bin/preparedistrib | grep "^#! */usr/bin" | grep "python" >/dev/null ; then \
+		sed -i "s@^#! */usr/bin/env \+python\$$@#!/usr/bin/python@" debian/devtools/usr/bin/preparedistrib; \
+	fi
+	chmod a+x debian/devtools/usr/bin/preparedistrib
+	if head -1 debian/devtools/usr/bin/makedistrib | grep "^#! */usr/bin" | grep "python" >/dev/null ; then \
+		sed -i "s@^#! */usr/bin/env \+python\$$@#!/usr/bin/python@" debian/devtools/usr/bin/makedistrib; \
+	fi
+	chmod a+x debian/devtools/usr/bin/makedistrib
+	if head -1 debian/devtools/usr/bin/stp | grep "^#! */usr/bin" | grep "python" >/dev/null ; then \
+		sed -i "s@^#! */usr/bin/env \+python\$$@#!/usr/bin/python@" debian/devtools/usr/bin/stp; \
+	fi
+	chmod a+x debian/devtools/usr/bin/stp
+	install -m 644 elisp/pycover-mode.el elisp/changelog.el elisp/logilab.el debian/devtools/usr/share/emacs/site-lisp/devtools/
+	# install tests
+	(cd test && find . -type f -not \( -path '*/CVS/*' -or -name '*.pyc' \) -exec install -D --mode=644 {} ../debian/devtools/usr/share/doc/devtools/test/{} \;)
+
+
+# Build architecture-independent files here.
+binary-indep: build install
+	dh_testdir 
+	dh_testroot 
+	dh_install -i
+	gzip -9 -c ChangeLog > changelog.gz
+	dh_installchangelogs -i
+	dh_installexamples -i
+	dh_installdocs -i README TODO changelog.gz
+	dh_installman -i
+	dh_installemacsen
+	dh_link -i
+	dh_compress -i -X.py -X.ini -X.xml -Xtest
+	dh_fixperms -i
+	dh_installdeb -i
+	dh_gencontrol -i 
+	dh_md5sums -i
+	dh_builddeb -i
+
+
+
+binary: binary-indep
+.PHONY: build clean binary binary-indep
+

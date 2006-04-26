@@ -1,0 +1,120 @@
+#!/bin/bash
+#
+# prepare a distribution for a logilab python package after some checks
+#
+
+function cond_exit() {
+    # demande confirmation, quitte si non
+    echo -n "Continuer [y/N] ? "
+    read _a
+    if [ "$_a" = "y" ]; then
+	return 1
+    fi
+    exit 0
+}
+
+function cond_exec() {
+    # demande confirmation, retourne 0 si oui, 1 si non
+    echo -n "Executer $1 [Y/n] ? "
+    read _a
+    if [ "$_a" = "n" ]; then
+	return 1
+    fi
+    return 0
+}
+
+function checkpackage_python() {
+    checkpackage
+}
+
+function checkpackage_formation() {
+    checkpackage -o release_number
+}
+
+ADDITIONAL_DESCR="LOGILAB provides services in the fields of XML techniques and advanced
+computing (implementation of intelligent agents, knowledge management,
+natural language processing, statistical analysis, data mining, etc.),
+and also trainings on Python, XML, UML, Object Oriented design, design
+patterns use and other cutting edge topics. To know more about
+Logilab, visit http://www.logilab.com/.
+
+Logilab is also a strong supporter of the Free Software movement, and an
+active member of the Python and Debian communities. Logilab's open 
+source projects can be found on http://www.logilab.org/."
+
+if [ "$1" = "" -o "$1" = "--help" -o "$1" = "-h" ]; then
+    echo "USAGE: preparedistrib <source_directory>"
+else
+    PKGNAME=`basename $1`
+    BASEDIR=$PWD
+    if [ -f $1/__init__.py ]; then
+	PKGTYPE="python"
+    else
+	PKGTYPE="formation"
+    fi
+    
+    if [ "$PKGTYPE" = "python" ]; then
+        echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+        cond_exec pylint && pylint --ignore doc $PKGNAME && cond_exit
+    fi
+    
+    pushd $1
+    echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+    if [ "$PKGTYPE" = "python" ]; then
+	cond_exec "vérification du paquetage" && checkpackage_python && cond_exit
+    fi
+    
+    if [ -d test ]
+	then
+	echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+	if cond_exec "lancement des tests"  ; then
+	    pushd test
+	    python runtests.py
+	    if [ $? -ne 0 ]; then
+		echo "ERREUR: les tests ont échoués"
+		cond_exit
+	    fi
+	    popd
+	fi
+    fi
+
+    if [ -f ChangeLog ]; then
+	echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+	cond_exec "fermer le ChangeLog" && (
+	    chmod u+w ChangeLog
+	    changelog close
+#	    if [ $? -eq 0 ] ; then
+#		cvs ci -m "close change log for revision $PKGVER" ChangeLog
+#	    else
+#		cvs unedit ChangeLog
+#	    fi
+	)
+    fi
+
+    if [ -d doc ]; then
+	echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+	if cond_exec "construction de la documentation" ; then
+	    pushd doc
+	    make
+	    if [ $? -ne 0 ]; then
+		echo "ERREUR: impossible de construire la documentation"
+		cond_exit
+	    fi
+	    popd
+	fi
+    fi
+
+    if [ "$PKGTYPE" = "python" ] && [ -f announce.txt ]; then
+	echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+	cond_exec "génération de l'annonce dans $BASEDIR/dist/$PKGNAME.announce" && (
+            CLOG=`changelog extract`
+            VARS=`python -c 'from __pkginfo__ import version, web, ftp, mailinglist ; print "VERSION %(version)s WEB %(web)s FTP %(ftp)s MAILINGLIST %(mailinglist)s"%globals()'`
+            LDESC=`pkginfo dump long_desc`
+            DISTNAME=`pkginfo dump name`
+	    stp announce.txt CHANGELOG "$CLOG" $VARS LONG_DESC "$LDESC" DISTNAME "$DISTNAME" ADDITIONAL_DESCR "$ADDITIONAL_DESCR" > $BASEDIR/dist/$PKGNAME.announce
+	)
+    fi
+
+    popd
+
+fi

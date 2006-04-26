@@ -1,0 +1,7 @@
+Logilab's development tools
+===========================
+
+A suite of tool to help in Logilab's software development.
+
+Notice that this distribution include modified software with copyright
+to Gareth Rees (see lib/coverage.py)

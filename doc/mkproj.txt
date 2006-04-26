@@ -1,0 +1,43 @@
+L'utilitaire *mkproj*
+=====================
+
+:Author: Sylvain Thénault
+:Organization: Logilab
+:Version: $Revision: 1.1 $
+:Date: $Date: 2003-09-19 11:50:08 $
+
+.. contents::
+
+
+Description
+```````````
+Cet utilitaire est dédié à la création d'un nouveau projet Python. Il va créer
+une arborescence de répertoire (dont vous n'aurez peut-être pas besoin de la
+totalité) et quelques fichiers standard prérenseignés, le tout conforme au
+standard_source_tree_.
+
+
+Synopsis
+````````
+
+::
+
+    USAGE: mkproj [OPTIONS] <PACKAGENAME>
+
+    OPTIONS:
+      -h / --help
+	   display this help message
+
+
+Exemple d'utilisation
+`````````````````````
+
+::
+
+    mkproj xmlrpccli
+
+va créer un répertoire *xmlrpccli* contenant les sous-répertoires standards et
+quelques fichiers pré-renseignés.
+
+
+.. _standard_source_tree: standard_source_tree.html

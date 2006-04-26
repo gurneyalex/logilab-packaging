@@ -1,0 +1,6 @@
+#!/usr/bin/env python
+
+from logilab.devtools import cvstatus
+import sys
+cvstatus.run(sys.argv[1:])
+
