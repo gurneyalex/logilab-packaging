@@ -125,7 +125,12 @@ class SVNAgent:
         :return:
           a list of tuple (file, status) describing files which are not up to date
         """
-        raise NotImplementedError()
+        executed = Execute("svn status %s" % filepath)
+        result = []
+        for nouptodate in executed.out.splitlines():
+            status, filename = nouptodate.split()
+            result.append( (status.strip(), filename.strip()) )
+        return result
         
     def edited(self, filepath):
         """get a list describing files which are currentlyedited under
