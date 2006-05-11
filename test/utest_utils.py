@@ -8,7 +8,15 @@ import os, shutil
 
 def make_test_fs(arch):
     """creates a default file system for unittests purpose
-    The following arch. will be created under data/ : 
+    Given the input:
+
+    [('dir1', ('file1.py', 'file2.py')),
+     ('dir2', ()),
+     ('dir3', ('file1.py', 'file2.py', 'file3.py')),
+     ]
+     
+    The following tree will be created in the current working dir : 
+
       |- dir1
       |  |- file1.py
       |  \- file2.py
