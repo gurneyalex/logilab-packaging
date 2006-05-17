@@ -454,6 +454,9 @@ def get_vcs_agent(directory):
         return CVSAgent()
     if exists(join(directory, '.svn')):
         from logilab.devtools.vcslib.svn import SVNAgent
-        return SVNAgent()
+        return SVNAgent() 
+    from logilab.devtools.vcslib.hg import HGAgent, find_repository
+    if find_repository(directory):
+        return HGAgent()
     return None
     

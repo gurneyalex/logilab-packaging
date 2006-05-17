@@ -1,4 +1,3 @@
-# -*- coding: ISO-8859-1 -*-
 """unittests for cvs management in OoBrother"""
 
 __revision__ = '$Id: unittest_vcs_cvs.py,v 1.2 2005-01-12 14:20:44 syt Exp $'
@@ -9,11 +8,11 @@ from utest_utils import make_test_fs, delete_test_fs
 
 from logilab.devtools.vcslib import svn
 
-class CVSAgentTC(testlib.TestCase):
-    """test case for CVSAgent"""
+class SVNAgentTC(testlib.TestCase):
+    """test case for SVNAgent"""
 
     def setUp(self):
-        """make test CVS directory"""
+        """make test SVN directory"""
         self.tmp1 = os.tempnam('/tmp')
         self.tmp2 = os.tempnam('/tmp')        
         os.system('svnadmin create %s' % self.tmp1)
