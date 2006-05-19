@@ -8,8 +8,10 @@ ChangeLog for logilab.devtools
       subpackage should set this to True and the others should depends on 
       this package)
     * debianize: fix Uploader to Uploaders in control
-	* pkginfo: fix debian handler detection
+    * pkginfo: fix debian handler detection
     * makedistrib: don't ask to tag package if an error occurs
+    * vcslib: added mercurial support
+
 	
 2006-01-10  --  0.8.0
     * debianize:

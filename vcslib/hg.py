@@ -208,7 +208,7 @@ class HGAgent:
         """
         ui = Ui()
         repo = Repository(ui, path=path)
-        opts = dict(rev=['tip:0'], branches=None)
+        opts = dict(rev=['tip:0'], branches=None, include=(), exclude=())
         changeiter, getchange, matchfn = walkchangerevs(ui, repo, (), opts)
         from_date = datetime.datetime(*[int(x) for x in from_date.split('-')])
         to_date = datetime.datetime(*[int(x) for x in to_date.split('-')])
