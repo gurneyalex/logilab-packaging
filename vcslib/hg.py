@@ -26,14 +26,14 @@ __metaclass__ = type
 __all__ = ['HGAgent', 'find_repository']
 
 import os
-from os.path import abspath
+from os.path import abspath, isdir, join, dirname
 import datetime
 
 from logilab.devtools.vcslib import VCS_UPTODATE, VCS_MODIFIED, \
      VCS_MISSING, VCS_NEW, VCS_CONFLICT, VCS_NOVERSION, VCS_IGNORED, \
      VCS_REMOVED, VCS_NEEDSPATCH, IVCSAgent
 
-from mercurial.localrepo import localrepository as Repository
+from mercurial.hg import repository as Repository
 from mercurial.ui import ui as Ui
 from mercurial.commands import walkchangerevs
 
@@ -60,7 +60,7 @@ def changeset_info(repo, rev=0, changenode=None):
     manifest, user, (time, timezone), files, desc = log.read(changenode)
     summary = desc.splitlines()[0]
     checkin_date = datetime.date.fromtimestamp((float(time) - timezone))
-    return rev, date, user, summary
+    return rev, checkin_date, user, summary
 
 
 class HGAgent:
@@ -168,8 +168,11 @@ class HGAgent:
           repository using the given tag name
         """
         if not isinstance(filepath, basestring):
-            filepath = ' '.join(filepath)
-        assert os.getcwd().startswith(abspath(filepath)), \
+            filepath = filepath[0] #' '.join(filepath)
+        print os.getcwd()
+        print '**'
+        print abspath(filepath)
+        assert abspath(filepath).startswith(os.getcwd()), \
                "I don't know how to deal with filepath and <hg tag>"
         return "hg tag %s" % tagname
 
@@ -188,7 +191,7 @@ class HGAgent:
           a shell command string to check out the given file or
           directory from the vc repository
         """
-        if tag:
+        if tag and tag != 'HEAD':
             raise NotImplementedError("don't know how to co a given tag "
                                       "(hg clone -r tag ?")
         if path:
@@ -207,6 +210,8 @@ class HGAgent:
         repo = Repository(ui, path=path)
         opts = dict(rev=['tip:0'], branches=None)
         changeiter, getchange, matchfn = walkchangerevs(ui, repo, (), opts)
+        from_date = datetime.datetime(*[int(x) for x in from_date.split('-')])
+        to_date = datetime.datetime(*[int(x) for x in to_date.split('-')])
         for st, rev, fns in changeiter:
             if st == 'add':
                 changenode = repo.changelog.node(rev)

@@ -1,5 +1,5 @@
 # Copyright (c) 2003 Sylvain Thenault (thenault@gmail.com)
-# Copyright (c) 2003-2005 Logilab (devel@logilab.fr)
+# Copyright (c) 2003-2006 Logilab (devel@logilab.fr)
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -24,6 +24,7 @@ import glob
 import sys
 from os.path import basename, join, split, exists
 
+from logilab.devtools.vcslib import BASE_EXCLUDE
 
 PUBLIC_RGX = re.compile('PUBLIC\s+"-//(?P<group>.*)//DTD (?P<pubid>.*)//(?P<lang>\w\w)(//XML)?"\s*"(?P<dtd>.*)"')
 
@@ -76,7 +77,7 @@ def get_scripts(dirname, include_bat=0):
         return ()
     result = []
     for filename in os.listdir(bindir):
-        if filename in ('CVS', '.svn'):
+        if filename in BASE_EXCLUDE:
             continue
         if include_bat or filename[-4:] != '.bat':
             result.append(join('bin', filename))

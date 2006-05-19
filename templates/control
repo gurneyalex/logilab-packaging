@@ -3,7 +3,7 @@ Section: %SECTION%
 Priority: optional
 %MAINTAINER% 
 Build-Depends: debhelper (>= 5.0.0)%BUILD_DEPENDENCIES%
-Standards-Version: 3.6.2
+Standards-Version: 3.7.2
 
 Package: %PACKAGE%
 Architecture: all

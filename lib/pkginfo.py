@@ -34,6 +34,7 @@ from stat import S_IWRITE
 from logilab.devtools import TEMPLATE_DIR
 from logilab.devtools.lib import TextReporter
 from logilab.devtools.lib.utils import SGMLCatalog, get_scripts, glob_match
+from logilab.devtools.vcslib import BASE_EXCLUDE
 
 try:
     from scriptfoundry.snakespell import iSpell
@@ -250,7 +251,7 @@ def _get_files(pkginfo, directories, include_exts=None, exclude_exts=None,
     """
     cwd = os.getcwd()
     os.chdir(pkginfo.base_directory)
-    exclude_dirs += ('CVS', '.svn')
+    exclude_dirs += BASE_EXCLUDE
     try:
         for directory in directories:
             if exists(directory):

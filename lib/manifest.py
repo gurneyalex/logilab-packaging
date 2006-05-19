@@ -1,6 +1,7 @@
 # -*- coding: ISO-8859-1 -*-
 
-# Copyright (c) 2003 Sylvain Thénault (thenault@nerim.net)
+# Copyright (c) 2003 Sylvain Thénault (thenault@gmail.com)
+# Copyright (c) 2003-2006 LOGILAB S.A. (Paris, FRANCE).
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -25,7 +26,9 @@ from distutils.filelist import FileList
 from distutils.text_file import TextFile
 from distutils.errors import DistutilsTemplateError
 
-JUNK_EXTENSIONS = ('~', '.pyc', '.pyo', '.fo', '.o', '.so')
+from logilab.devtools.vcslib import BASE_EXCLUDE
+
+JUNK_EXTENSIONS = ('~', '.pyc', '.pyo', '.fo', '.o', '.so', '.swp')
 
 def match_extensions(filename, extensions):
     """return true if the given file match one of the given extensions"""
@@ -38,7 +41,7 @@ def match_extensions(filename, extensions):
 def read_manifest_in(reporter,
                      filelist=None, dirname=os.getcwd(),
                      filename="MANIFEST.in",
-                     exclude_patterns=(r'/(RCS|CVS|\.svn)/.*',)):
+                     exclude_patterns=(r'/(RCS|CVS|\.svn|\.hg)/.*',)):
     """return a list of files matching the MANIFEST.in"""
     absfile = join(dirname, filename)
     if not exists(absfile):
@@ -102,7 +105,7 @@ def get_manifest_files(dirname=os.getcwd(), junk_extensions=JUNK_EXTENSIONS,
         if absfile in ignored or filename in ignored or filename.endswith(',cover'):
             continue
         if isdir(absfile):
-            if filename in ('CVS', '.svn', 'deprecated'):
+            if filename in BASE_EXCLUDE + ('deprecated',):
                 continue
             result += get_manifest_files(absfile, junk_extensions, ignored,
                                          prefix)

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright (c) 2004-2005 LOGILAB S.A. (Paris, FRANCE).
+# Copyright (c) 2004-2006 LOGILAB S.A. (Paris, FRANCE).
 # http://www.logilab.fr/ -- mailto:contact@logilab.fr
 #
 # This program is free software; you can redistribute it and/or modify it under
@@ -49,8 +49,8 @@ def tag_package(package_dir, vcs_agent=None):
         release_tag = pi.release_tag()
         if cond_exec("Add tag %s on %s" % (release_tag, package_dir)):
             manifest_files = read_manifest_in(REPORTER, dirname='.',
-                                              exclude_patterns=(r'/(RCS|CVS|\.svn)/.*',
-                                                                r'(.*\.pyc|.*\.pyo|.*\.html||.*\.pdf)'))
+                                              exclude_patterns=(r'/(RCS|CVS|\.svn|\.hg)/.*',
+                                                                r'(.*\.pyc|.*\.pyo|.*\.html|.*\.pdf)'))
             python_files = get_module_files(package_dir)
             files = [f.replace(package_dir, '') for f in manifest_files + python_files]
             os.system(vcs_agent.tag(files, release_tag))

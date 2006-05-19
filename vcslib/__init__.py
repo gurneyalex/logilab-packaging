@@ -1,5 +1,5 @@
 # pylint: disable-msg=E0201
-# Copyright (c) 2004 LOGILAB S.A. (Paris, FRANCE).
+# Copyright (c) 2004-2006 LOGILAB S.A. (Paris, FRANCE).
 # http://www.logilab.fr/ -- mailto:contact@logilab.fr
 #
 # This program is free software; you can redistribute it and/or modify it under
@@ -35,6 +35,8 @@ from os.path import join, exists, isfile, isdir, dirname, basename
 
 from logilab.devtools.vcslib.interfaces import IVCSFile, IVCSAgent
 from logilab.devtools.vcslib.node import BaseNode
+
+BASE_EXCLUDE = ('CVS', '.svn', '.hg')
 
 VCS_IGNORED    = 0
 VCS_NOVERSION  = 1

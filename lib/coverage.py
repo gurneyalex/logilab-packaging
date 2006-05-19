@@ -86,6 +86,8 @@ import threading
 from os.path import exists, isdir, isabs, splitext, walk, join, \
      abspath, basename, dirname, normcase
 
+from logilab.devtools.vcslib import BASE_EXCLUDE
+
 def modpath_from_file(filename):
     """given an absolute file path return the python module's path as a list
     """
@@ -110,9 +112,9 @@ def modpath_from_file(filename):
             base, ', \n'.join(sys.path)))
     return mod_path
 
-def get_python_files(path, ignored=('CVS', '.svn', 'test', 'tests',
-                                    'setup.py',
-                                    '__pkginfo__.py')):
+def get_python_files(path, ignored=BASE_EXCLUDE + ('test', 'tests',
+                                                   'setup.py',
+                                                   '__pkginfo__.py')):
     """run the list of python files in <path>"""
     result = []
     def walk_handler(arg, directory, fnames):

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Copyright (c) 2003-2005 LOGILAB S.A. (Paris, FRANCE).
+# Copyright (c) 2003-2006 LOGILAB S.A. (Paris, FRANCE).
 # http://www.logilab.fr/ -- mailto:contact@logilab.fr
 #
 # This program is free software; you can redistribute it and/or modify it under
@@ -52,6 +52,7 @@ from os.path import basename, join, exists
 from logilab.devtools.lib import TextReporter
 from logilab.devtools.lib.pkginfo import PackageInfo, check_info_module
 from logilab.devtools.lib.manifest import check_manifest_in
+from logilab.devtools.vcslib import BASE_EXCLUDE
 from logilab.devtools import templates
 
 def is_executable(filename):
@@ -133,7 +134,7 @@ def check_bin(reporter, dirname):
     if not exists(bindir):
         return status
     for filename in os.listdir(bindir):
-        if filename in ('CVS', '.svn'):
+        if filename in BASE_EXCLUDE:
             continue
         if filename[-4:] == '.bat':
             continue
