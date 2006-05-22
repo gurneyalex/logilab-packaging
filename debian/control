@@ -1,9 +1,9 @@
 Source: devtools
 Section: python
 Priority: optional
-Maintainer: Sylvain Thenault <sylvain.thenault@logilab.fr> 
+Maintainer: Sylvain Thénault <sylvain.thenault@logilab.fr> 
 Build-Depends: debhelper (>= 4.0.0), python-dev
-Standards-Version: 3.6.2
+Standards-Version: 3.7.2
 
 Package: devtools
 Architecture: all
