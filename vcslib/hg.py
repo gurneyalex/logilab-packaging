@@ -42,6 +42,7 @@ def find_repository(path):
 
     None if <path> is not under hg control
     """
+    path = abspath(path)
     while not isdir(join(path, ".hg")):
         oldpath = path
         path = dirname(path)
@@ -81,13 +82,25 @@ class HGAgent:
         :return:
           a list of tuple (file, status) describing files which are not up to date
         """
-        ui = Ui()
-        repo = Repository(ui, path=filepath)
-        changes = repo.changes()
-        statuslist = ('M', 'A', 'R', 'D', '?')
-        # XXX: use repo.findincoming to detect "needs patch" status
-        return [(status, filename) for status, files in zip(statuslist, changes)
-                for filename in files]
+        parentui = Ui()
+        repo = Repository(parentui, path=find_repository(filepath))
+        localui = repo.ui
+        remote = Repository(parentui, localui.expandpath('default'))
+        changes = []
+        for nid in repo.findincoming(remote):
+            manifest, user, timeinfo, files, desc = remote.changelog.read(nid)
+            for filename in files:
+                # .ljust(15)
+                changes.append(('incoming', filename))
+        for nid in repo.findoutgoing(remote):
+            manifest, user, timeinfo, files, desc = repo.changelog.read(nid)
+            for filename in files:
+                # .ljust(15)
+                changes.append(('outgoing', filename))
+        statuslist = ('modified', 'added', 'removed', 'deleted', 'unknown')
+        return changes + [(status, filename)
+                          for status, files in zip(statuslist, repo.changes())
+                          for filename in files]
         
     def edited(self, filepath):
         """get a list describing files which are currentlyedited under
@@ -207,7 +220,7 @@ class HGAgent:
         (file, revision_info_as_string, added_lines, removed_lines)
         """
         ui = Ui()
-        repo = Repository(ui, path=path)
+        repo = Repository(ui, path=find_repository(path))
         opts = dict(rev=['tip:0'], branches=None, include=(), exclude=())
         changeiter, getchange, matchfn = walkchangerevs(ui, repo, (), opts)
         from_date = datetime.datetime(*[int(x) for x in from_date.split('-')])
