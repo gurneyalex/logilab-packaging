@@ -203,7 +203,7 @@ class FileWrapper(BaseNode):
     
     def get_child_number(self):
         """
-        This method is overriden from `BaseNode` since it can be a bit
+        This method is overridden from `BaseNode` since it can be a bit
         more efficient than simply len(node.get_children() as here
         get_children is a lazy method building children on the first call
 
