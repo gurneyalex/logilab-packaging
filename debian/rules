@@ -51,10 +51,6 @@ install: build
 		sed -i "s@^#! */usr/bin/env \+python\$$@#!/usr/bin/python@" debian/devtools/usr/bin/buildpackage; \
 	fi
 	chmod a+x debian/devtools/usr/bin/buildpackage
-	if head -1 debian/devtools/usr/bin/dos2unix | grep "^#! */usr/bin" | grep "python" >/dev/null ; then \
-		sed -i "s@^#! */usr/bin/env \+python\$$@#!/usr/bin/python@" debian/devtools/usr/bin/dos2unix; \
-	fi
-	chmod a+x debian/devtools/usr/bin/dos2unix
 	if head -1 debian/devtools/usr/bin/cvslog | grep "^#! */usr/bin" | grep "python" >/dev/null ; then \
 		sed -i "s@^#! */usr/bin/env \+python\$$@#!/usr/bin/python@" debian/devtools/usr/bin/cvslog; \
 	fi

@@ -3,7 +3,6 @@ include bin/cvslog
 include bin/changelog
 include bin/checkpackage
 include bin/debianize
-include bin/dos2unix
 include bin/preparedistrib
 include bin/makedistrib
 include bin/mkproj
