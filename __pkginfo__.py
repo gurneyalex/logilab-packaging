@@ -50,7 +50,6 @@ include_dirs = ['templates', join('test', 'data')]
 
 scripts = ['bin/buildeb',
            'bin/buildpackage',
-           'bin/dos2unix',
            'bin/cvslog',
            'bin/mkproj',
            'bin/tagpackage',

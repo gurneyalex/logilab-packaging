@@ -2,6 +2,7 @@ ChangeLog for logilab.devtools
 ==============================
 
 --
+    * dos2unix: removal (unused, buggy, conflicts with debian package tofrodos)
     * debianize: fix the way to handle subpackage's __init__.py file (there 
       is now a subpackage_master boolean property in the __pkginfo__.py which
       tells if a package is handling the __init__.py file, so now only one 
