@@ -23,6 +23,16 @@ function cond_exec() {
     return 0
 }
 
+function install_copying() {
+    license=`python -c "from __pkginfo__ import license; import os; from logilab.devtools import templates; print os.path.join(os.path.dirname(templates.__file__), 'licenses', 'full_%s.txt'%license)"`
+    if [ $license -nt COPYING ] ; then
+        cp $license COPYING 
+        echo Copie du fichier $license dans COPYING
+    else
+        echo Fichier COPYING à jour
+    fi
+}
+
 function checkpackage_python() {
     checkpackage
 }
@@ -59,6 +69,10 @@ else
     fi
     
     pushd $1
+    if [ "$PKGTYPE" = "python" ]; then
+        echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+        cond_exec "installation du fichier COPYING"  && install_copying
+    fi
     echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
     if [ "$PKGTYPE" = "python" ]; then
 	cond_exec "vérification du paquetage" && checkpackage_python && cond_exit
