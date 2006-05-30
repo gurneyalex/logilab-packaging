@@ -39,8 +39,10 @@ include templates/zope.postinst
 include templates/zope.prerm
 include templates/zope.templates
 
+recursive-include test/data *
 
 include README
+include COPYING
 include TODO 
 include ChangeLog
 include DEPENDS
