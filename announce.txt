@@ -1,9 +1,11 @@
+I'm pleased to announce the %VERSION% release of %DISTNAME%.
+
 What's new ?
 ------------
 %CHANGELOG%
 
 
-What is %SOURCEPACKAGE% ?
+What is %DISTNAME% ?
 ------------------------
 %LONG_DESC%
 
