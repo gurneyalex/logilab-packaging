@@ -3,11 +3,15 @@ MKHTMLOPTS=--doctype book --param toc.section.depth=2  --target html --styleshee
 SRC=.
 
 TXTFILES:= $(wildcard *.txt)
-TARGET := $(TXTFILES:.txt=.html)
+TXTFILES:= $(wildcard *.xml)
+TARGET := $(TXTFILES:.txt=.html) $(TXTFILES:.xml=.html)
 
 all: ${TARGET}
 
 %.html: %.txt
+	${MKHTML} ${MKHTMLOPTS} $<
+
+%.html: %.xml
 	${MKHTML} ${MKHTMLOPTS} $<
 
 clean:
