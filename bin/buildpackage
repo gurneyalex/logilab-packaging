@@ -37,6 +37,7 @@ function build_debian_package() {
     echo '********** DEBIAN PACKAGE'
     if [ "$DEBUILDER" = "" ]; then
         #DEBUILDER="pdebuild"
+        echo DEBUILDER = "pdebuild --buildresult $PWD/dist"
         export DEBUILDER="pdebuild --buildresult $PWD/dist"
         #DEBUILDER="fakeroot make -f debian/rules binary "
     fi
