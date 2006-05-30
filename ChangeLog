@@ -1,9 +1,12 @@
 ChangeLog for logilab.devtools
 ==============================
 
---
+  --  
+    * preparedistrib: offers to copy the COPYING file from a set of
+      known licenses 
+    * buildpackage: fixed missing DEBUILDER environment variable bug
     * dos2unix: removal (unused, buggy, conflicts with debian package tofrodos)
-    * debianize: fix the way to handle subpackage's __init__.py file (there 
+    * debianize: fix the way to handle subpackage's __init__.py file (there
       is now a subpackage_master boolean property in the __pkginfo__.py which
       tells if a package is handling the __init__.py file, so now only one 
       subpackage should set this to True and the others should depends on 
@@ -16,9 +19,9 @@ ChangeLog for logilab.devtools
 	
 2006-01-10  --  0.8.0
     * debianize:
-      * updated to handle site-python installation with architecture
+    * updated to handle site-python installation with architecture
         independant package (implements #10119)
-      * consider the optional debian_uploader variable in package
+    * consider the optional debian_uploader variable in package
         information 
     * fix .examples files generation with debianize
     * fix templates: control.standard-version is now 3.6.2, updated FSF
