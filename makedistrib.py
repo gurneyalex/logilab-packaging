@@ -73,7 +73,12 @@ def run(args=None):
     status = os.system('buildpackage %s %s' % (package_dir, target))
     if status == 0:
         print '+' * 72
-        tag_package(package_dir, vcs_agent)
+        if cond_exec("lancement de piuparts sur les paquets générés"):
+            print 'buildeb --piuparts %s %s' % (package_dir, 'dist')
+            if os.system('buildeb --piuparts %s %s' % (package_dir, 'dist')):
+                print '+' * 72
+                tag_package(package_dir, vcs_agent)
 
 if __name__ == '__main__':
     run()
+ 
