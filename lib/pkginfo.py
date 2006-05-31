@@ -72,7 +72,8 @@ def get_known_licenses():
         result = []
         licenses_dir = join(TEMPLATE_DIR, 'licenses')
         for license_file in os.listdir(licenses_dir):
-            if license_file.endswith('.txt'):
+            if license_file.endswith('.txt') and not license_file.startswith('full'):
+                assert os.path.isfile(os.path.join(licenses_dir, 'full_'+license_file)), "No full text available for %s"%license_file
                 license_id = license_file[:-4].upper()
                 result.append(license_id)
                 _LICENSES_FILE[license_id] = join(licenses_dir, license_file)
