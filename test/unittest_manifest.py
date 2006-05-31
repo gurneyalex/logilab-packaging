@@ -18,6 +18,7 @@ __revision__ = '$Id: unittest_manifest.py,v 1.9 2005-07-26 09:41:25 syt Exp $'
 
 import unittest
 import sys
+from os.path import dirname, join
 from logilab.devtools.lib.manifest import *
 from logilab.devtools.lib import TextReporter
 
@@ -34,13 +35,14 @@ class MatchExtensionsFunctionTest(unittest.TestCase):
 class ReadManifestInFunctionTest(unittest.TestCase):
     
     def test_known_values(self):
-        self.assertEqual(read_manifest_in(reporter, dirname='data/'),
+        self.assertEqual(read_manifest_in(reporter,
+                                          dirname=join(dirname(__file__),'data/')),
                          ['bad_file.rst', 'bin/tool.bat'])
         
 class GetManifestFilesFunctionTest(unittest.TestCase):
     
     def test_known_values(self):
-        detected = get_manifest_files(dirname='data/')
+        detected = get_manifest_files(dirname=join(dirname(__file__),'data/'))
         detected.sort()
         self.assertEqual(detected,
                          ['ChangeLog',
