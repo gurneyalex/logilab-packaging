@@ -2,6 +2,9 @@
 
 __revision__ = '$Id: unittest_vcs_cvs.py,v 1.2 2005-01-12 14:20:44 syt Exp $'
 
+import warnings
+warnings.filterwarnings('ignore', "tempnam is a potential security risk to your program")
+
 import os, shutil
 from tempfile import mkdtemp
 from logilab.common import testlib
