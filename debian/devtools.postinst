@@ -4,7 +4,7 @@
 
 
 # precompile python files
-VERSION=2.3
+VERSION=2.4
 PACKAGEDIR=/usr/lib/site-python/logilab/devtools
 case "$1" in
     configure|abort-upgrade|abort-remove|abort-deconfigure)

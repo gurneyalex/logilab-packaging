@@ -18,7 +18,7 @@
 
 USAGE: debianize [OPTIONS] [package_dir]
           create / update debian files (debian mode). If no python versions are
-          provided, default to 2.1 2.2 2.3 (on the first run). Used options are
+          provided, default to 2.3 2.4 (on the first run). Used options are
           saved in a config file (debian/debianizerc) so you don't have to
           provide them on futur runs.
           The <python version> arguments is only used with the python-library
