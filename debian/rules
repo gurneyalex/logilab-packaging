@@ -19,7 +19,7 @@ export DH_COMPAT=4
 build: build-stamp
 build-stamp: 
 	dh_testdir
-	python setup.py -q build
+	python2.4 setup.py -q build
 	touch build-stamp
 
 clean: 
@@ -36,73 +36,13 @@ install: build
 	dh_testroot
 	dh_clean -k
 	dh_installdirs
-	python setup.py -q install_lib --no-compile --install-dir=debian/devtools/usr/lib/site-python
-	python setup.py -q install_headers --install-dir=debian/devtools/usr/include/
-	python setup.py -q install_scripts --install-dir=debian/devtools/usr/bin/
+	python2.4 setup.py -q install_lib --no-compile --install-dir=debian/devtools/usr/lib/site-python
+	python2.4 setup.py -q install_headers --install-dir=debian/devtools/usr/include/
+	python2.4 setup.py -q install_scripts --install-dir=debian/devtools/usr/bin/
 	# remove sub-package __init__ file (created by another package)
 	rm debian/devtools/usr/lib/site-python/logilab/__init__.py
 	# remove test directory (installed in in the doc directory)
 	rm -rf debian/devtools/usr/lib/site-python/logilab/devtools/test
-	if head -1 debian/devtools/usr/bin/buildeb | grep "^#! */usr/bin" | grep "python" >/dev/null ; then \
-		sed -i "s@^#! */usr/bin/env \+python\$$@#!/usr/bin/python@" debian/devtools/usr/bin/buildeb; \
-	fi
-	chmod a+x debian/devtools/usr/bin/buildeb
-	if head -1 debian/devtools/usr/bin/buildpackage | grep "^#! */usr/bin" | grep "python" >/dev/null ; then \
-		sed -i "s@^#! */usr/bin/env \+python\$$@#!/usr/bin/python@" debian/devtools/usr/bin/buildpackage; \
-	fi
-	chmod a+x debian/devtools/usr/bin/buildpackage
-	if head -1 debian/devtools/usr/bin/cvslog | grep "^#! */usr/bin" | grep "python" >/dev/null ; then \
-		sed -i "s@^#! */usr/bin/env \+python\$$@#!/usr/bin/python@" debian/devtools/usr/bin/cvslog; \
-	fi
-	chmod a+x debian/devtools/usr/bin/cvslog
-	if head -1 debian/devtools/usr/bin/mkproj | grep "^#! */usr/bin" | grep "python" >/dev/null ; then \
-		sed -i "s@^#! */usr/bin/env \+python\$$@#!/usr/bin/python@" debian/devtools/usr/bin/mkproj; \
-	fi
-	chmod a+x debian/devtools/usr/bin/mkproj
-	if head -1 debian/devtools/usr/bin/tagpackage | grep "^#! */usr/bin" | grep "python" >/dev/null ; then \
-		sed -i "s@^#! */usr/bin/env \+python\$$@#!/usr/bin/python@" debian/devtools/usr/bin/tagpackage; \
-	fi
-	chmod a+x debian/devtools/usr/bin/tagpackage
-	if head -1 debian/devtools/usr/bin/changelog | grep "^#! */usr/bin" | grep "python" >/dev/null ; then \
-		sed -i "s@^#! */usr/bin/env \+python\$$@#!/usr/bin/python@" debian/devtools/usr/bin/changelog; \
-	fi
-	chmod a+x debian/devtools/usr/bin/changelog
-	if head -1 debian/devtools/usr/bin/cvstatus | grep "^#! */usr/bin" | grep "python" >/dev/null ; then \
-		sed -i "s@^#! */usr/bin/env \+python\$$@#!/usr/bin/python@" debian/devtools/usr/bin/cvstatus; \
-	fi
-	chmod a+x debian/devtools/usr/bin/cvstatus
-	if head -1 debian/devtools/usr/bin/pkginfo | grep "^#! */usr/bin" | grep "python" >/dev/null ; then \
-		sed -i "s@^#! */usr/bin/env \+python\$$@#!/usr/bin/python@" debian/devtools/usr/bin/pkginfo; \
-	fi
-	chmod a+x debian/devtools/usr/bin/pkginfo
-	if head -1 debian/devtools/usr/bin/pycoverage | grep "^#! */usr/bin" | grep "python" >/dev/null ; then \
-		sed -i "s@^#! */usr/bin/env \+python\$$@#!/usr/bin/python@" debian/devtools/usr/bin/pycoverage; \
-	fi
-	chmod a+x debian/devtools/usr/bin/pycoverage
-	if head -1 debian/devtools/usr/bin/update_gettext.sh | grep "^#! */usr/bin" | grep "python" >/dev/null ; then \
-		sed -i "s@^#! */usr/bin/env \+python\$$@#!/usr/bin/python@" debian/devtools/usr/bin/update_gettext.sh; \
-	fi
-	chmod a+x debian/devtools/usr/bin/update_gettext.sh
-	if head -1 debian/devtools/usr/bin/checkpackage | grep "^#! */usr/bin" | grep "python" >/dev/null ; then \
-		sed -i "s@^#! */usr/bin/env \+python\$$@#!/usr/bin/python@" debian/devtools/usr/bin/checkpackage; \
-	fi
-	chmod a+x debian/devtools/usr/bin/checkpackage
-	if head -1 debian/devtools/usr/bin/debianize | grep "^#! */usr/bin" | grep "python" >/dev/null ; then \
-		sed -i "s@^#! */usr/bin/env \+python\$$@#!/usr/bin/python@" debian/devtools/usr/bin/debianize; \
-	fi
-	chmod a+x debian/devtools/usr/bin/debianize
-	if head -1 debian/devtools/usr/bin/preparedistrib | grep "^#! */usr/bin" | grep "python" >/dev/null ; then \
-		sed -i "s@^#! */usr/bin/env \+python\$$@#!/usr/bin/python@" debian/devtools/usr/bin/preparedistrib; \
-	fi
-	chmod a+x debian/devtools/usr/bin/preparedistrib
-	if head -1 debian/devtools/usr/bin/makedistrib | grep "^#! */usr/bin" | grep "python" >/dev/null ; then \
-		sed -i "s@^#! */usr/bin/env \+python\$$@#!/usr/bin/python@" debian/devtools/usr/bin/makedistrib; \
-	fi
-	chmod a+x debian/devtools/usr/bin/makedistrib
-	if head -1 debian/devtools/usr/bin/stp | grep "^#! */usr/bin" | grep "python" >/dev/null ; then \
-		sed -i "s@^#! */usr/bin/env \+python\$$@#!/usr/bin/python@" debian/devtools/usr/bin/stp; \
-	fi
-	chmod a+x debian/devtools/usr/bin/stp
 	install -m 644 elisp/pycover-mode.el elisp/changelog.el elisp/logilab.el debian/devtools/usr/share/emacs/site-lisp/devtools/
 	# install tests
 	(cd test && find . -type f -not \( -path '*/CVS/*' -or -name '*.pyc' \) -exec install -D --mode=644 {} ../debian/devtools/usr/share/doc/devtools/test/{} \;)
