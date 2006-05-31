@@ -68,4 +68,4 @@ scripts = ['bin/buildeb',
 debian_name = 'devtools'
 debian_maintainer = 'Sylvain Thenault'
 debian_maintainer_email = 'sylvain.thenault@logilab.fr'
-pyversions = ['2.3', '2.4']
+pyversions = ['2.4']
