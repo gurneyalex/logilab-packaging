@@ -26,10 +26,11 @@ import os, shutil
 from logilab.devtools.vcslib import FileWrapper
 
 from utest_utils import make_test_fs, delete_test_fs
+basedir = os.path.dirname(__file__)
 
-ARCH = [('data/dir1', ('file1.py', 'file2.py')),
-        ('data/dir2', ()),
-        ('data/dir3', ('file1.py', 'file2.py', 'file3.py')),
+ARCH = [(os.path.join(basedir, 'data/dir1'), ('file1.py', 'file2.py')),
+        (os.path.join(basedir, 'data/dir2'), ()),
+        (os.path.join(basedir, 'data/dir3'), ('file1.py', 'file2.py', 'file3.py')),
         ]
 
 
@@ -37,7 +38,7 @@ class FileWrapperTC(unittest.TestCase):
     """test case for file wrappers"""
 
     def setUp(self):
-        self.cwd = os.getcwd()
+        self.cwd = os.path.dirname(__file__)
         make_test_fs(ARCH)
         self.root_dir = FileWrapper(os.path.join(self.cwd, 'data'))
 
@@ -107,7 +108,7 @@ class FileWrapperTC(unittest.TestCase):
     def test_force_update(self):
         """test FileWrapper.force_update()"""
         self.assertRaises(KeyError, self.root_dir.__getitem__, 'dir1/file3.py')
-        file('data/dir1/file3.py', 'w').close()
+        file(os.path.join(self.cwd, 'data/dir1/file3.py'), 'w').close()
         dir1 = self.root_dir['dir1']
         dir1.force_update()
         try:
@@ -116,9 +117,9 @@ class FileWrapperTC(unittest.TestCase):
             raise AssertionError('file3 should be accessible after a force_update()')
         
     def test_no_force_update(self):
-        """test FileWrapper.force_update()"""
+        """test FileWrapper.no_force_update()"""
         self.assertRaises(KeyError, self.root_dir.__getitem__, 'dir1/file3.py')
-        file('data/dir1/file3.py', 'w').close()
+        file(os.path.join(self.cwd, 'data/dir1/file3.py'), 'w').close()
         self.assertRaises(KeyError, self.root_dir.__getitem__, 'dir1/file3.py')
 
 
@@ -136,9 +137,16 @@ class FileWrapperTC(unittest.TestCase):
         trace = []
         root.walk(trace_walk, trace)
         self.assertEquals(trace,
-                          ['data/dir1', 'data/dir1/file1.py', 'data/dir1/file2.py',
-                           'data/dir2',
-                           'data/dir3', 'data/dir3/file1.py', 'data/dir3/file2.py', 'data/dir3/file3.py'])
+                          [os.path.join(self.cwd, d)
+                           for d in
+                           ('data/dir1',
+                            'data/dir1/file1.py',
+                            'data/dir1/file2.py',
+                            'data/dir2',
+                            'data/dir3',
+                            'data/dir3/file1.py',
+                            'data/dir3/file2.py',
+                            'data/dir3/file3.py')])
 
 
 def trace_walk(node, trace):
