@@ -20,7 +20,7 @@ logilab.devtools packaging information
 __revision__ = "$Id: __pkginfo__.py,v 1.47 2006-01-10 15:11:50 syt Exp $"
 
 modname = 'devtools'
-numversion = (0, 8, 0)
+numversion = (0, 9, 0)
 version = '.'.join([str(num) for num in numversion])
 
 license = 'GPL'
