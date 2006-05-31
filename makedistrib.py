@@ -73,7 +73,7 @@ def run(args=None):
     status = os.system('buildpackage %s %s' % (package_dir, target))
     if status == 0:
         print '+' * 72
-        if cond_exec("lancement de piuparts sur les paquets générés"):
+        if target == "deb" and cond_exec("lancement de piuparts sur les paquets générés"):
             print 'buildeb --piuparts %s %s' % (package_dir, 'dist')
             os.system('buildeb --piuparts %s %s' % (package_dir, 'dist'))
     print '+' * 72
