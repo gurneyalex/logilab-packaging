@@ -13,6 +13,7 @@ include bin/update_gettext.sh
 include bin/pkginfo
 include bin/tagpackage
 include bin/pycoverage
+include bin/vcpull
 
 include elisp/*.el
 include elisp/startup
