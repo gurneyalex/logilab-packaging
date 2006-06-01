@@ -62,7 +62,8 @@ scripts = ['bin/buildeb',
            'bin/debianize',
            'bin/preparedistrib',
            'bin/makedistrib',
-           'bin/stp'] 
+           'bin/stp',
+           'bin/vcpull'] 
 
 # debianize info
 debian_name = 'devtools'
