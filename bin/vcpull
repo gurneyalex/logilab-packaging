@@ -1,10 +1,10 @@
 #!/usr/bin/python2.4
 """
-Update all sources in the specified directory
+Update all sources in the specified directories
 
-USAGE: vcpull [directory]
+USAGE: vcpull [directory ...]
 
-If a directory is not supplied, the current working directory is used.
+If no directory is supplied, the current working directory is used.
 
 This programm looks recursively for source repository using various
 version control systems and attempts to pull the latest changes from
@@ -49,8 +49,11 @@ if __name__ == '__main__':
         print __doc__
         sys.exit(0)
     if len(sys.argv) == 1:
-        basedir = os.getcwd()
+        basedirs = [ os.getcwd() ]
     else:
-        basedir = sys.argv[1]
-    assert os.path.isdir(basedir)
-    find_updates(basedir)
+        basedirs = sys.argv[1:]
+    for basedir in basedirs:
+        if os.path.isdir(basedir):
+            find_updates(basedir)
+        else:
+            print >>sys.stderr, "Skipping %s which is not a directory" % basedir
