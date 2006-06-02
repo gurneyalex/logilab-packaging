@@ -7,7 +7,7 @@ Standards-Version: 3.7.2
 
 Package: devtools
 Architecture: all
-Recommends: logilab-doctools
+Recommends: logilab-doctools, piuparts, sudo
 Depends: python2.4, cvs, pymacs, python-logilab-common (>= 0.9.2), python2.4-dev, emacsen-common
 Provides: python2.3-devtools, python2.4-devtools
 Conflicts: python2.3-devtools, python2.4-devtools
