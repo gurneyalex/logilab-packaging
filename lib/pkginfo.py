@@ -200,7 +200,7 @@ def get_default_handler(pkginfo):
     """return the default debian handler (python-standalone if there is some
     scripts detected, else, python-library
     """
-    archdep = pkginfo.architecture_dependant and 'dep' or 'indep'
+    archdep = pkginfo.architecture_dependent and 'dep' or 'indep'
     if pkginfo.scripts:
         return 'python-%s-standalone' % archdep
     return 'python-%s-library' % archdep
@@ -353,9 +353,9 @@ author email.'},
     {'name': 'debian_uploader',
      'default' : None,
      'help' : 'debian uploader, if different from the debian maintainer.'},
-    {'name': 'architecture_dependant',
+    {'name': 'architecture_dependent',
      'default' : get_default_arch_dep,
-     'help' : 'flag indicating if the package is architecture dependant. If \
+     'help' : 'flag indicating if the package is architecture dependent. If \
 not specified, this value will be guessed according to the value of the \
 "ext_modules" variable.'},
     {'name': 'test_directory',
@@ -404,7 +404,7 @@ specified, this value will be set to according to the content of "doc" or \
 be guessed according to the content of the optional "man" directory.'},
     {'name': 'depends',
      'default' : get_default_depends,
-     'help' : 'packages dependancies. If not specified, this value will be \
+     'help' : 'packages dependencies. If not specified, this value will be \
 guessed according to the content of the optional "DEPENDS" file.'},
     {'name': 'recommends',
      'default' : get_default_recommends,
@@ -452,7 +452,7 @@ class PackageInfo:
         self.debian_maintainer_email = None
         self.debian_uploader = None
         self.debian_handler = None
-        self.architecture_dependant = None
+        self.architecture_dependent = None
         self.std_docs = None
         self.ext_modules = None
         self.prepare = None

@@ -90,8 +90,8 @@ debian_maintainer
 debian_maintainer_email
   debian maintainer email address, if different from the upstream author email.
 
-architecture_dependant
-  flag indicating if the package is architecture dependant. If not specified,
+architecture_dependent
+  flag indicating if the package is architecture dependent. If not specified,
   this value will be guessed according to the value of the "ext_modules"
   variable.
 
@@ -128,7 +128,7 @@ manpages
   to the content of the optional "man" directory.
 
 depends
-  packages dependancies. If not specified, this value will be guessed according
+  packages dependencies. If not specified, this value will be guessed according
   to the content of the optional "DEPENDS" file.
 
 recommends
