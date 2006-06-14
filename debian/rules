@@ -34,7 +34,7 @@ install: build
 	dh_installdirs
 	python2.4 setup.py -q install --no-compile --prefix=debian/devtools/usr/ 
 	# remove sub-package __init__ file (created by another package)
-	rm debian/devtools/usr/lib/python*/site-packageslogilab/__init__.py
+	rm debian/devtools/usr/lib/python*/site-packages/logilab/__init__.py
 	# remove test directory (installed in in the doc directory)
 	rm -rf debian/devtools/usr/lib/python*/site-packages/logilab/devtools/test
 	install -m 644 elisp/pycover-mode.el elisp/changelog.el elisp/logilab.el debian/devtools/usr/share/emacs/site-lisp/devtools/
