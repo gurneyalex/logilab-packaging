@@ -2,16 +2,15 @@ Source: devtools
 Section: python
 Priority: optional
 Maintainer: Sylvain Thénault <sylvain.thenault@logilab.fr> 
-Build-Depends: debhelper (>= 5.0.0), python2.4-dev
+Build-Depends: debhelper (>= 5.0.37.1), python (>=2.3.5-7), python-dev (>=2.3.5-7), python-central, python2.4, python2.4-dev
 Standards-Version: 3.7.2
+XS-Python-Version: 2.4
 
 Package: devtools
 Architecture: all
 Recommends: logilab-doctools, piuparts, sudo
-Depends: python2.4, cvs, pymacs, python-logilab-common (>= 0.9.2), python2.4-dev, emacsen-common
-Provides: python2.3-devtools, python2.4-devtools
-Conflicts: python2.3-devtools, python2.4-devtools
-Replaces: python2.3-devtools, python2.4-devtools
+Depends: ${python:Depends}, cvs, mercurial, pymacs, python-logilab-common (>= 0.16.1-2), python2.4-dev, emacsen-common
+XB-Python-Version: ${python:Versions}
 Description: set of development tools used at Logilab
  Set of tools which aims to help the developpement process, including :
   * standard for zope and python packages
