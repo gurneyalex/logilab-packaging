@@ -1,6 +1,9 @@
 ChangeLog for logilab.devtools
 ==============================
 
+  --  
+    * fixed spelling of dependant/dependent
+    * Move to new Python packaging policy
 2006-05-31  --  0.9.0
     * buildpackage: offers to test the packages with piuparts
     * preparedistrib: offers to copy the COPYING file from a set of
@@ -21,7 +24,7 @@ ChangeLog for logilab.devtools
 2006-01-10  --  0.8.0
     * debianize:
     * updated to handle site-python installation with architecture
-        independant package (implements #10119)
+        independent package (implements #10119)
     * consider the optional debian_uploader variable in package
         information 
     * fix .examples files generation with debianize
@@ -59,7 +62,7 @@ ChangeLog for logilab.devtools
 2005-06-14  --  0.6.5
     * new options on checkpackage to select tests to apply
 	
-    * handle optional dependancy on logilab-common for the -test package
+    * handle optional dependency on logilab-common for the -test package
 
     * fix svn tagging (both svn and cvs tags now include the
       project's name)
@@ -210,7 +213,7 @@ ChangeLog for logilab.devtools
 
 
 2004-02-13  --  0.4.5
-    * fix debianize to handle dependancies to python standalone package
+    * fix debianize to handle dependencies to python standalone package
       (ie no "python" prefix in the default package)
 
     * fixed cvslog in rlog mode
@@ -266,7 +269,7 @@ ChangeLog for logilab.devtools
 
     * fix detection of examples directory in pkginfo
 
-    * fix debhelper dependancy in build-depends
+    * fix debhelper dependency in build-depends
 
     * remove minor bug in buildpackage (try to move archive.gz instead of
       archive.tar.gz
@@ -279,7 +282,7 @@ ChangeLog for logilab.devtools
     * remove important bug in buildpackage (rm sourcetree when building a
       source distrib)
 
-    * add version to dependancy between main packages and sub-packages (-data,
+    * add version to dependency between main packages and sub-packages (-data,
       -elisp and -sgml)
 
     * change way of creating the .orig.tar.gz

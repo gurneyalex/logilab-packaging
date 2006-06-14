@@ -290,7 +290,7 @@ binary-arch: build install
                     'INSTALL_ELISP':     '',
                     'INSTALL_MAN':       ''}
         # architecture
-        if pkginfo.architecture_dependant:
+        if pkginfo.architecture_dependent:
             patterns['BINARY_TARGET'] = 'binary-indep binary-arch'
             patterns['BINARY_ARCH'] = self.BINARY_ARCH
         else:
@@ -506,7 +506,7 @@ Description: shared data for the %s package
         debname = self.main_package_name()
         if not self.pkginfo.test_directory or test_package == debname:
             return ''
-        depends = self.test_dependancies()
+        depends = self.test_dependencies()
         return '''Package: %s
 Architecture: all
 Depends: %s

@@ -34,7 +34,7 @@ class ZopeHandler(PythonDepStandaloneHandler):
         PythonDepStandaloneHandler.__init__(self, pkginfo, replace_func, empty_func)
         if not 'zope' in self.pkginfo.depends:
             # FIXME : why did I add the test below ??
-            #if self.pkginfo.architecture_dependant: 
+            #if self.pkginfo.architecture_dependent: 
             self.pkginfo.depends.insert(0, 'zope (>= 2.6.2)')
             #else:
             #    self.pkginfo.depends.insert(0, 'zope')
@@ -106,14 +106,14 @@ class ZopeHandler(PythonDepStandaloneHandler):
             'LONG_DESCRIPTION':   normalized_desc,
             'SECTION' : 'web',
             }
-        deps, expand = self.expand_dependancies()
+        deps, expand = self.expand_dependencies()
         if expand:
             deps = deps % (self.pkginfo.pyversions[0] * expand)
         patterns['DEPENDENCIES'] = deps
         self.base_control(stream, patterns)
         stream.write(self.test_control())
         
-    def test_dependancies(self):
+    def test_dependencies(self):
         return '%s (= ${Source-Version})' % self.main_package_name()
 
     def postinst(self, stream):
