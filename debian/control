@@ -2,6 +2,7 @@ Source: devtools
 Section: python
 Priority: optional
 Maintainer: Sylvain Thénault <sylvain.thenault@logilab.fr> 
+Uploaders: Alexandre Fayolle <afayolle@debian.org>
 Build-Depends: debhelper (>= 5.0.37.1), python (>=2.3.5-7), python-dev (>=2.3.5-7), python-central, python2.4, python2.4-dev
 Standards-Version: 3.7.2
 XS-Python-Version: 2.4
