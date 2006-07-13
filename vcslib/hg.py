@@ -223,8 +223,8 @@ class HGAgent:
         repo = Repository(ui, path=find_repository(path))
         opts = dict(rev=['tip:0'], branches=None, include=(), exclude=())
         changeiter, getchange, matchfn = walkchangerevs(ui, repo, (), opts)
-        from_date = datetime.datetime(*[int(x) for x in from_date.split('-')])
-        to_date = datetime.datetime(*[int(x) for x in to_date.split('-')])
+        from_date = datetime.date(*[int(x) for x in from_date.split('-')])
+        to_date = datetime.date(*[int(x) for x in to_date.split('-')])
         for st, rev, fns in changeiter:
             if st == 'add':
                 changenode = repo.changelog.node(rev)
