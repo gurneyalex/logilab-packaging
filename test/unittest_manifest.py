@@ -37,7 +37,7 @@ class ReadManifestInFunctionTest(unittest.TestCase):
     def test_known_values(self):
         self.assertEqual(read_manifest_in(reporter,
                                           dirname=join(dirname(__file__),'data/')),
-                         ['bad_file.rst', 'bin/tool.bat'])
+                         ['good_file.xml', 'bin/tool.bat'])
         
 class GetManifestFilesFunctionTest(unittest.TestCase):
     
