@@ -5,9 +5,11 @@
 
 function cond_exit() {
     # demande confirmation, quitte si non
-    echo -n "Continuer [y/N] ? "
+    echo -n "Continuer [y/N/r] ? "
     read _a
     if [ "$_a" = "y" ]; then
+	return 0
+    elif [ "$_a" = "r" ]; then
 	return 1
     fi
     exit 0
@@ -65,7 +67,7 @@ else
     
     if [ "$PKGTYPE" = "python" ]; then
         echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-        cond_exec pylint && pylint --ignore doc $PKGNAME && cond_exit
+        cond_exec pylint && while true; do pylint --ignore doc $PKGNAME && cond_exit && break; done 
     fi
     
     pushd $1
@@ -75,7 +77,7 @@ else
     fi
     echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
     if [ "$PKGTYPE" = "python" ]; then
-	cond_exec "vérification du paquetage" && checkpackage_python && cond_exit
+	cond_exec "vérification du paquetage" && while true; do checkpackage_python && cond_exit && break; done
     fi
     
     if [ -d test ]
@@ -83,11 +85,15 @@ else
 	echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 	if cond_exec "lancement des tests"  ; then
 	    pushd test
-	    python runtests.py
-	    if [ $? -ne 0 ]; then
-		echo "ERREUR: les tests ont échoués"
-		cond_exit
-	    fi
+            while true; do
+	        python runtests.py
+                if [ $? -ne 0 ]; then
+                    echo "ERREUR: les tests ont échoués"
+                    cond_exit && break
+                else
+		    break
+		fi
+	    done
 	    popd
 	fi
     fi
@@ -109,11 +115,15 @@ else
 	echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 	if cond_exec "construction de la documentation" ; then
 	    pushd doc
-	    make
-	    if [ $? -ne 0 ]; then
-		echo "ERREUR: impossible de construire la documentation"
-		cond_exit
-	    fi
+            while true; do
+                make
+                if [ $? -ne 0 ]; then
+                    echo "ERREUR: impossible de construire la documentation"
+                    cond_exit && break
+                else
+		    break
+		fi
+	    done
 	    popd
 	fi
     fi
