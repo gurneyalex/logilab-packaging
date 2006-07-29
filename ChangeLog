@@ -4,6 +4,9 @@ ChangeLog for logilab.devtools
   --  
     * fixed spelling of dependant/dependent
     * Move to new Python packaging policy
+    * logilab.el: insert current year in copyright (#10779)
+    * checkpackage: correctly ignore mercurial files (#14462)
+    
 2006-05-31  --  0.9.0
     * buildpackage: offers to test the packages with piuparts
     * preparedistrib: offers to copy the COPYING file from a set of

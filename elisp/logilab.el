@@ -6,7 +6,7 @@
 ;;  insert-date :
 ;;      insert today's date under the cursor
 ;;  insert-warning :
-:			       ;      insert warnings under the cursor
+;;      insert warnings under the cursor
 ;;  insert-gpl :  
 ;;      insert the GPL terms under the cursor
 ;;  insert-revision :  
@@ -61,7 +61,7 @@ this program; if not, write to the Free Software Foundation, Inc.,
 (defun lglb-copyright ()
   "insert the Logilab's copyright under the cursor"
   (interactive)
-  (insert "Copyright (c) 2000-2003 LOGILAB S.A. (Paris, FRANCE).
+  (insert "Copyright (c) " (format-time-string "%Y") " LOGILAB S.A. (Paris, FRANCE).
 http://www.logilab.fr/ -- mailto:contact@logilab.fr
 "))
 
