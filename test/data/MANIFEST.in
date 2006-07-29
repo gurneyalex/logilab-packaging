@@ -1,2 +1,3 @@
 recursive-include bin *.bat
-include bad_file.rst
+include *.xml
+exclude bad_file.xml
