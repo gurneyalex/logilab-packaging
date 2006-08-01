@@ -1,3 +1,11 @@
+devtools (0.10.0-1) unstable; urgency=low
+
+  * splitted devtools into 3 binary packages (python-vcslib, pycoverage,
+    logilab-packaging)
+  * new upstream release
+
+ -- Adrien.DiMascio <Adrien.DiMascio@logilab.fr>  Tue,  1 Aug 2006 18:21:44 +0200
+
 devtools (0.9.0-2) unstable; urgency=low
 
   * updated to new python policy
