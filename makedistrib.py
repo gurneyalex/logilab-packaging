@@ -48,7 +48,7 @@ def run(args=None):
     pkgname = basename(package_dir)
     vcs_agent = get_vcs_agent(package_dir)
     print '+' * 72
-    if cond_exec("vérification que le cvs est uptodate"):
+    if cond_exec("vérifier que l'entrepôt est à jour"):
         try:
             result = vcs_agent.not_up_to_date(package_dir)
             if result:
@@ -57,7 +57,7 @@ def run(args=None):
         except NotImplementedError:
             print 'pas encore supporté par cet agent de controle'
     print '+' * 72
-    if cond_exec("vérification que aucun fichier n'est en édition"):
+    if cond_exec("vérifier qu'aucun fichier n'est en édition"):
         try:
             result = vcs_agent.edited(package_dir)
             if result:
@@ -69,7 +69,7 @@ def run(args=None):
     print "nettoyage du répertoire de travail"
     os.system('rm -f *~ \#* .\#* */*~ */\#* */.\#* */*/*~ */*/\#* */*/.\#* 2>/dev/null')
     print '+' * 72
-    print "génération du packet"
+    print "génération du paquet"
     target = len(args) == 2 and args[1] or 'deb'
     status = os.system('buildpackage %s %s' % (package_dir, target))
     if status != 0:
