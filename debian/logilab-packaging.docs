@@ -1,5 +1,4 @@
 doc/makedistrib.html
-doc/cvstatus.html
 doc/packaging_howto.html
 doc/changelog.html
 doc/preparedistrib.html
@@ -8,7 +7,6 @@ doc/mkproj.html
 doc/buildpackage.html
 doc/tagpackage.html
 doc/standard_source_tree.html
-doc/cvslog.html
 doc/stp.html
 doc/pkginfo_variables.html
 doc/pkginfo.html
@@ -19,12 +17,10 @@ doc/changelog.txt
 doc/standard_source_tree.xml
 doc/stp.txt
 doc/makedistrib.txt
-doc/cvslog.txt
 doc/index.txt
 doc/pkginfo.txt
 doc/tagpackage.txt
 doc/mkproj.txt
 doc/checkpackage.txt
-doc/cvstatus.txt
 doc/pkginfo_variables.txt
 doc/preparedistrib.txt

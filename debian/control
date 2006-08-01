@@ -3,21 +3,43 @@ Section: python
 Priority: optional
 Maintainer: Sylvain Thénault <sylvain.thenault@logilab.fr> 
 Uploaders: Alexandre Fayolle <afayolle@debian.org>
-Build-Depends: debhelper (>= 5.0.37.1), python (>=2.3.5-7), python-dev (>=2.3.5-7), python-central, python2.4, python2.4-dev
+Build-Depends: debhelper (>= 5.0.37.1), python-all, python-central
 Standards-Version: 3.7.2
-XS-Python-Version: 2.4
+XS-Python-Version: current
 
-Package: devtools
+
+Package: python-vcslib
 Architecture: all
-Recommends: logilab-doctools, piuparts, linda, lintian, sudo
-Depends: ${python:Depends}, cvs, mercurial, pymacs, python-logilab-common (>= 0.16.1-2), python2.4-dev, emacsen-common
+Depends: ${python:Depends}, cvs, mercurial, python-logilab-common (>= 0.16.1-2)
+XB-Python-Version: ${python:Versions}
+Description: set of development tools used at Logilab for source management
+ Set of tools which aims to help the developpement process, including :
+  * cvs/svn/mercurial utilities
+ .
+ Homepage: http://www.logilab.org/projects/devtools
+
+
+
+Package: logilab-packaging
+Architecture: all
+Recommends: logilab-doctools, piuparts, linda, lintian, sudo, emacsen-common
+Depends: ${python:Depends}, cvs, mercurial, pymacs, python-vcslib, python-logilab-common (>= 0.16.1-2), python2.4, emacsen-common
 XB-Python-Version: ${python:Versions}
 Description: set of development tools used at Logilab
  Set of tools which aims to help the developpement process, including :
   * standard for zope and python packages
   * tools to check and build source and/or debian packages
-  * python coverage tool
-  * cvs/svn utilities
  .
  Homepage: http://www.logilab.org/projects/devtools
 
+
+
+Package: pycoverage
+Architecture: all
+Recommends: emacsen-common
+Depends: ${python:Depends}
+XB-Python-Version: ${python:Versions}
+Description: python code coverage tool
+ tool primary used to compute test coverage
+ .
+ Homepage: http://www.logilab.org/projects/devtools
