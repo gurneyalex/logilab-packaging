@@ -45,7 +45,7 @@
       (find-file file-name))
     (or (eq major-mode 'change-log-mode)
 	(change-log-mode))
-    ; find posistion
+    ; find position
     (goto-char (point-max))
     (search-backward (concat "    * " (if new-entry new-entry "") "
 "))
