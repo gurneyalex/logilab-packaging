@@ -86,7 +86,8 @@ import threading
 from os.path import exists, isdir, isabs, splitext, walk, join, \
      abspath, basename, dirname, normcase
 
-from logilab.devtools.vcslib import BASE_EXCLUDE
+
+BASE_EXCLUDE = ('CVS', '.svn', '.hg', 'bzr')
 
 def modpath_from_file(filename):
     """given an absolute file path return the python module's path as a list
