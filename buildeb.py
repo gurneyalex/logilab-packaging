@@ -125,6 +125,21 @@ def test_package(pkg_dir='.', dist_dir='.', command=None, system=os.system):
     status = system(piuparts + ' '.join(packages))
     return status
 
+
+def lint(command, pkg_dir='.', dist_dir='.'):
+    command += ' '
+    orig_dir = os.getcwd()
+    os.chdir(pkg_dir)
+    debian_version = get_debian_version()
+    pipe = os.popen('dh_listpackages')
+    os.chdir(orig_dir)
+    packages = [os.path.join(dist_dir, '%s_%s_*.deb' % (f.strip(), debian_version))
+                for f in pipe.readlines()]
+    print command + ' '.join(packages)
+    status = os.system(command + ' '.join(packages))
+    return status
+    
+
 def run(args):
     """main"""
     if '-h' in args or '--help' in args:

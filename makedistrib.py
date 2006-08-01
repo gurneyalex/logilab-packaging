@@ -28,6 +28,7 @@ from os.path import basename
 from logilab.devtools.vcslib import get_vcs_agent
 from logilab.devtools.tagpackage import tag_package
 from logilab.devtools.lib.utils import cond_exec, cond_continue
+from logilab.devtools.buildeb import lint
 
 def usage(status=0):
     """print usage and exit with the given status"""
@@ -71,11 +72,21 @@ def run(args=None):
     print "génération du packet"
     target = len(args) == 2 and args[1] or 'deb'
     status = os.system('buildpackage %s %s' % (package_dir, target))
-    if status == 0:
-        print '+' * 72
-        if target == "deb" and cond_exec("lancement de piuparts sur les paquets générés"):
-            print 'buildeb --piuparts %s %s' % (package_dir, 'dist')
-            os.system('buildeb --piuparts %s %s' % (package_dir, 'dist'))
+    if status != 0:
+        return
+    # lintian
+    print '+' * 72
+    if target == "deb" and cond_exec("lancement de lintian sur les paquets générés"):
+        lint('lintian -i', package_dir, 'dist')
+    # linda
+    print '+' * 72
+    if target == "deb" and cond_exec("lancement de linda sur les paquets générés"):
+        lint('linda -i', package_dir, 'dist')
+    # piuparts
+    print '+' * 72
+    if target == "deb" and cond_exec("lancement de piuparts sur les paquets générés"):
+        print 'buildeb --piuparts %s %s' % (package_dir, 'dist')
+        os.system('buildeb --piuparts %s %s' % (package_dir, 'dist'))
     print '+' * 72
     tag_package(package_dir, vcs_agent)
 

@@ -9,7 +9,7 @@ XS-Python-Version: 2.4
 
 Package: devtools
 Architecture: all
-Recommends: logilab-doctools, piuparts, sudo
+Recommends: logilab-doctools, piuparts, linda, lintian, sudo
 Depends: ${python:Depends}, cvs, mercurial, pymacs, python-logilab-common (>= 0.16.1-2), python2.4-dev, emacsen-common
 XB-Python-Version: ${python:Versions}
 Description: set of development tools used at Logilab
