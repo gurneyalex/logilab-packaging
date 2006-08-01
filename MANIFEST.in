@@ -2,7 +2,6 @@ include bin/cvstatus
 include bin/cvslog
 include bin/changelog
 include bin/checkpackage
-include bin/debianize
 include bin/preparedistrib
 include bin/makedistrib
 include bin/mkproj
@@ -51,6 +50,5 @@ include RECOMMENDS
 include logging.conf
 include doc/*.html
 
-include man/debianize.1
 include man/pycoverage.1
 

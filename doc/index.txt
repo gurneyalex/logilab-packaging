@@ -26,8 +26,6 @@ Gestion des paquets
 
 - changelog_
 
-- debianize_
-
 - checkpackage_
 
 - buildpackage_
@@ -53,7 +51,6 @@ How-to
 .. _mkproj: mkproj.html
 .. _pkginfo: pkginfo.html
 .. _changelog: changelog.html
-.. _debianize: debianize.html
 .. _checkpackage: checkpackage.html
 .. _buildpackage: buildpackage.html
 .. _tagpackage: tagpackage.html

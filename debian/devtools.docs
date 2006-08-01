@@ -1,5 +1,4 @@
 doc/makedistrib.html
-doc/debianize.html
 doc/cvstatus.html
 doc/packaging_howto.html
 doc/changelog.html
@@ -20,7 +19,6 @@ doc/changelog.txt
 doc/standard_source_tree.xml
 doc/stp.txt
 doc/makedistrib.txt
-doc/debianize.txt
 doc/cvslog.txt
 doc/index.txt
 doc/pkginfo.txt
