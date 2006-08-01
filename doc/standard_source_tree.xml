@@ -26,7 +26,6 @@
 PKG/
   |-- [bin/]
   |-- [debian/]
-  |   `-- debianizerc
   |-- [doc/]
   |   `-- makefile
   |-- [dtd/]

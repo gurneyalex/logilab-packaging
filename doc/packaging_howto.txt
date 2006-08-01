@@ -49,51 +49,10 @@ avant d'effectuer une distribution. Une fois le tarball généré et vérifié,
 utiliser l'utilitaire tagpackage_ pour mettre un tag dans le CVS correspondant
 à la distribution que vous venez d'effectuer.
 
-Création / mise à jour des fichiers de configuration debian
-```````````````````````````````````````````````````````````
-Pour créer et mettre à jour les fichiers de configuration nécessaire à la
-construction d'un paquet debian, vous pouvez utiliser debianize_. Celui-ci va
-créer tout les fichiers nécessaires (si votre package n'est pas trop exotique),
-a part le fichier changelog qu'il faut créer et maintenir à la main. debianize_
-prend principalement en considération les variables suivantes du fichier
-`__pkginfo__.py`_ : 
-
-- debian_name
-
-- debian_maintainer
-
-- debian_maintainer_email
-
-- debian_handler
-
-- architecture_dependent
-
-- pyversion
-
-- subpackage_of
-
-Il ne vous reste ensuite plus qu'à taper **debianize** à la racine du paquet
-pour qu'il crée ou mettes à jour les fichiers existants, en fonction de ces
-variables et du contenu du paquet.
-
-
 Test du paquet debian
 `````````````````````
-Pour tester rapidement votre paquet debian :
-
-1. **debianize --orig prepare** à la racine du paquet, cela va vous créer le
-   répertoire de construction ainsi que l'archive .orig.tar.gz contenant le
-   package sans les fichiers debian.
-
-2. **fakeroot make -f debian/rules binary** à la racine du répertoire de
-   construction.
-
-Cette méthode permet de tester que votre paquet se construit bien de manière
-beaucoup plus rapide qu'avec pbuilder, qui va construire le paquet dans un
-environnement construit spécifiquement pour le paquet (ce qui prend du temps...)
-Si vous affectez la variable d'environnement ``DEBUILDER`` à **fakeroot make -f
-debian/rules binary**, vous pouvez utilisez buildpackage_ pour automatiser ces
-deux étapes (**buildpackage logilab/pyreverse deb** si on reprend l'exemple).
+Pour tester rapidement votre paquet debian utilisez buildpackage_.
+(**buildpackage logilab/pyreverse deb** si on reprend l'exemple).
 
 Une fois le paquet construit, il faut vérifier :
 
@@ -111,20 +70,7 @@ Construction du paquet final
 
 Une fois que tout marche, vous devez utiliser makedistrib_ pour construire le
 tarball et le paquet debian. Il est important d'utiliser ensuite l'utilitaire
-tagpackage_ pour mettre les tags dans le CVS.
-
-
-
-Debianization d'un paquet externe
----------------------------------
-
-Pour "debianizer" un paquet externe, a priori non conforme au standard source
-tree, il faut spécifier toutes les informations nécessaires dans le fichier
-*__pkginfo__.py*, y compris celles spécifiées comme étant optionelles dans le
-document décrivant les variables du fichier `__pkginfo__.py`_. A partir de là,
-tout devrait fonctionner de la même manière que pour nos paquets (évidemment
-cela suppose dans le cas des packages python que le setup.py fonctionne !).
-
+tagpackage_ pour mettre les tags dans le gestionnaire de source.
 
 
 .. _Distutils: http://www.python.org/sigs/distutils-sig/  
@@ -135,4 +81,3 @@ cela suppose dans le cas des packages python que le setup.py fonctionne !).
 .. _makedistrib: makedistrib.html
 .. _buildpackage: buildpackage.html
 .. _tagpackage: tagpackage.html
-.. _debianize: debianize.html
