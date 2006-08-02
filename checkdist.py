@@ -41,13 +41,12 @@ def check_bin(s_dir, d_dir):
     return errors
 
 
-def run(args):
+def add_options(parser):
+    parser.usage = 'lgp checkd [options] <args>'
+
+def run(options, args):
     """check a source (.tar.gz) distribution
     """
-    opts, args = getopt.getopt(args, 'h', 'help')
-    if opts:
-        print __doc__
-        return
     s_dir = args[0]
     d_dir = args[1]
     errors = []

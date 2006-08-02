@@ -38,7 +38,7 @@ def usage(status=0):
     sys.exit(status)
    
 def add_options(parser):
-    pass
+    parser.usage = 'lgp make [options] <project_dir> ...'
 
 def run(options, args):
     package_dir = args[0]
