@@ -1,6 +1,0 @@
-#!/usr/bin/python
-
-from logilab.devtools import pkginfo 
-import sys
-sys.exit(pkginfo.run(sys.argv[1:]))
-
