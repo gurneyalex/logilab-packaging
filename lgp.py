@@ -12,6 +12,7 @@ lgp checkd - check distribution
 lgp tag - tag package
 lgp build - build debian package
 lgp check - check package 
+lgp info - gives package information
 
 """
 
@@ -44,6 +45,8 @@ def run(args):
         from logilab.devtools.tagpackage import run, add_options
     elif 'check' == cmd:
         from logilab.devtools.checkpackage import run, add_options
+    elif 'info' == cmd:
+        from logilab.devtools.pkginfo import run, add_options
     else:
         print USAGE
 	sys.exit(1)

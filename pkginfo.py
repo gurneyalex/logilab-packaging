@@ -114,7 +114,10 @@ def help(values):
             print
 
 
-def run(args):
+def add_options(parser):
+    pass
+
+def run(options, args):
     """extract package info according to command line arguments
     """
     opts, args = getopt.getopt(args, 'hd:i:', ['help', 'package-dir=',
