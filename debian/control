@@ -10,8 +10,8 @@ XS-Python-Version: current
 
 Package: python-vcslib
 Architecture: all
-
-Depends: ${python:Depends}, cvs, mercurial, python-logilab-common (>= 0.16.1-2)
+Recommends: cvs, mercurial, subversion
+Depends: ${python:Depends}, , python-logilab-common (>= 0.16.1-2)
 XB-Python-Version: ${python:Versions}
 Description: set of development tools used at Logilab for source management
  Set of tools which aims to help the developpement process, including :
