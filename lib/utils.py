@@ -92,7 +92,31 @@ def cond_continue():
     if answer.lower() in ('n', '') :
         sys.exit(0)
     
+def exec_continue(cmd, separator=True):
+    if separator:
+        print '+'*72
+        print cmd
+    if os.system(cmd):
+        cond_continue()
+        
+def exec_continue_retry(cmd):
+    while True:
+        status = os.system(cmd)
+        if status:
+            try:
+                ans = raw_input('Continue? [y/N/r] ').strip().lower()
+            except (EOFError, KeyboardInterrupt):
+                sys.exit(0)
+            if ans[0] == 'y':
+                return
+            elif ans[0] == 'r':
+                continue
+            else:
+                sys.exit(0)
+        else:
+            return
 
+    
 def cond_exec(cmd):
     """demande confirmation, retourne 0 si oui, 1 si non"""
     try:
