@@ -12,6 +12,7 @@
 #export DH_VERBOSE=1
 export DH_COMPAT=5
 
+PYVER=`pyversions -d`
 
 build: build-stamp
 build-stamp: 
@@ -35,20 +36,21 @@ install: build
 	dh_installdirs
 	python setup.py -q install --no-compile --prefix=debian/logilab-packaging/usr
 	# remove sub-package __init__ file (created by another package)
-	rm debian/logilab-packaging/usr/lib/python*/site-packages/logilab/__init__.py
-	# move vcslib specific tools and modules (XXX python2.3/site-packages ??!!)
-	mv debian/logilab-packaging/usr/lib/python*/site-packages/logilab/devtools/vcslib debian/python-vcslib/usr/python2.3/site-packages/logilab/devtools
+	rm debian/logilab-packaging/usr/lib/${PYVER}/site-packages/logilab/__init__.py
+	cp debian/logilab-packaging/usr/lib${PYVER}/site-packages/logilab/devtools/__init__.py debian/python-vcslib/usr/lib/${PYVER}/site-packages/logilab/devtools
+	# move vcslib specific tools and modules
+	mv debian/logilab-packaging/usr/lib/${PYVER}/site-packages/logilab/devtools/vcslib debian/python-vcslib/usr/lib/${PYVER}/site-packages/logilab/devtools
 	mv debian/logilab-packaging/usr/bin/vcpull debian/python-vcslib/usr/bin
 	mv debian/logilab-packaging/usr/bin/cvslog debian/python-vcslib/usr/bin
 	mv debian/logilab-packaging/usr/bin/cvstatus debian/python-vcslib/usr/bin
-	# move pycoverage and coverage.py (XXX python2.3/site-packages ??!!)
-	mv debian/logilab-packaging/usr/lib/python*/site-packages/logilab/devtools/lib/coverage.py debian/pycoverage/usr/python2.3/site-packages/logilab/devtools/lib
+	# move pycoverage and coverage.py 
+	mv debian/logilab-packaging/usr/lib/${PYVER}/site-packages/logilab/devtools/lib/coverage.py debian/pycoverage/usr/lib/${PYVER}/site-packages/
 	mv debian/logilab-packaging/usr/bin/pycoverage debian/pycoverage/usr/bin
 
-	# XXX: elisp files and tests missing
+	# XXX: tests missing
+	install -m 644 elisp/pycover-mode.el elisp/changelog.el elisp/logilab.el debian/logilab-elsip/usr/share/emacs/site-lisp/logilab/
 	# remove test directory (installed in in the doc directory)
-	# rm -rf debian/devtools/usr/lib/python*/site-packages/logilab/devtools/test
-	# install -m 644 elisp/pycover-mode.el elisp/changelog.el elisp/logilab.el debian/devtools/usr/share/emacs/site-lisp/devtools/
+	# rm -rf debian/devtools/usr/lib/${PYVER}/site-packages/logilab/devtools/test
 	# install tests
 	# (cd test && find . -type f -not \( -path '*/CVS/*' -or -name '*.pyc' \) -exec install -D --mode=644 {} ../debian/devtools/usr/share/doc/devtools/test/{} \;)
 
@@ -61,7 +63,7 @@ binary-indep: build install
 	gzip -9 -c ChangeLog > changelog.gz
 	dh_installchangelogs -i
 	dh_installexamples -i
-	dh_installdocs -i README TODO changelog.gz
+	dh_installdocs -i README changelog.gz
 	dh_installman -i
 	dh_installemacsen
 	dh_pycentral -i
