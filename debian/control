@@ -10,6 +10,7 @@ XS-Python-Version: current
 
 Package: python-vcslib
 Architecture: all
+
 Depends: ${python:Depends}, cvs, mercurial, python-logilab-common (>= 0.16.1-2)
 XB-Python-Version: ${python:Versions}
 Description: set of development tools used at Logilab for source management
@@ -22,7 +23,8 @@ Description: set of development tools used at Logilab for source management
 
 Package: logilab-packaging
 Architecture: all
-Recommends: logilab-doctools, piuparts, linda, lintian, sudo, emacsen-common
+Suggests: logilab-doctools
+Recommends: piuparts, linda, lintian, sudo, emacsen-common
 Depends: ${python:Depends}, cvs, mercurial, pymacs, python-vcslib, python-logilab-common (>= 0.16.1-2), python2.4, emacsen-common
 XB-Python-Version: ${python:Versions}
 Description: set of development tools used at Logilab
@@ -43,3 +45,16 @@ Description: python code coverage tool
  tool primary used to compute test coverage
  .
  Homepage: http://www.logilab.org/projects/devtools
+
+
+Package: logilab-elisp
+Architecture: all
+Depends: emacsen-common
+Description: emacs lisp code for logilab development tools
+ Set of elisp goodies including :
+  * an emacs mode for pycover files
+  * an emacs mode for ChangeLog files
+  * a small set of emacs shortcuts used at logilab
+ .
+ Homepage: http://www.logilab.org/projects/devtools
+
