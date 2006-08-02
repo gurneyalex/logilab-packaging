@@ -7,7 +7,7 @@ USAGE = """lgp - logilab packaging tool
 
 lgp prepare - process to prepare distrib (pylint, checkpkg, check vcs, etc.)
 lgp make - process to build distrib (build, tag, etc.)
-lgp checkd - check distribution
+lgp test - test distrib (linda, lintian, piuparts)
 
 lgp tag - tag package
 lgp build - build debian package
@@ -22,7 +22,7 @@ def get_parser():
     """
     parser = OptionParser()
     parser.usage = 'lgp COMMAND [options] <arg> ...'
-    parser.min_args, parser.max_args = 0, 0
+    parser.min_args, parser.max_args = 0, 1
     return parser
 
 def run(args):
@@ -37,8 +37,8 @@ def run(args):
         from logilab.devtools.preparedist import run, add_options
     elif 'make'.startswith(cmd):
         from logilab.devtools.makedist import run, add_options
-    elif 'checkd' == cmd:
-        from logilab.devtools.checkdist import run, add_options
+    elif 'test' == cmd:
+        from logilab.devtools.testdist import run, add_options
     elif 'build'.startswith(cmd):
         from logilab.devtools.buildpackage import run, add_options
     elif 'tag'.startswith(cmd):

@@ -31,11 +31,12 @@ specified, it is expected to be the current directory.
 
 __revision__ = '$Id: buildeb.py,v 1.17 2005-07-26 09:41:12 syt Exp $'
 
+import glob
 import os
 import sys
 import commands
 import stat
-from os.path import abspath, exists
+from os.path import abspath, join, isdir
 
 from logilab.common.shellutils import mv, cp, rm
 from logilab.common.fileutils import ensure_mode
@@ -44,58 +45,54 @@ from logilab.devtools.lib.pkginfo import PackageInfo
 from logilab.devtools.debhdlrs import get_package_handler
 
 BUILD_COMMAND = 'fakeroot make -f debian/rules binary'
-PIUPARTS_COMMAND = 'sudo piuparts --pbuilder '
 
 def get_debian_version():
     """return the current debian version for a package
     (i.e. last debian changelog entry)
     """
+    # XXX use lib.changelog.get_latest_revision() ??
     return commands.getoutput(
         "(dpkg-parsechangelog | sed -n 's/^Version: \(.*:\|\)//p') 2>/dev/null")
     
-def build_debian(dest_dir='.', pkg_dir='.', command=None, system=os.system):
-    """build debian package and move them is <dest_dir>
+def build_debian(pkg_dir, pdebuild_options):
+    """build debian package and move them in <dest_dir>
     
     the debian package to build is expected to be in the current working
     directory
     """
-    orig_dir = os.getcwd()
+    orig_dir = abspath(os.getcwd())
     os.chdir(pkg_dir)
-    dest_dir = abspath(dest_dir)
-    if not exists('debian'):
+    dest_dir = join(orig_dir, 'dist')
+    if not isdir('debian'):
         raise Exception('No "debian" directory')
+    if not isdir(dest_dir):
+        os.mkdir(dest_dir)
     # ensure the "rules" file is executable
     ensure_mode('debian/rules', stat.S_IEXEC)
     # retreive package information
     pkginfo = PackageInfo()
-    pkghandler = get_package_handler(pkginfo)
     upstream_name = pkginfo.name
     upstream_version = pkginfo.version
     debian_name = pkginfo.debian_name
     debian_version = get_debian_version()
     #
     pipe = os.popen('dh_listpackages')
-    packages = ['%s_%s_*.deb' % (f.strip(), debian_version) for f in pipe.readlines()]
+    packages = ['%s_%s_*.deb' % (line.strip(), debian_version) for line in pipe.readlines()]
+    pipe.close()
+    binary_packages = list(packages)
     packages.append('%s_%s.orig.tar.gz' % (debian_name, upstream_version))
     packages.append('%s_%s.diff.gz' % (debian_name, debian_version))
     packages.append('%s_%s.dsc' % (debian_name, debian_version))
     packages.append('%s_%s_*.changes' % (debian_name, debian_version))
-    pipe.close()
-    # initialise the build directory
-    build_dir = pkghandler.prepare_debian(1)
     # build debian packages
-    os.chdir(build_dir)
-    debuilder = command or os.environ.get('DEBUILDER') or BUILD_COMMAND
-    status = system(debuilder)
-    # remove the build directory
-    os.chdir(orig_dir)
-    rm(build_dir)
-    # check builder status
+    debuilder = os.environ.get('DEBUILDER') or 'pdebuild'
+    status = os.system('%s %s' % (debuilder, pdebuild_options))
     if status:
         raise Exception('An error occured while building the debian package '
                         '(return status: %s)' % status)
-    # move all builded files in a common directory
+    # move all built files in a common directory
     # the place of those files depends of the command used to build the package
+    
     if debuilder.startswith('pdebuild'):
         rm('../%s_%s.diff.gz' % (debian_name, debian_version))
         rm('../%s_%s.dsc' % (debian_name, debian_version))
@@ -106,60 +103,23 @@ def build_debian(dest_dir='.', pkg_dir='.', command=None, system=os.system):
         cp('%s/%s_%s.orig.tar.gz' % (dest_dir, debian_name, upstream_version),
            '%s/%s-%s.tar.gz' % (dest_dir, upstream_name, upstream_version))
     else: # fakeroot
-        mv('../*%s*%s*.deb' % (debian_name, debian_version), dest_dir)
+        for package in binary_packages:
+            mv('../*%s' % package, dest_dir)
         mv('../%s_%s.orig.tar.gz' % (debian_name, upstream_version), dest_dir)
         mv('../%s-%s.tar.gz' % (upstream_name, upstream_version), dest_dir)
+            
+        # mv('../*%s*%s*.deb' % (debian_name, debian_version), dest_dir)
+        # mv('../%s_%s.orig.tar.gz' % (debian_name, upstream_version), dest_dir)
+        # mv('../%s-%s.tar.gz' % (upstream_name, upstream_version), dest_dir)
 
-
-def test_package(pkg_dir='.', dist_dir='.', command=None, system=os.system):
-    piuparts = command or os.environ.get('PIUPARTS') or PIUPARTS_COMMAND
-    piuparts += ' '
-    orig_dir = os.getcwd()
-    os.chdir(pkg_dir)
-    debian_version = get_debian_version()
-    pipe = os.popen('dh_listpackages')
-    os.chdir(orig_dir)
-    packages = [os.path.join(dist_dir, '%s_%s_*.deb' % (f.strip(), debian_version))
-                for f in pipe.readlines()]
-    print piuparts + ' '.join(packages)
-    status = system(piuparts + ' '.join(packages))
-    return status
-
-
-def lint(command, pkg_dir='.', dist_dir='.'):
-    command += ' '
-    orig_dir = os.getcwd()
-    os.chdir(pkg_dir)
-    debian_version = get_debian_version()
-    pipe = os.popen('dh_listpackages')
-    os.chdir(orig_dir)
-    packages = [os.path.join(dist_dir, '%s_%s_*.deb' % (f.strip(), debian_version))
-                for f in pipe.readlines()]
-    print command + ' '.join(packages)
-    status = os.system(command + ' '.join(packages))
-    return status
-    
 
 def add_options(parser):
     parser.usage = 'lgp build [options] <args>'
+    parser.add_option('--debbuildopts', default='', help='options passed to pdebuild')
 
 def run(options, args):
     """main"""
-    if '-h' in args or '--help' in args:
-        print __doc__
-        return 0
-    try:
-        if "--piuparts" in args:
-                args.remove('--piuparts')
-                return test_package(*args)
-        else:
-            build_debian(*args)
-            return 0
-    except TypeError:
-        import traceback
-        traceback.print_exc()
-        print __doc__
-        return 1
+    build_debian(args[0], options.debbuildopts)
     
 # XXX make above an option of below (lgp build deb)
 """
