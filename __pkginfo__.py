@@ -64,6 +64,7 @@ scripts = [
 
 # debianize info
 debian_name = 'devtools'
+binary_packages = ('python-vcslib', 'logilab-packaging', 'pycoverage', 'logilab-elisp')
 debian_maintainer = 'Sylvain Thenault'
 debian_maintainer_email = 'sylvain.thenault@logilab.fr'
 pyversions = ['2.3']
