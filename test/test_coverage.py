@@ -11,7 +11,13 @@ from os.path import join
 from cStringIO import StringIO
 from shutil import rmtree
 
-from logilab.devtools.lib import coverage
+try:
+    # development version
+    from logilab.devtool.lib import coverage
+except:
+    # installed version
+    import coverage
+ 
 coverage = coverage.Coverage()
 
 try:
