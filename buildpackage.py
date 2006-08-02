@@ -140,7 +140,10 @@ def lint(command, pkg_dir='.', dist_dir='.'):
     return status
     
 
-def run(args):
+def add_options(parser):
+    parser.usage = 'lgp build [options] <args>'
+
+def run(options, args):
     """main"""
     if '-h' in args or '--help' in args:
         print __doc__
@@ -158,9 +161,6 @@ def run(args):
         print __doc__
         return 1
     
-if __name__ == '__main__':
-    run(sys.argv[1:])
-
 # XXX make above an option of below (lgp build deb)
 """
 #! /bin/bash

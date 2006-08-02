@@ -41,6 +41,9 @@ OPTIONS:
 
 __revision__ = '$Id: check_package.py,v 1.25 2005-06-20 10:35:21 syt Exp $'
 
+__all__ = ('check_info_module', 'check_release_number', 'check_manifest_in',
+           'check_bin', 'check_test', 'check_setup_py', 'check_announce')
+
 import sys
 import getopt
 import os
@@ -222,8 +225,10 @@ def check_release_number(reporter, dirname, info_module='__pkginfo__'):
 
 REPORTER = TextReporter()
 
+def add_options(parser):
+    parser.usage = 'lgp check [options] <package>'
 
-def run(args=None):
+def run(options, args):
     """main function to execute check package from command line"""
     # /!\ import Set here since we want check_package to be usable as a
     # /!\ library with python 2.2
@@ -279,9 +284,4 @@ def run(args=None):
     
     return REPORTER.counts[ERROR]
 
-if __name__ == '__main__':
-    run(sys.argv[1:])
-
     
-__all__ = ('check_info_module', 'check_release_number', 'check_manifest_in',
-           'check_bin', 'check_test', 'check_setup_py', 'check_announce')

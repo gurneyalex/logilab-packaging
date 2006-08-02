@@ -115,7 +115,9 @@ def help(values):
 
 
 def add_options(parser):
-    pass
+    parser.usage = 'lgp info [options] <args> ...'
+    parser.add_option("--dump", dest="action",
+                      help="dump package info")
 
 def run(options, args):
     """extract package info according to command line arguments
@@ -149,5 +151,3 @@ def run(options, args):
         raise Exception('Unknown command "%s"' % command)
     return 0
     
-if __name__ == '__main__':
-    sys.exit(run(sys.argv[1:]))

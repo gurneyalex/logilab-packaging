@@ -61,15 +61,12 @@ def tag_package(package_dir, vcs_agent=None):
                 os.system(vcs_agent.tag(package_dir, release_tag))
     finally:
         os.chdir(cwd)
-        
-def run(args=None):
-    args = args or sys.argv[1:]
-    if '--help' in args or '-h' in args:
-        usage( )
-    if len(args) > 1:
-        usage(1)
+
+def add_options(parser):
+    parser.usage = 'lgp tag [options] <package>'
+    
+
+def run(options, args):
     package_dir = args and args[0] or os.getcwd()
     tag_package(package_dir)
 
-if __name__ == '__main__':
-    run()
