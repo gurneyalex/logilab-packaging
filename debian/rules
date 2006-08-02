@@ -37,9 +37,11 @@ install: build
 	python setup.py -q install --no-compile --prefix=debian/logilab-packaging/usr
 	# remove sub-package __init__ file (created by another package)
 	rm debian/logilab-packaging/usr/lib/${PYVER}/site-packages/logilab/__init__.py
-	cp debian/logilab-packaging/usr/lib${PYVER}/site-packages/logilab/devtools/__init__.py debian/python-vcslib/usr/lib/${PYVER}/site-packages/logilab/devtools
+	cp debian/logilab-packaging/usr/lib/${PYVER}/site-packages/logilab/devtools/__init__.py debian/python-vcslib/usr/lib/${PYVER}/site-packages/logilab/devtools
 	# move vcslib specific tools and modules
 	mv debian/logilab-packaging/usr/lib/${PYVER}/site-packages/logilab/devtools/vcslib debian/python-vcslib/usr/lib/${PYVER}/site-packages/logilab/devtools
+	mv debian/logilab-packaging/usr/lib/${PYVER}/site-packages/logilab/devtools/cvslog.py debian/python-vcslib/usr/lib/${PYVER}/site-packages/logilab/devtools
+	mv debian/logilab-packaging/usr/lib/${PYVER}/site-packages/logilab/devtools/cvstatus.py debian/python-vcslib/usr/lib/${PYVER}/site-packages/logilab/devtools
 	mv debian/logilab-packaging/usr/bin/vcpull debian/python-vcslib/usr/bin
 	mv debian/logilab-packaging/usr/bin/cvslog debian/python-vcslib/usr/bin
 	mv debian/logilab-packaging/usr/bin/cvstatus debian/python-vcslib/usr/bin
@@ -48,9 +50,9 @@ install: build
 	mv debian/logilab-packaging/usr/bin/pycoverage debian/pycoverage/usr/bin
 
 	# XXX: tests missing
-	install -m 644 elisp/pycover-mode.el elisp/changelog.el elisp/logilab.el debian/logilab-elsip/usr/share/emacs/site-lisp/logilab/
-	# remove test directory (installed in in the doc directory)
-	# rm -rf debian/devtools/usr/lib/${PYVER}/site-packages/logilab/devtools/test
+	install -m 644 elisp/pycover-mode.el elisp/changelog.el elisp/logilab.el debian/logilab-elisp/usr/share/emacs/site-lisp/logilab/
+	# remove test directory
+	rm -rf debian/devtools/usr/lib/${PYVER}/site-packages/logilab/devtools/test
 	# install tests
 	# (cd test && find . -type f -not \( -path '*/CVS/*' -or -name '*.pyc' \) -exec install -D --mode=644 {} ../debian/devtools/usr/share/doc/devtools/test/{} \;)
 

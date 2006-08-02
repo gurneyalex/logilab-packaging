@@ -1,6 +1,5 @@
 usr/bin
 usr/share/doc/logilab-packaging
 usr/share/doc/logilab-packaging/test
-usr/share/emacs/site-lisp/devtools
 usr/lib/python2.3/site-packages/logilab
 usr/lib/python2.3/site-packages/logilab/devtools

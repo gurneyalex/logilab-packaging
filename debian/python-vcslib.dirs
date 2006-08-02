@@ -1,4 +1,4 @@
-usr/share/emacs/site-lisp/devtools
+usr/bin
 usr/lib/python2.3/site-packages/logilab
 usr/lib/python2.3/site-packages/logilab/devtools
 usr/share/doc/python-vcslib/test
