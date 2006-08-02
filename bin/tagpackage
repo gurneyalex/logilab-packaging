@@ -1,3 +1,0 @@
-#!/usr/bin/python2.4
-from logilab.devtools.tagpackage import run
-run()

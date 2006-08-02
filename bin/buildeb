@@ -1,6 +1,0 @@
-#!/usr/bin/python2.4
-
-from logilab.devtools import buildeb
-import sys
-sys.exit(buildeb.run(sys.argv[1:]))
-

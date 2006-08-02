@@ -1,3 +1,13 @@
+# -*- coding: iso-8859-1 -*-
+
+def add_options(parser):
+    parser.usage = 'lgp prepare [options] <project_dir> ...'
+
+def run(options, args):
+    pass
+
+# XXX FIXME translate this
+"""
 #!/bin/bash
 #
 # prepare a distribution for a logilab python package after some checks
@@ -142,3 +152,4 @@ else
     popd
 
 fi
+"""
