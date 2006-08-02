@@ -1,18 +1,11 @@
-include bin/cvstatus
-include bin/cvslog
+include bin/lgp
 include bin/changelog
-include bin/checkpackage
-include bin/preparedistrib
-include bin/makedistrib
-include bin/mkproj
-include bin/buildpackage
-include bin/buildeb
 include bin/stp
 include bin/update_gettext.sh
-include bin/pkginfo
-include bin/tagpackage
 include bin/pycoverage
 include bin/vcpull
+include bin/cvstatus
+include bin/cvslog
 
 include elisp/*.el
 include elisp/startup
@@ -50,5 +43,4 @@ include RECOMMENDS
 include logging.conf
 include doc/*.html
 
-include man/pycoverage.1
-
+include man/*.1
