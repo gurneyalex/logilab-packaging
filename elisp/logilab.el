@@ -142,3 +142,45 @@ $\"\n")
 ;; register hooks ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (add-hook 'python-mode-hook 'logilab-python-hook)
 
+;; add default modes for tac (twisted) and old python files ;;;;;;;;;;;;;;;;;;;
+(setq auto-mode-alist
+      (append '(("\\.py.old$"  . python-mode)
+                ("\\.tac$"  . python-mode)
+                ) auto-mode-alist))
+
+;; buffer / paragraph indentation ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defun buffer-indent()
+  "Indente l'ensemble du buffer courant."
+  (interactive)
+  ;; (normal-mode)
+  (save-excursion
+    (mark-whole-buffer)
+    (call-interactively 'indent-region)
+    (save-buffer))
+  
+  (message "%s" "Buffer indentation completed"))
+
+(defun para-indent()
+  "Indente l'ensemble du paragraphe."
+  (interactive)
+  ;; (normal-mode)
+  (save-excursion
+    (mark-paragraph)
+    (call-interactively 'indent-region)
+    (save-buffer))
+  (message "%s" "Paragraph indentation completed"))
+
+; (global-set-key [(shift f9)] 'buffer-indent)
+; (global-set-key [(shift f8)] 'para-indent)
+
+
+;; use C style indentation for CSS ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defun my-css-hook ()
+  (setq cssm-indent-function 'cssm-c-style-indenter)
+  (local-set-key [(C-tab)] 'cssm-complete-property)
+  )
+
+(add-hook 'css-mode-hook 'my-css-hook)
+
+; (global-set-key [(meta shift i)] 'string-rectangle)
+; (global-set-key [(meta shift d)] 'delete-rectangle)
