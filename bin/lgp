@@ -1,0 +1,4 @@
+#!/usr/bin/python2.4
+import sys
+from logilab.devtools.lgp import run
+run(sys.argv[1:])

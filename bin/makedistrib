@@ -1,3 +1,0 @@
-#!/usr/bin/python2.4
-from logilab.devtools.makedistrib import run
-run()

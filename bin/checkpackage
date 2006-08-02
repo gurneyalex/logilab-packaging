@@ -1,6 +1,0 @@
-#!/usr/bin/python2.4
-
-from logilab.devtools import check_package
-import sys
-check_package.run(sys.argv[1:])
-

@@ -1,7 +1,6 @@
-#!/usr/bin/env python
 # -*- coding: iso-8859-1 -*-
 #
-# Copyright (c) 2004 LOGILAB S.A. (Paris, FRANCE).
+# Copyright (c) 2004-2006 LOGILAB S.A. (Paris, FRANCE).
 # http://www.logilab.fr/ -- mailto:contact@logilab.fr
 #
 # This program is free software; you can redistribute it and/or modify it under
@@ -37,13 +36,11 @@ def usage(status=0):
     print
     print __doc__
     sys.exit(status)
-    
-def run(args=None):
-    args = args or sys.argv[1:]
-    if '--help' in args or '-h' in args:
-        usage( )
-    if not args or len(args) > 2:
-        usage(1)
+   
+def add_options(parser):
+    pass
+
+def run(options, args):
     package_dir = args[0]
     pkgname = basename(package_dir)
     vcs_agent = get_vcs_agent(package_dir)

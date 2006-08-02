@@ -1,6 +1,0 @@
-#!/usr/bin/python2.4
-
-from logilab.devtools import mkproj
-import sys
-mkproj.run(sys.argv[1:])
-
