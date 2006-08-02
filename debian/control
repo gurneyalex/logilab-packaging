@@ -24,8 +24,8 @@ Description: set of development tools used at Logilab for source management
 Package: logilab-packaging
 Architecture: all
 Suggests: logilab-doctools
-Recommends: piuparts, linda, lintian, sudo, emacsen-common
-Depends: ${python:Depends}, cvs, mercurial, pymacs, python-vcslib, python-logilab-common (>= 0.16.1-2), python2.4, emacsen-common
+Recommends: piuparts, linda, lintian, sudo, emacsen-common, cvs, mercurial, subversion
+Depends: ${python:Depends}, pymacs, python-vcslib, python-logilab-common (>= 0.16.1-2), python2.4, emacsen-common
 XB-Python-Version: ${python:Versions}
 Description: set of development tools used at Logilab
  Set of tools which aims to help the developpement process, including :
