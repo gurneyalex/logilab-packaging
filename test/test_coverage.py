@@ -13,8 +13,8 @@ from shutil import rmtree
 
 try:
     # development version
-    from logilab.devtool.lib import coverage
-except:
+    from logilab.devtools.lib import coverage
+except ImportError:
     # installed version
     import coverage
  
