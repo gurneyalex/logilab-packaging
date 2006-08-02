@@ -20,7 +20,7 @@ logilab.devtools packaging information
 __revision__ = "$Id: __pkginfo__.py,v 1.47 2006-01-10 15:11:50 syt Exp $"
 
 modname = 'devtools'
-numversion = (0, 9, 0)
+numversion = (0, 10, 0)
 version = '.'.join([str(num) for num in numversion])
 
 license = 'GPL'
@@ -48,24 +48,22 @@ from os.path import join
 include_dirs = ['templates', join('test', 'data')]
 
 
-scripts = ['bin/buildeb',
-           'bin/buildpackage',
-           'bin/cvslog',
-           'bin/mkproj',
-           'bin/tagpackage',
-           'bin/changelog',
-           'bin/cvstatus',
-           'bin/pkginfo',
-           'bin/pycoverage',
-           'bin/update_gettext.sh',
-           'bin/checkpackage',
-           'bin/preparedistrib',
-           'bin/makedistrib',
-           'bin/stp',
-           'bin/vcpull'] 
+scripts = [
+    # vcslib
+    'bin/vcpull',
+    'bin/cvslog',
+    'bin/cvstatus',
+    # pycovergae
+    'bin/pycoverage',
+    # logilab-packaging
+    'bin/changelog',
+    'bin/update_gettext.sh',
+    'bin/lgp',
+    'bin/stp',
+    ] 
 
 # debianize info
 debian_name = 'devtools'
 debian_maintainer = 'Sylvain Thenault'
 debian_maintainer_email = 'sylvain.thenault@logilab.fr'
-pyversions = ['2.4']
+pyversions = ['2.3']
