@@ -71,7 +71,7 @@ def build_documentation(projdir=os.getcwd()):
 
 
 def make_announce(pkginfo, filename):
-    if osp.isfile('announce.txt') and confirm('generate announe in %s ?' % filename):
+    if osp.isfile('announce.txt') and confirm('generate announce in %s ?' % filename):
         stream = StringIO()
         chglog = ChangeLog('ChangeLog')
         chglog.extract(stream=stream)
