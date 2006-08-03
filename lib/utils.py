@@ -52,7 +52,7 @@ class SGMLCatalog:
                 self.dtd_infos(dtdname)
             except KeyError:
                 msg = 'DTD %s is not registered by the main catalog' % dtd
-                reporter.log(ERROR, dtd, None, msg)
+                reporter.error(dtd, None, msg)
 
 def glob_match(pattern, prefix=None):
     """return a list of files matching <pattern> from the <prefix> directory
