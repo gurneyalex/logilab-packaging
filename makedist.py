@@ -26,67 +26,73 @@ from os.path import basename
 
 from logilab.devtools.vcslib import get_vcs_agent
 from logilab.devtools.tagpackage import tag_package
-from logilab.devtools.lib.utils import cond_exec, cond_continue
+from logilab.devtools.lib.utils import confirm, cond_exec
 from logilab.devtools.buildeb import lint
 
-def usage(status=0):
-    """print usage and exit with the given status"""
-    print "USAGE: makedistrib <source_directory> <bdist_wininst|sdist|deb>"
-    print "if the second argument is omitted, default is deb"
-    print
-    print __doc__
-    sys.exit(status)
-   
+SEPARATOR = '+' * 72
+
 def add_options(parser):
     parser.usage = 'lgp make [options] <project_dir> ...'
+    #print "USAGE: makedistrib <source_directory> <bdist_wininst|sdist|deb>"
 
 def run(options, args):
     package_dir = args[0]
     pkgname = basename(package_dir)
     vcs_agent = get_vcs_agent(package_dir)
-    print '+' * 72
-    if cond_exec("vérifier que l'entrepôt est à jour"):
+
+    # check vcs up to date
+    print SEPARATOR
+    if confirm("vérifier que l'entrepôt est à jour ?"):
         try:
             result = vcs_agent.not_up_to_date(package_dir)
             if result:
                 print '\n'.join(["%s: %s"%r for r in result])
-                cond_continue()
+                if not confirm('Continue ?'):
+                    return 0
         except NotImplementedError:
             print 'pas encore supporté par cet agent de controle'
-    print '+' * 72
-    if cond_exec("vérifier qu'aucun fichier n'est en édition"):
+
+    # check no file in edition
+    print SEPARATOR
+    if confirm("vérifier qu'aucun fichier n'est en édition ?"):
         try:
             result = vcs_agent.edited(package_dir)
             if result:
                 print '\n'.join(result)
-                cond_continue()
+                if not confirm('Continue ?'):
+                    return 0
         except NotImplementedError:
             print 'pas encore supporté par cet agent de controle'
-    print '+' * 72
+
+    # clean
+    print SEPARATOR
     print "nettoyage du répertoire de travail"
     os.system('rm -f *~ \#* .\#* */*~ */\#* */.\#* */*/*~ */*/\#* */*/.\#* 2>/dev/null')
-    print '+' * 72
+
+    # build
+    print SEPARATOR
     print "génération du paquet"
-    target = len(args) == 2 and args[1] or 'deb'
-    status = os.system('buildpackage %s %s' % (package_dir, target))
-    if status != 0:
-        return
+    target = (len(args) == 2) and args[1] or 'deb'
+    if os.system('buildpackage %s %s' % (package_dir, target)):
+        return 1
+
     # lintian
-    print '+' * 72
-    if target == "deb" and cond_exec("lancement de lintian sur les paquets générés"):
+    print SEPARATOR
+    if target == "deb" and confirm("lancement de lintian sur les paquets générés ?"):
         lint('lintian -i', package_dir, 'dist')
+
     # linda
-    print '+' * 72
-    if target == "deb" and cond_exec("lancement de linda sur les paquets générés"):
+    print SEPARATOR
+    if target == "deb" and confirm("lancement de linda sur les paquets générés ?"):
         lint('linda -i', package_dir, 'dist')
+
     # piuparts
-    print '+' * 72
-    if target == "deb" and cond_exec("lancement de piuparts sur les paquets générés"):
+    print SEPARATOR
+    if target == "deb" and confirm("lancement de piuparts sur les paquets générés ?"):
         print 'buildeb --piuparts %s %s' % (package_dir, 'dist')
         os.system('buildeb --piuparts %s %s' % (package_dir, 'dist'))
-    print '+' * 72
+    print SEPARATOR
+
     tag_package(package_dir, vcs_agent)
 
-if __name__ == '__main__':
-    run()
  
