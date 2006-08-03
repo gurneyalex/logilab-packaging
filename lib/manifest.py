@@ -50,8 +50,7 @@ def read_manifest_in(reporter,
     os.chdir(dirname)
     if filelist is None:
         filelist = FileList()
-    filelist.warn = lambda msg, r=reporter, f=absfile: r.log(WARNING, f,
-                                                             None, msg)
+    filelist.warn = lambda msg, r=reporter, f=absfile: r.warning(f, None, msg)
     try:
         template = TextFile(filename, strip_comments=1,
                             skip_blanks=1, join_lines=1,
@@ -64,7 +63,7 @@ def read_manifest_in(reporter,
             try:
                 filelist.process_template_line(line)
             except DistutilsTemplateError, msg:
-                reporter.log(ERROR, absfile, template.current_line, msg)
+                reporter.error(absfile, template.current_line, msg)
         filelist.sort()
         filelist.remove_duplicates()
         for pattern in exclude_patterns:
@@ -134,10 +133,10 @@ def check_manifest_in(reporter, dirname=os.getcwd(),
             i = matched.index(path)
             matched.pop(i)
         except ValueError:
-            reporter.log(ERROR, absfile, None, '%s is not matched' % path)
+            reporter.error(absfile, None, '%s is not matched' % path)
             status = 0
     # check garbage
     for filename in matched:
         if match_extensions(filename, junk_extensions):
-            reporter.log(WARNING, absfile, None, 'match %s' % filename)
+            reporter.warning(absfile, None, 'match %s' % filename)
     return status

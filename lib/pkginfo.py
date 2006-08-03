@@ -476,7 +476,7 @@ class PackageInfo:
             except KeyError:
                 msg = 'Unknown license %s' % value
                 self.setattr('license_text', '')
-                self.reporter.log(ERROR, self.info_module, None, msg)
+                self.reporter.error(self.info_module, None, msg)
         setattr(self, name, value)
 
     def getattr(self, name):
@@ -511,7 +511,7 @@ class PackageInfo:
                         msg = 'Missing required attribute %s (%s: %s)'
                         msg = msg  % (opt_name, cat, opt_def['help'])
                         config_module = imod + '.py'
-                        self.reporter.log(ERROR, config_module, None, msg)
+                        self.reporter.error(config_module, None, msg)
                         status = 0
         # override prepare function ?
         if hasattr(info_module, 'prepare'):
@@ -588,13 +588,13 @@ def check_url(reporter, file, var, url):
     """
     if not url:
         msg = 'No %s variable specified' % var
-        reporter.log(WARNING, file, None, msg)
+        reporter.warning(file, None, msg)
         return
     try:
         urlopen(url)
     except Exception, ex:
         msg = '%s on %s=%r' % (ex, var, url)
-        reporter.log(ERROR, file, None, msg)
+        reporter.error(file, None, msg)
       
 def check_info_module(reporter,
                       dirname=os.getcwd(), info_module='__pkginfo__'):
@@ -606,7 +606,7 @@ def check_info_module(reporter,
                                                     [dirname])
         module = load_module(info_module, mp_file, mp_filename, mp_desc)
     except Exception, ex:
-        reporter.log(ERROR, absfile, None, str(ex))
+        reporter.error(absfile, None, str(ex))
         return 0
     # this will check for missing required attribute
     pi = PackageInfo(reporter, dirname, info_module, init=0)
@@ -617,7 +617,7 @@ def check_info_module(reporter,
 ##     if not getattr(module, 'name', None) and \
 ##            not getattr(module, 'modname', None):
 ##         msg = 'No required "name" nor "modname" attribute'
-##         reporter.log(ERROR, info_module, None, msg)
+##         reporter.error(info_module, None, msg)
 ##         status = 0
         
     # check scripts
@@ -625,20 +625,20 @@ def check_info_module(reporter,
     scripts = getattr(module, 'scripts', []) or []
     if not sequence_equal(detected_scripts, scripts):
         msg = 'Detected %r as default "scripts" value, found %r'
-        reporter.log(WARNING, absfile, None, msg % (detected_scripts, scripts))
+        reporter.warning(absfile, None, msg % (detected_scripts, scripts))
 
     # check license
     if not (getattr(module, 'license', None) or
             getattr(module, 'license_text', None)):
         msg = 'No "license" nor "license_text" attribute'
-        reporter.log(ERROR, absfile, None, msg)
+        reporter.error(absfile, None, msg)
         status = 0
 
     # check copyright
     copyright = getattr(module, 'copyright', '') 
     if not copyright:
         msg = 'No copyright notice'
-        reporter.log(ERROR, absfile, None, msg)
+        reporter.error(absfile, None, msg)
         status = 0
     else:
         match = COPYRIGHT_RGX.search(copyright)
@@ -647,18 +647,18 @@ def check_info_module(reporter,
             thisyear = localtime(time())[0]
             if int(end) < thisyear:
                 msg = 'Copyright is outdated (%s)' % end
-                reporter.log(WARNING, absfile, None, msg)
+                reporter.warning(absfile, None, msg)
                 
         else:
             msg = 'Copyright doesn\'t match %s' % COPYRIGHT_RGX.pattern
-            reporter.log(WARNING, absfile, None, msg)
+            reporter.warning(absfile, None, msg)
             
     # check include_dirs
     if getattr(module, 'include_dirs', None):
         for directory in module.include_dirs:
             if not exists(join(dirname, directory)):
                 msg = 'Include inexistant directory %r' % directory
-                reporter.log(ERROR, absfile, None, msg)
+                reporter.error(absfile, None, msg)
 
     # check web site and ftp
     check_url(reporter, absfile, 'web', pi.web)
@@ -667,36 +667,36 @@ def check_info_module(reporter,
     # check descriptions
     if not pi.short_desc:
         msg = 'No short description'
-        reporter.log(ERROR, absfile, None, msg)
+        reporter.error(absfile, None, msg)
     else:
         if len(pi.short_desc) > 80:
             msg = 'Short description longer than 80 characters'
-            reporter.log(ERROR, absfile, None, msg)
+            reporter.error(absfile, None, msg)
         desc = pi.short_desc.lower().split()
         if pi.name.lower() in desc or pi.debian_name.lower() in desc:
             msg = 'Short description contains the package name'
-            reporter.log(ERROR, absfile, None, msg)
+            reporter.error(absfile, None, msg)
         if pi.short_desc[0].isupper():
             msg = 'Short description starts with a capitalized letter'
-            reporter.log(ERROR, absfile, None, msg)
+            reporter.error(absfile, None, msg)
         if pi.short_desc[-1] == '.':
             msg = 'Short description ends with a period'
-            reporter.log(ERROR, absfile, None, msg)
+            reporter.error(absfile, None, msg)
         for word in spell_check(pi.short_desc, ignore=(pi.name.lower(),)):
             msg = 'Possiply mispelled word %r' % word
-            reporter.log(WARNING, absfile, None, msg)
+            reporter.warning(absfile, None, msg)
             
     if not pi.long_desc:
         msg = 'No long description'
-        reporter.log(ERROR, absfile, None, msg)
+        reporter.error(absfile, None, msg)
     else:
         for word in spell_check(pi.long_desc, ignore=(pi.name.lower(),)):
             msg = 'Possiply mispelled word %r' % word
-            reporter.log(WARNING, absfile, None, msg)
+            reporter.warning(absfile, None, msg)
         for line in pi.long_desc.splitlines():
             if len(line) > 79:
                 msg = 'Long description contains lines longer than 80 characters'
-                reporter.log(WARNING, absfile, None, msg)
+                reporter.warning(absfile, None, msg)
         
     # standard source tree ####################################################
     
@@ -705,7 +705,7 @@ def check_info_module(reporter,
     dtds = getattr(module, 'dtd_files', None)
     if dtds is not None and not sequence_equal(detected_dtds, dtds):
         msg = 'Detected %r as default "dtd_files" value, found %r'
-        reporter.log(WARNING, absfile, None, msg % (detected_dtds, dtds))
+        reporter.warning(absfile, None, msg % (detected_dtds, dtds))
     else:
         dtds = detected_dtds
     detected_catalog = get_default_catalog(pi)
@@ -713,11 +713,11 @@ def check_info_module(reporter,
     if catalog:
         if detected_catalog and catalog != detected_catalog:
             msg = 'Detected %r as default "catalog" value, found %r'
-            reporter.log(WARNING, absfile, None, msg % (detected_catalog,
+            reporter.warning(absfile, None, msg % (detected_catalog,
                                                         catalog))
         elif split(catalog)[1] != 'catalog':
             msg = 'Package\'s main catalog should be named "catalog" not %r'
-            reporter.log(ERROR, join(dirname, 'dtd'), None,
+            reporter.error(join(dirname, 'dtd'), None,
                          msg % split(catalog)[1])
             status = 0
     else:
@@ -725,11 +725,11 @@ def check_info_module(reporter,
     cats = glob_match(join('dtd', '*.cat'))
     if cats:
         msg = 'Unsupported catalogs %s' % ' '.join(cats)
-        reporter.log(WARNING, join(dirname, 'dtd'), None, msg)
+        reporter.warning(join(dirname, 'dtd'), None, msg)
     if dtds:
         if not catalog:
             msg = 'Package provides some DTDs but no catalog'
-            reporter.log(ERROR, join(dirname, 'dtd'), None, msg)
+            reporter.error(join(dirname, 'dtd'), None, msg)
             status = 0
         else:
             # check catalog's content (i.e. dtds are listed inside)
