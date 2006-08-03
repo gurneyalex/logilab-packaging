@@ -28,10 +28,11 @@ from os.path import join, split, exists
 from imp import find_module, load_module
 from commands import getstatusoutput
 from time import time, localtime
+from stat import S_IWRITE
 
 from logilab.common.fileutils import lines, files_by_ext, ensure_fs_mode
-from stat import S_IWRITE
-from logilab.devtools import TEMPLATE_DIR
+
+import logilab.devtools
 from logilab.devtools.lib import TextReporter
 from logilab.devtools.lib.utils import SGMLCatalog, get_scripts, glob_match
 from logilab.devtools.vcslib import BASE_EXCLUDE
@@ -50,6 +51,8 @@ except:
         """spell the given text and return a list of possibly misspelled words
         """
         return []
+
+TEMPLATE_DIR = join(logilab.devtools.__path__[0], 'templates')
     
 STD_DOCS = ('README', 'README.txt', 'ChangeLog',
             'TODO', 'TODO.txt',

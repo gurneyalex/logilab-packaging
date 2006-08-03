@@ -6,12 +6,15 @@ from stat import ST_MTIME, S_IWUSR
 from cStringIO import StringIO
 from logilab.common.shellutils import cp
 
-from logilab.devtools import TEMPLATE_DIR
+import logilab.devtools
 from logilab.devtools.vcslib import get_vcs_agent
 from logilab.devtools.lib import TextReporter
 from logilab.devtools.lib.utils import cond_exec, confirm
 from logilab.devtools.lib.pkginfo import PackageInfo
 from logilab.devtools.lib.changelog import ChangeLog
+
+
+TEMPLATE_DIR = osp.join(logilab.devtools.__path__[0], 'templates')
 
 ADDITIONAL_DESCR="""LOGILAB provides services in the fields of XML techniques and advanced
 computing (implementation of intelligent agents, knowledge management,
