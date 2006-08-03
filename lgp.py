@@ -49,7 +49,7 @@ def run(args):
         from logilab.devtools.pkginfo import run, add_options
     else:
         print USAGE
-	sys.exit(1)
+        sys.exit(cmd not in ('--help', '-h'))
 
     parser = get_parser()
     add_options(parser)
