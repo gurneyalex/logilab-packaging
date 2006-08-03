@@ -64,12 +64,9 @@ def tag_package(package_dir, vcs_agent=None):
         os.chdir(cwd)
 
 def add_options(parser):
-    parser.usage = """lgp tag [options] [<package>]
-if <package> is omitted, the current directory will be used
-    """
-    
+    """needed by lgp.py"""
+    pass
 
-def run(options, args):
-    package_dir = args and args[0] or os.getcwd()
-    tag_package(package_dir)
+def run(pkgdir, options, args):
+    tag_package(pkgdir)
 

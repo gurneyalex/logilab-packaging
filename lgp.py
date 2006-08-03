@@ -44,17 +44,23 @@ class OptionParser(optparse.OptionParser):
     def add_command(self, name, module, help=''):
         self._commands[name] = (module, help)
 
+
+    def print_main_help(self):
+        optparse.OptionParser.print_help(self)
+        print '\ncommands:'
+        for cmdname, (_, help) in self._commands.items():
+            print '% 10s - %s' % (cmdname, help)
+        
+
     def parse_command(self, args):
         if len(args) == 0:
-            self.error('no command given')
+            self.print_main_help()
+            sys.exit(1)
         cmd = args[0]
 	args = args[1:]
         if cmd not in self._commands:
             if cmd in ('-h', '--help'):
-                self.print_help()
-                print '\ncommands:'
-                for cmdname, (_, help) in self._commands.items():
-                    print '% 10s - %s' % (cmdname, help)
+                self.print_main_help()
                 sys.exit(0)
             self.error('unknow command')
         self.prog = '%s %s' % (self.prog, cmd)
