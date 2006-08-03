@@ -230,9 +230,8 @@ def start_checks(package_dir, package_info='__pkginfo__', checks=DEFAULT_CHECKS)
 
 
 def add_options(parser):
-    parser.usage = """lgp check [options] <package>
-available checks: %s
-""" % ', '.join(DEFAULT_CHECKS)
+    parser.usage = "lgp check [options] <package>"
+    parser.description += ". Available checks: %s" % ', '.join(DEFAULT_CHECKS)
     parser.add_option('-i', '--package-info', default='__pkginfo__',
                       help='module where the packaging information may be found',
                       metavar='<INFOMODULE>')
