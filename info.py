@@ -13,44 +13,15 @@
 # You should have received a copy of the GNU General Public License along with
 # this program; if not, write to the Free Software Foundation, Inc.,
 # 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-"""USAGE:  pkginfo [OPTIONS] COMMAND [COMMAND ARGUMENTS]
-
-package info command line tool.
-
-COMMANDS:
-
-  * check, check the package information file. Take no argument.
-  
-  * dump, dump some package information. Optionaly take a list of attribute to
-    dump, else dump all the detected configuration.
-
-  * help, get help for a list of variables from the package info. Optionaly
-    take a list of attribute, else get help for all configuration variables.
-    
-OPTIONS:
-  -h / --help
-       display this help message and exit.
-       
-  -d / --package-dir <DIRECTORY>
-       package directory. Default to current working directory
-       
-  -i / --package-info <INFOMODULE>
-       module where the packaging information may be found. Default to
-       __pkginfo__.
+"""You should use grep instead
 """
 
-__revision__ = "$Id: pkginfo.py,v 1.10 2005-07-26 09:41:12 syt Exp $"
-
 import sys
-import os
-import getopt
 
 from logilab.common.textutils import normalize_text
 from logilab.devtools.lib import TextReporter
 from logilab.devtools.lib.pkginfo import PKGINFO, PKGINFO_ATTRIBUTES, \
      PackageInfo, check_info_module
-
-REPORTER = TextReporter(output=sys.stderr)
 
     
 def dump_values(pkginfo, values):
@@ -122,18 +93,17 @@ def add_options(parser):
     parser.max_args = 1
 
 
-def run(options, args):
+def run(pkgdir, options, args):
     """extract package info according to command line arguments
     """
-    package_dir = args and args[0] or os.getcwd()
     if options.list:
         print_list()
     elif options.field:
         try:
-            pi = PackageInfo(REPORTER, package_dir)
+            pi = PackageInfo(TextReporter(sys.stderr), pkgdir)
             dump_values(pi, [options.field])
         except ImportError:
-            sys.stderr.write("%r does not appear to be a valid package " % package_dir)
+            sys.stderr.write("%r does not appear to be a valid package " % pkgdir)
             sys.stderr.write("(no __pkginfo__ found)\n")
             return 1
     return 0
