@@ -1,7 +1,7 @@
 ChangeLog for logilab.devtools
 ==============================
 
-  --  
+2006-08-03  -- 0.10.0 
     * fixed spelling of dependant/dependent
     * Move to new Python packaging policy
     * logilab.el: insert current year in copyright (#10779)
