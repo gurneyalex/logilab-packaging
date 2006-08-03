@@ -1,6 +1,0 @@
-#!/usr/bin/python
-
-from logilab.devtools import stp
-import sys
-stp.run(sys.argv[1:])
-

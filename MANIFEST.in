@@ -1,6 +1,5 @@
 include bin/lgp
 include bin/changelog
-include bin/stp
 include bin/update_gettext.sh
 include bin/pycoverage
 include bin/vcpull
