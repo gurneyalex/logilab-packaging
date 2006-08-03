@@ -14,32 +14,12 @@
 # You should have received a copy of the GNU General Public License along with
 # this program; if not, write to the Free Software Foundation, Inc.,
 # 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-"""USAGE: checkpackage [OPTIONS]
 
-Check a package: correctness of __pkginfo__.py, release number consistency,
-MANIFEST.in matches what is int the directory, scripts in bin have a --help
-option and .bat equivalent, execute tests, setup.py matches devtools template,
-announce matches template too.
-
-OPTIONS:
-  -h / --help
-       display this help message and exit.
-       
-  -d / --package-dir <DIRECTORY>
-       package directory. Default to current working directory
-       
-  -i / --package -info <INFOMODULE>
-       module where the packaging information may be found. Default to
-       __pkginfo__.
-
-  -x / --exclude <CHECK>
-       do not perform that check (can't be used with '-o')
-
-  -o / --only <CHECK>
-       perform only that check (can't be used with '-x')
+"""Check a package: correctness of __pkginfo__.py, release number
+consistency, MANIFEST.in matches what is int the directory, scripts in
+bin have a --help option and .bat equivalent, execute tests, setup.py
+matches devtools template, announce matches template too.
 """
-
-__revision__ = '$Id: check_package.py,v 1.25 2005-06-20 10:35:21 syt Exp $'
 
 __all__ = ('check_info_module', 'check_release_number', 'check_manifest_in',
            'check_bin', 'check_test', 'check_setup_py', 'check_announce')
@@ -50,13 +30,17 @@ import os
 import stat
 import re
 import commands
-from os.path import basename, join, exists
+from os.path import basename, join, exists, isdir
+
+from logilab.common.compat import set
 
 from logilab.devtools.lib import TextReporter
 from logilab.devtools.lib.pkginfo import PackageInfo, check_info_module
 from logilab.devtools.lib.manifest import check_manifest_in
 from logilab.devtools.vcslib import BASE_EXCLUDE
 from logilab.devtools import templates
+from logilab.devtools.lib.changelog import ChangeLog, ChangeLogNotFound, \
+     find_ChangeLog
 
 def is_executable(filename):
     """return true if the file is executable"""
@@ -77,7 +61,7 @@ def check_bat(reporter, bat_file):
     data = f.read().strip()
     if not data[:11] == '@python -c ':
         msg = "unrecognized command %s" % data[:11]
-        reporter.log(WARNING, bat_file, None, msg)
+        reporter.warning(bat_file, None, msg)
         return status
     if data[-26:] == '%1 %2 %3 %4 %5 %6 %7 %8 %9':
         command = data[1:-26]
@@ -85,12 +69,12 @@ def check_bat(reporter, bat_file):
         command = data[1:-2]
     else:
         command = data
-        reporter.log(ERROR, bat_file, None, "forget arguments")
+        reporter.error(bat_file, None, "forget arguments")
         status = 0
     error = os.popen3('%s --help' % command)[2].read()
     if error:
-        reporter.log(ERROR, bat_file, None,
-                     "error while executing (%s):\n%s"%(command, error))
+        reporter.error(bat_file, None,
+                       "error while executing (%s):\n%s"%(command, error))
         status = 0
     return status
 
@@ -100,15 +84,15 @@ def check_sh(reporter, sh_file):
     status = 1
     data = open(sh_file).read()
     if data[:2] != '#!':
-        reporter.log(ERROR, sh_file, None, 'Script doesn\'t starts with "#!"')
+        reporter.error(sh_file, None, 'Script doesn\'t starts with "#!"')
         status = 0
     if not is_executable(sh_file):
         make_executable(sh_file)
     cmd = '%s --help' % sh_file
     cmdstatus, output = commands.getstatusoutput(cmd)
     if cmdstatus:
-        reporter.log(ERROR, sh_file, None,
-                     '%r returned status %s, ouput:\n%s' % (cmd, cmdstatus, output))
+        reporter.error(sh_file, None,
+                       '%r returned status %s, ouput:\n%s' % (cmd, cmdstatus, output))
         status = 0
     return status
 
@@ -116,14 +100,14 @@ def check_template(reporter, filename, templatename):
     """check a file is similar to a reference template
     """
     if not exists(filename):
-        reporter.log(WARNING, filename, None, 'Missing file')
+        reporter.warning(filename, None, 'Missing file')
         return 0
     template = open(join(templates.__path__[0], templatename)).read()
     template = REV_LINE.sub('', template)
     actual = open(filename).read()
     actual = REV_LINE.sub('', actual)
     if actual != template:
-        reporter.log(WARNING, filename, None, 'Does not match the template')
+        reporter.warning(filename, None, 'Does not match the template')
     return 1
 
 
@@ -144,8 +128,7 @@ def check_bin(reporter, dirname):
         sh_file = join(bindir, filename)
         bat_file = sh_file + '.bat'
         if not exists(bat_file):
-            reporter.log(WARNING, bindir, None,
-                         'No %s file' % basename(bat_file))
+            reporter.warning(bindir, None, 'No %s file' % basename(bat_file))
         elif filename[-4:] == '.bat':
             _status = check_bat(reporter, bat_file )
             status = status and _status
@@ -174,12 +157,11 @@ def check_test(reporter, dirname):
             test_dir = join(dirname, test_dir_name)
             break
     else:
-        reporter.log(WARNING, dirname, None,
-                     'No test directory')
+        reporter.warning(dirname, None, 'No test directory')
         return 1
     if not exists(join(test_dir, 'runtests.py')):
-        reporter.log(WARNING, join(basename(test_dir), 'runtests.py'), None,
-                     'Missing file')
+        reporter.warning(join(basename(test_dir), 'runtests.py'), None,
+                         'Missing file')
     return 1
 
 def normalize_version(version):
@@ -193,9 +175,10 @@ def normalize_version(version):
 def check_release_number(reporter, dirname, info_module='__pkginfo__'):
     """Check inconsistency with release number
     """
-    from logilab.devtools.lib.changelog import ChangeLog, ChangeLogNotFound, \
-         find_ChangeLog
-    pi = PackageInfo(reporter, dirname, info_module=info_module)
+    try:
+        pi = PackageInfo(reporter, dirname, info_module=info_module)
+    except ImportError:
+        return 0
     version = normalize_version(pi.version)
     status = 1
     try:
@@ -204,13 +187,13 @@ def check_release_number(reporter, dirname, info_module='__pkginfo__'):
         if cl_version != version:
             msg = 'Version inconsistency : found %s in ChangeLog \
 (reference is %s)'
-            reporter.log(ERROR, 'ChangeLog', None, msg % (cl_version, version))
+            reporter.error('ChangeLog', None, msg % (cl_version, version))
             status = 0
     except ChangeLogNotFound:
-        reporter.log(WARNING, 'ChangeLog', None, 'Missing file')
+        reporter.warning('ChangeLog', None, 'Missing file')
     if exists(join(dirname, 'debian')):
         if not exists(join(dirname, 'debian', 'changelog')):
-            reporter.log(ERROR, 'debian/changelog', None, 'Missing file')
+            reporter.error('debian/changelog', None, 'Missing file')
             status = 0
         else:
             deb_version = pi.debian_version()
@@ -218,70 +201,63 @@ def check_release_number(reporter, dirname, info_module='__pkginfo__'):
             if deb_version != version:
                 msg = 'Version inconsistency : found %s in debian/changelog \
 (reference is %s)'
-                reporter.log(ERROR, 'debian/changelog', None, msg % (deb_version,
-                                                                     version))
+                reporter.error('debian/changelog', None,
+                               msg % (deb_version, version))
                 status = 0
     return status
 
-REPORTER = TextReporter()
+DEFAULT_CHECKS = ('info_module', 'release_number', 'manifest_in',
+                  'bin', 'test', 'setup_py', 'announce')
+
+
+CHECKERS = dict([(name, value) for name, value in globals().items()
+                 if name.startswith('check_') and name[6:] in DEFAULT_CHECKS and callable(value)])
+
+def start_checks(package_dir, package_info='__pkginfo__', checks=DEFAULT_CHECKS):
+    reporter = TextReporter()
+    for check in checks:
+        try:
+            check_func = CHECKERS['check_%s' % check]
+        except KeyError:
+            reporter.warning(None, None, 'skipping invalid check: %r' % check)
+            continue
+        print "Testing ", check
+        try:
+            check_func(reporter, package_dir, package_info)
+        except TypeError:
+            check_func(reporter, package_dir)
+    return reporter.errors
+
+
 
 def add_options(parser):
-    parser.usage = 'lgp check [options] <package>'
+    parser.usage = """lgp check [options] <package>
+available checks: %s
+""" % ', '.join(DEFAULT_CHECKS)
+    parser.add_option('-i', '--package-info', default='__pkginfo__',
+                      help='module where the packaging information may be found',
+                      metavar='<INFOMODULE>')
+    parser.add_option('-x', '--exclude', action="append", dest="exclude", 
+                      help="do not perform that check (can't be used with '-o')",
+                      metavar='<CHECK>', default=[])
+    parser.add_option('-o', '--only', action="append", dest="only",
+                      help="perform only that check (can't be used with '-x')",
+                      metavar='<CHECK>', default=[])
+    parser.max_args = 1
+
 
 def run(options, args):
     """main function to execute check package from command line"""
-    # /!\ import Set here since we want check_package to be usable as a
-    # /!\ library with python 2.2
-    from sets import Set
-    if args is None:
-        args = sys.argv[1:]
-    s_opts = 'hd:i:x:o:'
-    l_opts = ['help', 'package-dir=', 'package-info=', 'exclude=', 'only=']
-    opts, args = getopt.getopt(args, s_opts, l_opts)
-    package_dir = os.getcwd()
-    package_info = '__pkginfo__'
-    excludes = Set()
-    only = Set()
-    for opt, val in opts:
-        if opt in ('-h', '--help'):
-            print __doc__
-            return 0
-        elif opt in ('--package-dir', '-d'):
-            package_dir = val
-        elif opt in ('--package-info', '-i'):
-            package_info = val
-        elif opt in ('--exclude', '-x'):
-            excludes.add(val)
-        elif opt in ('--only', '-o'):
-            only.add(val)
-    # check for command line consistency
-    if excludes and only:
+    package_dir = args and args[0] or os.getcwd()
+    debdir = join(package_dir, 'debian')
+    if not isdir(debdir):
+        print >> sys.stderr, "invalid package: no directory %r" % debdir
+        return 1
+
+    if options.exclude and options.only:
         print "--exclude and --only can't be used together"
         return 1
-    # check args
-    if args:
-        print __doc__
-        return 1
-    checks = {
-        'info_module' : check_info_module,
-        'release_number' : check_release_number,
-        'manifest_in' : check_manifest_in,
-        'bin' : check_bin,
-        'test' : check_test,
-        'setup_py' : check_setup_py,
-        'announce' : check_announce,
-        }
-    if only:
-        to_test = only
-    else:
-        to_test = Set(checks) - excludes
-    for name in to_test:
-        check_func = checks[name]
-        try:
-            check_func(REPORTER, package_dir, package_info)
-        except TypeError:
-            check_func(REPORTER, package_dir)
-    
-    return REPORTER.counts[ERROR]
+    to_test = options.only or (set(DEFAULT_CHECKS) - set(options.exclude))
+    return start_checks(package_dir, options.package_info, to_test)
 
     
