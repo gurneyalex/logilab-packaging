@@ -1,7 +1,7 @@
 # -*- encoding: iso-8859-15 -*-
 
 import sys
-from optparse import OptionParser
+from optparse import OptionParser as OP
 
 USAGE = """lgp - logilab packaging tool
 
@@ -16,47 +16,46 @@ lgp info - gives package information
 
 """
 
-def get_parser():
-    """
-    make option parser with standard/shared options
-    """
-    parser = OptionParser()
-    parser.usage = 'lgp COMMAND [options] <arg> ...'
-    parser.min_args, parser.max_args = 0, 1
-    return parser
+class OptionParser(OP):
 
-def run(args):
-    if len(args) > 0:
+    def __init__(self, *args, **kwargs):
+        OP.__init__(self, *args, **kwargs)
+        self._commands = {}
+        self.min_args, self.max_args = 0, 0
+        
+    def add_command(self, name, module, help=''):
+        self._commands[name] = (module, help)
+
+    def parse_command(self, args):
+        if len(args) == 0:
+            self.error('no command given')
         cmd = args[0]
 	args = args[1:]
-    else:
-        cmd = '--help'
-    if 'new'.startswith(cmd):
-        from logilab.devtools.mkproj import run, add_options
-    elif 'prepare'.startswith(cmd):
-        from logilab.devtools.preparedist import run, add_options
-    elif 'make'.startswith(cmd):
-        from logilab.devtools.makedist import run, add_options
-    elif 'test' == cmd:
-        from logilab.devtools.testdist import run, add_options
-    elif 'build'.startswith(cmd):
-        from logilab.devtools.buildpackage import run, add_options
-    elif 'tag'.startswith(cmd):
-        from logilab.devtools.tagpackage import run, add_options
-    elif 'check' == cmd:
-        from logilab.devtools.checkpackage import run, add_options
-    elif 'info' == cmd:
-        from logilab.devtools.pkginfo import run, add_options
-    else:
-        print USAGE
-        sys.exit(cmd not in ('--help', '-h'))
+        if cmd not in self._commands:
+            self.error('unknow command')
+        self.prog = '%s %s' % (self.prog, cmd)
+        exec('from %s import run, add_options'%self._commands[cmd][0])
+        add_options(self)
+        (options, args) = self.parse_args(args)        
+        if not (self.min_args <= len(args) <= self.max_args):
+            self.error('incorrect number of arguments')
+        return run, options, args
+        
 
-    parser = get_parser()
-    add_options(parser)
-    (options, args) = parser.parse_args(args)
-    if not (parser.min_args <= len(args) <= parser.max_args):
-        parser.error('incorrect number of arguments')
-
+def run(args):
+    parser = OptionParser()
+    parser.usage = 'lgp COMMAND [options] <arg> ...'
+    COMMANDS = [('prepare','logilab.devtools.preparedist'),
+                ('make','logilab.devtools.makedist'),
+                ('test','logilab.devtools.testdist'),
+                ('build','logilab.devtools.buildpackage'),
+                ('tag','logilab.devtools.tagpackage'),
+                ('check', 'logilab.devtools.checkpackage'),
+                ('info', 'logilab.devtools.pkginfo'),
+                ]
+    for item in COMMANDS:
+        parser.add_command(*item)
+    run, options, args = parser.parse_command(sys.argv[1:])
     run(options, args)
 
 if __name__ == '__main__':
