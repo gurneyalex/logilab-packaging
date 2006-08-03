@@ -115,39 +115,26 @@ def help(values):
 
 
 def add_options(parser):
-    parser.usage = 'lgp info [options] <args> ...'
-    parser.add_option("--dump", dest="action",
-                      help="dump package info")
+    parser.usage = 'lgp info [options] <args>'
+    parser.add_option("--dump", help="dump package info")
+    parser.add_option("--check", action="store_true", default=False,
+                      help="check module info")
+    parser.max_args = 1
+
 
 def run(options, args):
     """extract package info according to command line arguments
     """
-    opts, args = getopt.getopt(args, 'hd:i:', ['help', 'package-dir=',
-                                               'package-info='])
-    package_dir = os.getcwd()
-    package_info = '__pkginfo__'
-    for opt, val in opts:
-        if opt in ('-h', '--help'):
-            print __doc__
-            return 0
-        elif opt in ('--package-dir', '-d'):
-            package_dir = val
-        elif opt in ('--package-info', '-i'):
-            package_info = val
-    command = args[0]
-    command_args = args[1:]
-    if command == 'check':
+    package_dir = args and args[0] or os.getcwd()
+    if options.check:
         REPORTER.reset()
-        return check_info_module(REPORTER, package_dir, package_info)
-    elif command == 'dump':
-        pi = PackageInfo(REPORTER, package_dir, package_info)
-        dump_values(pi, command_args)
-##     elif command == 'rest':
-##         pi = PackageInfo(REPORTER, package_dir, package_info)
-##         rest(pi)
-    elif command == 'help':
-        help(command_args)
-    else:
-        raise Exception('Unknown command "%s"' % command)
+        return check_info_module(REPORTER, package_dir)
+    elif options.dump:
+        try:
+            pi = PackageInfo(REPORTER, package_dir)
+            dump_values(pi, [options.dump])
+        except ImportError:
+            sys.stderr.write("%r does not appear to be a valid package " % package_dir)
+            sys.stderr.write("(no __pkginfo__ found)\n")
+            return 1
     return 0
-    
