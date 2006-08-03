@@ -22,28 +22,29 @@ __revision__ = '$Id: tagpackage.py,v 1.7 2005-07-26 12:15:27 adim Exp $'
 
 import os
 import sys
-from os.path import join, exists, abspath
+from os.path import exists, abspath
 
 from logilab.common.modutils import get_module_files
 
 from logilab.devtools.lib.utils import cond_exec
 from logilab.devtools.lib.manifest import read_manifest_in
-from logilab.devtools.pkginfo import REPORTER, PackageInfo
+from logilab.devtools.lib import TextReporter
+from logilab.devtools.lib.pkginfo import PackageInfo
 from logilab.devtools.vcslib import get_vcs_agent
 
-def usage(status=0):
-    """print usage and exit with the given status"""
-    print "USAGE: tagpackage [package directory]"
-    print
-    print __doc__
-    sys.exit(status)
-        
+
 def tag_package(package_dir, vcs_agent=None):
     cwd = os.getcwd()
     package_dir = abspath(package_dir) + '/'
     os.chdir(package_dir)
     try:
-        pi = PackageInfo(REPORTER, '.')
+        try:
+            # this will try to import __pkginfo__
+            pi = PackageInfo(TextReporter(sys.stderr), '.')
+        except ImportError:
+            print >> sys.stderr, "%r does not appear to be a valid package \
+(no __pkginfo__ found)" % package_dir
+            return
         vcs_agent = vcs_agent or get_vcs_agent('.')
         # conditional tagging
         release_tag = pi.release_tag()
@@ -63,7 +64,9 @@ def tag_package(package_dir, vcs_agent=None):
         os.chdir(cwd)
 
 def add_options(parser):
-    parser.usage = 'lgp tag [options] <package>'
+    parser.usage = """lgp tag [options] [<package>]
+if <package> is omitted, the current directory will be used
+    """
     
 
 def run(options, args):
