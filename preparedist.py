@@ -7,6 +7,7 @@ from cStringIO import StringIO
 from logilab.common.shellutils import cp
 
 from logilab.devtools import TEMPLATE_DIR
+from logilab.devtools.vcslib import get_vcs_agent
 from logilab.devtools.lib import TextReporter
 from logilab.devtools.lib.utils import cond_exec, confirm
 from logilab.devtools.lib.pkginfo import PackageInfo
@@ -88,23 +89,23 @@ def make_announce(pkginfo, filename):
 
 
 DEFAULT_ACTIONS = ('pylint', 'copying', 'checkpackage',
-                   'runtests', 'changelog', 'doc', 'announce')
+                   'runtests', 'changelog', 'doc', 'announce',
+                   'uptodate', 'clean')
 
 def add_options(parser):
-    parser.usage = """lgp prepare [options] [<project_dir>]
-if <project_dir> is omitted, the current directory will be used
-
-possible actions are: %s
-""" % ', '.join(DEFAULT_ACTIONS)
+    parser.usage = "lgp prepare [options] [<project_dir>]"
+    parser.description += ". If <project_dir> is omitted, the current directory" \
+                          "will be used. Possible actions are: %s" % ', '.join(DEFAULT_ACTIONS)
     parser.add_option('-o', '--only', action="append", dest="only",
                       help="perform only that action (this option can be passed several times)",
                       metavar='<ACTIONS>', default=[])
+    parser.add_option('--dist', dest='distdir', default=osp.expanduser('~/dist'),
+                      help='where to put results')
     parser.max_args = 1
 
 
 def run(options, args):
     projdir = osp.abspath(args and args[0] or os.getcwd())
-    distdir = osp.abspath(osp.join(os.getcwd(), '..', 'dist'))
     os.chdir(projdir)
     if osp.isfile('__init__.py'):
         pkgtype = 'python'
@@ -151,5 +152,32 @@ def run(options, args):
         # prepare ANNOUNCE file
         if pkgtype == 'python':
             print SEPARATOR
-            filename = '%s/%s.announce' % (distdir, pkginfo.name)
+            try:
+                if not osp.isdir(options.distdir):
+                    os.mkdir(options.distdir)
+            except IOError, exc:
+                sys.stderr.write('could not create directory %r (%s)\n' % (options.distdir, exc))
+                sys.exit(1)
+            filename = '%s/%s.announce' % (options.distdir, pkginfo.name)
             make_announce(pkginfo, filename)
+    if 'uptodate' in actions:
+        # check vcs up to date
+        print SEPARATOR
+        if confirm("vérifier que l'entrepôt est à jour ?"):
+            try:
+                vcs_agent = get_vcs_agent(projdir)
+                result = vcs_agent.not_up_to_date(projdir)
+                if result:
+                    print '\n'.join(["%s: %s"%r for r in result])
+                    if not confirm('Continue ?'):
+                        return 0
+            except NotImplementedError:
+                print 'pas encore supporté par cet agent de controle'
+    if 'clean' in actions:
+        # clean
+        print SEPARATOR
+        if confirm("nettoyage du répertoire de travail ?"):
+            patterns = ['*~', '*.pyc', '*.pyo', '*.o', '\#*', '.\#*']
+            search = ' -o '.join(['-name "%s" '%item for item in patterns])
+            os.system('find . "(" %s ")" -a -exec rm -f \{\} \; 2>/dev/null' % search)
+

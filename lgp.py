@@ -57,9 +57,7 @@ def run(args):
     parser = OptionParser()
     parser.usage = 'lgp COMMAND [options] <arg> ...'
     COMMANDS = [('prepare', 'logilab.devtools.preparedist',
-                 'process to prepare distrib (pylint, checkpkg, check vcs, etc.)'),
-                ('make', 'logilab.devtools.makedist',
-                 'process to build distrib (build, linda, lintian, piuparts, tag)'),
+                 'process to prepare distrib'),
                 ('build', 'logilab.devtools.buildpackage',
                  'build debian and source packages'),
                 ('tag', 'logilab.devtools.tagpackage',

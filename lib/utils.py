@@ -93,6 +93,7 @@ def ask(msg, options):
         try:
             answer = raw_input('%s [%s] ' % (msg, '/'.join(options)))
         except (EOFError, KeyboardInterrupt):
+            print
             sys.exit(0)
         answer = answer.strip().lower() or default.lower()
     return answer
