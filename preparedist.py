@@ -104,17 +104,16 @@ def add_options(parser):
     parser.max_args = 1
 
 
-def run(options, args):
-    projdir = osp.abspath(args and args[0] or os.getcwd())
-    os.chdir(projdir)
+def run(pkgdir, options, args):
+    os.chdir(pkgdir)
     if osp.isfile('__init__.py'):
         pkgtype = 'python'
     else:
         pkgtype = 'formation'
     try:
-        pkginfo = PackageInfo(TextReporter(sys.stderr), projdir)
+        pkginfo = PackageInfo(TextReporter(sys.stderr), pkgdir)
     except ImportError, exc:
-        sys.stderr.write("%r does not appear to be a valid package " % projdir)
+        sys.stderr.write("%r does not appear to be a valid package " % pkgdir)
         sys.stderr.write("(no __pkginfo__ found)\n")
         return
     actions = options.only or DEFAULT_ACTIONS
@@ -122,7 +121,7 @@ def run(options, args):
         if 'pylint' in actions:
             # run pylint
             print SEPARATOR
-            cond_exec('pylint --ignore doc %s' % projdir, confirm=True, retry=True)
+            cond_exec('pylint --ignore doc %s' % pkgdir, confirm=True, retry=True)
         # update COPYING (license) file
         if pkginfo.license and 'copying' in actions:
             print SEPARATOR
@@ -165,8 +164,8 @@ def run(options, args):
         print SEPARATOR
         if confirm("vérifier que l'entrepôt est à jour ?"):
             try:
-                vcs_agent = get_vcs_agent(projdir)
-                result = vcs_agent.not_up_to_date(projdir)
+                vcs_agent = get_vcs_agent(pkgdir)
+                result = vcs_agent.not_up_to_date(pkgdir)
                 if result:
                     print '\n'.join(["%s: %s"%r for r in result])
                     if not confirm('Continue ?'):

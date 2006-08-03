@@ -245,10 +245,9 @@ available checks: %s
     parser.max_args = 1
 
 
-def run(options, args):
+def run(pkgdir, options, args):
     """main function to execute check package from command line"""
-    package_dir = args and args[0] or os.getcwd()
-    debdir = join(package_dir, 'debian')
+    debdir = join(pkgdir, 'debian')
     if not isdir(debdir):
         print >> sys.stderr, "invalid package: no directory %r" % debdir
         return 1
@@ -257,6 +256,6 @@ def run(options, args):
         print "--exclude and --only can't be used together"
         return 1
     to_test = options.only or (set(DEFAULT_CHECKS) - set(options.exclude))
-    return start_checks(package_dir, options.package_info, to_test)
+    return start_checks(pkgdir, options.package_info, to_test)
 
     
