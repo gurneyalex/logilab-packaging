@@ -83,51 +83,44 @@ def get_scripts(dirname, include_bat=0):
             result.append(join('bin', filename))
     return result
 
-def cond_continue():
-    """ask confirmation, quit if N"""
-    try:
-        answer = raw_input("Continue [y/N] ? ")
-    except (EOFError, KeyboardInterrupt):
-        sys.exit(0)
-    if answer.lower() in ('n', '') :
-        sys.exit(0)
-    
-def exec_continue(cmd, separator=True):
-    if separator:
-        print '+'*72
-        print cmd
-    if os.system(cmd):
-        cond_continue()
-        
-def exec_continue_retry(cmd):
+
+def ask(msg, options): 
+    default = [opt for opt in options if opt.isupper()]
+    assert len(default) == 1, "should have one (and only one) default value"
+    default = default[0]
+    answer = None
+    while str(answer) not in options.lower():
+        try:
+            answer = raw_input('%s [%s] ' % (msg, '/'.join(options)))
+        except (EOFError, KeyboardInterrupt):
+            sys.exit(0)
+        answer = answer.strip().lower() or default.lower()
+    return answer
+
+def confirm(msg):
+    return ask(msg, 'Yn') == 'y'
+
+def cond_exec(cmd, confirm=False, retry=False):
+    """demande confirmation, retourne 0 si oui, 1 si non"""
+    # ask confirmation before execution
+    if confirm:
+        answer = ask("Execute %s ?" % cmd, 'Ynq')
+        if answer == 'q':
+            sys.exit(0)
+        if answer == 'n':
+            return False
     while True:
-        status = os.system(cmd)
-        if status:
-            try:
-                ans = raw_input('Continue? [y/N/r] ').strip().lower()
-            except (EOFError, KeyboardInterrupt):
-                sys.exit(0)
-            if ans[0] == 'y':
-                return
-            elif ans[0] == 'r':
-                continue
+        # if execution failed ask wether to continue or retry
+        if os.system(cmd):
+            if retry:
+                answer = ask('Continue ?', 'yNr')
+            else:
+                answer = ask('Continue ?', 'yN')
+            if answer == 'y':
+                return True
+            elif retry and answer == 'r':
+                continue 
             else:
                 sys.exit(0)
         else:
-            return
-
-    
-def cond_exec(cmd):
-    """demande confirmation, retourne 0 si oui, 1 si non"""
-    try:
-        answer = raw_input("Execute %s [Y/n/q] ? " % cmd)
-    except (EOFError, KeyboardInterrupt):
-        sys.exit(0)
-    if answer == 'q':
-        sys.exit(0)
-    if answer == 'n':
-        return False
-    return True
-
-
-
+            return False

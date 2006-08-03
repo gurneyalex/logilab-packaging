@@ -206,9 +206,9 @@ class ChangeLog:
         entry.date = today
         entry.version = version
 
-    def extract(self, version):
+    def extract(self, version='', stream=sys.stdout):
         """extract messages for a given entry"""
-        self.get_entry(version).write()
+        self.get_entry(version).write(stream)
 
     def update(self, create=None):
         """update the change log by extracting infos from cvs
