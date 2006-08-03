@@ -84,7 +84,7 @@ def dump_values(pkginfo, values):
                 print '%s: %s' % (opt_name, value)
             print
 
-def help(values):
+def print_list(values=()):
     """get help for a list of variables from the package info
     """
     if values:
@@ -115,10 +115,10 @@ def help(values):
 
 
 def add_options(parser):
-    parser.usage = 'lgp info [options] <args>'
-    parser.add_option("--dump", help="dump package info")
-    parser.add_option("--check", action="store_true", default=False,
-                      help="check module info")
+    parser.usage = "lgp info [options] <args>"
+    parser.add_option("-f", "--field", help="print field value read from package info")
+    parser.add_option("--list", action="store_true", default=False,
+                      help="list all pkginfo fields")
     parser.max_args = 1
 
 
@@ -126,13 +126,12 @@ def run(options, args):
     """extract package info according to command line arguments
     """
     package_dir = args and args[0] or os.getcwd()
-    if options.check:
-        REPORTER.reset()
-        return check_info_module(REPORTER, package_dir)
-    elif options.dump:
+    if options.list:
+        print_list()
+    elif options.field:
         try:
             pi = PackageInfo(REPORTER, package_dir)
-            dump_values(pi, [options.dump])
+            dump_values(pi, [options.field])
         except ImportError:
             sys.stderr.write("%r does not appear to be a valid package " % package_dir)
             sys.stderr.write("(no __pkginfo__ found)\n")
