@@ -35,7 +35,6 @@ recursive-include test/data *
 
 include README
 include COPYING
-include TODO 
 include ChangeLog
 include DEPENDS
 include RECOMMENDS
