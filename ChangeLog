@@ -10,6 +10,7 @@ ChangeLog for logilab.devtools
     * preparedistrib: added retry option when step failed (#8862)
     * debianize: removed (#14473)
     * debian package refactor (#14476)
+    * lgp: one program to rule them all (#14467)
 
 2006-05-31  --  0.9.0
     * buildpackage: offers to test the packages with piuparts
