@@ -42,7 +42,6 @@ from logilab.common.shellutils import mv, cp, rm
 from logilab.common.fileutils import ensure_mode
 
 from logilab.devtools.lib.pkginfo import PackageInfo
-from logilab.devtools.debhdlrs import get_package_handler
 
 BUILD_COMMAND = 'fakeroot make -f debian/rules binary'
 
