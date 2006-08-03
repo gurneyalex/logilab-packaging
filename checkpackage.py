@@ -221,7 +221,6 @@ def start_checks(package_dir, package_info='__pkginfo__', checks=DEFAULT_CHECKS)
         except KeyError:
             reporter.warning(None, None, 'skipping invalid check: %r' % check)
             continue
-        print "Testing ", check
         try:
             check_func(reporter, package_dir, package_info)
         except TypeError:
