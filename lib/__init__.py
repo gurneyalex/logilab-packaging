@@ -37,8 +37,6 @@ REVERSE_SEVERITIES = {
     FATAL : 'FATAL'
     }
 
-__builtins__.update(SEVERITIES)
-
 class TextReporter:
     """ report messages and layouts in plain text
     """
@@ -60,3 +58,33 @@ class TextReporter:
         self.counts[severity] += 1
         self.out.write('%s:%s:%s:%s\n' % (REVERSE_SEVERITIES[severity][0], path,
                                           line or '', msg))
+
+    # convenience methods to avoid importing level constants
+    def warning(self, path, line, msg):
+        self.log(WARNING, path, line, msg)
+
+    def error(self, path, line, msg):
+        self.log(ERROR, path, line, msg)
+
+    def info(self, path, line, msg):
+        self.log(INFO, path, line, msg)
+
+    def fatal(self, path, line, msg):
+        self.log(FATAL, path, line, msg)
+
+    def errors(self):
+        return self.counts[ERROR]
+    errors = property(errors)
+    
+    def warnings(self):
+        return self.counts[WARNING]
+    warnings = property(warnings)
+
+    def fatals(self):
+        return self.counts[FATAL]
+    fatals = property(fatals)
+
+    def infos(self):
+        return self.counts[INFO]
+    infos = property(infos)
+    
