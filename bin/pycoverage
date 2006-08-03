@@ -1,4 +1,7 @@
 #!/usr/bin/python
 import sys
-from logilab.devtools import coverage
+try:
+    from logilab.devtools.lib import coverage
+except:
+    import coverage
 coverage.run(sys.argv[1:])
