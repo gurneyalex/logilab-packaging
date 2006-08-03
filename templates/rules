@@ -11,11 +11,11 @@
 # Uncomment this to turn on verbose mode.
 #export DH_VERBOSE=1
 
-%RULE_HEAD%
+%(RULE_HEAD)s
 
 build: build-stamp
 build-stamp: 
-	dh_testdir%BUILD_PYTHON%
+	dh_testdir%(BUILD_PYTHON)s
 	touch build-stamp
 
 clean: 
@@ -31,13 +31,13 @@ install: build
 	dh_testdir
 	dh_testroot
 	dh_clean -k
-	dh_installdirs%INSTALL_PYTHON%%INSTALL_ALT%%SUBPACKAGE_INIT%%INSTALL_ELISP%%INSTALL_TEST%
+	dh_installdirs%(INSTALL_PYTHON)s%(INSTALL_ALT)s%(SUBPACKAGE_INIT)s%(INSTALL_ELISP)s%(INSTALL_TEST)s
 
 
-%BINARY_INDEP%
+%(BINARY_INDEP)s
 
-%BINARY_ARCH%
+%(BINARY_ARCH)s
 
-binary: %BINARY_TARGET%
-.PHONY: build clean binary %BINARY_TARGET%
+binary: %(BINARY_TARGET)s
+.PHONY: build clean binary %(BINARY_TARGET)s
 

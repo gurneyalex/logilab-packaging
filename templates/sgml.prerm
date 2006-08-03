@@ -1,6 +1,6 @@
 # Remove SGML catalog entries
-CENTRALCAT=/etc/sgml/%DEBNAME%.cat
-ORDCAT="%CATALOG%"
+CENTRALCAT=/etc/sgml/%(DEBNAME)s.cat
+ORDCAT="%(CATALOG)s"
 if [ -f $CENTRALCAT ]; then
     if [ "$1" = remove ]; then
 	update-catalog --quiet --remove --super $CENTRALCAT

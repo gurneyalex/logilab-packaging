@@ -1,7 +1,7 @@
 #!/bin/sh -e
 
 FLAVOR=$1
-PACKAGE=%PACKAGE%
+PACKAGE=%(PACKAGE)s
 
 if [ ${FLAVOR} != emacs ]; then
     if test -x /usr/sbin/install-info-altdir; then
