@@ -14,13 +14,13 @@
 # this program; if not, write to the Free Software Foundation, Inc.,
 # 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 """
-%MODNAME% packaging information
+%(MODNAME)s packaging information
 """
 
 __revision__ = "$Id: __pkginfo__.py,v 1.5 2003-11-14 12:41:37 syt Exp $"
 
 # package name
-modname = '%MODNAME%'
+modname = '%(MODNAME)s'
 
 # release version
 numversion = [0, 1, 0]

@@ -1,8 +1,8 @@
-%CONTENT%
+%(CONTENT)s
 
 # precompile python files
-VERSION=%PYVER%
-PACKAGEDIR=%PACKAGEDIR%
+VERSION=%(PYVER)s
+PACKAGEDIR=%(PACKAGEDIR)s
 case "$1" in
     configure|abort-upgrade|abort-remove|abort-deconfigure)
     ;;
