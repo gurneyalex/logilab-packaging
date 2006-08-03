@@ -59,7 +59,6 @@ scripts = [
     'bin/changelog',
     'bin/update_gettext.sh',
     'bin/lgp',
-    'bin/stp',
     ] 
 
 # debianize info
