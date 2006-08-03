@@ -26,7 +26,7 @@ from os.path import exists, abspath
 
 from logilab.common.modutils import get_module_files
 
-from logilab.devtools.lib.utils import cond_exec
+from logilab.devtools.lib.utils import cond_exec, confirm
 from logilab.devtools.lib.manifest import read_manifest_in
 from logilab.devtools.lib import TextReporter
 from logilab.devtools.lib.pkginfo import PackageInfo
@@ -48,7 +48,7 @@ def tag_package(package_dir, vcs_agent=None):
         vcs_agent = vcs_agent or get_vcs_agent('.')
         # conditional tagging
         release_tag = pi.release_tag()
-        if cond_exec("Add tag %s on %s" % (release_tag, package_dir)):
+        if confirm("Add tag %s on %s ?" % (release_tag, package_dir)):
             manifest_files = read_manifest_in(REPORTER, dirname='.',
                                               exclude_patterns=(r'/(RCS|CVS|\.svn|\.hg)/.*',
                                                                 r'(.*\.pyc|.*\.pyo|.*\.html|.*\.pdf)'))
@@ -58,7 +58,7 @@ def tag_package(package_dir, vcs_agent=None):
         package_dir = 'debian'
         if exists(package_dir):
             release_tag = pi.debian_release_tag()
-            if cond_exec("Add tag %s on %s" % (release_tag, package_dir)):
+            if confirm("Add tag %s on %s ?" % (release_tag, package_dir)):
                 os.system(vcs_agent.tag(package_dir, release_tag))
     finally:
         os.chdir(cwd)
