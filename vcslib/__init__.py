@@ -36,7 +36,7 @@ from os.path import join, exists, isfile, isdir, dirname, basename
 from logilab.devtools.vcslib.interfaces import IVCSFile, IVCSAgent
 from logilab.devtools.vcslib.node import BaseNode
 
-BASE_EXCLUDE = ('CVS', '.svn', '.hg')
+BASE_EXCLUDE = ('CVS', '.svn', '.hg', 'bzr')
 
 VCS_IGNORED    = 0
 VCS_NOVERSION  = 1

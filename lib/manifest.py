@@ -94,7 +94,7 @@ def get_manifest_files(dirname=os.getcwd(), junk_extensions=JUNK_EXTENSIONS,
                     join(prefix, 'debian'),
 		    # do not match mercurial files
                     join(prefix, '.hgignore'), join(prefix, '.hg'),
-                    join(prefix, '.hgrc'),
+                    join(prefix, '.hgtags'), join(prefix, '.hgrc'),
                     )
     result = []
     if (exists(join(dirname, '__init__.py')) or
