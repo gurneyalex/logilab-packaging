@@ -39,7 +39,7 @@ class OptionParser(optparse.OptionParser):
     def __init__(self, *args, **kwargs):
         optparse.OptionParser.__init__(self, *args, **kwargs)
         self._commands = {}
-        self.min_args, self.max_args = 0, 0
+        self.min_args, self.max_args = 0, 1
         
     def add_command(self, name, module, help=''):
         self._commands[name] = (module, help)
