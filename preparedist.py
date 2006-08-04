@@ -45,10 +45,13 @@ def install_copying(license):
 
 def runtests(projdir=os.getcwd()):
     """runs unit tests"""
-    if osp.isdir('test'):
-        os.chdir('test')
-        cond_exec('python runtests.py', confirm=True, retry=True)
-        os.chdir(projdir)
+    testdirs = ('test', 'tests')
+    for testdir in testdirs:
+        if osp.isdir(testdir):
+            os.chdir(testdir)
+            cond_exec('python runtests.py', confirm=True, retry=True)
+            os.chdir(projdir)
+            break
 
 def close_changelog(projdir=os.getcwd()):
     """closes the projects's ChangeLog"""
