@@ -20,7 +20,7 @@
 
 import os
 import stat
-from os.path import abspath, isdir, expanduser
+from os.path import abspath, isdir, expanduser, isfile
 
 from logilab.common.shellutils import mv, cp, rm
 from logilab.common.fileutils import ensure_mode
@@ -30,6 +30,7 @@ from logilab.devtools.lib.pkginfo import PackageInfo
 from logilab.devtools.lib.changelog import DebianChangeLog
 
 SEPARATOR = '+' * 72
+
 
 def build_debian(pkg_dir, dest_dir, pdebuild_options):
     """build debian package and move them in <dest_dir>
@@ -71,12 +72,16 @@ def build_debian(pkg_dir, dest_dir, pdebuild_options):
     # the place of those files depends of the command used to build the package
     try:
         if debuilder.startswith('pdebuild'):
+            source_dist = '%s_%s.tar.gz' % (upstream_name, debian_version)
             rm('../%s_%s.diff.gz' % (debian_name, debian_version))
             rm('../%s_%s.dsc' % (debian_name, debian_version))
             rm('../%s_%s*.changes' % (debian_name, debian_version))
+            if isfile('../%s' % source_dist):
+                rm('../%s' % source_dist)
             if not debuilder.startswith('pdebuild --buildresult'):
                 for package in packages:
                     cp('/var/cache/pbuilder/result/%s' % package, dest_dir)
+                cp('/var/cache/pbuilder/result/%s' % source_dist, dest_dir)
             cp('%s/%s_%s.orig.tar.gz' % (dest_dir, debian_name, upstream_version),
                '%s/%s-%s.tar.gz' % (dest_dir, upstream_name, upstream_version))
         else: # fakeroot
