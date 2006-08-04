@@ -32,7 +32,7 @@ from logilab.devtools.lib.changelog import DebianChangeLog
 SEPARATOR = '+' * 72
 
 
-def build_debian(pkg_dir, dest_dir, pdebuild_options):
+def build_debian(pkg_dir, dest_dir, pdebuild_options=''):
     """build debian package and move them in <dest_dir>
     
     the debian package to build is expected to be in the current working
@@ -86,7 +86,7 @@ def build_debian(pkg_dir, dest_dir, pdebuild_options):
                '%s/%s-%s.tar.gz' % (dest_dir, upstream_name, upstream_version))
         else: # fakeroot
             for package in binary_packages:
-                mv('../*%s' % package, dest_dir)
+                mv('../%s*' % package, dest_dir)
             mv('../%s_%s.orig.tar.gz' % (debian_name, upstream_version), dest_dir)
             mv('../%s-%s.tar.gz' % (upstream_name, upstream_version), dest_dir)
     except Exception, exc:
