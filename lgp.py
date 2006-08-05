@@ -17,63 +17,7 @@
 
 import sys
 import os, os.path as osp
-import optparse
-
-## class Command:
-
-##     def __init__(self, module=None, run=None, add_opt=None):
-##         self.module = module
-##         self.run = run
-##         self.add_options = add_opt
-
-##     def get_(self):
-##         if self.module:
-##             exec('from %s import run, add_options'%self.module)
-##             return run, add_options:
-##         else:
-##             return self.run, self.add_options
-
-
-class OptionParser(optparse.OptionParser):
-
-    def __init__(self, *args, **kwargs):
-        optparse.OptionParser.__init__(self, *args, **kwargs)
-        self._commands = {}
-        self.min_args, self.max_args = 0, 1
-        
-    def add_command(self, name, module, help=''):
-        self._commands[name] = (module, help)
-
-
-    def print_main_help(self):
-        optparse.OptionParser.print_help(self)
-        print '\ncommands:'
-        for cmdname, (_, help) in self._commands.items():
-            print '% 10s - %s' % (cmdname, help)
-        
-
-    def parse_command(self, args):
-        if len(args) == 0:
-            self.print_main_help()
-            sys.exit(1)
-        cmd = args[0]
-	args = args[1:]
-        if cmd not in self._commands:
-            if cmd in ('-h', '--help'):
-                self.print_main_help()
-                sys.exit(0)
-            self.error('unknow command')
-        self.prog = '%s %s' % (self.prog, cmd)
-        module, help = self._commands[cmd]
-        # optparse inserts self.description between usage and options help
-        self.description = help
-        exec('from %s import run, add_options'%module)
-        add_options(self)
-        (options, args) = self.parse_args(args)        
-        if not (self.min_args <= len(args) <= self.max_args):
-            self.error('incorrect number of arguments')
-        return run, options, args
-
+from logilab.common.optparser import OptionParser
 
 def run(args):
     parser = OptionParser()
