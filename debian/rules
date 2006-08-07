@@ -46,7 +46,7 @@ install: build
 	mv debian/logilab-packaging/usr/bin/cvslog debian/python-vcslib/usr/bin
 	mv debian/logilab-packaging/usr/bin/cvstatus debian/python-vcslib/usr/bin
 	# move pycoverage and coverage.py
-	mv debian/logilab-packaging/usr/lib/${PYVER}/site-packages/logilab/devtools/lib/coverage.py debian/pycoverage/usr/lib/${PYVER}/site-packages/coverage/__init__.py
+	mv debian/logilab-packaging/usr/lib/${PYVER}/site-packages/logilab/devtools/lib/coverage.py debian/pycoverage/usr/lib/${PYVER}/site-packages/coverage.py
 	mv debian/logilab-packaging/usr/bin/pycoverage debian/pycoverage/usr/bin
 
 	# XXX: tests missing
@@ -67,9 +67,9 @@ binary-indep: build install
 	dh_installexamples -i
 	dh_installdocs -i README changelog.gz
 	dh_installman -i
-	dh_installemacsen
-	dh_pycentral -i
-	dh_python -i
+	dh_installemacsen -plogilab-elisp
+	dh_pycentral -i -Nlogilab-elisp
+	dh_python -i -Nlogilab-elisp
 	dh_link -i
 	dh_compress -i -X.py -X.ini -X.xml -Xtest
 	dh_fixperms -i
