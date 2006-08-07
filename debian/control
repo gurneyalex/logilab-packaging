@@ -2,11 +2,10 @@ Source: devtools
 Section: python
 Priority: optional
 Maintainer: Sylvain Thénault <sylvain.thenault@logilab.fr> 
-Uploaders: Alexandre Fayolle <afayolle@debian.org>
-Build-Depends: debhelper (>= 5.0.37.1), python-all, python-central
+Uploaders: Alexandre Fayolle <afayolle@debian.org>, Adrien Di Mascio <adrien.dimascio@logilab.fr>
+Build-Depends: debhelper (>= 5.0.37.1), python-dev (>=2.3.5-7), python-central
 Standards-Version: 3.7.2
 XS-Python-Version: current
-
 
 Package: python-vcslib
 Architecture: all
@@ -18,8 +17,6 @@ Description: set of development tools used at Logilab for source management
   * cvs/svn/mercurial utilities
  .
  Homepage: http://www.logilab.org/projects/devtools
-
-
 
 Package: logilab-packaging
 Architecture: all
@@ -34,8 +31,6 @@ Description: set of development tools used at Logilab
  .
  Homepage: http://www.logilab.org/projects/devtools
 
-
-
 Package: pycoverage
 Architecture: all
 Recommends: emacsen-common
@@ -45,7 +40,6 @@ Description: python code coverage tool
  tool primary used to compute test coverage
  .
  Homepage: http://www.logilab.org/projects/devtools
-
 
 Package: logilab-elisp
 Architecture: all
@@ -57,4 +51,3 @@ Description: emacs lisp code for logilab development tools
   * a small set of emacs shortcuts used at logilab
  .
  Homepage: http://www.logilab.org/projects/devtools
-
