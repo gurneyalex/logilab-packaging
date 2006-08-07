@@ -1,3 +1,10 @@
+devtools (0.10.1-1) unstable; urgency=low
+
+  * moved coverage.py in its own python package
+  * new upstream release
+
+ -- Adrien.DiMascio <Adrien.DiMascio@logilab.fr>  Fri,  4 Aug 2006 18:22:41 +0200
+
 devtools (0.10.0-1) unstable; urgency=low
 
   * splitted devtools into 3 binary packages (python-vcslib, pycoverage,
