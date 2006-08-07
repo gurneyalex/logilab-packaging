@@ -1,6 +1,10 @@
 ChangeLog for logilab.devtools
 ==============================
 
+2006-08-04  -- 0.10.1
+    * fixed silly NameError
+
+
 2006-08-03  -- 0.10.0 
     * fixed spelling of dependant/dependent
     * Move to new Python packaging policy

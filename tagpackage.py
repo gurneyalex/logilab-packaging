@@ -44,12 +44,12 @@ def tag_package(package_dir, vcs_agent=None):
         except ImportError:
             print >> sys.stderr, "%r does not appear to be a valid package \
 (no __pkginfo__ found)" % package_dir
-            return
+            return 1
         vcs_agent = vcs_agent or get_vcs_agent('.')
         # conditional tagging
         release_tag = pi.release_tag()
         if confirm("Add tag %s on %s ?" % (release_tag, package_dir)):
-            manifest_files = read_manifest_in(REPORTER, dirname='.',
+            manifest_files = read_manifest_in(TextReporter(sys.stderr), dirname='.',
                                               exclude_patterns=(r'/(RCS|CVS|\.svn|\.hg)/.*',
                                                                 r'(.*\.pyc|.*\.pyo|.*\.html|.*\.pdf)'))
             python_files = get_module_files(package_dir)
@@ -60,6 +60,7 @@ def tag_package(package_dir, vcs_agent=None):
             release_tag = pi.debian_release_tag()
             if confirm("Add tag %s on %s ?" % (release_tag, package_dir)):
                 os.system(vcs_agent.tag(package_dir, release_tag))
+        return 0
     finally:
         os.chdir(cwd)
 
@@ -68,5 +69,5 @@ def add_options(parser):
     pass
 
 def run(pkgdir, options, args):
-    tag_package(pkgdir)
+    return tag_package(pkgdir)
 
