@@ -1,6 +1,11 @@
 ChangeLog for logilab.devtools
 ==============================
 
+  --  
+    * fixed silly NameError
+    * moved optparse commands extension into logilab-common
+
+	
 2006-08-04  -- 0.10.1
     * fixed silly NameError
 
