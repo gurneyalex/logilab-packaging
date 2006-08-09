@@ -1,3 +1,10 @@
+devtools (0.10.1-2) unstable; urgency=low
+
+  * conflicts / replaces devtools
+  * re-install coverage.py as a single module
+
+ -- Adrien.DiMascio <Adrien.DiMascio@logilab.fr>  Wed,  9 Aug 2006 12:51:00 +0200
+
 devtools (0.10.1-1) unstable; urgency=low
 
   * moved coverage.py in its own python package
@@ -119,7 +126,7 @@ devtools (0.5.4-1) unstable; urgency=low
   * install the new pycoverage's man page
   * new upstream release
 
- -- Sylvain Thénault <sylvain.thenault@logilab.fr>  Wen, 3 Nov 2004 10:24:58 +0200
+ -- Sylvain Thénault <sylvain.thenault@logilab.fr>  Wed, 3 Nov 2004 10:24:58 +0200
 
 devtools (0.5.3-1) unstable; urgency=low
 
