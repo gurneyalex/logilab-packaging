@@ -109,7 +109,7 @@ def build_debian(pkg_dir, dest_dir, pdebuild_options='', origpath=None):
             if origpath:
                 cp(origpath, tmpdir)
             else:
-                origpath = join(tmpdir, '%s_%s.orig.tar.gz' % (upstream_name, upstream_version))
+                origpath = join(tmpdir, '%s_%s.orig.tar.gz' % (debian_name, upstream_version))
                 os.system('cd %s && tar czf %s %s' % (tmpdir, origpath, '%s-%s'% (debian_name, upstream_version)))
                 
             ## 4/ make
@@ -121,7 +121,9 @@ def build_debian(pkg_dir, dest_dir, pdebuild_options='', origpath=None):
                           '(return status: %s)' % status
                 return 1
 
-            # result
+            # move result
+            if not isdir(dest_dir):
+                os.mkdir(dest_dir)
             cp(origpath, dest_dir)
             if move_result(dest_dir, info, debuilder):
                 return 1
