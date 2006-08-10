@@ -22,7 +22,7 @@ import os
 import stat
 import tempfile
 import shutil
-from os.path import abspath, isdir, expanduser, isfile, join
+from os.path import abspath, isdir, expanduser, isfile, join, isabs
 
 from logilab.common.shellutils import mv, cp, rm
 from logilab.common.fileutils import ensure_mode, export
@@ -80,7 +80,11 @@ def build_debian(pkg_dir, dest_dir, pdebuild_options='', origpath=None):
     
     the debian package to build is expected to be in the current working
     directory
-    """ 
+    """
+    assert isabs(pkg_dir), "build_debian requires pkg_dir to be an absolute path"
+    assert isabs(dest_dir), "build_debian requires dest_dir to be an absolute path"
+    if origpath is not None:
+        assert isabs(origpath), "build_debian requires origpath to be an absolute path"
     # 0/ retrieve package information
     os.chdir(pkg_dir)
     pkginfo = PackageInfo()
@@ -91,7 +95,6 @@ def build_debian(pkg_dir, dest_dir, pdebuild_options='', origpath=None):
     info = (upstream_name, upstream_version, debian_name, debian_version)
 
     ## 1/ ensure project directory has debian/ and debian/rules
-    os.chdir(pkg_dir)
     if not isdir('debian'):
         print 'No "debian" directory'
         return 1
@@ -147,8 +150,9 @@ def add_options(parser):
 
 def run(pkgdir, options, args):
     """main"""
-    if build_debian(pkgdir, options.distdir, options.debbuildopts,
-                    options.orig):
+    if build_debian(pkgdir, abspath(options.distdir),
+                    options.debbuildopts,
+                    abspath(options.orig)):
         return 1
     # lintian
     print SEPARATOR
