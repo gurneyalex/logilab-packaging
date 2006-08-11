@@ -29,6 +29,8 @@ import os
 from os.path import abspath, isdir, join, dirname
 import datetime
 
+from logilab.common.compat import sorted, reversed
+
 from logilab.devtools.vcslib import VCS_UPTODATE, VCS_MODIFIED, \
      VCS_MISSING, VCS_NEW, VCS_CONFLICT, VCS_NOVERSION, VCS_IGNORED, \
      VCS_REMOVED, VCS_NEEDSPATCH, IVCSAgent
@@ -225,6 +227,9 @@ class HGAgent:
         changeiter, getchange, matchfn = walkchangerevs(ui, repo, (), opts)
         from_date = datetime.date(*[int(x) for x in from_date.split('-')])
         to_date = datetime.date(*[int(x) for x in to_date.split('-')])
+
+        infos = []
+        msg_template = '%s by %s on %s: %s'
         for st, rev, fns in changeiter:
             if st == 'add':
                 changenode = repo.changelog.node(rev)
@@ -233,10 +238,11 @@ class HGAgent:
                     br = repo.branchlookup([repo.changelog.node(rev)])
                 rev, date, user, summary = changeset_info(repo, rev, changenode)
                 if from_date <= date <= to_date:
-                    msg = '%s by %s on %s: %s' % (rev, user, date, summary)
                     # FIXME: lines information
-                    yield '', msg, 1, 0
-
+                    infos.append((rev, user, date, summary))
+                    # msg = '%s by %s on %s: %s' % (rev, user, date, summary)
+        for info in reversed(sorted(infos)):
+            yield '', msg_template % info, 1, 0
 
 
 # HGAgent is a stateless object, transparent singleton thanks to its __call__
