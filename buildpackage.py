@@ -152,9 +152,12 @@ def add_options(parser):
 
 def run(pkgdir, options, args):
     """main"""
+    if options.orig:
+        origdir = abspath(options.orig)
+    else:
+        origdir = None
     if build_debian(pkgdir, abspath(options.distdir),
-                    options.debbuildopts,
-                    abspath(options.orig)):
+                    options.debbuildopts, origdir):
         return 1
     # lintian
     print SEPARATOR
