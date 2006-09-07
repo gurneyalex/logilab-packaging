@@ -25,9 +25,11 @@ __revision__ = '$Id$'
 __metaclass__ = type
 __all__ = ['HGAgent', 'find_repository']
 
+import sys
 import os
 from os.path import abspath, isdir, join, dirname
 import datetime
+from cStringIO import StringIO
 
 from logilab.common.compat import sorted, reversed
 
@@ -84,26 +86,33 @@ class HGAgent:
         :return:
           a list of tuple (file, status) describing files which are not up to date
         """
-        parentui = Ui()
-        repo = Repository(parentui, path=find_repository(filepath))
-        localui = repo.ui
-        remote = Repository(parentui, localui.expandpath('default'))
-        changes = []
-        for nid in repo.findincoming(remote):
-            manifest, user, timeinfo, files, desc = remote.changelog.read(nid)
-            for filename in files:
-                # .ljust(15)
-                changes.append(('incoming', filename))
-        for nid in repo.findoutgoing(remote):
-            manifest, user, timeinfo, files, desc = repo.changelog.read(nid)
-            for filename in files:
-                # .ljust(15)
-                changes.append(('outgoing', filename))
-        statuslist = ('modified', 'added', 'removed', 'deleted', 'unknown')
-        return changes + [(status, filename)
-                          for status, files in zip(statuslist, repo.changes())
-                          for filename in files]
-        
+        # we don't want mercurial's stdout to interfere with ours
+        sys.stdout = StringIO()
+        try:
+            parentui = Ui()
+            repo = Repository(parentui, path=find_repository(filepath))
+            localui = repo.ui
+            remote = Repository(parentui, localui.expandpath('default'))
+            changes = []
+            # XXX: httprepository doesn't have changelog attribute
+            if hasattr(remote, 'changelog'):
+                for nid in repo.findincoming(remote):
+                    manifest, user, timeinfo, files, desc = remote.changelog.read(nid)
+                    for filename in files:
+                        # .ljust(15)
+                        changes.append(('incoming', filename))
+                for nid in repo.findoutgoing(remote):
+                    manifest, user, timeinfo, files, desc = repo.changelog.read(nid)
+                    for filename in files:
+                        # .ljust(15)
+                        changes.append(('outgoing', filename))
+            statuslist = ('modified', 'added', 'removed', 'deleted', 'unknown')
+            return changes + [(status, filename)
+                              for status, files in zip(statuslist, repo.changes())
+                              for filename in files]
+        finally:
+            sys.stdout = sys.__stdout__
+            
     def edited(self, filepath):
         """get a list describing files which are currentlyedited under
         the given path
