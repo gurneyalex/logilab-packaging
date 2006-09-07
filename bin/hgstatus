@@ -61,13 +61,14 @@ def parse_command_line():
     else:
         directories = [os.getcwd()]
     skipped = set()
+    if options.quiet:
+        # at least skip unknown file in quiet mode
+        # if -I is also passed, then 'incoming' will be added in the set
+        skipped.add('unknown')
     if not options.unknown:
         skipped.add('unknown')
     if not options.incoming:
         skipped.add('incoming')
-    if options.quiet:
-        # in quiet mode, only unknown files are skipped
-        skipped = set(['unknown'])
     return skipped, options.quiet, directories
 
 
