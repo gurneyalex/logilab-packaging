@@ -1,0 +1,64 @@
+.TH pycoverage 1 "2004-09-10" "logilab devtools"
+
+.SH NAME
+.B pycoverage 
+\- calculates coverage of given module. Produces report and listings of covered lines
+
+
+.SH SYNOPSIS
+.B  pycoverage -\fICOMMAND
+[
+.I OPTIONS
+] [
+.I args
+]
+
+.SH DESCRIPTION
+Part of logilab's devtools.
+
+.SH COMMANDS
+pycoverage \fB-x\fR MODULE.py [ARG1 ARG2 ...]
+    Execute module, passing the given command-line arguments, collecting
+    coverage data.
+
+pycoverage \fB-e\fR
+    Erase collected coverage data.
+
+pycoverage \fB-r\fR [\fB-m\fR] DIR1 FILE1 FILE2 ...
+    Report on the statement coverage for the given files.  With the -m
+    option, show line numbers of the statements that weren't executed.
+
+pycoverage \fB-a\fR [\fB-d\fR dir] DIR1 FILE1 FILE2 ...
+    Make annotated copies of the given files, marking statements that
+    are executed with > and statements that are missed with !.  With
+    the -d option, make the copies in that directory.  Without the -d
+    option, make each copy in the same directory as the original.
+
+Coverage data is saved in the file .coverage by default.  Set the
+COVERAGE_FILE environment variable to save it somewhere else.
+
+.SH SEE ALSO
+/usr/share/doc/pythonX.Y-devtools/
+
+.SH COPYRIGHT 
+(c) 2004 Logilab. General Public Licence.
+
+This program is free software; you can redistribute it and/or modify 
+it under the terms of the GNU General Public License as published 
+by the Free Software Foundation; either version 2 of the License, 
+or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful, 
+but WITHOUT ANY WARRANTY; without even the implied warranty of 
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License 
+along with this program; if not, write to the Free Software 
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, 
+MA 02111-1307 USA.
+.SH BUGS 
+Full listing at http://intranet.logilab.fr/jpl
+
+.SH AUTHOR
+Logilab <contact@logilab.fr>

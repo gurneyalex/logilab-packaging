@@ -1,0 +1,83 @@
+#!/usr/bin/env python
+
+"""finds (recursively) each mercurial repository in a directory
+and reports if it has some incoming / outgoing / uncommited changes
+
+/!\ : http repositories might not be handled correctly
+/!\ : nested repositories are skipped (only topmost
+      repository will be checked)
+
+if no directory is provided, the script will use the current directory
+"""
+
+# XXX: with a little more work, this script might also work with CVS and SVN
+
+import sys
+import os, os.path as osp
+from optparse import OptionParser
+
+from logilab.common.compat import sorted, set
+from logilab.devtools.vcslib import get_vcs_agent
+
+def check(directory, skipped=(), quietmode=False):
+    """walks in directory and check each repo's status"""
+    for root, dirs, files in os.walk(directory):
+        if osp.isdir(osp.join(root, '.hg')):
+            vcsagent = get_vcs_agent(root)
+            try:
+                statusinfo = [(status, filename)
+                              for status, filename in vcsagent.not_up_to_date(root)
+                              if status not in skipped]
+                if statusinfo:
+                    print "***** Project %s not up-to-date:" % osp.basename(root)
+                    if not quietmode:
+                        for status, filename in sorted(statusinfo):
+                            if status in skipped:
+                                continue # skip unknown files
+                            print "%s: %s" % (status.ljust(10), filename)
+            except Exception, exc:
+                print "An error occured while checking repo", root
+                print exc
+            dirs[:] = [] # don't consider nested mercurial repositories
+
+
+
+## command line / main routine ################################################
+def parse_command_line():
+    parser = OptionParser()
+    # parser.set_description(__doc__)
+    parser.set_usage(__doc__) # avoid description reformatting
+    parser.add_option('-I', '--no-incoming',
+                      help="do not show incoming message",
+                      dest="incoming", default=True, action="store_false")
+    parser.add_option('-u', '--show-unknown', help="show unknown files",
+                      dest="unknown", default=False, action="store_true")
+    parser.add_option('-q', '--quiet',
+                      help="quiet mode (don't show file details)",
+                      dest="quiet", default=False, action="store_true")
+    options, args = parser.parse_args()
+    if args:
+        directories = [osp.abspath(path) for path in args]
+    else:
+        directories = [os.getcwd()]
+    skipped = set()
+    if options.quiet:
+        # at least skip unknown file in quiet mode
+        # if -I is also passed, then 'incoming' will be added in the set
+        skipped.add('unknown')
+    if not options.unknown:
+        skipped.add('unknown')
+    if not options.incoming:
+        skipped.add('incoming')
+    return skipped, options.quiet, directories
+
+
+def run():
+    skipped, quietmode, directories = parse_command_line()
+    for directory in directories:
+        check(directory, skipped, quietmode)
+    
+    
+if __name__ == '__main__':
+    run()
+    

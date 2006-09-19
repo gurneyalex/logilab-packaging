@@ -1,0 +1,7 @@
+# Install SGML catalog entries
+CENTRALCAT=/etc/sgml/%(DEBNAME)s.cat
+ORDCAT="%(CATALOG)s"
+if [ "$1" = configure ] ; then
+    update-catalog --quiet --add $CENTRALCAT /usr/share/sgml/$ORDCAT
+    update-catalog --quiet --add --super $CENTRALCAT
+fi

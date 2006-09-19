@@ -1,0 +1,13 @@
+This package was debianized by %(DEBIANIZER)s <%(DEBIANIZER_EMAIL)s>  Sat, 13 Apr 2002 19:05:23 +0200.
+
+%(UPSTREAM_FTP)s
+
+Upstream Author: 
+
+  %(UPSTREAM_AUTHOR)s
+
+Copyright:
+
+%(COPYRIGHT)s
+
+%(LICENSE)s

@@ -1,0 +1,43 @@
+L'utilitaire *checkpackage*
+===========================
+
+:Author: Sylvain Thénault
+:Organization: Logilab
+:Version: $Revision: 1.1 $
+:Date: $Date: 2003-09-19 11:50:08 $
+
+.. contents::
+
+
+Description
+```````````
+Cet utilitaire vérifie la structure et les fichiers de configuration
+du paquet (__pkginfo__.py, setup.py, MANIFEST.in). 
+
+
+Synopsis
+````````
+
+::
+
+    USAGE: checkpackage [OPTIONS]
+
+    OPTIONS:
+      -h / --help
+	   display this help message and exit.
+
+      -d / --package-dir <DIRECTORY>
+	   package directory. Default to current working directory
+
+      -i / --package -info <INFOMODULE>
+	   module where the packaging information may be found. Default to __pkginfo__.
+
+
+Exemple d'utilisation
+`````````````````````
+
+::
+
+    checkpackage
+
+va vérifier le paquet contenu dans le répertoire courant.

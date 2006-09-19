@@ -1,0 +1,85 @@
+#!/usr/bin/make -f
+# Sample debian/rules that uses debhelper.
+# GNU copyright 1997 to 1999 by Joey Hess.
+#
+# adapted by Logilab for automatic generation by debianize
+# (part of the devtools project, http://www.logilab.org/projects/devtools)
+#
+# Copyright (c) 2003-2005 LOGILAB S.A. (Paris, FRANCE).
+# http://www.logilab.fr/ -- mailto:contact@logilab.fr
+
+# Uncomment this to turn on verbose mode.
+#export DH_VERBOSE=1
+export DH_COMPAT=5
+
+PYVER=`pyversions -d`
+
+build: build-stamp
+build-stamp: 
+	dh_testdir
+	python setup.py -q build
+	touch build-stamp
+
+clean: 
+	dh_testdir
+	dh_testroot
+	rm -f build-stamp configure-stamp
+	rm -rf build
+	find . -name "*.pyc" | xargs rm -f
+	rm -f changelog.gz
+	dh_clean
+
+install: build
+	dh_testdir
+	dh_testroot
+	dh_clean -k
+	dh_installdirs
+	python setup.py -q install --no-compile --prefix=debian/logilab-packaging/usr
+	# remove sub-package __init__ file (created by another package)
+	rm debian/logilab-packaging/usr/lib/${PYVER}/site-packages/logilab/__init__.py
+	# move vcslib specific tools and modules
+	mv debian/logilab-packaging/usr/lib/${PYVER}/site-packages/logilab/devtools/vcslib debian/python-vcslib/usr/lib/${PYVER}/site-packages/logilab/devtools
+	mv debian/logilab-packaging/usr/lib/${PYVER}/site-packages/logilab/devtools/cvslog.py debian/python-vcslib/usr/lib/${PYVER}/site-packages/logilab/devtools
+	mv debian/logilab-packaging/usr/lib/${PYVER}/site-packages/logilab/devtools/cvstatus.py debian/python-vcslib/usr/lib/${PYVER}/site-packages/logilab/devtools
+	mv debian/logilab-packaging/usr/lib/${PYVER}/site-packages/logilab/devtools/__init__.py debian/python-vcslib/usr/lib/${PYVER}/site-packages/logilab/devtools
+	mv debian/logilab-packaging/usr/bin/vcpull debian/python-vcslib/usr/bin
+	mv debian/logilab-packaging/usr/bin/cvslog debian/python-vcslib/usr/bin
+	mv debian/logilab-packaging/usr/bin/cvstatus debian/python-vcslib/usr/bin
+	# move pycoverage and coverage.py
+	mv debian/logilab-packaging/usr/lib/${PYVER}/site-packages/logilab/devtools/lib/coverage.py debian/pycoverage/usr/lib/${PYVER}/site-packages/coverage.py
+	mv debian/logilab-packaging/usr/bin/pycoverage debian/pycoverage/usr/bin
+
+	# XXX: tests missing
+	install -m 644 elisp/pycover-mode.el elisp/changelog.el elisp/logilab.el debian/logilab-elisp/usr/share/emacs/site-lisp/logilab/
+	# remove test directory
+	rm -rf debian/devtools/usr/lib/${PYVER}/site-packages/logilab/devtools/test
+	# install tests
+	# (cd test && find . -type f -not \( -path '*/CVS/*' -or -name '*.pyc' \) -exec install -D --mode=644 {} ../debian/devtools/usr/share/doc/devtools/test/{} \;)
+
+
+# Build architecture-independent files here.
+binary-indep: build install
+	dh_testdir 
+	dh_testroot 
+	dh_install -i
+	gzip -9 -c ChangeLog > changelog.gz
+	dh_installchangelogs -i
+	dh_installexamples -i
+	dh_installdocs -i README changelog.gz
+	dh_installman -i
+	dh_installemacsen -plogilab-elisp
+	dh_pycentral -i -Nlogilab-elisp
+	dh_python -i -Nlogilab-elisp
+	dh_link -i
+	dh_compress -i -X.py -X.ini -X.xml -Xtest
+	dh_fixperms -i
+	dh_installdeb -i
+	dh_gencontrol -i 
+	dh_md5sums -i
+	dh_builddeb -i
+
+binary-arch:
+
+binary: binary-indep
+.PHONY: build clean binary binary-indep binary-arch
+

@@ -1,0 +1,59 @@
+#!/usr/bin/python
+"""
+Update all sources in the specified directories
+
+USAGE: vcpull [directory ...]
+
+If no directory is supplied, the current working directory is used.
+
+This programm looks recursively for source repository using various
+version control systems and attempts to pull the latest changes from
+the configured central repository.
+
+Supported version control systems are:
+
+ * CVS
+ * Subversion
+ * Mercurial
+
+"""
+import os
+import sys
+
+
+def find_updates(basedir):
+    for dirpath, dirnames, filenames in os.walk(basedir):
+        print '***', dirpath
+        if '.svn' in dirnames:
+            _update(dirpath, 'svn up')
+            del dirnames[:]
+        elif '.hg' in dirnames:
+            _update(dirpath, 'hg pull -u')
+            del dirnames[:]
+        elif 'CVS' in dirnames:
+            _update(dirpath, 'cvs up -dP')
+            del dirnames[:]
+        else:
+            continue
+
+def _update(path, command):
+    basedir = os.getcwd()
+    try:
+        os.chdir(path)
+        os.system(command)
+    finally:
+        os.chdir(basedir)
+
+if __name__ == '__main__':
+    if '-h' in sys.argv or '--help' in sys.argv:
+        print __doc__
+        sys.exit(0)
+    if len(sys.argv) == 1:
+        basedirs = [ os.getcwd() ]
+    else:
+        basedirs = sys.argv[1:]
+    for basedir in basedirs:
+        if os.path.isdir(basedir):
+            find_updates(basedir)
+        else:
+            print >>sys.stderr, "Skipping %s which is not a directory" % basedir

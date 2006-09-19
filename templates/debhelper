@@ -1,0 +1,8 @@
+#! /bin/sh -e
+#
+
+%(CONTENT)s
+
+#DEBHELPER#
+
+exit 0

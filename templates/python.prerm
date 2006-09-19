@@ -1,0 +1,6 @@
+# remove .pyc and .pyo files
+dpkg --listfiles %(PACKAGE)s |
+	awk '$0~/\.py$/ {print $0"c\n" $0"o"}' |
+	xargs rm -f >&2
+
+%(CONTENT)s

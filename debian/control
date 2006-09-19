@@ -1,0 +1,61 @@
+Source: devtools
+Section: python
+Priority: optional
+Maintainer: Sylvain Thénault <sylvain.thenault@logilab.fr> 
+Uploaders: Alexandre Fayolle <afayolle@debian.org>, Adrien Di Mascio <adrien.dimascio@logilab.fr>
+Build-Depends: debhelper (>= 5.0.37.2), python-dev (>=2.3.5-7), python-central (>=0.5)
+Standards-Version: 3.7.2
+XS-Python-Version: current
+
+Package: python-vcslib
+Architecture: all
+Recommends: cvs, mercurial, subversion
+Depends: ${python:Depends}, , python-logilab-common (>= 0.18.0)
+XB-Python-Version: ${python:Versions}
+Conflicts: devtools
+Replaces: devtools
+Description: set of development tools used at Logilab for source management
+ Set of tools which aims to help the developpement process, including :
+  * cvs/svn/mercurial utilities
+ .
+ Homepage: http://www.logilab.org/projects/devtools
+
+Package: logilab-packaging
+Architecture: all
+Suggests: logilab-doctools
+Recommends: piuparts, linda, lintian, sudo, emacsen-common, cvs, mercurial, subversion
+Depends: ${python:Depends}, pymacs, python-vcslib, python-logilab-common (>= 0.18.0)
+Conflicts: devtools
+Replaces: devtools
+XB-Python-Version: ${python:Versions}
+Description: set of development tools used at Logilab
+ Set of tools which aims to help the developpement process, including :
+  * standard for zope and python packages
+  * tools to check and build source and/or debian packages
+ .
+ Homepage: http://www.logilab.org/projects/devtools
+
+Package: pycoverage
+Architecture: all
+Recommends: emacsen-common
+Depends: ${python:Depends}
+XB-Python-Version: ${python:Versions}
+Conflicts: devtools
+Replaces: devtools
+Description: python code coverage tool
+ tool primary used to compute test coverage
+ .
+ Homepage: http://www.logilab.org/projects/devtools
+
+Package: logilab-elisp
+Architecture: all
+Depends: emacsen-common
+Conflicts: devtools
+Replaces: devtools
+Description: emacs lisp code for logilab development tools
+ Set of elisp goodies including :
+  * an emacs mode for pycover files
+  * an emacs mode for ChangeLog files
+  * a small set of emacs shortcuts used at logilab
+ .
+ Homepage: http://www.logilab.org/projects/devtools

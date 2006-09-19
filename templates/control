@@ -1,0 +1,13 @@
+Source: %(SOURCEPACKAGE)s
+Section: %(SECTION)s
+Priority: optional
+%(MAINTAINER)s 
+Build-Depends: debhelper (>= 5.0.0)%(BUILD_DEPENDENCIES)s
+Standards-Version: 3.7.2
+
+Package: %(PACKAGE)s
+Architecture: all
+%(DEPENDENCIES)s
+Description: %(SHORT_DESCRIPTION)s
+%(LONG_DESCRIPTION)s
+

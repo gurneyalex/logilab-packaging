@@ -1,0 +1,37 @@
+L'utilitaire *cvslog*
+=====================
+
+:Author: Sylvain Thénault
+:Organization: Logilab
+:Version: $Revision: 1.1 $
+:Date: $Date: 2003-09-19 11:50:08 $
+
+.. contents::
+
+
+Description
+```````````
+Cet utilitaire filtre la sortie de **cvs log** afin d'en extraire les
+informations essentielles ou de calculer quelques statistiques.
+
+
+Synopsis
+````````
+
+::
+
+    USAGE: cvslog [COMMAND] [OPTIONS] [-- [CVS OPTIONS] [-- CVS LOG OPTION]]
+
+    COMMANDS:
+	info
+	stats
+
+
+Exemple d'utilisation
+`````````````````````
+
+::
+
+    cvslog info
+
+permet d'extraire les messages de log du répertoire courant.

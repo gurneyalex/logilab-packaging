@@ -1,0 +1,3 @@
+version=2
+%(FTPDIR)s/%(SOURCEPACKAGE)s-(.*)\.tar\.gz debian uupdate
+

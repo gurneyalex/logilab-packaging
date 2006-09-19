@@ -1,0 +1,14 @@
+%(CONTENT)s
+
+# precompile python files
+VERSION=%(PYVER)s
+PACKAGEDIR=%(PACKAGEDIR)s
+case "$1" in
+    configure|abort-upgrade|abort-remove|abort-deconfigure)
+    ;;
+
+    *)
+        echo "postinst called with unknown argument \`$1'" >&2
+        exit 1
+    ;;
+esac

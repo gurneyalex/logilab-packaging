@@ -1,0 +1,42 @@
+L'utilitaire *cvstatus*
+=======================
+
+:Author: Sylvain Thénault
+:Organization: Logilab
+:Version: $Revision: 1.1 $
+:Date: $Date: 2003-09-19 11:50:08 $
+
+.. contents::
+
+
+Description
+```````````
+Cet utilitaire filtre la sortie de **cvs status** afin d'en extraire les
+informations essentielles.
+
+
+Synopsis
+````````
+
+::
+
+    USAGE: cvs status | cvstatus [OPTIONS]
+
+    OPTIONS:
+       -h/--help
+	    display this help message
+       -u/--uptodate
+	    show status of up-to-date files
+       -m/--module-level <num>
+	    display file name without the first <num> directories
+	    (default is 0)
+
+
+Exemple d'utilisation
+`````````````````````
+
+::
+
+    cvs -Q status  | ~/bin/cvstatus
+
+permet de voir tout les fichiers que ne sont pas synchroniser avec le CVS.

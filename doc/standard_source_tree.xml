@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!--
+<!DOCTYPE article PUBLIC "-//LOGILAB/DTD DocBook V4.1.2-Based Extension V0.1//EN" "/home/logilab/lib/dtd/logidoc/lglb-dcbk42.dtd" []>
+-->
+<article id="standard_source_tree" lang="fr">
+ 
+  <articleinfo>
+    <title>Architecture standard d'un paquet</title>
+    <author> 
+      <firstname>Sylvain</firstname>
+      <surname>Thénault</surname>
+    </author>
+    <abstract><para>
+	Afin d'automatiser le processus de publication de nouvelles versions d'un
+	logiciel que nous avons développé, les conventions suivantes doivent être
+	appliquées.
+      </para></abstract>
+  </articleinfo>
+
+  <sect1><title>Fichers et répertoires standards</title>
+    <para>
+      La structure standard est la suivante (les répertoires sont terminés par un
+      "/" et les fichiers optionels sont entre crochets).
+    </para>
+    <programlisting>
+PKG/
+  |-- [bin/]
+  |-- [debian/]
+  |-- [doc/]
+  |   `-- makefile
+  |-- [dtd/]
+  |   `-- catalog
+  |-- [examples/]
+  |-- [man/]
+  |-- [test/]
+  |   `-- runtests.py
+  |-- [xsl/]
+  |-- [DEPENDS]
+  |-- [RECOMMENDS]
+  |-- [SUGGESTS]
+  |-- MANIFEST.in
+  |-- README
+  |-- [TODO]
+  |-- ChangeLog
+  |-- __init__.py
+  |-- __pkginfo__.py
+  |-- setup.cfg
+  |-- setup.py
+  `-- announce.txt
+    </programlisting>
+    <para>Voyons ça d'un peu plus près&#160;:</para>
+    <formalpara><title>bin/</title>
+      répertoire où mettre les binaires et scripts éxécutables
+    </formalpara>
+    <formalpara><title>debian/</title>
+      répertoire contenant les fichiers nécessaires à la création de package
+	debian. Ce répertoire n'est pas (et ne doit pas être) inclus dans la
+      distribution. 
+    </formalpara>
+    <formalpara><title>doc/</title>
+      répertoire contenant la documentation. Si celui-ci est présent, il doit
+	contenir un fichier <filename>makefile</filename> décrivant les règles de
+	construction de la documentation (voir modèle dans pyreverse ou pygantt)
+    </formalpara>
+    <formalpara><title>dtd/</title>
+      répertoire contenant les DTD nécessaire au package. Les DTD présentes doivent
+	être référencées dans un catalogue SGML présent dans ce même répertoire,
+      nommé <filename>catalog</filename>.
+    </formalpara>
+    <formalpara><title>examples/</title>
+      répertoire contenant les exemples accompagnant le logiciel.
+    </formalpara>
+    <formalpara><title>man/</title>
+      répertoire contenant les page de manuels. Chaque script placé dans
+	<filename>bin/</filename> doit avoir sa page de manuel.
+    </formalpara>
+    <formalpara><title>test/</title>
+      répertoire contenant tous les tests (unitaires, smoke, régression...). Si
+      celui-ci est présent (il devrait ;-), il doit contenir un fichier
+      <filename>runtests.py</filename> qui lance l'éxécution de tout les
+      tests. Ce fichier est à copier depuis le répertoire
+      <filename>templates</filename> du package devtools. Pour être reconnu, les
+      modules de tests doivent fournir une fonction <emphasis role="bold">suite</emphasis>
+      ne prenant aucun argument et retournant une suite de test (<emphasis
+      role="bold">unittest.TestSuite</emphasis>). Vous pouvez générer
+      automatiquement des squelettes de test unitaires à l'aide de l'utilitaire
+      <filename>py2tests</filename> fourni par PyReverse.
+    </formalpara>
+    <formalpara><title>xsl/</title>
+      <para>
+        répertoire contenant les transformations XSLT du paquet. Les
+        transformations doivent avoir des extensions en .xsl ou .xslt.
+      </para>
+    </formalpara>
+    <formalpara><title>__init__.py</title>
+      <para>
+      requis par Python pour que le répertoire soit reconnu comme un package. Ce
+      fichier (comme tout les autres __init__.py) ne doit pas être vide car cela
+      pose des problèmes dans certains environnements. On y mettra donc au moins
+      une chaine de doc ou la variable __revision__.
+      </para>
+    </formalpara>
+    <formalpara><title>__pkginfo__.py</title>
+      <para>
+      Ce fichier devra définir un certain nombre d'attributs permettant de
+      caractériser le paquet et d'automatiser distribution. Voir <ulink
+      href="pkginfo_variables.html">ici</ulink> pour une description des
+      variables contenues par ce fichier.
+      </para>
+    </formalpara>
+    <formalpara><title>DEPENDS</title>
+      liste des paquets debian dont dépend ce paquet (un par ligne). Pour les
+      librairies python, pas la peine de spécifier la version de l'interpréteur
+      python. En cas de dépendance vers un paquet python ne contenant pas le
+      préfixe Python dans sa version par défaut (comme pylint par exemple),
+      ajouter "(python)" à la suite du nom du paquet (on obtient par exemple
+      dans le cas de pylint la ligne "pylint (python)")
+    </formalpara>
+    <formalpara><title>RECOMMENDS</title>
+      liste des paquets debian recommandés pour ce paquet. Le format est le même
+      que celui de DEPENDS. 
+    </formalpara>
+    <formalpara><title>SUGGESTS</title>
+      liste des paquets debian suggérés pour ce paquet. Le format est le même
+      que celui de DEPENDS. 
+    </formalpara>
+    <formalpara><title>README</title>
+      information minimales à propos du logiciel (utilité, auteur, licence,
+      dépendances, page web et liste de discussion).
+    </formalpara>
+    <formalpara><title>TODO</title>
+      liste les choses à corriger/améliorer/ajouter.
+    </formalpara>
+    <formalpara><title>ChangeLog</title>
+      historique des changements par révisions (voir la description du <ulink
+      url="changelog.html">format</ulink>. 
+    </formalpara>
+    <formalpara><title>setup.py</title>
+      requis par distutils pour les packages python (ce fichier n'est pas
+      nécessaire pour les produits Zope). Ce fichier est à copier depuis le
+      répertoire <filename>templates</filename> du package devtools.
+    </formalpara>
+    <formalpara><title>MANIFEST.in</title>
+      requis par distutils pour les packages python (ce fichier n'est pas
+      nécessaire pour les produits Zope).
+    </formalpara>
+    <formalpara><title>setup.cfg</title>
+      requis par distutils pour les packages python (ce fichier n'est pas
+      nécessaire pour les produits Zope). Déprécié depuis debian ?
+    </formalpara>
+    <formalpara><title>announce.txt</title>
+      modèle de l'annonce email. Prendre celle de PyReverse comme référence.
+    </formalpara>
+  </sect1>
+
+  <sect1><title>Remarques</title>
+    <para>
+      On pourra prévoir d'étendre cela à des logiciels non python...
+    </para>
+  </sect1>
+
+</article>
