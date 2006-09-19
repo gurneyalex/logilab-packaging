@@ -53,6 +53,7 @@ scripts = [
     'bin/vcpull',
     'bin/cvslog',
     'bin/cvstatus',
+    'bin/hgstatus',
     # pycovergae
     'bin/pycoverage',
     # logilab-packaging
