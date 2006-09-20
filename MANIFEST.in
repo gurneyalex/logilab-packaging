@@ -5,6 +5,7 @@ include bin/pycoverage
 include bin/vcpull
 include bin/cvstatus
 include bin/cvslog
+include bin/hgstatus
 
 include elisp/*.el
 include elisp/startup
