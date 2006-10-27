@@ -193,9 +193,9 @@ class HGAgent:
         """
         if not isinstance(filepath, basestring):
             filepath = filepath[0] #' '.join(filepath)
-        print os.getcwd()
-        print '**'
-        print abspath(filepath)
+        #print os.getcwd()
+        #print '**'
+        #print abspath(filepath)
         assert abspath(filepath).startswith(os.getcwd()), \
                "I don't know how to deal with filepath and <hg tag>"
         return "hg tag %s" % tagname
@@ -218,8 +218,8 @@ class HGAgent:
         if tag and tag != 'HEAD':
             raise NotImplementedError("don't know how to co a given tag "
                                       "(hg clone -r tag ?")
-        if path:
-            print "warning: <%s> argument not needed and ignored" % path
+        #if path:
+        #    print "warning: <%s> argument not needed and ignored" % path
         return 'hg clone %s' % repository
 
     # FIXME: fix docstring and add to interface

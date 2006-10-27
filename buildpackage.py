@@ -86,7 +86,7 @@ def build_debian(pkg_dir, dest_dir, pdebuild_options='', origpath=None):
     assert isabs(dest_dir), "build_debian requires dest_dir to be an absolute path"
     if origpath is not None:
         assert isabs(origpath), "build_debian requires origpath to be an absolute path"
-    sys.__stdout__.write("build_debian(%s, %s, %s, %s)\n" % (pkg_dir, dest_dir, pdebuild_options, origpath))
+    #sys.__stdout__.write("build_debian(%s, %s, %s, %s)\n" % (pkg_dir, dest_dir, pdebuild_options, origpath))
     # 0/ retrieve package information
     os.chdir(pkg_dir)
     pkginfo = PackageInfo()
