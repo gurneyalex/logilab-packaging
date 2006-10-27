@@ -17,8 +17,6 @@
 deduced from the package content.
 """
 
-__revision__ = '$Id: pkginfo.py,v 1.57 2006-02-28 14:14:00 syt Exp $'
-
 import os
 import re
 import tempfile
@@ -529,7 +527,7 @@ class PackageInfo:
         if not self.name:
             self.name = self.modname
         if not self.debian_name:
-            if self.subpackage_of:
+            if self.subpackage_of and not self.name.startswith(self.subpackage_of):
                 self.debian_name = '%s-%s' % (self.subpackage_of,
                                               self.name.lower())
             else:
