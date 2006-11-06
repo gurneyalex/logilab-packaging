@@ -17,9 +17,9 @@
 logilab.devtools packaging information
 """
 
-__revision__ = "$Id: __pkginfo__.py,v 1.47 2006-01-10 15:11:50 syt Exp $"
 
 modname = 'devtools'
+distname = 'logilab-devtools'
 numversion = (0, 10, 1)
 version = '.'.join([str(num) for num in numversion])
 
