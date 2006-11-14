@@ -26,7 +26,7 @@ import shutil
 from os.path import abspath, isdir, expanduser, isfile, join, isabs
 
 from logilab.common.shellutils import mv, cp, rm
-from logilab.common.fileutils import ensure_mode, export
+from logilab.common.fileutils import ensure_fs_mode, export
 
 from logilab.devtools.lib.utils import confirm, cond_exec
 from logilab.devtools.lib.pkginfo import PackageInfo
@@ -100,7 +100,7 @@ def build_debian(pkg_dir, dest_dir, pdebuild_options='', origpath=None):
     if not isdir('debian'):
         print 'No "debian" directory'
         return 1
-    ensure_mode('debian/rules', stat.S_IEXEC)
+    ensure_fs_mode('debian/rules', stat.S_IEXEC)
 
     ## 2/ copy project directory to workdir named projectname-version/
     tmpdir = tempfile.mkdtemp()
