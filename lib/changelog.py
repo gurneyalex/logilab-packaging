@@ -33,12 +33,10 @@ This module should be able to find the change log file by itself.
 See the debian documentation for the debian change log format.
 """
 
-__revision__ = '$Id: changelog.py,v 1.25 2005-07-01 19:50:58 nico Exp $'
-
 import sys
 import os
 import time
-from os.path import join, isfile, dirname
+from os.path import join, isfile, dirname, exists
 from logilab.common.fileutils import ensure_fs_mode
 from stat import S_IWRITE
 
@@ -78,9 +76,10 @@ def get_pkg_version(base_dir=None):
     """return the current package version
     """
     if base_dir is None:
-        sys.path.insert(0, os.getcwd())
-    else:
-        sys.path.insert(0, base_dir)
+        base_dir = os.getcwd()
+    if exists(join(base_dir, 'version.txt')):
+        return open(join(base_dir, 'version.txt')).read().strip()
+    sys.path.insert(0, base_dir)
     mod = __import__('__pkginfo__')
     sys.path.pop(0)
     try:
