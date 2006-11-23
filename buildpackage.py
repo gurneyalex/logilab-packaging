@@ -23,7 +23,7 @@ import sys
 import stat
 import tempfile
 import shutil
-from os.path import abspath, isdir, expanduser, isfile, join, isabs
+from os.path import abspath, isdir, expanduser, isfile, join, isabs, split
 
 from logilab.common.shellutils import mv, cp, rm
 from logilab.common.fileutils import ensure_fs_mode, export
@@ -95,30 +95,49 @@ def build_debian(pkg_dir, dest_dir, pdebuild_options='', origpath=None):
     debian_name = pkginfo.debian_name
     debian_version = DebianChangeLog('debian/changelog').get_latest_revision()
     info = (upstream_name, upstream_version, debian_name, debian_version)
-
-    ## 1/ ensure project directory has debian/ and debian/rules
+    tmpdir = tempfile.mkdtemp()
+    workdir = join(tmpdir, '%s-%s'% (debian_name, upstream_version))
+    # 1/ ensure project directory has debian/ directory
     if not isdir('debian'):
         print 'No "debian" directory'
         return 1
+    
+    # 2/ check destination directory exists, create it if necessary, ensure
+    #    debian/rules exists and is executable
+    if not isdir(dest_dir):
+        os.mkdir(dest_dir)
     ensure_fs_mode('debian/rules', stat.S_IEXEC)
 
-    ## 2/ copy project directory to workdir named projectname-version/
-    tmpdir = tempfile.mkdtemp()
-    workdir = join(tmpdir, '%s-%s'% (debian_name, upstream_version))
     try:
         try:
-            export(pkg_dir, workdir)
-            export('debian', '%s/debian' % workdir)
-
-            ## 3/ if needed create archive projectname-version.orig.tar.gz
-            if origpath:
-                cp(origpath, tmpdir)
-            else:
+            print 'pkg_dir', pkg_dir
+            print 'workdir', workdir
+            print 'origpath', origpath
+            origdir = '%s-%s' % (upstream_name, upstream_version)
+            # 3/ if needed create archive projectname-version.orig.tar.gz using setup.py sdist
+            if not origpath:
+                os.chdir(pkg_dir)
+                os.system('python setup.py sdist')
+                tarball = join('dist', '%s.tar.gz' % origdir)
                 origpath = join(tmpdir, '%s_%s.orig.tar.gz' % (debian_name, upstream_version))
-                os.system('cd %s && tar czf %s %s' % (tmpdir, origpath, '%s-%s'% (debian_name, upstream_version)))
-                
-            ## 4/ make
-            os.chdir(workdir)
+                cp(tarball, dest_dir)
+                cp(tarball, origpath)
+            else:
+                cp(origpath, tmpdir)
+                origpath = join(tmpdir, split(origpath)[1])
+            
+            # 4/ create build directory by extracting the .orig.tar.gz and then
+            #    copying debian/ directory
+            os.chdir(tmpdir)
+            status = os.system('tar xzf %s' % origpath)
+            if status:
+                print 'An error occured while extracting the upstream tarball ' \
+                      '(return status: %s)' % status
+                return 1
+            export(join(pkg_dir, 'debian'), '%s/debian' % origdir)
+            
+            # 5/ build the package using fakeroot or pbuilder usually
+            os.chdir(origdir)
             debuilder = os.environ.get('DEBUILDER') or 'pdebuild'
             status = os.system('%s %s' % (debuilder, pdebuild_options))
             if status:
@@ -126,10 +145,8 @@ def build_debian(pkg_dir, dest_dir, pdebuild_options='', origpath=None):
                           '(return status: %s)' % status
                 return 1
 
-            # move result
-            if not isdir(dest_dir):
-                os.mkdir(dest_dir)
-            cp(origpath, dest_dir)
+            # 6/ move the upstream tarball and debian package files to the destination directory
+            mv(origpath, dest_dir)
             if move_result(dest_dir, info, debuilder):
                 return 1
             return 0
