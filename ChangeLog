@@ -1,18 +1,18 @@
 ChangeLog for logilab.devtools
 ==============================
 
-  --  
+2006-12-06  --  0.10.2
     * fixed silly NameError
     * moved optparse commands extension into logilab-common
     * changelog: fix to consider version.txt
     * updated for logilab-common 0.21
-    * new hgstatus script	
+    * new hgstatus script
 	
-2006-08-04  -- 0.10.1
+2006-08-04  --  0.10.1
     * fixed silly NameError
 
 
-2006-08-03  -- 0.10.0 
+2006-08-03  --  0.10.0
     * fixed spelling of dependant/dependent
     * Move to new Python packaging policy
     * logilab.el: insert current year in copyright (#10779)
