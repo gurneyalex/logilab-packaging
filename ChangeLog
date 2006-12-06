@@ -6,6 +6,7 @@ ChangeLog for logilab.devtools
     * moved optparse commands extension into logilab-common
     * changelog: fix to consider version.txt
     * updated for logilab-common 0.21
+    * new hgstatus script	
 	
 2006-08-04  -- 0.10.1
     * fixed silly NameError
