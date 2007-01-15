@@ -39,7 +39,7 @@ from logilab.devtools.vcslib import VCS_UPTODATE, VCS_MODIFIED, \
 
 from mercurial.hg import repository as Repository
 from mercurial.ui import ui as Ui
-from mercurial.commands import walkchangerevs
+from mercurial.cmdutil import walkchangerevs
 
 def find_repository(path):
     """returns <path>'s mercurial repository
