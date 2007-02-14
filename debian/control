@@ -9,7 +9,7 @@ XS-Python-Version: current
 
 Package: python-vcslib
 Architecture: all
-Recommends: cvs, mercurial, subversion
+Recommends: cvs, mercurial (>= 0.9.3), subversion
 Depends: ${python:Depends}, , python-logilab-common (>= 0.18.0)
 XB-Python-Version: ${python:Versions}
 Conflicts: devtools
@@ -23,7 +23,7 @@ Description: set of development tools used at Logilab for source management
 Package: logilab-packaging
 Architecture: all
 Suggests: logilab-doctools
-Recommends: piuparts, linda, lintian, sudo, emacsen-common, cvs, mercurial, subversion
+Recommends: piuparts, linda, lintian, sudo, emacsen-common, cvs, mercurial (>= 0.9.3), subversion
 Depends: ${python:Depends}, pymacs, python-vcslib, python-logilab-common (>= 0.18.0)
 Conflicts: devtools
 Replaces: devtools

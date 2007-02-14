@@ -38,6 +38,8 @@ install: build
 	# remove sub-package __init__ file (created by another package)
 	rm debian/logilab-packaging/usr/lib/${PYVER}/site-packages/logilab/__init__.py
 	# move vcslib specific tools and modules
+	install -d debian/python-vcslib/usr/lib/${PYVER}/site-packages/logilab/devtools
+	install -d debian/pycoverage/usr/lib/${PYVER}/site-packages/
 	mv debian/logilab-packaging/usr/lib/${PYVER}/site-packages/logilab/devtools/vcslib debian/python-vcslib/usr/lib/${PYVER}/site-packages/logilab/devtools
 	mv debian/logilab-packaging/usr/lib/${PYVER}/site-packages/logilab/devtools/cvslog.py debian/python-vcslib/usr/lib/${PYVER}/site-packages/logilab/devtools
 	mv debian/logilab-packaging/usr/lib/${PYVER}/site-packages/logilab/devtools/cvstatus.py debian/python-vcslib/usr/lib/${PYVER}/site-packages/logilab/devtools
