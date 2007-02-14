@@ -1,4 +1,4 @@
-Source: devtools
+Source: logilab-devtools
 Section: python
 Priority: optional
 Maintainer: Sylvain Thénault <sylvain.thenault@logilab.fr> 
