@@ -1,6 +1,7 @@
-devtools (0.10.2-1) unstable; urgency=low
+logilab-devtools (0.10.2-1) unstable; urgency=low
 
   * New upstream release
+  * renamed source package
 
  -- Adrien.DiMascio <Adrien.DiMascio@logilab.fr>  Wed, 14 Feb 2007 09:14:04 +0100
 
