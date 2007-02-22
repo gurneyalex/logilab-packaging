@@ -63,7 +63,7 @@ def changeset_info(repo, rev=0, changenode=None):
         changenode = log.node(rev)
     elif not rev:
         rev = log.rev(changenode)
-    manifest, user, (time, timezone), files, desc = log.read(changenode)
+    manifest, user, (time, timezone), files, desc, extra = log.read(changenode)
     summary = desc.splitlines()[0]
     checkin_date = datetime.date.fromtimestamp((float(time) - timezone))
     return rev, checkin_date, user, summary
@@ -98,12 +98,12 @@ class HGAgent:
             # XXX: httprepository doesn't have changelog attribute
             if hasattr(remote, 'changelog'):
                 for nid in repo.findincoming(remote):
-                    manifest, user, timeinfo, files, desc = remote.changelog.read(nid)
+                    manifest, user, timeinfo, files, desc, extra = remote.changelog.read(nid)
                     for filename in files:
                         # .ljust(15)
                         changes.append(('incoming', filename))
                 for nid in repo.findoutgoing(remote):
-                    manifest, user, timeinfo, files, desc = repo.changelog.read(nid)
+                    manifest, user, timeinfo, files, desc, extra = repo.changelog.read(nid)
                     for filename in files:
                         # .ljust(15)
                         changes.append(('outgoing', filename))
