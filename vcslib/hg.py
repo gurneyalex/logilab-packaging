@@ -235,7 +235,7 @@ class HGAgent:
         repo = Repository(ui, path=find_repository(path))
         opts = dict(rev=['tip:0'], branches=None, include=(), exclude=())
         get = cachefunc(lambda r: repo.changectx(r).changeset())
-        changeiter, matchfn = cmdutil.walkchangerevs(ui, repo, (), get, opts)
+        changeiter, matchfn = walkchangerevs(ui, repo, (), get, opts)
         from_date = datetime.date(*[int(x) for x in from_date.split('-')])
         to_date = datetime.date(*[int(x) for x in to_date.split('-')])
 
