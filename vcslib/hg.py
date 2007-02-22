@@ -40,6 +40,7 @@ from logilab.devtools.vcslib import VCS_UPTODATE, VCS_MODIFIED, \
 from mercurial.hg import repository as Repository
 from mercurial.ui import ui as Ui
 from mercurial.cmdutil import walkchangerevs
+from mercurial.util import cachefunc
 
 def find_repository(path):
     """returns <path>'s mercurial repository
@@ -233,7 +234,8 @@ class HGAgent:
         ui = Ui()
         repo = Repository(ui, path=find_repository(path))
         opts = dict(rev=['tip:0'], branches=None, include=(), exclude=())
-        changeiter, getchange, matchfn = walkchangerevs(ui, repo, (), opts)
+        get = cachefunc(lambda r: repo.changectx(r).changeset())
+        changeiter, matchfn = cmdutil.walkchangerevs(ui, repo, (), get, opts)
         from_date = datetime.date(*[int(x) for x in from_date.split('-')])
         to_date = datetime.date(*[int(x) for x in to_date.split('-')])
 
