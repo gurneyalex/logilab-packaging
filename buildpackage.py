@@ -117,7 +117,7 @@ def build_debian(pkg_dir, dest_dir, pdebuild_options='', origpath=None):
             # 3/ if needed create archive projectname-version.orig.tar.gz using setup.py sdist
             if not origpath:
                 os.chdir(pkg_dir)
-                os.system('python setup.py sdist')
+                os.system('python setup.py sdist --force-manifest')
                 tarball = join('dist', '%s.tar.gz' % origdir)
                 origpath = join(tmpdir, '%s_%s.orig.tar.gz' % (debian_name, upstream_version))
                 cp(tarball, dest_dir)
