@@ -76,7 +76,8 @@ def move_result(dest_dir, info, debuilder):
         #mv('../%s-%s.tar.gz' % (upstream_name, upstream_version), dest_dir)
             
 
-def build_debian(pkg_dir, dest_dir, pdebuild_options='', origpath=None):
+def build_debian(pkg_dir, dest_dir, pdebuild_options='',
+                 origpath=None, quiet=False):
     """build debian package and move them in <dest_dir>
     
     the debian package to build is expected to be in the current working
@@ -110,14 +111,14 @@ def build_debian(pkg_dir, dest_dir, pdebuild_options='', origpath=None):
 
     try:
         try:
-            print 'pkg_dir', pkg_dir
-            print 'workdir', workdir
-            print 'origpath', origpath
             origdir = '%s-%s' % (upstream_name, upstream_version)
             # 3/ if needed create archive projectname-version.orig.tar.gz using setup.py sdist
             if not origpath:
                 os.chdir(pkg_dir)
-                os.system('python setup.py sdist --force-manifest')
+                cmd = 'python setup.py sdist --force-manifest'
+                if quiet:
+                    cmd += ' 1>/dev/null 2>/dev/null'
+                os.system(cmd)
                 tarball = join('dist', '%s.tar.gz' % origdir)
                 origpath = join(tmpdir, '%s_%s.orig.tar.gz' % (debian_name, upstream_version))
                 cp(tarball, dest_dir)
@@ -139,7 +140,10 @@ def build_debian(pkg_dir, dest_dir, pdebuild_options='', origpath=None):
             # 5/ build the package using fakeroot or pbuilder usually
             os.chdir(origdir)
             debuilder = os.environ.get('DEBUILDER') or 'pdebuild'
-            status = os.system('%s %s' % (debuilder, pdebuild_options))
+            cmd = '%s %s' % (debuilder, pdebuild_options)
+            if quiet:
+                cmd += ' 1>/dev/null 2>/dev/null'
+            status = os.system(cmd)
             if status:
                 print 'An error occured while building the debian package ' \
                           '(return status: %s)' % status
