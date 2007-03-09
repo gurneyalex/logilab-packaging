@@ -18,7 +18,6 @@
 system library.
 """
 
-__revision__ = '$Id: interfaces.py,v 1.3 2004-12-14 16:10:58 syt Exp $'
 __docformat__ = "restructuredtext en"
 __metaclass__ = type
 

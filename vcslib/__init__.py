@@ -25,7 +25,6 @@ typical use would be:
 etc.
 """
 
-__revision__ = '$Id: __init__.py,v 1.15 2006-02-08 12:54:16 nico Exp $'
 __docformat__ = "restructuredtext en"
 __metaclass__ = type
 
@@ -445,6 +444,17 @@ parent is not under version control' % self.abspath)
         except KeyError:
             pass            
 
+def agent(name):
+    if name == 'cvs':
+        from logilab.devtools.vcslib.cvs import CVSAgent
+        return CVSAgent()
+    if name == 'svn':
+        from logilab.devtools.vcslib.svn import SVNAgent
+        return SVNAgent()
+    if name == 'hg':
+        from logilab.devtools.vcslib.hg import HGAgent, find_repository
+        return HGAgent()
+    raise ValueError(name)
 
 def get_vcs_agent(directory):
     """returns the appropriate VCS agent according to the version control
