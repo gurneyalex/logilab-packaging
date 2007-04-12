@@ -62,7 +62,7 @@ def changeset_info(repo, rev=0, changenode=None):
         rev = log.rev(changenode)
     manifest, user, (time, timezone), files, desc, extra = log.read(changenode)
     summary = desc.splitlines()[0]
-    checkin_date = datetime.datetime.fromtimestamp((float(time) - timezone))
+    checkin_date = datetime.datetime.fromtimestamp((float(time) + timezone))
     return rev, checkin_date, user, summary
 
 
