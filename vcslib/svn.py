@@ -2,7 +2,7 @@
 #      Copyright (C) 2002-2003 Stephen Kennedy <stevek@gnome.org>
 #      http://meld.sourceforge.net
 #
-# Copyright (c) 2004-2005 LOGILAB S.A. (Paris, FRANCE).
+# Copyright (c) 2004-2007 LOGILAB S.A. (Paris, FRANCE).
 # http://www.logilab.fr/ -- mailto:contact@logilab.fr
 #
 # This program is free software; you can redistribute it and/or modify it under
@@ -18,21 +18,18 @@
 # this program; if not, write to the Free Software Foundation, Inc.,
 # 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 """this module contains SVN vcs system mangagement implementation
-for OoBrother
 """
 
-from __future__ import generators
-
-__revision__ = '$Id: svn.py,v 1.10 2005-07-28 10:02:19 syt Exp $'
 __metaclass__ = type
 __all__ = ['SVNAgent']
 
 import os
 import re
 from os.path import isdir, join, dirname, basename, exists, split
+from time import strftime
 from xml.sax import make_parser, ContentHandler
 
-from logilab.common import Execute
+from logilab.common.shellutils import Execute
 
 from logilab.devtools.vcslib import VCS_UPTODATE, VCS_MODIFIED, \
      VCS_MISSING, VCS_NEW, VCS_CONFLICT, VCS_NOVERSION, VCS_IGNORED, \
@@ -250,14 +247,16 @@ class SVNAgent:
         return 'svn checkout --non-interactive -q -r %s %s/%s/%s' % (
             tag, repository, svn_dir, path)
 
-    # FIXME: fix docstring and add to interface
     def log_info(self, path, from_date, to_date, repository=None, tag=None):
-        """get log messages between <from_date> and <to_date>
-        Both date should be local time (ie 9-sequence) or epoch time (ie float)
+        """get log messages between <from_date> and <to_date> (inclusive)
+        
+        Both date should be local time (ie 9-sequence)
         
         a log information is a tuple
         (file, revision_info_as_string, added_lines, removed_lines)
         """
+        from_date = strftime('%Y-%m-%d', from_date)
+        to_date = strftime('%Y-%m-%d', to_date)
         command = 'svn log -r {%s}:{%s} %s %s' % (from_date, to_date,
                                                   repository or '', path)
         separator = '-' * 72
