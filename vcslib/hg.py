@@ -234,7 +234,7 @@ class HGAgent:
         get = cachefunc(lambda r: repo.changectx(r).changeset())
         changeiter, matchfn = walkchangerevs(ui, repo, (), get, opts)
         from_date = datetime.datetime(*from_date[:6])
-        to_date = datetime.date(*to_date[:6])
+        to_date = datetime.datetime(*to_date[:6])
         infos = []
         msg_template = '%s by %s on %s: %s'
         for st, rev, fns in changeiter:

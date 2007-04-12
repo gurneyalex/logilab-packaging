@@ -4,7 +4,9 @@ ChangeLog for logilab.devtools
  --
     * force manifest file regeneration
     * updated for mercurial API changes
-
+    * fixed vcsagent.log_info method api: from_date and to_date should be
+      local time tuple
+	
 2006-12-06  --  0.10.2
     * fixed silly NameError
     * moved optparse commands extension into logilab-common
