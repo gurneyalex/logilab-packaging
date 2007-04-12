@@ -2,7 +2,7 @@
 #      Copyright (C) 2002-2003 Stephen Kennedy <stevek@gnome.org>
 #      http://meld.sourceforge.net
 #
-# Copyright (c) 2004-2005 LOGILAB S.A. (Paris, FRANCE).
+# Copyright (c) 2004-2007 LOGILAB S.A. (Paris, FRANCE).
 # http://www.logilab.fr/ -- mailto:contact@logilab.fr
 #
 # This program is free software; you can redistribute it and/or modify it under
@@ -19,9 +19,6 @@
 # 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 """this module contains mercurial scm"""
     
-from __future__ import generators
-
-__revision__ = '$Id$'
 __metaclass__ = type
 __all__ = ['HGAgent', 'find_repository']
 
@@ -65,7 +62,7 @@ def changeset_info(repo, rev=0, changenode=None):
         rev = log.rev(changenode)
     manifest, user, (time, timezone), files, desc, extra = log.read(changenode)
     summary = desc.splitlines()[0]
-    checkin_date = datetime.date.fromtimestamp((float(time) - timezone))
+    checkin_date = datetime.datetime.fromtimestamp((float(time) - timezone))
     return rev, checkin_date, user, summary
 
 
@@ -223,10 +220,10 @@ class HGAgent:
         #    print "warning: <%s> argument not needed and ignored" % path
         return 'hg clone %s' % repository
 
-    # FIXME: fix docstring and add to interface
     def log_info(self, path, from_date, to_date, repository=None, tag=None):
-        """get log messages between <from_date> and <to_date>
-        Both date should be local time (ie 9-sequence) or epoch time (ie float)
+        """get log messages between <from_date> and <to_date> (inclusive)
+        
+        Both date should be local time (ie 9-sequence)
         
         a log information is a tuple
         (file, revision_info_as_string, added_lines, removed_lines)
@@ -236,9 +233,8 @@ class HGAgent:
         opts = dict(rev=['tip:0'], branches=None, include=(), exclude=())
         get = cachefunc(lambda r: repo.changectx(r).changeset())
         changeiter, matchfn = walkchangerevs(ui, repo, (), get, opts)
-        from_date = datetime.date(*[int(x) for x in from_date.split('-')])
-        to_date = datetime.date(*[int(x) for x in to_date.split('-')])
-
+        from_date = datetime.datetime(*from_date[:6])
+        to_date = datetime.date(*to_date[:6])
         infos = []
         msg_template = '%s by %s on %s: %s'
         for st, rev, fns in changeiter:

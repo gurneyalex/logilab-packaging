@@ -2,7 +2,7 @@
 #      Copyright (C) 2002-2003 Stephen Kennedy <stevek@gnome.org>
 #      http://meld.sourceforge.net
 #
-# Copyright (c) 2004 LOGILAB S.A. (Paris, FRANCE).
+# Copyright (c) 2004-2007 LOGILAB S.A. (Paris, FRANCE).
 # http://www.logilab.fr/ -- mailto:contact@logilab.fr
 #
 # This program is free software; you can redistribute it and/or modify it under
@@ -18,12 +18,8 @@
 # this program; if not, write to the Free Software Foundation, Inc.,
 # 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 """this module contains CVS vcs system mangagement implementation
-for OoBrother
 """
 
-from __future__ import generators
-
-__revision__ = '$Id: cvs.py,v 1.12 2005-07-26 09:41:29 syt Exp $'
 __docformat__ = "restructuredtext en"
 
 __all__ = ('CVSAgent',)
@@ -292,16 +288,17 @@ class CVSAgent:
         tag = tag or 'HEAD'
         return 'cvs -d %s -Q checkout -r %s %s' % (repository, tag, path)
 
-
-    # FIXME: fix docstring and add to interface
     def log_info(self, path, from_date, to_date, repository=None, tag=None):
-        """get log messages between <from_date> and <to_date>
-        Both date should be local time (ie 9-sequence) or epoch time (ie float)
+        """get log messages between <from_date> and <to_date> (inclusive)
+        
+        Both date should be local time (ie 9-sequence)
         
         a log information is a tuple
         (file, revision_info_as_string, added_lines, removed_lines)
         """
-        cmdoptions = ['-d %s\<%s' % (from_date, to_date)]
+        from_date = strftime('%Y-%m-%d', from_date)
+        to_date = strftime('%Y-%m-%d', to_date)        
+        cmdoptions = ['-d %s\<=%s' % (from_date, to_date)]
         if tag and tag != 'HEAD':
             cmdoptions.append('-r%s' % tag)
         if repository:
