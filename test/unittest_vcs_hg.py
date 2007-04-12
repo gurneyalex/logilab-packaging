@@ -10,13 +10,17 @@ from tempfile import mkdtemp
 from logilab.common import testlib
 from utest_utils import make_test_fs, delete_test_fs
 
-from logilab.devtools.vcslib import hg
 
 class HGAgentTC(testlib.TestCase):
     """test case for HGAgent"""
 
     def setUp(self):
         """make test HG directory"""
+        try:
+            from logilab.devtools.vcslib import hg
+        except ImportError:
+            self.skip('mercurial is not installed')
+        self.agent = hg.HGAgent
         self.tmp1 = mkdtemp(dir='/tmp')
         # self.tmp2 = mkdtemp(dir='/tmp')
         self.tmp2 = os.tempnam('/tmp')
@@ -25,11 +29,11 @@ class HGAgentTC(testlib.TestCase):
 
     def test_status(self):
         """check that hg status correctly reports changes"""
-        self.assertEquals(hg.HGAgent.not_up_to_date(self.tmp2), [])
+        self.assertEquals(self.agent.not_up_to_date(self.tmp2), [])
         f = os.path.join(self.tmp2, 'toto')
         file(f,'w').close()
         # os.system('ls %s' % self.tmp2)
-        self.assertEquals(len(hg.HGAgent.not_up_to_date(self.tmp2)), 1)
+        self.assertEquals(len(self.agent.not_up_to_date(self.tmp2)), 1)
         
     def tearDown(self):
         """deletes temp files"""
