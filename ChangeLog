@@ -6,6 +6,7 @@ ChangeLog for logilab.devtools
     * updated for mercurial API changes
     * fixed vcsagent.log_info method api: from_date and to_date should be
       local time tuple
+    * fixed hg local time conversion
 	
 2006-12-06  --  0.10.2
     * fixed silly NameError
