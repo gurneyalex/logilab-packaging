@@ -24,8 +24,9 @@ __all__ = ['HGAgent', 'find_repository']
 
 import sys
 import os
-from os.path import abspath, isdir, join, dirname
 import datetime
+from time import gmtime, mktime
+from os.path import abspath, isdir, join, dirname
 from cStringIO import StringIO
 
 from logilab.common.compat import sorted, reversed
@@ -233,8 +234,10 @@ class HGAgent:
         opts = dict(rev=['tip:0'], branches=None, include=(), exclude=())
         get = cachefunc(lambda r: repo.changectx(r).changeset())
         changeiter, matchfn = walkchangerevs(ui, repo, (), get, opts)
-        from_date = datetime.datetime(*from_date[:6])
-        to_date = datetime.datetime(*to_date[:6])
+        # changeset_info return GMT time, convert from_date and to_date
+        # as well so we can compare
+        from_date = datetime.datetime(*gmtime(mktime(from_date))[:6])
+        to_date = datetime.datetime(*gmtime(mktime(to_date))[:6])
         infos = []
         msg_template = '%s by %s on %s: %s'
         for st, rev, fns in changeiter:
