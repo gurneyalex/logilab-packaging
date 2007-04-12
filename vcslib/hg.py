@@ -109,7 +109,7 @@ class HGAgent:
                         changes.append(('outgoing', filename))
             statuslist = ('modified', 'added', 'removed', 'deleted', 'unknown')
             return changes + [(status, filename)
-                              for status, files in zip(statuslist, repo.changes())
+                              for status, files in zip(statuslist, repo.status())
                               for filename in files]
         finally:
             sys.stdout = sys.__stdout__
