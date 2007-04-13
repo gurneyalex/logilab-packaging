@@ -39,7 +39,7 @@ from mercurial.ui import ui as Ui
 from mercurial.cmdutil import walkchangerevs
 from mercurial.util import cachefunc, _encoding
 
-ui.warn = lambda *args, **kwargs: 0 # make it quiet
+Ui.warn = lambda *args, **kwargs: 0 # make it quiet
 
 def find_repository(path):
     """returns <path>'s mercurial repository
