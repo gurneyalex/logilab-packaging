@@ -23,17 +23,19 @@
 __metaclass__ = type
 __all__ = ['SVNAgent']
 
+import sys
 import os
 import re
 from os.path import isdir, join, dirname, basename, exists, split
-from time import strftime
+from datetime import datetime
+from time import strptime, strftime, mktime
 from xml.sax import make_parser, ContentHandler
 
 from logilab.common.shellutils import Execute
 
 from logilab.devtools.vcslib import VCS_UPTODATE, VCS_MODIFIED, \
      VCS_MISSING, VCS_NEW, VCS_CONFLICT, VCS_NOVERSION, VCS_IGNORED, \
-     VCS_REMOVED, VCS_NEEDSPATCH, IVCSAgent
+     VCS_REMOVED, VCS_NEEDSPATCH, IVCSAgent, CheckInInfo, localtime_to_gmtime
 
 # This one is for when the svn '-u' option will work ...
 # ENTRY_SRE = re.compile("^(.)......(.)\s*\d*\s*(\d*)\s*[^ ]*\s*(.*)$(?m)")
@@ -51,7 +53,7 @@ SVN_CODES =  {
     "*" : VCS_NEEDSPATCH,
     }
 
-REM_LOCAL_DATE_RGX = re.compile(r' \(\w\w\w, \d\d \w\w\w \d\d\d\d\)')
+REM_LOCAL_DATE_RGX = re.compile(r' \+0000 \(\w\w\w, \d\d \w\w\w \d\d\d\d\)')
         
 
 def get_info(path):
@@ -255,20 +257,26 @@ class SVNAgent:
         a log information is a tuple
         (file, revision_info_as_string, added_lines, removed_lines)
         """
-        from_date = strftime('%Y-%m-%d', from_date)
-        to_date = strftime('%Y-%m-%d', to_date)
-        command = 'svn log -r {%s}:{%s} %s %s' % (from_date, to_date,
-                                                  repository or '', path)
+        assert from_date < to_date
+        # XXX how-to to include time
+        from_date = strftime('%Y-%m-%d %H:%M', localtime_to_gmtime(from_date))
+        # since we want an inclusive range
+        to_date = strftime('%Y-%m-%d %H:%M', localtime_to_gmtime(to_date))
+        command = 'TZ=UTC svn log -r "{%s}:{%s}" %s %s' % (from_date, to_date,
+                                                           repository or '', path)
         separator = '-' * 72
         status, msg, rev, author, date = None, '', None, None, None
+        infos = []
         for line in Execute(command).out.splitlines():
             if not line.strip():
                 continue
             if line == separator:
                 if status is not None:
-                    # FIXME: fix line information
-                    msg = '%s by %s on %s: %s' % (rev, author, date, msg)
-                    yield '', msg, 1, 0
+                    # FIXME: added/removed line information
+                    date = datetime.fromtimestamp(mktime(strptime(date, '%Y-%m-%d %H:%M:%S')))
+                    msg = unicode(msg, sys.stdout.encoding)
+                    infos.append((date, CheckInInfo(date, author, msg, rev,
+                                                    branch=tag)))
                 status, msg = 'new', ''
             elif status == 'new':
                 rev, author, date, added = [part.strip()
@@ -277,6 +285,8 @@ class SVNAgent:
                 status = 'content'
             elif status == 'content':
                 msg = '%s\n%s' % (msg, line)
+        for _, info in reversed(sorted(infos)):
+            yield info
 
 
 # SVNAgent is a stateless object, transparent singleton thanks to its __call__

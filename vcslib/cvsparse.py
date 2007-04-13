@@ -1,4 +1,4 @@
-# Copyright (c) 2000-2002 LOGILAB S.A. (Paris, FRANCE).
+# Copyright (c) 2002-2007 LOGILAB S.A. (Paris, FRANCE).
 # http://www.logilab.fr/ -- mailto:contact@logilab.fr
 #
 # This program is free software; you can redistribute it and/or modify it under
@@ -13,15 +13,13 @@
 # You should have received a copy of the GNU General Public License along with
 # this program; if not, write to the Free Software Foundation, Inc.,
 # 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+"""library to analyze cvs log
 """
-library to analyze cvs log
-"""
-
-__revision__ = "$Id: cvs.py,v 1.9 2005-12-28 18:34:50 syt Exp $"
 
 import os
 import re
 from time import time, localtime, strftime
+
 from logilab.common.tree import Node
 from logilab.common.interface import Interface
 
@@ -96,12 +94,14 @@ class StatusLineHandler:
                 print self._w_revision
                 print '%s\t%s'% (' '.join(s[:2]), s[2])
 
+DATE_FORMAT = '%Y/%m/%d %H:%M:%S'
+
 # "cvs log" output handler #####################################################
 
 # match "date: 2001/09/15 01:48:06;  author: molson;  state: Exp;"
 #       "date: 2001/09/15 02:24:47;  author: molson;  state: Exp;  lines: +29 -0"
-REV_DATE_RGX = re.compile('(?P<date>\d\d\d\d[-/]\d\d[-/]\d\d) [^;]*;  \
-author: (?P<author>[^;]*);  state: ([^;]*);(  lines: \+(?P<new>\d+) -(?P<removed>\d+))?$')
+REV_DATE_RGX = re.compile('(?P<date>\d\d\d\d[-/]\d\d[-/]\d\d [^;]*);  \
+author: (?P<author>[^;]*);  state: ([^;]*);(  lines: \+(?P<new>\d+) -(?P<removed>\d+))?')
 #
 REV_TOTAL_RGX = re.compile('(?P<total>\d+);\s+selected revisions: (?P<selected>\d+)')
 
@@ -194,7 +194,7 @@ def revision_date(revision, line):
     assert m is not None, "%s doesn't match %s" % (line, REV_DATE_RGX.pattern)
     revision.author = m.group('author')
     # cvs date format differs according to cvs version, need normalisation (purpose of the .replace call)
-    revision.date = m.group('date').replace('-', '/')
+    revision.date = m.group('date').replace('-', '/').split('+', 1)[0].strip()
     if m.group('new') is None:
         revision.initial = 1
     else:

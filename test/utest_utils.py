@@ -2,8 +2,6 @@
 """this module defines useful functions for OoBrother's unit tests
 """
 
-__revision__ = '$Id: utest_utils.py,v 1.2 2005-01-12 14:20:44 syt Exp $'
-
 import os, shutil
 
 def make_test_fs(arch):
