@@ -25,17 +25,21 @@ __docformat__ = "restructuredtext en"
 __all__ = ('CVSAgent',)
 __metaclass__ = type
 
-
+import sys
 import os
 import os.path as osp
 import time
 import re
+from datetime import datetime
+from time import strptime, strftime, mktime
+
+from logilab.common.shellutils import Execute
 
 from logilab.devtools.cvslog import get_logs
 from logilab.devtools.vcslib import VCS_UPTODATE, VCS_MODIFIED, \
      VCS_MISSING, VCS_NEW, VCS_REMOVED, VCS_CONFLICT, VCS_NEEDSPATCH, \
-     IVCSAgent
-from logilab.common import Execute
+     IVCSAgent, CheckInInfo, localtime_to_gmtime
+from logilab.devtools.vcslib.cvsparse import DATE_FORMAT
 
 ENTRY_SRE = re.compile('^(?P<isdir>D?)/(?P<name>[^/]+)/(?P<status>.+)$(?m)')
 
@@ -172,7 +176,13 @@ class CVSAgent:
         :return:
           a list of tuple (file, status) describing files which are not up to date
         """
-        executed = Execute("cvs -Q status %s | grep Status | grep -v Up-to-date" % filepath)
+        if osp.isdir(filepath):
+            dirname, filepath = filepath, ''
+        else:
+            dirname, filepath = osp.split(filepath)
+        cmd = "cd %s && (cvs -Q status %s | grep Status | grep -v Up-to-date)" % (
+            dirname, filepath)
+        executed = Execute(cmd)
         result = []
         for nouptodate in executed.out.splitlines():
             file, status = nouptodate.split('Status:')
@@ -296,9 +306,10 @@ class CVSAgent:
         a log information is a tuple
         (file, revision_info_as_string, added_lines, removed_lines)
         """
-        from_date = strftime('%Y-%m-%d', from_date)
-        to_date = strftime('%Y-%m-%d', to_date)        
-        cmdoptions = ['-d %s\<=%s' % (from_date, to_date)]
+        assert from_date < to_date
+        from_date = strftime('%Y-%m-%d %H:%M', localtime_to_gmtime(from_date))
+        to_date = strftime('%Y-%m-%d %H:%M', localtime_to_gmtime(to_date))
+        cmdoptions = ['-d "%s<=%s"' % (from_date, to_date)]
         if tag and tag != 'HEAD':
             cmdoptions.append('-r%s' % tag)
         if repository:
@@ -310,7 +321,11 @@ class CVSAgent:
             for rev in fileobj.children:
                 if fileobj.repo_file.find('/Attic/') > -1:
                     continue
-                yield fileobj.repo_file, str(rev), rev.lines[0], rev.lines[1]
+                date = datetime.fromtimestamp(mktime(strptime(rev.date, DATE_FORMAT)))
+                msg = unicode('\n'.join(rev.message), sys.stdout.encoding)
+                yield CheckInInfo(date, rev.author, msg,
+                                  rev.revision, rev.lines[0], rev.lines[1],
+                                  files=(fileobj.repo_file,), branch=tag)
 
     def _in_dir_cmd(self, directory, cmd):
         if directory:

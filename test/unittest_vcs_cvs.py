@@ -1,9 +1,10 @@
 # -*- coding: ISO-8859-1 -*-
 """unittests for cvs management in OoBrother"""
 
-__revision__ = '$Id: unittest_vcs_cvs.py,v 1.2 2005-01-12 14:20:44 syt Exp $'
+from logilab.common import testlib
 
-import unittest
+import shutil, tempfile, os, os.path as osp
+from time import localtime, time
 from utest_utils import make_test_fs, delete_test_fs
 
 from logilab.devtools.vcslib import cvs
@@ -30,7 +31,7 @@ ARCH = [('generated', ()),
         ]
 
 
-class CVSAgentTC(unittest.TestCase):
+class GetInfoTC(testlib.TestCase):
     """test case for CVSAgent"""
     def setUp(self):
         """make test CVS directory"""
@@ -64,7 +65,52 @@ class CVSAgentTC(unittest.TestCase):
         delete_test_fs(ARCH)
 
     
+
+class CVSAgentTC(testlib.TestCase):
+    """test case for CVSAgent"""
+
+    def setUp(self):
+        """make test CVS directory"""
+        self.tmp1 = tempfile.mkdtemp(dir='/tmp')
+        os.system('cvs -d %s init' % self.tmp1)
+        os.mkdir(osp.join(self.tmp1, 'module'))
+        self.tmp2 = tempfile.mkdtemp(dir='/tmp')        
+        os.system('cvs -d %s co -d %s module >/dev/null 2>/dev/null' % (self.tmp1, self.tmp2))
+        f = os.path.join(self.tmp2, 'README')
+        stream = file(f,'w')
+        stream.write('hop')
+        stream.close()
+        os.system('(cd %s && cvs add README && cvs ci -m "add readme file") >/dev/null 2>/dev/null' % self.tmp2)
+        stream = file(f,'w')
+        stream.write('hop hop')
+        stream.close()
+        os.system('(cd %s && cvs ci -m "update readme file") >/dev/null 2>/dev/null' % self.tmp2)
+        #os.system('(cd %s && cvs up) >/dev/null' % self.tmp2)
+        
+    def tearDown(self):
+        """deletes temp files"""
+        shutil.rmtree(self.tmp1)
+        shutil.rmtree(self.tmp2)
+
+    def test_status(self):
+        """check that cvs status correctly reports changes"""
+        self.assertEquals(cvs.CVSAgent.not_up_to_date(self.tmp2), [])
+        f = os.path.join(self.tmp2, 'README')
+        stream = file(f,'w')
+        stream.write('hoooooooo')
+        stream.close()
+        self.assertEquals(len(cvs.CVSAgent.not_up_to_date(self.tmp2)), 1)
+
+    def test_log_info(self):
+        login = os.getlogin()
+        from_date = localtime(time() - 60*60*24)
+        # add some minutes since it seems to be cvs log resolution
+        to_date = localtime(time() + 120)
+        self.assertEquals([str(cii) for cii in cvs.CVSAgent.log_info('module/README', from_date, to_date,
+                                                                     repository=self.tmp1)],
+                          ['%s: update readme file (1.2)' % login,
+                           '%s: add readme file (1.1)' % login])
     
 
 if __name__ == '__main__':
-    unittest.main()
+    testlib.unittest_main()

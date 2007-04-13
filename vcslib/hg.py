@@ -25,7 +25,6 @@ __all__ = ['HGAgent', 'find_repository']
 import sys
 import os
 import datetime
-from time import gmtime, mktime
 from os.path import abspath, isdir, join, dirname
 from cStringIO import StringIO
 
@@ -33,12 +32,12 @@ from logilab.common.compat import sorted, reversed
 
 from logilab.devtools.vcslib import VCS_UPTODATE, VCS_MODIFIED, \
      VCS_MISSING, VCS_NEW, VCS_CONFLICT, VCS_NOVERSION, VCS_IGNORED, \
-     VCS_REMOVED, VCS_NEEDSPATCH, IVCSAgent
+     VCS_REMOVED, VCS_NEEDSPATCH, IVCSAgent, CheckInInfo, localtime_to_gmtime
 
 from mercurial.hg import repository as Repository
 from mercurial.ui import ui as Ui
 from mercurial.cmdutil import walkchangerevs
-from mercurial.util import cachefunc
+from mercurial.util import cachefunc, _encoding
 
 def find_repository(path):
     """returns <path>'s mercurial repository
@@ -62,9 +61,8 @@ def changeset_info(repo, rev=0, changenode=None):
     elif not rev:
         rev = log.rev(changenode)
     manifest, user, (time, timezone), files, desc, extra = log.read(changenode)
-    summary = desc.splitlines()[0]
     checkin_date = datetime.datetime.fromtimestamp((float(time) + timezone))
-    return rev, checkin_date, user, summary
+    return rev, checkin_date, user, desc, files
 
 
 class HGAgent:
@@ -226,9 +224,11 @@ class HGAgent:
         
         Both date should be local time (ie 9-sequence)
         
-        a log information is a tuple
-        (file, revision_info_as_string, added_lines, removed_lines)
+        return an iterator on `CheckInInfo` instances, sorted by date
+        (descending)
         """
+        if tag and tag != 'HEAD':
+            raise NotImplementedError("dunno how to get logs for a given tag")
         ui = Ui()
         repo = Repository(ui, path=find_repository(path))
         opts = dict(rev=['tip:0'], branches=None, include=(), exclude=())
@@ -236,25 +236,21 @@ class HGAgent:
         changeiter, matchfn = walkchangerevs(ui, repo, (), get, opts)
         # changeset_info return GMT time, convert from_date and to_date
         # as well so we can compare
-        from_date = datetime.datetime(*gmtime(mktime(from_date))[:6])
-        to_date = datetime.datetime(*gmtime(mktime(to_date))[:6])
+        from_date = datetime.datetime(*localtime_to_gmtime(from_date)[:6])
+        to_date = datetime.datetime(*localtime_to_gmtime(to_date)[:6])
         infos = []
-        msg_template = '%s by %s on %s: %s'
         for st, rev, fns in changeiter:
             if st == 'add':
                 changenode = repo.changelog.node(rev)
-                br = None
-                if opts['branches']:
-                    br = repo.branchlookup([repo.changelog.node(rev)])
-                rev, date, user, summary = changeset_info(repo, rev, changenode)
+                rev, date, user, message, files = changeset_info(repo, rev, changenode)
                 if from_date <= date <= to_date:
-                    # FIXME: lines information
-                    infos.append((rev, user, date, summary))
-                    # msg = '%s by %s on %s: %s' % (rev, user, date, summary)
-        for info in reversed(sorted(infos)):
-            yield '', msg_template % info, 1, 0
-
-
+                    # FIXME: added/removed lines information
+                    cii = CheckInInfo(date, user, unicode(message, _encoding),
+                                      rev, files=files, branch=tag)
+                    infos.append((date, cii))
+        for _, info in reversed(sorted(infos)):
+            yield info
+                  
 # HGAgent is a stateless object, transparent singleton thanks to its __call__
 # method
 HGAgent = HGAgent()

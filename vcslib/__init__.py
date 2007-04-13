@@ -1,5 +1,5 @@
 # pylint: disable-msg=E0201
-# Copyright (c) 2004-2006 LOGILAB S.A. (Paris, FRANCE).
+# Copyright (c) 2004-2007 LOGILAB S.A. (Paris, FRANCE).
 # http://www.logilab.fr/ -- mailto:contact@logilab.fr
 #
 # This program is free software; you can redistribute it and/or modify it under
@@ -30,7 +30,10 @@ __metaclass__ = type
 
 import mimetypes
 import os
+from datetime import datetime
 from os.path import join, exists, isfile, isdir, dirname, basename
+
+from logilab.common.textutils import splittext
 
 from logilab.devtools.vcslib.interfaces import IVCSFile, IVCSAgent
 from logilab.devtools.vcslib.node import BaseNode
@@ -476,4 +479,55 @@ def get_vcs_agent(directory):
         if find_repository(directory):
             return HGAgent()
     return None
+
+
+class CheckInInfo:
+    def __init__(self, date, author, message,
+                 revision=None, added=0, removed=0, files=(), branch=None):
+        """information relative to a vcs checkin
+
+        required arguments:
+        
+        * `date`: GMT date (`datetime.datetime` instance) on which the check-in
+          has been done
+        * `author`: string representing the author of the check-in
+        * `message`: unicode string giving the check-in message
+
+        optional arguments:
+        
+        * `revision`: revision on vcs where it make sense. Type will depend on
+          the scm.
+        * `added`: integer number of lines added by this check-in
+        * `removed`: integer number of lines removed by this check-in
+        * `files`: list of files on which the check-in apply
+        * `branch`: branch on which the check-in apply if it's not the main trunk
+        """
+        assert isinstance(date, datetime), repr(date)
+        assert isinstance(author, basestring), repr(author)
+        assert isinstance(message, unicode), repr(message)
+        assert isinstance(added, int), repr(added)
+        assert isinstance(removed, int), repr(removed)
+        self.date = date
+        self.author = author
+        self.message = message
+        self.revision = revision
+        self.added = added
+        self.removed = removed
+        self.files = files
+        self.branch = branch
+
+    def message_summary(self, maxlen=72, ellispis='...'):
+        """return a short summary of the message in case it's too long"""
+        msg = ' '.join(self.message.split()).strip()
+        if len(msg) > maxlen:
+            msg = splittext(msg, maxlen - len(ellispis)) + ellispis
+        return msg
+
+    def __str__(self):
+        return '%s: %s (%s)' % (self.author,
+                                self.message_summary().encode('ascii', 'replace'),
+                                self.revision)
     
+from time import gmtime, mktime
+def localtime_to_gmtime(timetuple):
+    return gmtime(mktime(timetuple))

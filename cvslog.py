@@ -13,8 +13,6 @@ OPTIONS:
     -d / --days
 """
 
-__revision__ = '$Id: cvslog.py,v 1.9 2004-02-13 09:21:32 syt Exp $'
-
 import os
 import sys
 import getopt
@@ -97,7 +95,7 @@ def get_logs(cvsoptions, cvscommandoptions, rlog=''):
     else:
         cvsargs = '%s log %s' % (' '.join(cvsoptions),
                                  ' '.join(cvscommandoptions))
-    command = 'cvs -Q %s' % (cvsargs)
+    command = 'TZ=UTC cvs -Q %s' % (cvsargs)
     # spawn the cvs command
     (p_input, p_output, p_err) = os.popen3(command)
     p_input.close()
