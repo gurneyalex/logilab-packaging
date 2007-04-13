@@ -231,8 +231,10 @@ class HGAgent:
         """
         if tag and tag != 'HEAD':
             raise NotImplementedError("dunno how to get logs for a given tag")
+        repopath = find_repository(path)
+        assert repopath is not None, 'no repository found in %s' % path
         ui = Ui()
-        repo = Repository(ui, path=find_repository(path))
+        repo = Repository(ui, path=repopath)
         opts = dict(rev=['tip:0'], branches=None, include=(), exclude=())
         get = cachefunc(lambda r: repo.changectx(r).changeset())
         changeiter, matchfn = walkchangerevs(ui, repo, (), get, opts)
