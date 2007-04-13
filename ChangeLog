@@ -5,8 +5,9 @@ ChangeLog for logilab.devtools
     * force manifest file regeneration
     * updated for mercurial API changes
     * fixed vcsagent.log_info method api: from_date and to_date should be
-      local time tuple
+      local time tuple, return an iterator on CheckInInfo instances
     * fixed hg local time conversion
+    * fixed cvs log output parsing
 	
 2006-12-06  --  0.10.2
     * fixed silly NameError
