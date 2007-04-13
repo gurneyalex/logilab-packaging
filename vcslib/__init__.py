@@ -520,7 +520,7 @@ class CheckInInfo:
         """return a short summary of the message in case it's too long"""
         msg = ' '.join(self.message.split()).strip()
         if len(msg) > maxlen:
-            msg = splittext(msg, maxlen - len(ellispis)) + ellispis
+            msg = splittext(msg, maxlen - len(ellispis))[0] + ellispis
         return msg
 
     def __str__(self):
