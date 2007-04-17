@@ -68,7 +68,6 @@ pycoverage -a [-d dir] DIR1 FILE1 FILE2 ...
 Coverage data is saved in the file .coverage by default.  Set the
 COVERAGE_FILE environment variable to save it somewhere else."""
 
-__revision__ = '$Id: coverage.py,v 1.20 2005-12-29 14:44:57 syt Exp $'
 __version__ = "2.5.20051204"    # see detailed history at the end of this file.
 
 import compiler
@@ -356,9 +355,12 @@ class Coverage:
     
     def t(self, f, w, a): #pragma: no cover
         if w == 'line':
-            self.c[(f.f_code.co_filename, f.f_lineno)] = 1
+            path = abspath(f.f_code.co_filename)
+            self.c[(path, f.f_lineno)] = 1
             for c in self.cstack:
-                c[(f.f_code.co_filename, f.f_lineno)] = 1
+                c[(path, f.f_lineno)] = 1
+        else:
+            path = abspath(f.f_code.co_filename)
         return self.t
 
     def get_ready(self):
@@ -370,7 +372,9 @@ class Coverage:
     def start(self):
         self.get_ready()
         if self.nesting == 0:                               #pragma: no cover
-            sys.settrace(self.t)
+            self.settrace = sys.settrace
+            self.settrace(self.t)
+            sys.settrace = lambda x: None
             if hasattr(threading, 'settrace'):
                 threading.settrace(self.t)
         self.nesting += 1
@@ -378,7 +382,7 @@ class Coverage:
     def stop(self):
         self.nesting -= 1
         if self.nesting == 0:                               #pragma: no cover
-            sys.settrace(None)
+            self.settrace(None)
             if hasattr(threading, 'settrace'):
                 threading.settrace(None)
 

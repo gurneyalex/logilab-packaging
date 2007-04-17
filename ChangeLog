@@ -8,6 +8,8 @@ ChangeLog for logilab.devtools
       local time tuple, return an iterator on CheckInInfo instances
     * fixed hg local time conversion
     * fixed cvs log output parsing
+    * coverage disable settrace while running with its own trace
+      function. This break doctests but avoid coverage problems...
 	
 2006-12-06  --  0.10.2
     * fixed silly NameError
