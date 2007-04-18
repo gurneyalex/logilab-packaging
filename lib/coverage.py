@@ -372,8 +372,9 @@ class Coverage:
     def start(self):
         self.get_ready()
         if self.nesting == 0:                               #pragma: no cover
-            self.settrace = sys.settrace
+            self.settrace = sys.__settrace__ = sys.settrace
             self.settrace(self.t)
+            sys.__tracer__ = self.t
             sys.settrace = lambda x: None
             if hasattr(threading, 'settrace'):
                 threading.settrace(self.t)
