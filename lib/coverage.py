@@ -83,7 +83,7 @@ import token
 import getopt
 import threading
 from os.path import exists, isdir, isabs, splitext, walk, join, \
-     abspath, basename, dirname, normcase
+     abspath, basename, dirname, normcase, isfile
 
 
 BASE_EXCLUDE = ('CVS', '.svn', '.hg', 'bzr')
@@ -334,7 +334,8 @@ class Coverage:
     # avoid duplicating work.
     canonical_filename_cache = {}
 
-    def __init__(self):
+
+    def __init__(self, analyzeonly=None):
         self.usecache = 1
         self.cache = None
         self.exclude_re = ''
@@ -343,6 +344,7 @@ class Coverage:
         self.xstack = []
         self.get_ready()
         self.exclude('#pragma[: ]+[nN][oO] [cC][oO][vV][eE][rR]')
+        self.analyzeonly = analyzeonly or []
         
     # t(f, x, y).  This method is passed to sys.settrace as a trace function.  
     #def t(f, x, y):
@@ -352,15 +354,25 @@ class Coverage:
     # the arguments and return value of the trace function.
     # See [van Rossum 2001-07-20a, 3.2] for a description of frame and code
     # objects.
-    
+
     def t(self, f, w, a): #pragma: no cover
-        if w == 'line':
+        if w == 'c_call': # do nothing on C calls
+            return None
+        elif w == 'call':
+            if not isfile(f.f_code.co_filename):
+                return None
+            path = abspath(f.f_code.co_filename)
+            for dirpath in self.analyzeonly:
+                if path.startswith(dirpath):
+                    # we *have* to analyze this file
+                    break
+            else:
+                return None
+        elif w == 'line':
             path = abspath(f.f_code.co_filename)
             self.c[(path, f.f_lineno)] = 1
             for c in self.cstack:
                 c[(path, f.f_lineno)] = 1
-        else:
-            path = abspath(f.f_code.co_filename)
         return self.t
 
     def get_ready(self):
@@ -379,11 +391,12 @@ class Coverage:
             if hasattr(threading, 'settrace'):
                 threading.settrace(self.t)
         self.nesting += 1
-
+	
     def stop(self):
         self.nesting -= 1
         if self.nesting == 0:                               #pragma: no cover
             self.settrace(None)
+            sys.settrace = self.settrace
             if hasattr(threading, 'settrace'):
                 threading.settrace(None)
 
@@ -793,6 +806,7 @@ def help(error=None, status=0):
     print __doc__
     sys.exit(status)
 
+
 def run(args):
     """Command line utility"""
     settings = {}
@@ -805,6 +819,7 @@ def run(args):
         '-r': 'report',
         '-x': 'execute',
         '-o': 'omit=',
+        '-p:': 'project-root=',
         }
     short_opts = ''.join(map(lambda o: o[1:], optmap.keys())) + 'h'
     long_opts = optmap.values() + ['help']
@@ -837,8 +852,12 @@ def run(args):
         help("Unexpected arguments %s." % args, 1)
     if args_needed and not args:
         help("Missing argument.", 1)
-    the_coverage = Coverage()
-    
+    projdir = settings.get('project-root=')
+    if projdir:
+        the_coverage = Coverage([projdir])
+    else:
+        the_coverage = Coverage()
+
     if settings.get('erase'):
         the_coverage.erase()
     if settings.get('execute'):
