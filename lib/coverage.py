@@ -70,6 +70,7 @@ COVERAGE_FILE environment variable to save it somewhere else."""
 
 __version__ = "2.5.20051204"    # see detailed history at the end of this file.
 
+
 import compiler
 import compiler.visitor
 import os
@@ -731,8 +732,12 @@ class Coverage:
             except ZeroDivisionError:
                 pc_missing = 0.
             result[name] = (nb_stmts, nb_exec_stmts, pc, pc_missing, readable)
-        result[TOTAL_ENTRY] = (total_statements, total_executed,
-                               100.0 * total_executed / total_statements, '')
+            try:
+                result[TOTAL_ENTRY] = (total_statements, total_executed,
+                                       100.0 * total_executed / total_statements, '')
+            except ZeroDivisionError:
+                result[TOTAL_ENTRY] = (total_statements, total_executed,
+                                       100.0, '')
         return result
         
     blank_re = re.compile(r"\s*(#|$)")
