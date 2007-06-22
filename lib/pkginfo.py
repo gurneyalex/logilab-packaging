@@ -28,7 +28,8 @@ from commands import getstatusoutput
 from time import time, localtime
 from stat import S_IWRITE
 
-from logilab.common.fileutils import lines, files_by_ext, ensure_fs_mode
+from logilab.common.fileutils import lines, ensure_fs_mode
+from logilab.common.shellutils import find
 
 import logilab.devtools
 from logilab.devtools.lib import TextReporter
@@ -246,7 +247,7 @@ def _get_lines(pkginfo, fname):
         return lines(filename, '#')
     return []
 
-def _get_files(pkginfo, directories, include_exts=None, exclude_exts=None,
+def _get_files(pkginfo, directories, include_exts=(), exclude_exts=None,
                exclude_dirs=()):
     """return files matching or excluding a set of extensions, in the first
     existing directory
@@ -257,9 +258,10 @@ def _get_files(pkginfo, directories, include_exts=None, exclude_exts=None,
     try:
         for directory in directories:
             if exists(directory):
-                return files_by_ext(directory, include_exts=include_exts,
-                                  exclude_exts=exclude_exts,
-                                  exclude_dirs=exclude_dirs)
+                return find(directory,
+                            include_exts,
+                            exclude_exts,
+                            exclude_dirs)
         return []
     finally:
         os.chdir(cwd)
