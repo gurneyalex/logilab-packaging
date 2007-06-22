@@ -337,7 +337,7 @@ information.'},
 specified a known license with the "license" attribute. Otherwise, you must \
 set this variable.'},
     {'name': 'pyversions',
-     'default' : ('2.3', '2.4'),
+     'default' : ('2.4', '2.5'),
      'help' : 'list of supported Python versions'},
     )),
                       
