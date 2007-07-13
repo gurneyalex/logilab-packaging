@@ -39,6 +39,14 @@ from mercurial.ui import ui as Ui
 from mercurial.cmdutil import walkchangerevs
 from mercurial.util import cachefunc, _encoding
 
+try:
+    # demandimport causes problems when activated, ensure it isn't
+    # XXX put this in apycot where the pb has been noticed?
+    from mercurial import demandimport
+    demandimport.disable()
+except:
+    pass
+
 Ui.warn = lambda *args, **kwargs: 0 # make it quiet
 
 def find_repository(path):
