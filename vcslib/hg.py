@@ -205,7 +205,7 @@ class HGAgent:
         #print abspath(filepath)
         assert abspath(filepath).startswith(os.getcwd()), \
                "I don't know how to deal with filepath and <hg tag>"
-        return "hg tag %s" % tagname
+        return "hg tag -f %s" % tagname
 
     def checkout(self, repository, path, tag=None):
         """
