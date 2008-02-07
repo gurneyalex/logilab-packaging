@@ -140,7 +140,10 @@ def build_debian(pkg_dir, dest_dir, pdebuild_options='',
             # 5/ build the package using fakeroot or pbuilder usually
             os.chdir(origdir)
             debuilder = os.environ.get('DEBUILDER') or 'pdebuild'
-            cmd = '%s %s' % (debuilder, pdebuild_options)
+            if pdebuild_options:
+                cmd = '%s --debbuildopts %s' % (debuilder, pdebuild_options)
+            else:
+                cmd = debuilder
             if quiet:
                 cmd += ' 1>/dev/null 2>/dev/null'
             status = os.system(cmd)
@@ -165,7 +168,8 @@ def build_debian(pkg_dir, dest_dir, pdebuild_options='',
 
 def add_options(parser):
     parser.usage = 'lgp build [options] <args>'
-    parser.add_option('--debbuildopts', default='', help='options passed to pdebuild')
+    parser.add_option('--debbuildopts', default='',
+                      help="options passed to pdebuild's --debbuildopts option")
     parser.add_option('--dist', dest='distdir', default=expanduser('~/dist'),
                       help='where to put results')
     parser.add_option('--orig', help='path to orig.tar.gz file')
