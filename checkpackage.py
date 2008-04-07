@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+-#!/usr/bin/env python
 # Copyright (c) 2003-2006 LOGILAB S.A. (Paris, FRANCE).
 # http://www.logilab.fr/ -- mailto:contact@logilab.fr
 #
@@ -168,8 +168,8 @@ def normalize_version(version):
     """remove trailing .0 in version if necessary (i.e. 1.1.0 -> 1.1,
     2.0.0 -> 2)
     """
-    while version.endswith('.0'):
-        version = version[:-2]
+    while version and version[-1] == 0:
+        version = version[:-1]
     return version
 
 def check_release_number(reporter, dirname, info_module='__pkginfo__'):
