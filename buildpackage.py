@@ -1,4 +1,4 @@
-# -*- encoding: iso-8859-15 -*-
+# -*- coding: iso-8859-15 -*-
 # Copyright (c) 2003-2006 LOGILAB S.A. (Paris, FRANCE).
 # http://www.logilab.fr/ -- mailto:contact@logilab.fr
 #
