@@ -84,7 +84,7 @@ import token
 import getopt
 import threading
 from os.path import exists, isdir, isabs, splitext, walk, join, \
-     abspath, basename, dirname, normcase, isfile
+     abspath, basename, dirname, normcase, isfile, realpath
 
 
 BASE_EXCLUDE = ('CVS', '.svn', '.hg', 'bzr')
@@ -345,7 +345,10 @@ class Coverage:
         self.xstack = []
         self.get_ready()
         self.exclude('#pragma[: ]+[nN][oO] [cC][oO][vV][eE][rR]')
-        self.analyzeonly = analyzeonly or []
+        if analyzeonly:
+            self.analyzeonly = [realpath(path) for path in analyzeonly]
+        else:
+            self.analyzeonly = []
         
     # t(f, x, y).  This method is passed to sys.settrace as a trace function.  
     #def t(f, x, y):
@@ -359,10 +362,10 @@ class Coverage:
     def t(self, f, w, a): #pragma: no cover
         if w == 'c_call': # do nothing on C calls
             return None
-        elif w == 'call':
+        elif w == 'call' and self.analyzeonly:
             if not isfile(f.f_code.co_filename):
                 return None
-            path = abspath(f.f_code.co_filename)
+            path = realpath(f.f_code.co_filename)
             for dirpath in self.analyzeonly:
                 if path.startswith(dirpath):
                     # we *have* to analyze this file
@@ -370,7 +373,7 @@ class Coverage:
             else:
                 return None
         elif w == 'line':
-            path = abspath(f.f_code.co_filename)
+            path = realpath(f.f_code.co_filename)
             self.c[(path, f.f_lineno)] = 1
             for c in self.cstack:
                 c[(path, f.f_lineno)] = 1
