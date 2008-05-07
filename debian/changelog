@@ -1,3 +1,10 @@
+devtools (0.10.2-2) unstable; urgency=low
+
+  * Fix __future__ import in template/setup.py which causes installation
+    problems with python2.5
+
+ -- Alexandre Fayolle <afayolle@debian.org>  Wed, 07 May 2008 17:15:15 +0200
+
 logilab-devtools (0.10.2-1) unstable; urgency=low
 
   * New upstream release
