@@ -16,6 +16,7 @@
 """
 
 import sys
+from logilab.common.textutils import colorize_ansi
 
 INFO = 0
 WARNING = 10
@@ -36,13 +37,21 @@ REVERSE_SEVERITIES = {
     FATAL : 'FATAL'
     }
 
+SEVERITIES_COLORS = {
+    'INFO' : None,
+    'WARNING' : 'yellow',
+    'ERROR' : 'red',
+    'FATAL' : 'red',
+    }
+
 class TextReporter:
     """ report messages and layouts in plain text
     """
     
-    def __init__(self, output=sys.stdout):
+    def __init__(self, output=sys.stdout, color=False):
         self.out = output
         self.reset()
+        self.term_color = color
         
     def reset(self):
         self.counts = {}
@@ -55,8 +64,12 @@ class TextReporter:
         line may be None if unknown
         """
         self.counts[severity] += 1
-        self.out.write('%s:%s:%s:%s\n' % (REVERSE_SEVERITIES[severity][0], path,
-                                          line or '', msg))
+        severity_name = REVERSE_SEVERITIES[severity]
+        msg = '%s:%s:%s:%s\n' % (severity_name[0],
+                                 path, line or '', msg)
+        if self.term_color:
+            msg = colorize_ansi(msg, SEVERITIES_COLORS[severity_name])
+        self.out.write(msg)
 
     # convenience methods to avoid importing level constants
     def warning(self, path, line, msg):

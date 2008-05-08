@@ -21,8 +21,8 @@ import sys
 
 from logilab.common.textutils import normalize_text
 from logilab.devtools.lib import TextReporter
-from logilab.devtools.lib.pkginfo import PKGINFO, PKGINFO_ATTRIBUTES, \
-     PackageInfo, check_info_module
+from logilab.devtools.lib.pkginfo import PKGINFO, PKGINFO_ATTRIBUTES
+from logilab.devtools.lib.pkginfo import PackageInfo
 
     
 def dump_values(pkginfo, values):
@@ -101,7 +101,9 @@ def run(pkgdir, options, args):
         print_list()
     elif options.field:
         try:
-            pi = PackageInfo(TextReporter(sys.stderr), pkgdir)
+            out = sys.stderr
+            reporter = TextReporter(out, color=out.isatty())
+            pi = PackageInfo(reporter, pkgdir)
             dump_values(pi, [options.field])
         except ImportError:
             sys.stderr.write("%r does not appear to be a valid package " % pkgdir)
