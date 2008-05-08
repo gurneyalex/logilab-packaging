@@ -1,6 +1,7 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 #
-# Copyright (c) 2004-2006 LOGILAB S.A. (Paris, FRANCE).
+# Copyright (c) 2004-2008 LOGILAB S.A. (Paris, FRANCE).
 # http://www.logilab.fr/ -- mailto:contact@logilab.fr
 #
 # This program is free software; you can redistribute it and/or modify it under
@@ -17,8 +18,6 @@
 # 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 """tag a package for a distribution
 """
-
-__revision__ = '$Id: tagpackage.py,v 1.7 2005-07-26 12:15:27 adim Exp $'
 
 import os
 import sys

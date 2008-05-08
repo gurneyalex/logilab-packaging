@@ -1,4 +1,5 @@
-# Copyright (c) 2002-2007 LOGILAB S.A. (Paris, FRANCE).
+# -*- coding: utf-8 -*-
+# Copyright (c) 2002-2008 LOGILAB S.A. (Paris, FRANCE).
 # http://www.logilab.fr/ -- mailto:contact@logilab.fr
 #
 # This program is free software; you can redistribute it and/or modify it under

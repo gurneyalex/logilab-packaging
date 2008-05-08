@@ -988,7 +988,7 @@ if __name__ == '__main__':
 # C. COPYRIGHT AND LICENCE
 #
 # Copyright 2001 Gareth Rees.  All rights reserved.
-# Copyright 2003-2005 LOGILAB S.A. (Paris, FRANCE).  All rights reserved.
+# Copyright 2003-2008 LOGILAB S.A. (Paris, FRANCE).  All rights reserved.
 # Copyright 2004-2005 Ned Batchelder.  All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without

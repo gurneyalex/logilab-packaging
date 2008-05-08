@@ -1,7 +1,7 @@
 ;;; BASED ON diff-mode.el --- A mode for viewing/editing context diffs
 
 ;; Copyright (C) 1998, 1999, 2000, 2001  Free Software Foundation, Inc.
-;; Copyright (C) 2005 LOGILAB S.A. (Paris, FRANCE).
+;; Copyright (C) 2005-2008 LOGILAB S.A. (Paris, FRANCE).
 ;; http://www.logilab.fr/ -- mailto:contact@logilab.fr
 
 ;; Author: Stefan Monnier <monnier@cs.yale.edu>

@@ -11,9 +11,6 @@ OPTIONS:
         (default is 0)
 """
 
-__revision__ = '$Id: cvstatus.py,v 1.8 2003-11-14 12:41:37 syt Exp $'
-
-
 from logilab.devtools.vcslib.cvsparse import StatusLineHandler, parse
 import sys
 import getopt

@@ -1,5 +1,6 @@
 #!/usr/bin/env python
-# Copyright (c) 2003-2005 LOGILAB S.A. (Paris, FRANCE).
+# -*- coding: utf-8 -*-
+# Copyright (c) 2003-2008 LOGILAB S.A. (Paris, FRANCE).
 # http://www.logilab.fr/ -- mailto:contact@logilab.fr
 #
 # This program is free software; you can redistribute it and/or modify it under
@@ -15,8 +16,6 @@
 # this program; if not, write to the Free Software Foundation, Inc.,
 # 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 """command line wrapper for lib.changelog"""
-
-__revision__ = "$Id: changelog.py,v 1.9 2005-12-28 18:34:49 syt Exp $"
 
 import sys
 import getopt

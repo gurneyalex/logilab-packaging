@@ -14,7 +14,6 @@
 """unittest for the lib/manifest.py module
 """
 
-__revision__ = '$Id: unittest_manifest.py,v 1.9 2005-07-26 09:41:25 syt Exp $'
 
 import unittest
 import sys

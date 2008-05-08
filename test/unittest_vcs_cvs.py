@@ -1,4 +1,4 @@
-# -*- coding: ISO-8859-1 -*-
+# -*- coding: utf-8 -*-
 """unittests for cvs management in OoBrother"""
 
 from logilab.common import testlib
