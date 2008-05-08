@@ -1,8 +1,8 @@
-# -*- coding: iso-8859-1 -*-
+# -*- coding: utf-8 -*-
 
 import os, os.path as osp
 import sys
-from stat import ST_MTIME, S_IWUSR
+from stat import ST_MTIME
 from cStringIO import StringIO
 from logilab.common.shellutils import cp
 
@@ -168,7 +168,7 @@ def run(pkgdir, options, args):
     if 'uptodate' in actions:
         # check vcs up to date
         print SEPARATOR
-        if confirm("vérifier que l'entrepôt est à jour ?"):
+        if confirm("vÃ©rifier que l'entrepÃ´t est Ã  jour ?"):
             try:
                 vcs_agent = get_vcs_agent(pkgdir)
                 result = vcs_agent.not_up_to_date(pkgdir)
@@ -177,11 +177,11 @@ def run(pkgdir, options, args):
                     if not confirm('Continue ?'):
                         return 0
             except NotImplementedError:
-                print 'pas encore supporté par cet agent de controle'
+                print 'pas encore supportÃ© par cet agent de controle'
     if 'clean' in actions:
         # clean
         print SEPARATOR
-        if confirm("nettoyage du répertoire de travail ?"):
+        if confirm("nettoyage du rÃ©pertoire de travail ?"):
             patterns = ['*~', '*.pyc', '*.pyo', '*.o', '\#*', '.\#*']
             search = ' -o '.join(['-name "%s" '%item for item in patterns])
             os.system('find . "(" %s ")" -a -exec rm -f \{\} \; 2>/dev/null' % search)

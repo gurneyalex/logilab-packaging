@@ -1,4 +1,4 @@
-# Copyright (c) 2004 LOGILAB S.A. (Paris, FRANCE).
+# Copyright (c) 2004-2008 LOGILAB S.A. (Paris, FRANCE).
 # http://www.logilab.fr/ -- mailto:contact@logilab.fr
 #
 # This program is free software; you can redistribute it and/or modify it under
@@ -18,7 +18,6 @@ the file system tree representation, but it could be used to represent any tree
 like data structure.
 """
 
-__revision__ = '$Id: node.py,v 1.2 2004-12-14 15:46:33 syt Exp $'
 __docformat__ = "restructuredtext en"
 __metaclass__ = type
 

@@ -1,4 +1,4 @@
-# Copyright (c) 2000-2003 LOGILAB S.A. (Paris, FRANCE).
+# Copyright (c) 2000-2008 LOGILAB S.A. (Paris, FRANCE).
 # http://www.logilab.fr/ -- mailto:contact@logilab.fr
 
 # This program is free software; you can redistribute it and/or modify it under
@@ -17,8 +17,6 @@
 %(MODNAME)s packaging information
 """
 
-__revision__ = "$Id: __pkginfo__.py,v 1.5 2003-11-14 12:41:37 syt Exp $"
-
 # package name
 modname = '%(MODNAME)s'
 
@@ -28,7 +26,7 @@ version = '.'.join([str(num) for num in numversion])
 
 # license and copyright
 license = 'GPL'
-copyright = '''Copyright (c) 2001-2003 LOGILAB S.A. (Paris, FRANCE).
+copyright = '''Copyright (c) 2001-2008 LOGILAB S.A. (Paris, FRANCE).
 http://www.logilab.fr/ -- mailto:contact@logilab.fr'''
 
 # short and long description

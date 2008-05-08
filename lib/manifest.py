@@ -1,7 +1,7 @@
-# -*- coding: ISO-8859-1 -*-
+# -*- coding: utf-8 -*-
 
-# Copyright (c) 2003 Sylvain Thénault (thenault@gmail.com)
-# Copyright (c) 2003-2006 LOGILAB S.A. (Paris, FRANCE).
+# Copyright (c) 2003 Sylvain ThÃ©nault (thenault@gmail.com)
+# Copyright (c) 2003-2008 LOGILAB S.A. (Paris, FRANCE).
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -17,8 +17,6 @@
 # 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 """check MANIFEST.in files
 """
-
-__revision__ = '$Id: manifest.py,v 1.19 2005-07-26 09:41:16 syt Exp $'
 
 import os
 from os.path import isdir, exists, join, basename

@@ -1,5 +1,5 @@
-# -*- coding: iso-8859-15 -*-
-# Copyright (c) 2003-2006 LOGILAB S.A. (Paris, FRANCE).
+# -*- coding: utf-8 -*-
+# Copyright (c) 2003-2008 LOGILAB S.A. (Paris, FRANCE).
 # http://www.logilab.fr/ -- mailto:contact@logilab.fr
 #
 # This program is free software; you can redistribute it and/or modify it under
@@ -186,15 +186,15 @@ def run(pkgdir, options, args):
         return 1
     # lintian
     print SEPARATOR
-    if confirm("lancement de lintian sur les paquets générés ?"):
+    if confirm("lancement de lintian sur les paquets gÃ©nÃ©rÃ©s ?"):
         cond_exec('lintian -i %s/*.deb' % options.distdir)
 
     # linda
     print SEPARATOR
-    if confirm("lancement de linda sur les paquets générés ?"):
+    if confirm("lancement de linda sur les paquets gÃ©nÃ©rÃ©s ?"):
         cond_exec('linda -i %s/*.deb' % options.distdir)
 
     # piuparts
     print SEPARATOR
-    if confirm("lancement de piuparts sur les paquets générés ?"):
+    if confirm("lancement de piuparts sur les paquets gÃ©nÃ©rÃ©s ?"):
         cond_exec('sudo piuparts -p %s/*.deb' % options.distdir)

@@ -1,5 +1,5 @@
 # Copyright (c) 2003 Sylvain Thenault (thenault@gmail.com)
-# Copyright (c) 2003-2006 Logilab (devel@logilab.fr)
+# Copyright (c) 2003-2008 Logilab (devel@logilab.fr)
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -15,8 +15,6 @@
 # 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 """miscellaneous utilities, mostly shared by package'checkers
 """
-
-__revision__ = '$Id: utils.py,v 1.17 2005-07-26 09:41:18 syt Exp $'
 
 import re
 import os
