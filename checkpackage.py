@@ -25,7 +25,6 @@ __all__ = ('check_info_module', 'check_release_number', 'check_manifest_in',
            'check_bin', 'check_test', 'check_setup_py', 'check_announce')
 
 import sys
-import getopt
 import os
 import stat
 import re
@@ -214,7 +213,7 @@ CHECKERS = dict([(name, value) for name, value in globals().items()
                  if name.startswith('check_') and name[6:] in DEFAULT_CHECKS and callable(value)])
 
 def start_checks(package_dir, package_info='__pkginfo__', checks=DEFAULT_CHECKS):
-    reporter = TextReporter()
+    reporter = TextReporter(color=sys.stdout.isatty())
     for check in checks:
         try:
             check_func = CHECKERS['check_%s' % check]

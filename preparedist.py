@@ -117,7 +117,9 @@ def run(pkgdir, options, args):
     else:
         pkgtype = 'formation'
     try:
-        pkginfo = PackageInfo(TextReporter(sys.stderr), pkgdir)
+        out = sys.stderr
+        reporter = TextReporter(out, color=out.isatty())
+        pkginfo = PackageInfo(reporter, pkgdir)
     except ImportError, exc:
         sys.stderr.write("%r does not appear to be a valid package " % pkgdir)
         sys.stderr.write("(no __pkginfo__ found)\n")

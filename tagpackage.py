@@ -39,7 +39,7 @@ def tag_package(package_dir, vcs_agent=None):
     try:
         try:
             # this will try to import __pkginfo__
-            pi = PackageInfo(TextReporter(sys.stderr), '.')
+            pi = PackageInfo(TextReporter(sys.stderr, sys.stderr.isatty()), '.')
         except ImportError:
             print >> sys.stderr, "%r does not appear to be a valid package \
 (no __pkginfo__ found)" % package_dir
@@ -48,7 +48,8 @@ def tag_package(package_dir, vcs_agent=None):
         # conditional tagging
         release_tag = pi.release_tag()
         if confirm("Add tag %s on %s ?" % (release_tag, package_dir)):
-            manifest_files = read_manifest_in(TextReporter(sys.stderr), dirname='.',
+            manifest_files = read_manifest_in(TextReporter(sys.stderr, sys.stderr.isatty()),
+                                              dirname='.',
                                               exclude_patterns=(r'/(RCS|CVS|\.svn|\.hg)/.*',
                                                                 r'(.*\.pyc|.*\.pyo|.*\.html|.*\.pdf)'))
             python_files = get_module_files(package_dir)

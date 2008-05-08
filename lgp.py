@@ -35,9 +35,9 @@ def run(args):
                 ]
     for item in COMMANDS:
         parser.add_command(*item)
-    run, options, args = parser.parse_command(sys.argv[1:])
+    run_, options, args = parser.parse_command(sys.argv[1:])
     pkgdir = osp.abspath(args and args[0] or os.getcwd())
-    return run(pkgdir, options, args[1:])
+    return run_(pkgdir, options, args[1:])
 
 if __name__ == '__main__':
     sys.exit(run(sys.argv[1:]))
