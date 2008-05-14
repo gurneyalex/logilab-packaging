@@ -49,7 +49,7 @@ def runtests(projdir=os.getcwd()):
     for testdir in testdirs:
         if osp.isdir(testdir):
             os.chdir(testdir)
-            cond_exec('python runtests.py', confirm=True, retry=True)
+            cond_exec('pytest', confirm=True, retry=True)
             os.chdir(projdir)
             break
 
