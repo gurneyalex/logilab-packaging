@@ -158,9 +158,9 @@ def check_test(reporter, dirname):
     else:
         reporter.warning(dirname, None, 'No test directory')
         return 1
-    if not exists(join(test_dir, 'runtests.py')):
-        reporter.warning(join(basename(test_dir), 'runtests.py'), None,
-                         'Missing file')
+    #if not exists(join(test_dir, 'runtests.py')):
+    #    reporter.warning(join(basename(test_dir), 'runtests.py'), None,
+    #                    'Missing file')
     return 1
 
 def normalize_version(version):
