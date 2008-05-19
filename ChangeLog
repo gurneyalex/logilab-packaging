@@ -1,7 +1,7 @@
 ChangeLog for logilab.devtools
 ==============================
 
- --
+2008-05-19  --  0.11.0
     * force manifest file regeneration
     * updated for mercurial API changes
     * fixed vcsagent.log_info method api: from_date and to_date should be

@@ -1,3 +1,8 @@
+logilab-devtools (0.11.0-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Pierre-Yves David <pierre-yves.david@logilab.org>  Mon, 19 May 2008 16:29:13 +0200
 devtools (0.10.2-2) unstable; urgency=low
 
   * Fix __future__ import in template/setup.py which causes installation
