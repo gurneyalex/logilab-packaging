@@ -23,7 +23,7 @@ import getopt
 from logilab.devtools.lib import changelog
 
 
-USAGE = """%s
+USAGE = """
 USAGE: changelog [OPTIONS] [COMMAND] [COMMAND_ARGS]
 
 OPTIONS:
@@ -31,6 +31,8 @@ OPTIONS:
     display this help message
   --package-dir <dir>
     base directory of the package
+  --file <change log file>
+    change log file to consider
   --new
     create a new entry if no current entry found 
   --debian
@@ -54,16 +56,17 @@ COMMAND COMMANDS_ARGS
   close
     close the current entry (version is read from the package
     __pkginfo__.py file)
-""" % changelog.__doc__
+"""
     
 def run(args):
     """main"""
     # read option
-    l_opt = ['package-dir=', 'new', 'debian', 'help']
-    (opts, args) = getopt.getopt(args, 'h', l_opt)
+    l_opt = ['package-dir=', 'file=', 'new', 'debian', 'help']
+    (opts, args) = getopt.getopt(args, 'p:f:ndh', l_opt)
     pkg_dir = None
     create = None
     debian = False
+    chlogfile = None
     for name, value in opts:
         if name == ('--pkg-dir', '-p'):
             pkg_dir = value
@@ -71,6 +74,8 @@ def run(args):
             create = True
         elif name in ('--debian', '-d'):
             debian = True
+        elif name in ('--file', '-f'):
+            chlogfile = value
         elif name in ('--help', '-h'):
             print USAGE
             sys.exit(0)
@@ -78,10 +83,12 @@ def run(args):
         print USAGE
         sys.exit(1)
     if debian:
-        chlogfile = changelog.find_debian_changelog(pkg_dir)
+        if chlogfile is None:
+            chlogfile = changelog.find_debian_changelog(pkg_dir)
         chlg = changelog.DebianChangeLog(chlogfile)
     else:
-        chlogfile = changelog.find_ChangeLog(pkg_dir)
+        if chlogfile is None:
+            chlogfile = changelog.find_ChangeLog(pkg_dir)
         chlg = changelog.ChangeLog(chlogfile)
     
     if args[0] == 'extract':
