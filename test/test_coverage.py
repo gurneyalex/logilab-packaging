@@ -165,7 +165,7 @@ class CoverageTest(unittest.TestCase):
         for exc in excludes:
             coverage.exclude(exc)
         coverage.start()
-
+        
         # Import the python file, executing it.
         mod = self.importModule(modname)
         
@@ -514,6 +514,31 @@ class SimpleStatementTests(CoverageTest):
             assert locs['a'] == 2 and locs['b'] == 2 and locs['c'] == 2
             """,
             [1,2,3,4,7], "")
+    def testNonregrIgnoreFunctionContent(self):
+        self.checkCoverage("""\
+            def uncalled():
+                a=12
+                b=13
+                assert False,"should not be executed"
+                return 42
+            a=1
+            b=2
+            """,
+            [1,6,7],"2-5"
+            
+            )
+    def testNonregrIfFalseContent(self):
+        self.checkCoverage("""\
+            if False:
+                a=12
+                b=13
+                assert False,"should not be executed"
+            a=1
+            b=2
+            """,
+            [1,5,6],"2-4"
+            
+            )
 
 class CompoundStatementTests(CoverageTest):
     def testStatementList(self):
@@ -1307,7 +1332,7 @@ if sys.hexversion >= 0x020300f0:
     class ThreadingTests(CoverageTest):
         def testThreading(self):
             self.checkCoverage("""\
-                import time, threading
+                import threading
     
                 def fromMainThread():
                     return "called from main thread"
@@ -1318,11 +1343,23 @@ if sys.hexversion >= 0x020300f0:
                 def neverCalled():
                     return "no one calls me"
                 
-                threading.Thread(target=fromOtherThread).start()
+                t = threading.Thread(target=fromOtherThread)
+                t.start()
                 fromMainThread()
-                time.sleep(1)
+                t.join()
                 """,
-                [1,3,4,6,7,9,10,12,13,14], "10")
+                [1,3,4,6,7,9,10,12,13,14,15], "10")
+        def testNestedSetTrace(self):
+            self.checkCoverage("""\
+                import sys
+    
+                def f(a,b,c):
+                    assert False,"the sys.settrace call should be ignored"
+                
+                sys.settrace(f)
+                a=4
+                """,
+                [1,3,6,7], "4")
 
 class ApiTests(CoverageTest):
     def testSimple(self):
