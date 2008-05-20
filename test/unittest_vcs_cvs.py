@@ -4,8 +4,9 @@
 from logilab.common import testlib
 
 import shutil, tempfile, os, os.path as osp
-from time import localtime, time
+from time import localtime, time, sleep
 from utest_utils import make_test_fs, delete_test_fs
+
 
 from logilab.devtools.vcslib import cvs
 
@@ -75,17 +76,23 @@ class CVSAgentTC(testlib.TestCase):
         os.system('cvs -d %s init' % self.tmp1)
         os.mkdir(osp.join(self.tmp1, 'module'))
         self.tmp2 = tempfile.mkdtemp(dir='/tmp')        
-        os.system('cvs -d %s co -d %s module >/dev/null 2>/dev/null' % (self.tmp1, self.tmp2))
+        os.system(('cvs -d %s co -d %s module'
+                  +' >/dev/null 2>/dev/null') % (self.tmp1, self.tmp2))
         f = os.path.join(self.tmp2, 'README')
         stream = file(f,'w')
         stream.write('hop')
         stream.close()
-        os.system('(cd %s && cvs add README && cvs ci -m "add readme file") >/dev/null 2>/dev/null' % self.tmp2)
+        os.system( ('(cd %s && cvs add README &&'
+                   +' cvs ci -m "add readme file") >/dev/null 2>/dev/null')
+                    % self.tmp2
+                 )
+        sleep(0.001) # added to avoid misterious missing ci
         stream = file(f,'w')
         stream.write('hop hop')
         stream.close()
-        os.system('(cd %s && cvs ci -m "update readme file") >/dev/null 2>/dev/null' % self.tmp2)
-        #os.system('(cd %s && cvs up) >/dev/null' % self.tmp2)
+        os.system(('(cd %s && cvs ci -m "update readme file")'
+                  +' >/dev/null 2>/dev/null') % self.tmp2)
+        #os.system('cd %s && cvs log' % self.tmp2)
         
     def tearDown(self):
         """deletes temp files"""
@@ -105,11 +112,13 @@ class CVSAgentTC(testlib.TestCase):
         login = os.getlogin()
         from_date = localtime(time() - 60*60*24)
         # add some minutes since it seems to be cvs log resolution
-        to_date = localtime(time() + 120)
-        self.assertEquals([str(cii) for cii in cvs.CVSAgent.log_info('module/README', from_date, to_date,
-                                                                     repository=self.tmp1)],
-                          ['%s: update readme file (1.2)' % login,
-                           '%s: add readme file (1.1)' % login])
+        to_date = localtime(time() + 1200)
+        log_info = cvs.CVSAgent.log_info('module/README', from_date, to_date,repository=self.tmp1)
+        log_info = [str(cii) for cii in log_info]
+
+        expected_result = ['%s: update readme file (1.2)' % login,
+                              '%s: add readme file (1.1)' % login]
+        self.assertEquals(log_info, expected_result)
     
 
 if __name__ == '__main__':
