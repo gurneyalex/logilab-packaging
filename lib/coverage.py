@@ -309,6 +309,23 @@ class StatementFindingAstVisitor(compiler.visitor.ASTVisitor):
         # trace function), so don't record their line numbers.
         pass
 
+
+class _SysProxy(object):
+    def __init__(self, module, settrace):
+        assert not isinstance(module,_SysProxy)
+        self.__dict__["_mod"] = module
+        self.__dict__["settrace"] = settrace
+        
+    def __getattr__(self, attr):
+        if attr != 'settrace':
+            return getattr(self._mod, attr)
+        else:
+            return self.__dict__['settrace']
+
+    def __setattr__(self, attr, value):
+        if attr != 'settrace':
+            return setattr(self._mod, attr, value)
+
 class Coverage:
     error = "coverage error"
 
@@ -391,18 +408,22 @@ class Coverage:
             self.settrace = sys.__settrace__ = sys.settrace
             self.settrace(self.t)
             sys.__tracer__ = self.t
-            sys.settrace = lambda x: None
             if hasattr(threading, 'settrace'):
                 threading.settrace(self.t)
+                threading._sys = _SysProxy(sys,self.settrace)
+            # XXX generalize the proxy for all imports sys.modules["sys"]=...
+            sys.settrace = lambda x: None # disable any other settrace while covering
         self.nesting += 1
 	
     def stop(self):
         self.nesting -= 1
         if self.nesting == 0:                               #pragma: no cover
             self.settrace(None)
-            sys.settrace = self.settrace
+            sys.settrace = self.settrace # enable any other settrace again
+
             if hasattr(threading, 'settrace'):
                 threading.settrace(None)
+                threading._sys = sys
 
     def erase(self):
         self.c = {}
