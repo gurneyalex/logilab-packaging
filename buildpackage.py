@@ -49,6 +49,7 @@ def get_packages_list(info):
 def move_result(dest_dir, info, debuilder):
     if not isdir(dest_dir):
         os.mkdir(dest_dir)
+    
     packages = get_packages_list(info)
     binary_packages = [pkg for pkg in packages if pkg.endswith('.deb')]
     (upstream_name, upstream_version, debian_name, debian_version) = info
@@ -101,7 +102,7 @@ def build_debian(pkg_dir, dest_dir, pdebuild_options='',
     # 1/ ensure project directory has debian/ directory
     if not isdir('debian'):
         print 'No "debian" directory'
-        return 1
+        return False
     
     # 2/ check destination directory exists, create it if necessary, ensure
     #    debian/rules exists and is executable
@@ -134,7 +135,7 @@ def build_debian(pkg_dir, dest_dir, pdebuild_options='',
             if status:
                 print 'An error occured while extracting the upstream tarball ' \
                       '(return status: %s)' % status
-                return 1
+                return False
             export(join(pkg_dir, 'debian'), '%s/debian' % origdir)
             
             # 5/ build the package using fakeroot or pbuilder usually
@@ -150,16 +151,16 @@ def build_debian(pkg_dir, dest_dir, pdebuild_options='',
             if status:
                 print 'An error occured while building the debian package ' \
                           '(return status: %s)' % status
-                return 1
+                return False
 
             # 6/ move the upstream tarball and debian package files to the destination directory
             mv(origpath, dest_dir)
             if move_result(dest_dir, info, debuilder):
-                return 1
-            return 0
+                return False
+            return get_packages_list(info)
         except Exception, exc:
             print "An exception occured while moving files (%s)" % exc
-            return 1
+            return False
     finally:
         os.chdir(pkg_dir)
         # print "please visit", tmpdir
@@ -181,20 +182,28 @@ def run(pkgdir, options, args):
         origdir = abspath(options.orig)
     else:
         origdir = None
-    if build_debian(pkgdir, abspath(options.distdir),
-                    options.debbuildopts, origdir):
+
+    packages = build_debian(pkgdir, abspath(options.distdir),
+                    options.debbuildopts, origdir)
+    if not packages:
         return 1
     # lintian
     print SEPARATOR
     if confirm("lancement de lintian sur les paquets générés ?"):
-        cond_exec('lintian -i %s/*.deb' % options.distdir)
+        for package in packages:
+            if package.endswith('.deb'):
+                cond_exec('lintian -i %s/%s' % (options.distdir,package))
 
     # linda
     print SEPARATOR
     if confirm("lancement de linda sur les paquets générés ?"):
-        cond_exec('linda -i %s/*.deb' % options.distdir)
+        for package in packages:
+            if package.endswith('.deb'):
+                cond_exec('linda -i %s/%s' % (options.distdir,package))
 
     # piuparts
     print SEPARATOR
     if confirm("lancement de piuparts sur les paquets générés ?"):
-        cond_exec('sudo piuparts -p %s/*.deb' % options.distdir)
+        for package in packages:
+            if package.endswith('.deb'):
+                cond_exec('sudo piuparts -p %s/%s' % (options.distdir,package))
