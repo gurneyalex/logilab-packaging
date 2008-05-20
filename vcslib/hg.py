@@ -262,7 +262,6 @@ class HGAgent:
                                       rev, files=files, branch=tag)
                     infos.append((date, cii))
         for _, info in reversed(sorted(infos)):
-        #for _, info in sorted(infos):
             yield info
                   
 # HGAgent is a stateless object, transparent singleton thanks to its __call__
