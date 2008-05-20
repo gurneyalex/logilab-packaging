@@ -1,9 +1,9 @@
 """unittests for mercurail management"""
 
-import os, shutil
+import os, shutil,pwd
 from tempfile import mkdtemp, mktemp
 from logilab.common import testlib
-from time import localtime, time
+from time import localtime, time, sleep
 from utest_utils import make_test_fs, delete_test_fs
 
 
@@ -22,14 +22,19 @@ class HGAgentTC(testlib.TestCase):
         os.system('hg init %s' % self.tmp1)
         os.system('hg clone %s %s >/dev/null' % (self.tmp1, self.tmp2))
         f = os.path.join(self.tmp2, 'README')
+        sleep(1) # added to avoid misterious missing ci
         stream = file(f,'w')
         stream.write('hop')
         stream.close()
-        os.system('(cd %s && hg add README && hg ci -m "add readme file") >/dev/null 2>/dev/null' % self.tmp2)
+        os.system(('(cd %s && hg add README && hg ci -m "add readme file")'
+                  +' >/dev/null 2>/dev/null') % self.tmp2)
+        sleep(1) # added to avoid misterious missing ci
         stream = file(f,'w')
         stream.write('hop hop')
         stream.close()
-        os.system('(cd %s && hg ci -m "update readme file" && hg push) >/dev/null 2>/dev/null' % self.tmp2)
+        os.system(('(cd %s && hg ci -m "update readme file" && hg push)'
+                  +' >/dev/null 2>/dev/null') % self.tmp2)
+        #os.system(('(cd %s && hg pull && hg log)') % self.tmp2)
         
     def tearDown(self):
         """deletes temp files"""
@@ -45,11 +50,11 @@ class HGAgentTC(testlib.TestCase):
         self.assertEquals(len(self.agent.not_up_to_date(self.tmp2)), 1)
 
     def test_log_info(self):
-        login = os.getlogin()
+        login, _,_,_,_,home,_ = pwd.getpwuid(os.getuid())
         from_date = localtime(time() - 60*60*24)
         # add 1 minute since it seems to be svn log resolution
         to_date = localtime(time())
-        hgrc = os.path.join('/home', login, '.hgrc')
+        hgrc = os.path.join(home,'.hgrc')
         if os.path.exists(hgrc):
             for line in file(hgrc):
                 line = line.strip()

@@ -628,8 +628,8 @@ class Coverage:
 
     # Backward compatibility with version 1.
     def analysis(self, morf):
-        f, s, _, m, mf = self.analysis2(morf)
-        return f, s, m, mf
+        filename, statement, _, missing, mis_formatted = self.analysis2(morf)
+        return filename, statement, missing, mis_formatted
 
     def analysis2(self, morf):
         filename, statements, excluded = self.analyze_morf(morf)
