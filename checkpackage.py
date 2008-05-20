@@ -164,6 +164,8 @@ def normalize_version(version):
     """remove trailing .0 in version if necessary (i.e. 1.1.0 -> 1.1,
     2.0.0 -> 2)
     """
+    if isinstance(version,basestring):
+        version = tuple( int(num) for num in version.split('.'))
     while version and version[-1] == 0:
         version = version[:-1]
     return version
