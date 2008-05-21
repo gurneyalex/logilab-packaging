@@ -411,19 +411,22 @@ class Coverage:
             if hasattr(threading, 'settrace'):
                 threading.settrace(self.t)
                 threading._sys = _SysProxy(sys,self.settrace)
-            # XXX generalize the proxy for all imports sys.modules["sys"]=...
+                threading.__settrace__ = threading.settrace
+                threading.settrace = lambda x: None
             sys.settrace = lambda x: None # disable any other settrace while covering
         self.nesting += 1
 	
     def stop(self):
-        self.nesting -= 1
-        if self.nesting == 0:                               #pragma: no cover
-            self.settrace(None)
-            sys.settrace = self.settrace # enable any other settrace again
+        if self.nesting > 0:
+            self.nesting -= 1
+            if self.nesting <= 0:                               #pragma: no cover
+                self.settrace(None)
+                sys.settrace = self.settrace # enable any other settrace again
 
-            if hasattr(threading, 'settrace'):
-                threading.settrace(None)
-                threading._sys = sys
+                if hasattr(threading, 'settrace'):
+                    threading.settrace = threading.__settrace__
+                    threading.settrace(None)
+                    threading._sys = sys
 
     def erase(self):
         self.c = {}
