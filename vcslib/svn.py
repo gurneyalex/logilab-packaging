@@ -274,7 +274,10 @@ class SVNAgent:
                 if status is not None:
                     # FIXME: added/removed line information
                     date = datetime.fromtimestamp(mktime(strptime(date, '%Y-%m-%d %H:%M:%S')))
-                    msg = unicode(msg, sys.stdout.encoding)
+                    if hasattr(sys.stdout,'encoding'):
+                        msg = unicode(msg, sys.stdout.encoding)
+                    else:
+                        msg = unicode(msg)
                     infos.append((date, CheckInInfo(date, author, msg, rev,
                                                     branch=tag)))
                 status, msg = 'new', ''
