@@ -96,12 +96,17 @@ def build_debian(pkg_dir, dest_dir, pdebuild_options='',
     upstream_version = pkginfo.version
     debian_name = pkginfo.debian_name
     debian_version = DebianChangeLog('debian/changelog').get_latest_revision()
+    if debian_version[-1] > 1 and origpath is None:
+        print >> sys.stderr , '--orig option is required when not building the first'\
+                                ' version of the debian package'
+        return False
+    
     info = (upstream_name, upstream_version, debian_name, debian_version)
     tmpdir = tempfile.mkdtemp()
     workdir = join(tmpdir, '%s-%s'% (debian_name, upstream_version))
     # 1/ ensure project directory has debian/ directory
     if not isdir('debian'):
-        print 'No "debian" directory'
+        print >> sys.stderr ,'No "debian" directory'
         return False
     
     # 2/ check destination directory exists, create it if necessary, ensure
@@ -133,7 +138,7 @@ def build_debian(pkg_dir, dest_dir, pdebuild_options='',
             os.chdir(tmpdir)
             status = os.system('tar xzf %s' % origpath)
             if status:
-                print 'An error occured while extracting the upstream tarball ' \
+                print >> sys.stderr ,'An error occured while extracting the upstream tarball ' \
                       '(return status: %s)' % status
                 return False
             export(join(pkg_dir, 'debian'), '%s/debian' % origdir)
@@ -149,7 +154,7 @@ def build_debian(pkg_dir, dest_dir, pdebuild_options='',
                 cmd += ' 1>/dev/null 2>/dev/null'
             status = os.system(cmd)
             if status:
-                print 'An error occured while building the debian package ' \
+                print >> sys.stderr ,'An error occured while building the debian package ' \
                           '(return status: %s)' % status
                 return False
 
@@ -159,7 +164,7 @@ def build_debian(pkg_dir, dest_dir, pdebuild_options='',
                 return False
             return get_packages_list(info)
         except Exception, exc:
-            print "An exception occured while moving files (%s)" % exc
+            print >> sys.stderr ,"An exception occured while moving files (%s)" % exc
             return False
     finally:
         os.chdir(pkg_dir)
