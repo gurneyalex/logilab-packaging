@@ -86,7 +86,7 @@ class CoverageTest(unittest.TestCase):
     def setUp(self):
         # Create a temporary directory.
         self.noise = str(random.random())[2:]
-        self.temproot = join(tempfile.gettempdir(),  'test_coverage' )
+        self.temproot = join(tempfile.gettempdir(),  'test_coverage'+self.noise )
         os.mkdir(self.temproot)
         self.tempdir = join(self.temproot, self.noise)
         os.mkdir(self.tempdir)
@@ -521,10 +521,11 @@ class SimpleStatementTests(CoverageTest):
                 b=13
                 assert False,"should not be executed"
                 return 42
+            
             a=1
             b=2
             """,
-            [1,6,7],"2-5"
+            [1,7,8],"2-5"
             
             )
     def testNonregrIfFalseContent(self):
@@ -533,10 +534,11 @@ class SimpleStatementTests(CoverageTest):
                 a=12
                 b=13
                 assert False,"should not be executed"
+            
             a=1
             b=2
             """,
-            [1,5,6],"2-4"
+            [1,6,7],"2-4"
             
             )
 
@@ -1349,17 +1351,119 @@ if sys.hexversion >= 0x020300f0:
                 t.join()
                 """,
                 [1,3,4,6,7,9,10,12,13,14,15], "10")
-        def testNestedSetTrace(self):
-            self.checkCoverage("""\
-                import sys
+class SetTraceTests(CoverageTest):
     
-                def f(a,b,c):
-                    assert False,"the sys.settrace call should be ignored"
-                
-                sys.settrace(f)
-                a=4
-                """,
-                [1,3,6,7], "4")
+    def setUp(self):
+        # Start up coverage.py
+        coverage.erase()
+        CoverageTest.setUp(self)
+        try:
+            set()
+        except NameError:
+            from sets import Set as set
+        
+        self.log = set()
+        self.expected_log = set()
+        self.log_counter = 0
+    def tearDown(self):
+        coverage.stop()
+        sys.settrace(None)
+
+    def make_tracer(self,log_value=0):
+        def tracer(a,b,c,log=self.log,log_value=log_value):
+            log.add(log_value)
+        return tracer
+    def set_tracer_log(self,value=0):
+        sys.settrace(self.make_tracer(value))
+
+    def assertLog(self):
+        self._assertEitherLogOrNoLog(True)
+    def assertNoLog(self):
+        self._assertEitherLogOrNoLog(False)
+    def _assertEitherLogOrNoLog(self,log):
+        self.set_tracer_log(self.log_counter)
+        if log:
+            self.expected_log.add(self.log_counter)
+        self.log_counter+=1
+        self.assertEqual(self.log,self.expected_log)
+
+
+    def testSimpleCall(self):
+        import sys
+        
+        coverage.start()
+
+        self.assertNoLog()
+
+        coverage.stop()
+
+        self.assertLog()
+    
+    def testMultipleSimpleCall(self):
+        import sys
+        
+        coverage.start()
+
+        self.assertNoLog()
+
+        coverage.stop()
+
+        self.assertLog()
+        
+        coverage.start()
+
+        self.assertNoLog()
+
+        coverage.stop()
+        
+        self.assertLog()
+    
+    def testNestedCall(self):
+        import sys
+        
+        coverage.start()
+        #
+        self.assertNoLog()
+        #
+        coverage.start()
+        ##
+        self.assertNoLog()
+        ##
+        coverage.stop()
+        #
+        self.assertNoLog()
+        #
+        coverage.stop()
+        
+        self.assertLog()
+    
+    def testMultipleNestedCall(self):
+        import sys
+        
+        coverage.start()
+        #
+        self.assertNoLog()
+        #
+        coverage.start()
+        ##
+        self.assertNoLog()
+        ##
+        coverage.stop()
+        #
+        self.assertNoLog()
+        #
+        coverage.start()
+        ##
+        self.assertNoLog()
+        ##
+        coverage.stop()
+        #
+        self.assertNoLog()
+        #
+        coverage.stop()
+        
+        self.assertLog()
+
 
 class ApiTests(CoverageTest):
     def testSimple(self):
