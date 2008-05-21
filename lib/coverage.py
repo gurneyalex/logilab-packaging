@@ -65,6 +65,13 @@ pycoverage -a [-d dir] DIR1 FILE1 FILE2 ...
     the -d option, make the copies in that directory.  Without the -d
     option, make each copy in the same directory as the original.
 
+Other Options:
+    -i : ignore-errors
+    -o  XXX : omit XXX prefix (comma separated)
+    -p:XXX : project-root=XXX
+                                                                    
+
+
 Coverage data is saved in the file .coverage by default.  Set the
 COVERAGE_FILE environment variable to save it somewhere else."""
 
