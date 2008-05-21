@@ -18,7 +18,7 @@ Description: set of development tools used at Logilab for source management
  Set of tools which aims to help the developpement process, including :
   * cvs/svn/mercurial utilities
  .
- Homepage: http://www.logilab.org/projects/devtools
+Homepage: http://www.logilab.org/projects/devtools
 
 Package: logilab-packaging
 Architecture: all
@@ -30,10 +30,10 @@ Replaces: devtools
 XB-Python-Version: ${python:Versions}
 Description: set of development tools used at Logilab
  Set of tools which aims to help the developpement process, including :
-  * standard for zope and python packages
-  * tools to check and build source and/or debian packages
+  * standard for zope and Python packages
+  * tools to check and build source and/or Debian packages
  .
- Homepage: http://www.logilab.org/projects/devtools
+Homepage: http://www.logilab.org/projects/devtools
 
 Package: pycoverage
 Architecture: all
@@ -45,7 +45,7 @@ Replaces: devtools
 Description: python code coverage tool
  tool primary used to compute test coverage
  .
- Homepage: http://www.logilab.org/projects/devtools
+Homepage: http://www.logilab.org/projects/devtools
 
 Package: logilab-elisp
 Architecture: all
@@ -58,4 +58,4 @@ Description: emacs lisp code for logilab development tools
   * an emacs mode for ChangeLog files
   * a small set of emacs shortcuts used at logilab
  .
- Homepage: http://www.logilab.org/projects/devtools
+Homepage: http://www.logilab.org/projects/devtools

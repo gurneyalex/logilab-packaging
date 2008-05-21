@@ -58,7 +58,7 @@ scripts = [
     'bin/pycoverage',
     # logilab-packaging
     'bin/changelog',
-    'bin/update_gettext.sh',
+    'bin/update_gettext',
     'bin/lgp',
     ] 
 
