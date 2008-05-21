@@ -652,6 +652,15 @@ class Coverage:
 
     # Backward compatibility with version 1.
     def analysis(self, morf):
+        """return the Analysis of a previously analysed morf
+            return the following value ( filename, statements, excluded, 
+                                                missing, formatted missing)
+            - filename  : the file name
+            - statement : the list of all unignored statement of the file
+            - excluded  : the list of excluded statement
+            - missing   : the list of noncovered statement
+            - formatted mising : a formatted string of the <missing> list
+                (see format_lines doc for details)"""
         filename, statement, _, missing, mis_formatted = self.analysis2(morf)
         return filename, statement, missing, mis_formatted
 

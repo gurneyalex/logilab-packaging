@@ -516,29 +516,29 @@ class SimpleStatementTests(CoverageTest):
             [1,2,3,4,7], "")
     def testNonregrIgnoreFunctionContent(self):
         self.checkCoverage("""\
-            def uncalled():
-                a=12
-                b=13
-                assert False,"should not be executed"
-                return 42
-            
-            a=1
-            b=2
+            def uncalled():    #1
+                a=12           #2
+                b=13           #3
+                assert False,"should not be executed" #4
+                return 42      #5
+                               #6 
+            a=1                #7
+            b=2                #8
             """,
-            [1,7,8],"2-5"
+            [1,2,3,4,5,7,8],"2-5"
             
             )
     def testNonregrIfFalseContent(self):
         self.checkCoverage("""\
-            if False:
-                a=12
-                b=13
-                assert False,"should not be executed"
+            if False: #1
+                a=12  #2
+                b=13  #3
+                assert False,"should not be executed" #4
             
-            a=1
-            b=2
+            a=1 #6
+            b=2 #7
             """,
-            [1,6,7],"2-4"
+            [1,2,3,4,6,7],"2-4"
             
             )
 
@@ -793,15 +793,15 @@ class CompoundStatementTests(CoverageTest):
             [1,2,3,4,6,7], "")
         # Don't take the else branch.
         self.checkCoverage("""\
-            a = 3; b = 0
-            while a:
-                b += 1
-                a -= 1
-                break
-                b = 123
-            else:
-                b = 99
-            assert a == 2 and b == 1
+            a = 3; b = 0             #1
+            while a:                 #2
+                b += 1               #3
+                a -= 1               #4
+                break                #5
+                b = 123              #6
+            else:                    #7
+                b = 99               #8
+            assert a == 2 and b == 1 #9
             """,
             [1,2,3,4,5,6,8,9], "6-8")
     
