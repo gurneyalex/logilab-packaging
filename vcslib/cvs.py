@@ -297,7 +297,7 @@ class CVSAgent:
         """
         tag = tag or 'HEAD'
         if quiet:
-            quiet = '-Q '
+            quiet = '-Q'
         else:
             quiet = ''
         return 'cvs -d %s %s checkout -r %s %s' % (repository, quiet, tag, path)
