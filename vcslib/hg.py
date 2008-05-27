@@ -208,7 +208,7 @@ class HGAgent:
                "I don't know how to deal with filepath and <hg tag>"
         return "hg tag -f %s" % tagname
 
-    def checkout(self, repository, path, tag=None):
+    def checkout(self, repository, path, tag=None, quiet=True):
         """
         :type repository: str
         :param repository: the CVS repository address
@@ -223,12 +223,17 @@ class HGAgent:
           a shell command string to check out the given file or
           directory from the vc repository
         """
+        if quiet:
+            quiet = '-q '
+        else:
+            quiet = ''
+
         if tag and tag != 'HEAD':
             raise NotImplementedError("don't know how to co a given tag "
                                       "(hg clone -r tag ?")
         #if path:
         #    print "warning: <%s> argument not needed and ignored" % path
-        return 'hg clone %s' % repository
+        return 'hg clone %s %s' % (quiet, repository)
 
     def log_info(self, path, from_date, to_date, repository=None, tag=None):
         """get log messages between <from_date> and <to_date> (inclusive)
