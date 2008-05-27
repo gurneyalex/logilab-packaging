@@ -39,6 +39,7 @@ from mercurial.hg import repository as Repository
 from mercurial.ui import ui as Ui
 from mercurial.cmdutil import walkchangerevs
 from mercurial.util import cachefunc, _encoding
+from mercurial.node import short
 
 try:
     # demandimport causes problems when activated, ensure it isn't
@@ -268,6 +269,15 @@ class HGAgent:
                     infos.append((date, cii))
         for _, info in reversed(sorted(infos)):
             yield info
+    def current_short_changeset(self,path):
+        """return the short id of the current changeset"""
+        repopath = find_repository(path)
+        if repopath is not None:
+            raise RuntimeError('no repository found in %s' % path)
+        ui = Ui()
+        repo = Repository(ui, path=repopath)
+        short(r.changectx().node)
+
                   
 # HGAgent is a stateless object, transparent singleton thanks to its __call__
 # method
