@@ -229,7 +229,7 @@ class SVNAgent:
         print cmd
         return cmd
 
-    def checkout(self, repository, path, tag=None):
+    def checkout(self, repository, path, tag=None, quiet=True):
         """
         :type repository: str
         :param repository: the CVS repository address
@@ -246,8 +246,12 @@ class SVNAgent:
         """
         tag = tag or 'HEAD'
         svn_dir = tag == 'HEAD' and 'trunk' or tag
-        return 'svn checkout --non-interactive -q -r %s %s/%s/%s' % (
-            tag, repository, svn_dir, path)
+        if quiet:
+            quiet ='-q'
+        else:
+            quiet = ''
+        return 'svn checkout --non-interactive %s -r %s %s/%s/%s' % (
+           quiet, tag, repository, svn_dir, path)
 
     def log_info(self, path, from_date, to_date, repository=None, tag=None):
         """get log messages between <from_date> and <to_date> (inclusive)
