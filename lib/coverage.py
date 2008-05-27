@@ -333,8 +333,11 @@ class _SysProxy(object):
         if attr != 'settrace':
             return setattr(self._mod, attr, value)
 
+class CoverageError(RuntimeError):
+    pass
+
 class Coverage:
-    error = "coverage error"
+    error = CoverageError
 
     # Name of the cache file (unless environment variable is set).
     cache_default = ".coverage"
@@ -522,7 +525,7 @@ class Coverage:
         """morf_filename(morf).  Return the filename for a module or file."""
         if isinstance(morf, types.ModuleType):
             if not hasattr(morf, '__file__'):
-                raise self.error, "Module has no __file__ attribute."
+                raise self.error("Module has no __file__ attribute.")
             file = morf.__file__
         else:
             file = morf
@@ -543,11 +546,11 @@ class Coverage:
         ext = splitext(filename)[1]
         if ext == '.pyc':
             if not exists(filename[0:-1]):
-                raise self.error, ("No source for compiled code '%s'."
+                raise self.error("No source for compiled code '%s'."
                                    % filename)
             filename = filename[0:-1]
         elif ext != '.py':
-            raise self.error, "File '%s' not Python source." % filename
+            raise self.error("File '%s' not Python source." % filename)
         try:
             source = open(filename, 'rU')
         except:
