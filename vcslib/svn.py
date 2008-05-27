@@ -274,7 +274,7 @@ class SVNAgent:
                 if status is not None:
                     # FIXME: added/removed line information
                     date = datetime.fromtimestamp(mktime(strptime(date, '%Y-%m-%d %H:%M:%S')))
-                    if hasattr(sys.stdout,'encoding'):
+                    if hasattr(sys.stdout,'encoding') and sys.stdout.encoding is not None:
                         msg = unicode(msg, sys.stdout.encoding)
                     else:
                         msg = unicode(msg)
