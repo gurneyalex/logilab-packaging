@@ -49,11 +49,18 @@ def read_manifest_in(reporter,
     os.chdir(dirname)
     if filelist is None:
         filelist = FileList()
-    def warn(_, msg, r=reporter, f=absfile):
-        r.warning(f,None,msg)
+    
+    def warn(msg,*args):
+        if args:
+            try:
+                msg%=args
+            except TypeError,e:
+                raise TypeError(str((first,msg,args)))
+        reporter.warning(absfile,None,msg)
     filelist.warn = warn
     __warn = distutils.log.warn
     distutils.log.warn = warn
+    
     try:
         template = TextFile(filename, strip_comments=1,
                             skip_blanks=1, join_lines=1,
