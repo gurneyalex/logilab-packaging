@@ -23,6 +23,7 @@ from os.path import isdir, exists, join, basename
 from distutils.filelist import FileList
 from distutils.text_file import TextFile
 from distutils.errors import DistutilsTemplateError
+import distutils
 
 from logilab.devtools.vcslib import BASE_EXCLUDE
 
@@ -48,7 +49,11 @@ def read_manifest_in(reporter,
     os.chdir(dirname)
     if filelist is None:
         filelist = FileList()
-    filelist.warn = lambda msg, r=reporter, f=absfile: r.warning(f, None, msg)
+    def warn(_, msg, r=reporter, f=absfile):
+        r.warning(f,None,msg)
+    filelist.warn = warn
+    __warn = distutils.log.warn
+    distutils.log.warn = warn
     try:
         template = TextFile(filename, strip_comments=1,
                             skip_blanks=1, join_lines=1,
@@ -68,6 +73,7 @@ def read_manifest_in(reporter,
             filelist.exclude_pattern(pattern, is_regex=1)
         return [path.replace('./', '') for path in filelist.files]
     finally:
+        distutils.log.warn = __warn
         os.chdir(orig_dir)
 
 def get_manifest_files(dirname=os.getcwd(), junk_extensions=JUNK_EXTENSIONS,
