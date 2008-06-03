@@ -1,6 +1,9 @@
 ChangeLog for logilab.devtools
 ==============================
 
+  --  
+    * vcslib: urlview support for HG
+
 2008-05-19  --  0.11.0
     * force manifest file regeneration
     * updated for mercurial API changes
