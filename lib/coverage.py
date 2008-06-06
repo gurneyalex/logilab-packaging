@@ -778,11 +778,11 @@ class Coverage:
             except ZeroDivisionError:
                 pc_missing = 0.
             result[name] = (nb_stmts, nb_exec_stmts, pc, pc_missing, readable)
-            try:
-                result[TOTAL_ENTRY] = (total_statements, total_executed,
-                                       100.0 * total_executed / total_statements, '')
-            except ZeroDivisionError:
-                result[TOTAL_ENTRY] = (total_statements, total_executed,
+        try:
+            result[TOTAL_ENTRY] = (total_statements, total_executed,
+                                   100.0 * total_executed / total_statements, '')
+        except ZeroDivisionError:
+            result[TOTAL_ENTRY] = (total_statements, total_executed,
                                        100.0, '')
         return result
         
