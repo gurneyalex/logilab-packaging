@@ -103,7 +103,9 @@ def get_manifest_files(dirname=os.getcwd(), junk_extensions=JUNK_EXTENSIONS,
                     join(prefix, 'README'), join(prefix, 'README.txt'),
                     # we _must not_ match the debian directory
                     join(prefix, 'debian'),
-		    # do not match mercurial files
+                    # we _must not_ match apycot config
+                    join(prefix, 'apycot.ini'),
+                    # do not match mercurial files
                     join(prefix, '.hgignore'), join(prefix, '.hg'),
                     join(prefix, '.hgtags'), join(prefix, '.hgrc'),
                     )
