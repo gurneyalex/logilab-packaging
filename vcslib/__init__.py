@@ -527,7 +527,13 @@ class CheckInInfo:
         return '%s: %s (%s)' % (self.author,
                                 self.message_summary().encode('ascii', 'replace'),
                                 self.revision)
+    def __repr__(self):
+        return "<CheckInInfo (%s)>"%self
     
+    def __cmp__(self, other):
+        return cmp(str(self),other)
+
+
 from time import gmtime, mktime
 def localtime_to_gmtime(timetuple):
     return gmtime(mktime(timetuple))
