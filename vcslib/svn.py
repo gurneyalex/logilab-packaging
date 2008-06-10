@@ -261,7 +261,7 @@ class SVNAgent:
         a log information is a tuple
         (file, revision_info_as_string, added_lines, removed_lines)
         """
-        assert from_date < to_date
+        assert from_date < to_date, "%r < %r" % (from_date, to_date)
         # XXX how-to to include time
         from_date = strftime('%Y-%m-%d %H:%M', localtime_to_gmtime(from_date))
         # since we want an inclusive range
@@ -271,7 +271,8 @@ class SVNAgent:
         separator = '-' * 72
         status, msg, rev, author, date = None, '', None, None, None
         infos = []
-        for line in Execute(command).out.splitlines():
+        cmd =  Execute(command)
+        for line in cmd.out.splitlines():
             if not line.strip():
                 continue
             if line == separator:
