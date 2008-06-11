@@ -177,8 +177,10 @@ class CoverageTest(unittest.TestCase):
 
         # Get the analysis results, and check that they are right.
         _, clines, _, cmissing = coverage.analysis(mod)
-        self.assertEqual(clines, lines)
-        self.assertEqual(cmissing, missing)
+        self.assertEqual(clines, lines, "statement mismatch:\nexpecting: %r'\
+                                        '\nget:       %r" % (lines, clines))
+        self.assertEqual(cmissing, missing, "missing statement mismatch:\n"\
+                    "expecting: %r\nget:       %r" % (missing, cmissing))
 
         if report:
             frep = StringIO()
