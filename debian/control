@@ -10,7 +10,7 @@ XS-Python-Version: current
 Package: python-vcslib
 Architecture: all
 Recommends: cvs, mercurial (>= 0.9.3), subversion
-Depends: ${python:Depends}, , python-logilab-common (>= 0.18.0)
+Depends: ${python:Depends}, , python-logilab-common (>= 0.32.0)
 XB-Python-Version: ${python:Versions}
 Conflicts: devtools
 Replaces: devtools
@@ -24,7 +24,7 @@ Package: logilab-packaging
 Architecture: all
 Suggests: logilab-doctools
 Recommends: piuparts, linda, lintian, sudo, emacsen-common, cvs, mercurial (>= 0.9.3), subversion
-Depends: ${python:Depends}, pymacs, python-vcslib, python-logilab-common (>= 0.18.0), pbuilder
+Depends: ${python:Depends}, pymacs, python-vcslib, python-logilab-common (>= 0.32.0), pbuilder
 Conflicts: devtools
 Replaces: devtools
 XB-Python-Version: ${python:Versions}
@@ -42,7 +42,7 @@ Depends: ${python:Depends}
 XB-Python-Version: ${python:Versions}
 Conflicts: devtools
 Replaces: devtools
-Description: python code coverage tool
+Description: Python code coverage tool
  tool primary used to compute test coverage
  .
 Homepage: http://www.logilab.org/projects/devtools
