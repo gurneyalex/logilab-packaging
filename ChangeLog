@@ -1,6 +1,6 @@
 ChangeLog for logilab.devtools
 ==============================
-2008-06-11  --  0.12.0
+2008-06-11  --  0.11.1
     * various bugfix
     * vcslib: urlview support for HG
 
