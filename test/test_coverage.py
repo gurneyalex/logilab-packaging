@@ -159,6 +159,8 @@ class CoverageTest(unittest.TestCase):
         self.n += 1
 
         self.makeFile(modname, text)
+        num_text = '\n'.join([': '.join(('#%i'%(i+1), line))
+                            for i, line in enumerate(text.splitlines())])
 
         # Start up coverage.py
         coverage.erase()
@@ -178,9 +180,9 @@ class CoverageTest(unittest.TestCase):
         # Get the analysis results, and check that they are right.
         _, clines, _, cmissing = coverage.analysis(mod)
         self.assertEqual(clines, lines, "statement mismatch:\nexpecting: %r'\
-                                        '\nget:       %r" % (lines, clines))
+                                        '\nget:       %r\n===== in file =====\n%s" % (lines, clines, num_text))
         self.assertEqual(cmissing, missing, "missing statement mismatch:\n"\
-                    "expecting: %r\nget:       %r" % (missing, cmissing))
+                    "expecting: %r\nget:       %r\n===== in file ====\n%s" % (missing, cmissing,num_text))
 
         if report:
             frep = StringIO()
