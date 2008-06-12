@@ -1161,8 +1161,8 @@ class ExcludeTests(CoverageTest):
             [1,6], "", ['#pragma: NO COVER'])
         self.checkCoverage("""\
             a = 0
-            for i in [1,2,3,4,5]\\
-                :                        #pragma: NO COVER
+            for i in [1, 2, 3, 4, 5
+                ]:                        #pragma: NO COVER
                 a += i
                 break
                 a = 99

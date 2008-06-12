@@ -188,8 +188,10 @@ class StatementFindingAstVisitor(compiler.visitor.ASTVisitor):
     def doCode(self, node):
         if hasattr(node, 'decorators') and node.decorators:
             self.dispatch(node.decorators)
-        self.doSuite(node, node.code)
-    
+            self.recordAndDispatch(node.code)
+        else:
+            self.doSuite(node, node.code)
+            
     visitFunction = visitClass = doCode
 
     def getFirstLine(self, node):
@@ -213,12 +215,35 @@ class StatementFindingAstVisitor(compiler.visitor.ASTVisitor):
     def doStatement(self, node):
         self.recordLine(self.getFirstLine(node))
 
-    visitAssert = visitAssign = visitAssTuple = visitDiscard = visitPrint = \
+    visitAssert = visitAssign = visitAssTuple = visitPrint = \
         visitPrintnl = visitRaise = visitSubscript = visitDecorators = \
         doStatement
     
+    def visitPass(self, node):
+        # Pass statements have weird interactions with docstrings.  If this
+        # pass statement is part of one of those pairs, claim that the statement
+        # is on the later of the two lines.
+        l = node.lineno
+        if l:
+            lines = self.suite_spots.get(l, [l,l])
+            self.statements[lines[1]] = 1
+        
+    def visitDiscard(self, node):
+        # Discard nodes are statements that execute an expression, but then
+        # discard the results.  This includes function calls, so we can't 
+        # ignore them all.  But if the expression is a constant, the statement
+        # won't be "executed", so don't count it now.
+        if node.expr.__class__.__name__ != 'Const':
+            self.doStatement(node)
+
     def recordNodeLine(self, node):
-        return self.recordLine(node.lineno)
+        # Stmt nodes often have None, but shouldn't claim the first line of
+        # their children (because the first child might be an ignorable line
+        # like "global a").
+        if node.__class__.__name__ != 'Stmt':
+            return self.recordLine(self.getFirstLine(node))
+        else:
+            return 0
     
     def recordLine(self, lineno):
         # Returns a bool, whether the line is included or excluded.
@@ -227,7 +252,7 @@ class StatementFindingAstVisitor(compiler.visitor.ASTVisitor):
             # keyword.
             if lineno in self.suite_spots:
                 lineno = self.suite_spots[lineno][0]
-            # If we're inside an exluded suite, record that this line was
+            # If we're inside an excluded suite, record that this line was
             # excluded.
             if self.excluding_suite:
                 self.excluded[lineno] = 1
@@ -279,6 +304,8 @@ class StatementFindingAstVisitor(compiler.visitor.ASTVisitor):
         self.doSuite(node, node.body)
         self.doElse(node.body, node)
 
+    visitWhile = visitFor
+
     def visitIf(self, node):
         # The first test has to be handled separately from the rest.
         # The first test is credited to the line with the "if", but the others
@@ -287,10 +314,6 @@ class StatementFindingAstVisitor(compiler.visitor.ASTVisitor):
         for t, n in node.tests[1:]:
             self.doSuite(t, n)
         self.doElse(node.tests[-1][1], node)
-
-    def visitWhile(self, node):
-        self.doSuite(node, node.body)
-        self.doElse(node.body, node)
 
     def visitTryExcept(self, node):
         self.doSuite(node, node.body)
@@ -310,6 +333,9 @@ class StatementFindingAstVisitor(compiler.visitor.ASTVisitor):
     def visitTryFinally(self, node):
         self.doSuite(node, node.body)
         self.doPlainWordSuite(node.body, node.final)
+        
+    def visitWith(self, node):
+        self.doSuite(node, node.body)
         
     def visitGlobal(self, node):
         # "global" statements don't execute like others (they don't call the
@@ -555,16 +581,53 @@ class Coverage:
             source = open(filename, 'rU')
         except:
             source = open(filename, 'r')
-        lines, excluded_lines = self.find_executable_statements(
+        lines, excluded_lines, line_map = self.find_executable_statements(
             source.read(), exclude=self.exclude_re
             )
         source.close()
-        result = filename, lines, excluded_lines
+        result = filename, lines, excluded_lines, line_map
         self.analysis_cache[morf] = result
         return result
 
+    def first_line_of_tree(self, tree):
+        while True:
+            if len(tree) == 3 and type(tree[2]) == type(1):
+                return tree[2]
+            tree = tree[1]
+    
+    def last_line_of_tree(self, tree):
+        while True:
+            if len(tree) == 3 and type(tree[2]) == type(1):
+                return tree[2]
+            tree = tree[-1]
+    
+    def find_docstring_pass_pair(self, tree, spots):
+        for i in range(1, len(tree)):
+            if self.is_string_constant(tree[i]) and self.is_pass_stmt(tree[i+1]):
+                first_line = self.first_line_of_tree(tree[i])
+                last_line = self.last_line_of_tree(tree[i+1])
+                self.record_multiline(spots, first_line, last_line)
+        
+    def is_string_constant(self, tree):
+        try:
+            return tree[0] == symbol.stmt and tree[1][1][1][0] == symbol.expr_stmt
+        except:
+            return False
+        
+    def is_pass_stmt(self, tree):
+        try:
+            return tree[0] == symbol.stmt and tree[1][1][1][0] == symbol.pass_stmt
+        except:
+            return False
 
+    def record_multiline(self, spots, i, j):
+        for l in range(i, j+1):
+            spots[l] = (i, j)
+            
     def get_suite_spots(self, tree, spots):
+        """ Analyze a parse tree to find suite introducers which span a number
+            of lines.
+        """
         for i in range(1, len(tree)):
             if type(tree[i]) == type(()):
                 if tree[i][0] == symbol.suite:
@@ -572,7 +635,9 @@ class Coverage:
                     lineno_colon = lineno_word = None
                     for j in range(i-1, 0, -1):
                         if tree[j][0] == token.COLON:
-                            lineno_colon = tree[j][2]
+                            # Colons are never executed themselves: we want the
+                            # line number of the last token before the colon.
+                            lineno_colon = self.last_line_of_tree(tree[j-1])
                         elif tree[j][0] == token.NAME:
                             if tree[j][1] == 'elif':
                                 # Find the line number of the first non-terminal
@@ -594,8 +659,20 @@ class Coverage:
                     if lineno_colon and lineno_word:
                         # Found colon and keyword, mark all the lines
                         # between the two with the two line numbers.
-                        for l in range(lineno_word, lineno_colon+1):
-                            spots[l] = (lineno_word, lineno_colon)
+                        self.record_multiline(spots, lineno_word, lineno_colon)
+
+                        #for l in range(lineno_word, lineno_colon+2):
+                        #    spots[l] = (lineno_word, lineno_colon)
+                    # "pass" statements are tricky: different versions of Python
+                    # treat them differently, especially in the common case of a
+                    # function with a doc string and a single pass statement.
+                    self.find_docstring_pass_pair(tree[i], spots)
+                    
+                elif tree[i][0] == symbol.simple_stmt:
+                    first_line = self.first_line_of_tree(tree[i])
+                    last_line = self.last_line_of_tree(tree[i])
+                    if first_line != last_line:
+                        self.record_multiline(spots, first_line, last_line)
                 self.get_suite_spots(tree[i], spots)
 
     def find_executable_statements(self, text, exclude=None):
@@ -608,6 +685,10 @@ class Coverage:
             for i in range(len(lines)):
                 if reExclude.search(lines[i]):
                     excluded[i+1] = 1
+
+        # Parse the code and analyze the parse tree to find out which statements
+        # are multiline, and where suites begin and end.
+
         tree = parser.suite(text+'\n\n').totuple(1)
         self.get_suite_spots(tree, suite_spots)
             
@@ -622,8 +703,7 @@ class Coverage:
         lines.sort()
         excluded_lines = excluded.keys()
         excluded_lines.sort()
-        return lines, excluded_lines
-
+        return lines, excluded_lines, suite_spots
 
 
     def format_lines(self, statements, lines):
@@ -675,13 +755,17 @@ class Coverage:
         return filename, statement, missing, mis_formatted
 
     def analysis2(self, morf):
-        filename, statements, excluded = self.analyze_morf(morf)
+        filename, statements, excluded, line_map = self.analyze_morf(morf)
         self.canonicalize_filenames()
         if not self.cexecuted.has_key(filename):
             self.cexecuted[filename] = {}
         missing = []
         for line in statements:
-            if not self.cexecuted[filename].has_key(line):
+            lines = line_map.get(line, [line, line])
+            for l in range(lines[0], lines[1]+1):
+                if self.cexecuted[filename].has_key(l):
+                    break
+            else:
                 missing.append(line)
         return (filename, statements, excluded, missing,
                 self.format_lines(statements, missing))
