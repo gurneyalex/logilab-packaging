@@ -326,7 +326,10 @@ class CVSAgent:
                 if fileobj.repo_file.find('/Attic/') > -1:
                     continue
                 date = datetime.fromtimestamp(mktime(strptime(rev.date, DATE_FORMAT)))
-                msg = unicode('\n'.join(rev.message), sys.stdout.encoding)
+                encoding = sys.stdout.encoding
+                if encoding is None:
+                    u'None'
+                msg = unicode('\n'.join(rev.message), encoding)
                 yield CheckInInfo(date, rev.author, msg,
                                   rev.revision, rev.lines[0], rev.lines[1],
                                   files=(fileobj.repo_file,), branch=tag)
