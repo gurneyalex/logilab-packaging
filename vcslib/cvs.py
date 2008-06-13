@@ -328,7 +328,7 @@ class CVSAgent:
                 date = datetime.fromtimestamp(mktime(strptime(rev.date, DATE_FORMAT)))
                 encoding = sys.stdout.encoding
                 if encoding is None:
-                    u'None'
+                    encoding = u'None'
                 msg = unicode('\n'.join(rev.message), encoding)
                 yield CheckInInfo(date, rev.author, msg,
                                   rev.revision, rev.lines[0], rev.lines[1],
