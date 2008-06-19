@@ -1,4 +1,4 @@
-I'm pleased to announce the %(VERSION)s release of %(DISTNAME)s.
+I am pleased to announce the %(VERSION)s release of %(DISTNAME)s.
 
 What's new ?
 ------------
