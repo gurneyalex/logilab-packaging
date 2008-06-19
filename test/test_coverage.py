@@ -64,7 +64,8 @@ class DebuggingAstVisitor(compiler.visitor.ASTVisitor):
         f = ''
         if hasattr(node, 'flags'):
             f = repr(node.flags)
-        print "%s%s %s %s" % (' ' * self.indent, node.__class__.__name__, node.lineno, f)
+        print "%s%s %s %s" % (' ' * self.indent, node.__class__.__name__,
+            node.lineno, f)
         self.indent += 2
         compiler.visitor.ASTVisitor.dispatch(self, node, *args)
         self.indent -= 2
@@ -87,7 +88,7 @@ class CoverageTest(unittest.TestCase):
     def setUp(self):
         # Create a temporary directory.
         self.noise = str(random.random())[2:]
-        self.temproot = join(tempfile.gettempdir(),  'test_coverage'+self.noise )
+        self.temproot = join(tempfile.gettempdir(),  'test_coverage'+self.noise)
         os.mkdir(self.temproot)
         self.tempdir = join(self.temproot, self.noise)
         os.mkdir(self.tempdir)
@@ -1489,7 +1490,8 @@ class ApiTests(CoverageTest):
         self.importModule("mycode")
         coverage.stop()
     
-        filename, statements, missing, readablemissing = coverage.analysis("mycode.py")
+        filename, statements, missing, readablemissing = coverage.analysis(
+            "mycode.py")
         self.assertEqual(statements, [1,2,3,4,5])
         self.assertEqual(missing, [4])
         self.assertEqual(readablemissing, "4")
