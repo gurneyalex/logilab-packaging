@@ -109,7 +109,11 @@ class CVSAgentTC(testlib.TestCase):
         self.assertEquals(len(cvs.CVSAgent.not_up_to_date(self.tmp2)), 1)
 
     def test_log_info(self):
-        login = os.getlogin()
+        try:
+            login = os.getlogin()
+        except OSError:
+            import pwd
+            login = pwd.getpwuid(os.getuid())[0]
         from_date = localtime(time() - 60*60*24)
         # add some minutes since it seems to be cvs log resolution
         to_date = localtime(time() + 1200)
