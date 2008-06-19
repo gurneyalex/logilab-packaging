@@ -17,7 +17,8 @@ try:
 except ImportError:
     # installed version
     import coverage
- 
+
+coverage_module = coverage 
 coverage = coverage.Coverage()
 
 try:
@@ -180,9 +181,11 @@ class CoverageTest(unittest.TestCase):
         # Get the analysis results, and check that they are right.
         _, clines, _, cmissing = coverage.analysis(mod)
         self.assertEqual(clines, lines, "statement mismatch:\nexpecting: %r'\
-                                        '\nget:       %r\n===== in file =====\n%s" % (lines, clines, num_text))
+            '\nget:       %r\n===== in file =====\n%s\nusing: %s"
+            % (lines, clines, num_text, coverage_module.__file__))
         self.assertEqual(cmissing, missing, "missing statement mismatch:\n"\
-                    "expecting: %r\nget:       %r\n===== in file ====\n%s" % (missing, cmissing,num_text))
+            "expecting: %r\nget:       %r\n===== in file ====\n%s\nusing: %s"
+            % (missing, cmissing,num_text, coverage_module.__file__))
 
         if report:
             frep = StringIO()
