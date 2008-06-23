@@ -1518,7 +1518,7 @@ class ApiTests(CoverageTest):
     def testReport(self):
         self.doReportWork("mycode2")
         coverage.report(["mycode2.py"])
-        self.assertEqual(self.getStdout(), dedent("""\
+        self.assertTextEqual(self.getStdout(), dedent("""\
             Name      Stmts   Exec  Cover %Missing   Missing
             ------------------------------------------------
             mycode2       7      4    57%   100%   4-6
@@ -1528,8 +1528,8 @@ class ApiTests(CoverageTest):
         self.doReportWork("mycode3")
         fout = StringIO()
         coverage.report(["mycode3.py"], file=fout)
-        self.assertEqual(self.getStdout(), "")
-        self.assertEqual(fout.getvalue(), dedent("""\
+        self.assertTextEqual(self.getStdout(), "")
+        self.assertTextEqual(fout.getvalue(), dedent("""\
             Name      Stmts   Exec  Cover %Missing   Missing
             ------------------------------------------------
             mycode3       7      4    57%   100%   4-6
