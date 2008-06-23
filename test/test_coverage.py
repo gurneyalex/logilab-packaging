@@ -5,7 +5,7 @@
 showcompiler = 0
 showparser = 0
 
-import unittest
+from logilab.common.testlib import TestCase, unittest_main
 import imp, os, random, sys, tempfile
 from os.path import join
 from cStringIO import StringIO
@@ -84,7 +84,7 @@ def annotateParseTree(tree):
     else:
         return tree
         
-class CoverageTest(unittest.TestCase):
+class CoverageTest(TestCase):
     def setUp(self):
         # Create a temporary directory.
         self.noise = str(random.random())[2:]
@@ -169,7 +169,8 @@ class CoverageTest(unittest.TestCase):
         for exc in excludes:
             coverage.exclude(exc)
         coverage.start()
-        
+        self.assertEquals(self.nesting,1)
+
         # Import the python file, executing it.
         mod = self.importModule(modname)
         
@@ -182,11 +183,13 @@ class CoverageTest(unittest.TestCase):
         # Get the analysis results, and check that they are right.
         _, clines, _, cmissing = coverage.analysis(mod)
         self.assertEqual(clines, lines, "statement mismatch:\nexpecting: %r'\
-            '\nget:       %r\n===== in file =====\n%s\nusing: %s"
-            % (lines, clines, num_text, coverage_module.__file__))
+            '\nget:       %r\n===== in file =====\n%s\nusing: %s (%s)"
+            % (lines, clines, num_text, coverage_module.__file__,
+                coverage_module.__version__))
         self.assertEqual(cmissing, missing, "missing statement mismatch:\n"\
-            "expecting: %r\nget:       %r\n===== in file ====\n%s\nusing: %s"
-            % (missing, cmissing,num_text, coverage_module.__file__))
+            "expecting: %r\nget:       %r\n===== in file ====\n%s\nusing: %s (%s)"
+            % (missing, cmissing,num_text, coverage_module.__file__,
+                coverage_module.__version__))
 
         if report:
             frep = StringIO()
@@ -1540,7 +1543,9 @@ class ApiTests(CoverageTest):
 
 if __name__ == '__main__':
     print "Testing under Python version:\n", sys.version
-    unittest.main()
+    coverage
+    unittest_main()
+    coverage
 
 # TODO: split "and" conditions across lines, and detect not running lines.
 #         (Can't be done: trace function doesn't get called for each line
