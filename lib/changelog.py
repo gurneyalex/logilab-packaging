@@ -124,7 +124,7 @@ class DebianVersion(tuple):
     def __new__(klass, versionstr):
         upstream, debian = versionstr.split('-')
         parsed = [int(i) for i in upstream.split('.')]
-        parsed.append(int(debian))
+        parsed.append( [int(num) for num in debian.split('.')])
         return tuple.__new__(klass, parsed)
 
     @property
