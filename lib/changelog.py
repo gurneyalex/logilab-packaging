@@ -117,6 +117,7 @@ class ChangeLog(BaseChangeLog):
 
 # debian change log ###########################################################
 
+
 class DebianVersion(tuple):
     """simple class to handle debian version number has a tuple while
     correctly printing it as X.Y.Z-D
@@ -133,7 +134,7 @@ class DebianVersion(tuple):
 
     @property
     def debian_version(self):
-        return self[-1]
+        return Version(self[-1])
     
     def __str__(self):
         return '%s-%s' % (self.upstream_version, self.debian_version)
