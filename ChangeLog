@@ -1,9 +1,14 @@
 ChangeLog for logilab.devtools
 ==============================
+
+  --  
+    * changelog: support for debian NMU version
+
 2008-06-11  --  0.11.1
     * various bugfix
     * vcslib: urlview support for HG
 
+    * --new changelog: support for debian NMU version
 2008-05-19  --  0.11.0
     * force manifest file regeneration
     * updated for mercurial API changes

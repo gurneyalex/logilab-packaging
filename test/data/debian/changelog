@@ -1,3 +1,9 @@
+devtools (0.5.4-1.1) unstable; urgency=low
+
+  * test NMU
+
+ -- Pierre-Yves David <pierre-yves.david@logilab.fr>  Thu, 26 Jun 2008 10:22:00 +0200
+
 devtools (0.5.4-1) unstable; urgency=low
 
   * added dependency on python-dev
@@ -96,3 +102,4 @@ logilab-devtools (0.1.0-1) unstable; urgency=low
   * Initial Release.
 
  -- Sylvain Thénault <sylvain.thenault@logilab.fr>  Wed, 19 Feb 2003 17:46:30 +0100
+

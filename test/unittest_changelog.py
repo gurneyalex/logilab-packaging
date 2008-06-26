@@ -14,8 +14,8 @@ class ChangeLogTC(TestCase):
         cl = self.cl_class(self.cl_file)
         out = StringIO()
         cl.write(out)
-        self.assertLinesEquals(open(self.cl_file).read().strip(),
-                               out.getvalue().strip())
+        self.assertStreamEquals(open(self.cl_file),
+                               out)
                           
 class DebianChangeLogTC(ChangeLogTC):
     cl_class = DebianChangeLog
