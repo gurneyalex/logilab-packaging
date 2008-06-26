@@ -169,7 +169,7 @@ class CoverageTest(TestCase):
         for exc in excludes:
             coverage.exclude(exc)
         coverage.start()
-        self.assertEquals(self.nesting,1)
+
 
         # Import the python file, executing it.
         mod = self.importModule(modname)
