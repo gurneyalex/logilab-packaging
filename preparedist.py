@@ -62,6 +62,8 @@ def close_changelog(projdir=os.getcwd()):
         chlg = ChangeLog('ChangeLog')
         try:
             chlg.close(projdir)
+            print "I:changelog closed for revision:", chlg.get_latest_revision()
+            chlg.save()
         except Exception, exc:
             print "An error occured while closing Changelog:", exc
             if not confirm('Continue ?'):
