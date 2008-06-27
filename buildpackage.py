@@ -97,17 +97,16 @@ def build_debian(pkg_dir, dest_dir, pdebuild_options='',
     debian_name = pkginfo.debian_name
     debian_version = DebianChangeLog('debian/changelog').get_latest_revision()
     if tuple(debian_version[-1]) > (1,) and origpath is None:
-        print >> sys.stderr , '--orig option is required when not building the first'\
-                                ' version of the debian package'
-        return False
+        raise ValueError('unable to build %s %s: --orig option is required when'\
+        ' not building the first version of the debian package'%( debian_name,
+            debian_version, ))
     
     info = (upstream_name, upstream_version, debian_name, debian_version)
     tmpdir = tempfile.mkdtemp()
     workdir = join(tmpdir, '%s-%s'% (debian_name, upstream_version))
     # 1/ ensure project directory has debian/ directory
     if not isdir('debian'):
-        print >> sys.stderr ,'No "debian" directory'
-        return False
+        raise ValueError('No "debian" directory')
     
     # 2/ check destination directory exists, create it if necessary, ensure
     #    debian/rules exists and is executable
@@ -116,56 +115,53 @@ def build_debian(pkg_dir, dest_dir, pdebuild_options='',
     ensure_fs_mode('debian/rules', stat.S_IEXEC)
 
     try:
-        try:
-            origdir = '%s-%s' % (upstream_name, upstream_version)
-            # 3/ if needed create archive projectname-version.orig.tar.gz using setup.py sdist
-            if not origpath:
-                os.chdir(pkg_dir)
-                cmd = 'python setup.py sdist --force-manifest'
-                if quiet:
-                    cmd += ' 1>/dev/null 2>/dev/null'
-                os.system(cmd)
-                tarball = join('dist', '%s.tar.gz' % origdir)
-                origpath = join(tmpdir, '%s_%s.orig.tar.gz' % (debian_name, upstream_version))
-                cp(tarball, dest_dir)
-                cp(tarball, origpath)
-            else:
-                cp(origpath, tmpdir)
-                origpath = join(tmpdir, split(origpath)[1])
-            
-            # 4/ create build directory by extracting the .orig.tar.gz and then
-            #    copying debian/ directory
-            os.chdir(tmpdir)
-            status = os.system('tar xzf %s' % origpath)
-            if status:
-                print >> sys.stderr ,'An error occured while extracting the upstream tarball ' \
-                      '(return status: %s)' % status
-                return False
-            export(join(pkg_dir, 'debian'), '%s/debian' % origdir)
-            
-            # 5/ build the package using fakeroot or pbuilder usually
-            os.chdir(origdir)
-            debuilder = os.environ.get('DEBUILDER') or 'pdebuild'
-            if pdebuild_options:
-                cmd = '%s --debbuildopts %s' % (debuilder, pdebuild_options)
-            else:
-                cmd = debuilder
+        origdir = '%s-%s' % (upstream_name, upstream_version)
+        # 3/ if needed create archive projectname-version.orig.tar.gz using setup.py sdist
+        if not origpath:
+            os.chdir(pkg_dir)
+            cmd = 'python setup.py sdist --force-manifest'
             if quiet:
                 cmd += ' 1>/dev/null 2>/dev/null'
-            status = os.system(cmd)
-            if status:
-                print >> sys.stderr ,'An error occured while building the debian package ' \
-                          '(return status: %s)' % status
-                return False
+            os.system(cmd)
+            tarball = join('dist', '%s.tar.gz' % origdir)
+            origpath = join(tmpdir, '%s_%s.orig.tar.gz' % (debian_name, upstream_version))
+            cp(tarball, dest_dir)
+            cp(tarball, origpath)
+        else:
+            cp(origpath, tmpdir)
+            origpath = join(tmpdir, split(origpath)[1])
+        
+        # 4/ create build directory by extracting the .orig.tar.gz and then
+        #    copying debian/ directory
+        os.chdir(tmpdir)
+        status = os.system('tar xzf %s' % origpath)
+        if status:
+            raise IOError('An error occured while extracting the upstream'\
+            ' tarball (return status: %s)' % status)
+        export(join(pkg_dir, 'debian'), '%s/debian' % origdir)
+        
+        # 5/ build the package using fakeroot or pbuilder usually
+        os.chdir(origdir)
+        debuilder = os.environ.get('DEBUILDER') or 'pdebuild'
+        if pdebuild_options:
+            cmd = '%s --debbuildopts %s' % (debuilder, pdebuild_options)
+        else:
+            cmd = debuilder
+        if quiet:
+            cmd += ' 1>/dev/null 2>/dev/null'
+        status = os.system(cmd)
+        if status:
+            raise OSError('An error occured while building the debian package ' \
+                      '(return status: %s)' % status)
 
+        try:
             # 6/ move the upstream tarball and debian package files to the destination directory
             mv(origpath, dest_dir)
             if move_result(dest_dir, info, debuilder):
                 return False
             return get_packages_list(info)
         except Exception, exc:
-            print >> sys.stderr ,"An exception occured while moving files (%s)" % exc
-            return False
+            raise IOError("An exception occured while moving files (%s)" % exci)
     finally:
         os.chdir(pkg_dir)
         # print "please visit", tmpdir
@@ -188,9 +184,11 @@ def run(pkgdir, options, args):
     else:
         origdir = None
 
-    packages = build_debian(pkgdir, abspath(options.distdir),
-                    options.debbuildopts, origdir)
-    if not packages:
+    try :
+        packages = build_debian(pkgdir, abspath(options.distdir),
+                        options.debbuildopts, origdir)
+    except Exception, ex:
+        print >> sys.stderr, ex
         return 1
     # lintian
     print SEPARATOR
