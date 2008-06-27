@@ -125,6 +125,10 @@ def run(pkgdir, options, args):
         sys.stderr.write("(no __pkginfo__ found)\n")
         return
     actions = options.only or DEFAULT_ACTIONS
+    if 'changelog' in actions:
+        # close project's ChangeLog
+        print SEPARATOR
+        close_changelog()
     if pkgtype == 'python':
         if 'pylint' in actions:
             # run pylint
@@ -147,10 +151,6 @@ def run(pkgdir, options, args):
         # run unit tests
         print SEPARATOR
         runtests()
-    if 'changelog' in actions:
-        # close project's ChangeLog
-        print SEPARATOR
-        close_changelog()
     if 'doc' in actions:
         # builds the documentation
         print SEPARATOR
