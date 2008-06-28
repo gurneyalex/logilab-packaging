@@ -327,7 +327,7 @@ class CVSAgent:
                     continue
                 date = datetime.fromtimestamp(mktime(strptime(rev.date, DATE_FORMAT)))
                 
-                kargs = { 'encoding': sys.stdout.encoding}
+                kargs = { 'encoding': getattr(sys.stdout,"encoding",None)}
                 if kargs['encoding'] is None:
                      kargs['encoding'] = 'ascii'
                      kargs['errors'] = 'ignore'
