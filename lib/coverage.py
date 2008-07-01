@@ -392,6 +392,7 @@ class Coverage:
     # avoid duplicating work.
     canonical_filename_cache = {}
 
+    DEFAULT_EXCLUDE = '(#pragma[: ]+[nN][oO] [cC][oO][vV][eE][rR])'
 
     def __init__(self, analyzeonly=None):
         self.usecache = 1
@@ -401,7 +402,7 @@ class Coverage:
         self.cstack = []
         self.xstack = []
         self.get_ready()
-        self.exclude('#pragma[: ]+[nN][oO] [cC][oO][vV][eE][rR]')
+        self.exclude(self.DEFAULT_EXCLUDE)
         if analyzeonly:
             self.analyzeonly = [realpath(path) for path in analyzeonly]
         else:
@@ -474,7 +475,7 @@ class Coverage:
         self.cexecuted = {}
         if self.cache and os.path.exists(self.cache):
             os.remove(self.cache)
-        self.exclude_re = ""
+        self.exclude_re = self.DEFAULT_EXCLUDE
 
     def exclude(self, re):
         if self.exclude_re:
@@ -689,7 +690,6 @@ class Coverage:
             for i in range(len(lines)):
                 if reExclude.search(lines[i]):
                     excluded[i+1] = 1
-
         # Parse the code and analyze the parse tree to find out which statements
         # are multiline, and where suites begin and end.
 
