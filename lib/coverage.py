@@ -90,11 +90,15 @@ import symbol
 import token
 import getopt
 import threading
+from ConfigParser import SafeConfigParser as ConfigParser
 from os.path import exists, isdir, isabs, splitext, walk, join, \
-     abspath, basename, dirname, normcase, isfile, realpath
+     abspath, basename, dirname, normcase, isfile, realpath, curdir
 
 
 BASE_EXCLUDE = ('CVS', '.svn', '.hg', 'bzr')
+RCFILE = ".pycoveragerc"
+SECTIONAME = "coverage"
+
 
 def modpath_from_file(filename):
     """given an absolute file path return the python module's path as a list
@@ -524,7 +528,7 @@ class Coverage:
             if isabs(f) and not exists(f):
                 f = basename(f)
             if not isabs(f):
-                for path in [os.curdir] + sys.path:
+                for path in [curdir] + sys.path:
                     g = join(path, f)
                     if exists(g):
                         f = g
@@ -956,6 +960,8 @@ def run(args):
         '-o': 'omit=',
         '-p:': 'project-root=',
         }
+    # list of option which might be define localy
+    allowed_local_options = ("omit","directory")
     short_opts = ''.join(map(lambda o: o[1:], optmap.keys())) + 'h'
     long_opts = optmap.values() + ['help']
     options, args = getopt.getopt(args, short_opts, long_opts)
@@ -992,6 +998,19 @@ def run(args):
         the_coverage = Coverage([projdir])
     else:
         the_coverage = Coverage()
+        projdir = curdir
+
+
+    local_conf_file = join(projdir, RCFILE)
+    if exists(local_conf_file):
+        local_conf =  ConfigParser()
+        local_conf.read(local_conf_file)
+        for opt in local_conf.options(SECTIONAME):
+            if opt not in settings: # update only undefined one
+                assert opt in allowed_local_options,\
+                    "%s option can't be define localy. Allowed options are %s"\
+                    % (opt, allowed_local_options)
+                settings[opt] = local_conf.get("coverage",opt)
 
     if settings.get('erase'):
         the_coverage.erase()
