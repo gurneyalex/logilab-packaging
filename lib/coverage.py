@@ -1012,12 +1012,12 @@ def run(args):
         args = the_coverage.cexecuted.keys()
     ignore_errors = settings.get('ignore-errors')
     show_missing = settings.get('show-missing')
-    directory = settings.get('directory=')
-    omit = settings.get('omit=')
+    directory = settings.get('directory')
+    omit = settings.get('omit')
     if omit is not None:
         omit = omit.split(',')
     else:
-        omit = []
+        omit = () #tuple
     if settings.get('report'):
         the_coverage.report(args, show_missing, ignore_errors, omit_prefixes=omit)
     if settings.get('annotate'):
