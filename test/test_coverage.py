@@ -1109,7 +1109,7 @@ class ExcludeTests(CoverageTest):
                 b = 9
             assert a == 4 and b == 5 and c == 6
             """,
-            [1,3,4,5,6,10], "", ['#pragma: NO COVER'])
+            [1,3,4,5,6,10], "", [])
         self.checkCoverage("""\
             a = 1; b = 2
 
@@ -1129,7 +1129,7 @@ class ExcludeTests(CoverageTest):
                 b = 9
             assert a == 4 and b == 5 and c == 6
             """,
-            [1,3,4,5,6,17], "", ['#pragma: NO COVER'])
+            [1,3,4,5,6,17], "", [])
 
     def testExcludingElifSuites(self):
         self.checkCoverage("""\
@@ -1147,7 +1147,7 @@ class ExcludeTests(CoverageTest):
                 b = 12
             assert a == 4 and b == 5 and c == 6
             """,
-            [1,3,4,5,6,11,12,13], "11-12", ['#pragma: NO COVER'])
+            [1,3,4,5,6,11,12,13], "11-12", [])
 
     def testExcludingForSuite(self):
         self.checkCoverage("""\
@@ -1156,7 +1156,7 @@ class ExcludeTests(CoverageTest):
                 a += i
             assert a == 15
             """,
-            [1,4], "", ['#pragma: NO COVER'])
+            [1,4], "", [])
         self.checkCoverage("""\
             a = 0
             for i in [1,
@@ -1165,7 +1165,7 @@ class ExcludeTests(CoverageTest):
                 a += i
             assert a == 15
             """,
-            [1,6], "", ['#pragma: NO COVER'])
+            [1,6], "", [])
         self.checkCoverage("""\
             a = 0
             for i in [1, 2, 3, 4, 5
@@ -1175,7 +1175,7 @@ class ExcludeTests(CoverageTest):
                 a = 99
             assert a == 1
             """,
-            [1,7], "", ['#pragma: NO COVER'])
+            [1,7], "", [])
             
     def testExcludingForElse(self):
         self.checkCoverage("""\
@@ -1188,7 +1188,7 @@ class ExcludeTests(CoverageTest):
                 a = 123
             assert a == 1
             """,
-            [1,2,3,4,5,8], "5", ['#pragma: NO COVER'])
+            [1,2,3,4,5,8], "5", [])
     
     def testExcludingWhile(self):
         self.checkCoverage("""\
@@ -1199,7 +1199,7 @@ class ExcludeTests(CoverageTest):
                 b = 99
             assert a == 3 and b == 0
             """,
-            [1,6], "", ['#pragma: NO COVER'])
+            [1,6], "", [])
         self.checkCoverage("""\
             a = 3; b = 0
             while (
@@ -1210,7 +1210,7 @@ class ExcludeTests(CoverageTest):
                 b = 99
             assert a == 3 and b == 0
             """,
-            [1,8], "", ['#pragma: NO COVER'])
+            [1,8], "", [])
 
     def testExcludingWhileElse(self):
         self.checkCoverage("""\
@@ -1223,7 +1223,7 @@ class ExcludeTests(CoverageTest):
                 b = 123
             assert a == 3 and b == 1
             """,
-            [1,2,3,4,5,8], "5", ['#pragma: NO COVER'])
+            [1,2,3,4,5,8], "5", [])
 
     def testExcludingTryExcept(self):
         self.checkCoverage("""\
@@ -1234,7 +1234,7 @@ class ExcludeTests(CoverageTest):
                 a = 99
             assert a == 1
             """,
-            [1,2,3,6], "", ['#pragma: NO COVER'])
+            [1,2,3,6], "", [])
         self.checkCoverage("""\
             a = 0
             try:
@@ -1244,7 +1244,7 @@ class ExcludeTests(CoverageTest):
                 a = 99
             assert a == 99
             """,
-            [1,2,3,4,6,7], "", ['#pragma: NO COVER'])
+            [1,2,3,4,6,7], "", [])
         self.checkCoverage("""\
             a = 0
             try:
@@ -1256,7 +1256,7 @@ class ExcludeTests(CoverageTest):
                 a = 123
             assert a == 123
             """,
-            [1,2,3,4,8,9], "", ['#pragma: NO COVER'])
+            [1,2,3,4,8,9], "", [])
         self.checkCoverage("""\
             a = 0
             try:
@@ -1267,7 +1267,7 @@ class ExcludeTests(CoverageTest):
                 a = 123
             assert a == 123
             """,
-            [1,2,3,7,8], "", ['#pragma: NO COVER'])
+            [1,2,3,7,8], "", [])
         self.checkCoverage("""\
             a = 0
             try:
@@ -1279,7 +1279,7 @@ class ExcludeTests(CoverageTest):
                 a = 123
             assert a == 99
             """,
-            [1,2,3,4,6,9], "", ['#pragma: NO COVER'])
+            [1,2,3,4,6,9], "", [])
     
     def testExcludingFunction(self):
         self.checkCoverage("""\
@@ -1291,7 +1291,7 @@ class ExcludeTests(CoverageTest):
             x = 1
             assert x == 1
             """,
-            [6,7], "", ['#pragma: NO COVER'])
+            [6,7], "", [])
 
     def testExcludingMethod(self):
         self.checkCoverage("""\
@@ -1305,7 +1305,7 @@ class ExcludeTests(CoverageTest):
             x = Fooey()
             assert x.a == 1
             """,
-            [1,2,3,8,9], "", ['#pragma: NO COVER'])
+            [1,2,3,8,9], "", [])
         
     def testExcludingClass(self):
         self.checkCoverage("""\
@@ -1319,7 +1319,7 @@ class ExcludeTests(CoverageTest):
             x = 1
             assert x == 1
             """,
-            [8,9], "", ['#pragma: NO COVER'])
+            [8,9], "", [])
 
 if sys.hexversion >= 0x020400f0 and 0:    # Don't test this yet.
     class Py24Tests(CoverageTest):
