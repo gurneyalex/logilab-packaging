@@ -453,8 +453,8 @@ class Coverage:
                 threading.settrace(self.t)
                 threading._sys = _SysProxy(sys,self.settrace)
                 threading.__settrace__ = threading.settrace
-                threading.settrace = lambda x: None
-            sys.settrace = lambda x: None # disable any other settrace while covering
+                threading.settrace = lambda *x: None
+            sys.settrace = lambda *x: None # disable any other settrace while covering
         self.nesting += 1
 	
     def stop(self):
