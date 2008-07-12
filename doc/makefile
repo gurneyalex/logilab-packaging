@@ -6,7 +6,7 @@ TXTFILES:= $(wildcard *.txt)
 XMLFILES:= $(wildcard *.xml)
 TARGET := $(TXTFILES:.txt=.html) $(XMLFILES:.xml=.html)
 
-all: ${TARGET}
+all: ${TARGET} apydoc
 
 %.html: %.txt
 	${MKHTML} ${MKHTMLOPTS} $<
@@ -14,5 +14,9 @@ all: ${TARGET}
 %.html: %.xml
 	${MKHTML} ${MKHTMLOPTS} $<
 
+apydoc:
+	epydoc -o apidoc --html -v --graph all --no-private --exclude="__pkginfo__" --exclude="setup" -n "Logilab's devtools library" ../
+
 clean:
+	rm -rf apidoc
 	rm -f *.html
