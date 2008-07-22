@@ -149,8 +149,10 @@ class DebianChangeLogEntry(ChangeLogEntry):
         write = stream.write
         write('%s (%s) %s; urgency=%s\n\n' % (self.package, self.version,
                                               self.distrib, self.urgency))
-        for msg in self.messages:
+        for msg, sub in self.messages:
             write('  * %s' % ''.join(msg))
+            for sub_msg in sub:
+                write('     - %s' % join(msg))
         write(' -- %s  %s\n\n' % (self.author, self.date))
 
 
