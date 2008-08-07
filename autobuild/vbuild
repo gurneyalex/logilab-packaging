@@ -1,0 +1,52 @@
+#!/usr/bin/python
+
+
+import optparse
+import sys
+import subprocess
+
+def test_arch(target_arch):
+    """return True if the arch of localhost is target_arch"""
+    cmd = ['dpkg-architecture', '-e%s' % target_arch]
+    status = subprocess.call(cmd)
+    return status == 0
+
+def build(source_control, distribution, binary_arch=False, orig_tarball=None):
+    cmd = ['sudo', 'pbuilder', '--build',
+           '--buildresult', '/opt/buildd/results-%s'%distribution,
+           '--basetgz', '/opt/buildd/%s.tgz'%distribution,
+           source_control]
+    if binary_arch:
+        cmd.insert(4, '--binary-arch')
+    subprocess.check_call(cmd)
+    
+
+def run():
+    parser = optparse.OptionParser()
+    parser.add_option('-d', '--distribution',
+                      default="sid", help="target distribution")
+    parser.add_option('-a', '--arch',
+                      default=None, help="target architecture (defaults to local host's arch)")
+    parser.add_option('-b', '--binary-arch',
+                      default=False, action='store_true',
+                      help="only build arch-specific targets instead of all targets")
+    parser.add_option('-o', '--orig',
+                      help='path to orig.tar.gz tarball (used when debian revision is > 1)')
+    usage = '%prog [options] <dsc file>'
+
+    options, arguments = parser.parse_args()
+    
+    if not(options.arch is None or test_arch(options.arch)):           
+        parser.error('Cross building not supported for now')
+
+    if len(arguments) != 1:
+        parser.error('Missing argument : debian source control file (package_version.dsc)')
+    build(arguments[-1],
+          options.distribution,
+          options.binary_arch,
+          options.orig
+          )
+    
+    
+if __name__ == '__main__':
+    run()
