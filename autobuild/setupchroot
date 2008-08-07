@@ -1,0 +1,6 @@
+#!/bin/bash
+
+for dist in etch lenny sid 
+do 
+    sudo pbuilder create --distribution ${dist} --basetgz /opt/buildd/${dist}.tgz --mirror http://ftp.fr.debian.org/debian
+done
