@@ -5,6 +5,7 @@ Maintainer: Sylvain Thénault <sylvain.thenault@logilab.fr>
 Uploaders: Alexandre Fayolle <afayolle@debian.org>, Adrien Di Mascio <adrien.dimascio@logilab.fr>
 Build-Depends: debhelper (>= 5.0.37.2), python-dev (>=2.3.5-7), python-central (>=0.5)
 Standards-Version: 3.7.2
+Homepage: http://www.logilab.org/projects/devtools
 XS-Python-Version: current
 
 Package: python-vcslib
@@ -17,14 +18,12 @@ Replaces: devtools
 Description: set of development tools used at Logilab for source management
  Set of tools which aims to help the developpement process, including :
   * cvs/svn/mercurial utilities
- .
-Homepage: http://www.logilab.org/projects/devtools
 
 Package: logilab-packaging
 Architecture: all
 Suggests: logilab-doctools
 Recommends: piuparts, linda, lintian, sudo, emacsen-common, cvs, mercurial (>= 0.9.3), subversion
-Depends: ${python:Depends}, pymacs, python-vcslib, python-logilab-common (>= 0.32.0), pbuilder
+Depends: ${python:Depends}, pymacs, python-vcslib, python-logilab-common (>= 0.32.0), pbuilder, debinstall, devscripts
 Conflicts: devtools
 Replaces: devtools
 XB-Python-Version: ${python:Versions}
@@ -32,8 +31,6 @@ Description: set of development tools used at Logilab
  Set of tools which aims to help the developpement process, including :
   * standard for zope and Python packages
   * tools to check and build source and/or Debian packages
- .
-Homepage: http://www.logilab.org/projects/devtools
 
 Package: pycoverage
 Architecture: all
@@ -44,8 +41,6 @@ Conflicts: devtools
 Replaces: devtools
 Description: Python code coverage tool
  tool primary used to compute test coverage
- .
-Homepage: http://www.logilab.org/projects/devtools
 
 Package: logilab-elisp
 Architecture: all
@@ -57,5 +52,12 @@ Description: emacs lisp code for logilab development tools
   * an emacs mode for pycover files
   * an emacs mode for ChangeLog files
   * a small set of emacs shortcuts used at logilab
- .
-Homepage: http://www.logilab.org/projects/devtools
+
+Package: logilab-dev-environment
+Architecture: all
+Depends: python-all-dev, python-all-dbg, emacs, python-ropemacs, logilab-packaging, pycoverage, logilab-elisp, build-essentials, pylint, mercurial, subversion, debinstall, hgview, meld, rcs, commit-tool
+Recommends: vim-python | gvim
+Description: minimum set of packages for development at Logilab
+ This meta-package ensures Python and pylint are available, as well as
+ emacs, Logilab's packaging tools, and the version control tools used
+ at Logilab (mercurial and subversion). 
