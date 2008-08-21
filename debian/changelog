@@ -2,6 +2,7 @@ logilab-devtools (0.12.0-1) unstable; urgency=low
 
   * Added new binary meta-package: logilab-dev-environment
   * Fixed Homepage field (source package field)
+  * added Conflicts on logilab-packaging with simh (which also ships /usr/bin/lgp)
 
  --
 
