@@ -23,7 +23,7 @@ Package: logilab-packaging
 Architecture: all
 Suggests: logilab-doctools
 Recommends: piuparts, linda, lintian, sudo, emacsen-common, cvs, mercurial (>= 0.9.3), subversion
-Depends: ${python:Depends}, pymacs, python-vcslib, python-logilab-common (>= 0.32.0), pbuilder, debinstall, devscripts
+Depends: ${python:Depends}, pymacs, python-vcslib, python-logilab-common (>= 0.32.0), pbuilder, debinstall, devscripts, debhelper
 Conflicts: devtools, simh
 Replaces: devtools
 XB-Python-Version: ${python:Versions}
