@@ -16,7 +16,8 @@ import os
 import time
 from os.path import join, isfile, dirname, exists
 
-from logilab.common.changelog import ChangeLog as BaseChangeLog, ChangeLogEntry, Version
+from logilab.common.changelog import ChangeLog as BaseChangeLog, ChangeLogEntry
+import subprocess
 
 CHANGEFILE = 'ChangeLog'
 
@@ -117,33 +118,48 @@ class ChangeLog(BaseChangeLog):
 
 # debian change log ###########################################################
 
-
-class DebianVersion(tuple):
+class Version(object):
+    def __init__(self, versionstr):
+        self.value = versionstr
+    def __str__(self):
+        return self.value
+    def __compare(self, op, other):
+        if isinstance(other, Version):
+            status = subprocess.call(['dpkg', '--compare-versions', self.value, op, other.value])
+            return (status == 0)
+        return NotImplemented
+    
+    def __eq__(self, other):
+        return self.__compare('eq', other)
+    def __ne__(self, other):
+        return self.__compare('ne', other)
+    def __lt__(self, other):
+        return self.__compare('lt', other)
+    def __le__(self, other):
+        return self.__compare('le', other)
+    def __gt__(self, other):
+        return self.__compare('gt', other)
+    def __ge__(self, other):
+        return self.__compare('ge', other)
+        
+class DebianVersion(Version):
     """simple class to handle debian version number has a tuple while
     correctly printing it as X.Y.Z-D
     """
-    def __new__(klass, versionstr):
-        upstream, debian = versionstr.split('-')
-        parsed = [int(i) for i in upstream.split('.')]
-        parsed.append( [int(num) for num in debian.split('.')])
-        return tuple.__new__(klass, parsed)
-
-    @property
-    def upstream_version(self):
-        return Version(self[:-1])
-
-    @property
-    def debian_version(self):
-        return Version(self[-1])
-    
-    def __str__(self):
-        return '%s-%s' % (self.upstream_version, self.debian_version)
-
+    # XXX lots of things supported by 'real' debian versions are not supported
+    # see Debian Policy for the full gory details
+    def __init__(self, versionstr):
+        Version.__init__(self, versionstr)
+        if ':' in versionstr:
+            self.epoch, versionstr = versionstr.split(':')
+        else:
+            self.epoch = ''
+        self.upstream_version, self.debian_version = versionstr.split('-')
+        
 
 class DebianChangeLogEntry(ChangeLogEntry):
     """object representation of a debian/changelog entry"""
     version_class = DebianVersion
-    
     def write(self, stream=sys.stdout):
         """write the entry to file """
         write = stream.write
