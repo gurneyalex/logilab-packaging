@@ -58,7 +58,9 @@ def move_result(dest_dir, info, debuilder):
         rm('../%s_%s.dsc' % (debian_name, debian_version))
         rm('../%s_%s*.changes' % (debian_name, debian_version))
 
+        # XXX : are we sure that's not "%s_%s.orig.tar.gz" ?
         source_dist = '%s_%s.tar.gz' % (upstream_name, debian_version)
+        print "looking for %s in .." % source_dist
         if osp.isfile('../%s' % source_dist):
             rm('../%s' % source_dist)
 
