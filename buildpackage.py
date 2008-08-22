@@ -138,7 +138,8 @@ def build_debian(pkg_dir, dest_dir,
     upstream_version = pkginfo.version
     debian_name = pkginfo.debian_name
     debian_version = DebianChangeLog('debian/changelog').get_latest_revision()
-    if tuple(debian_version[-1]) > (1,) and origpath is None:
+    
+    if debian_version.debian_version != '1' and origpath is None:
         raise ValueError('unable to build %s %s: --orig option is required when'\
         ' not building the first version of the debian package'%( debian_name,
             debian_version, ))
