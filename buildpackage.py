@@ -188,6 +188,7 @@ def build_debian(pkg_dir, dest_dir,
             cmd = debuilder
         if quiet:
             cmd += ' 1>/dev/null 2>/dev/null'
+        print cmd
         status = os.system(cmd)
         if status:
             raise OSError('An error occured while building the debian package ' \
