@@ -14,9 +14,9 @@
 # You should have received a copy of the GNU General Public License along with
 # this program; if not, write to the Free Software Foundation, Inc.,
 # 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-
-"""provides functions to uild a debian package for a python package
+""" Provides functions to build a debian package for a python package
 """
+__docformat__ = "restructuredtext en"
 
 import os
 import sys
@@ -24,16 +24,18 @@ import stat
 import tempfile
 import shutil
 import os.path as osp
+from subprocess import Popen, PIPE
 
 from logilab.common.shellutils import mv, cp, rm
 from logilab.common.fileutils import ensure_fs_mode, export
 
+from logilab.devtools.exceptions import (ArchitectureException,
+                                         DistributionException)
 from logilab.devtools.lib.utils import confirm, cond_exec
 from logilab.devtools.lib.pkginfo import PackageInfo
 from logilab.devtools.lib.changelog import DebianChangeLog
 
-SEPARATOR = '+' * 72
-
+KNOWN_DISTRIBUTIONS = ['etch', 'lenny', 'sid']
 
 def get_packages_list(info):
     (upstream_name, upstream_version, debian_name, debian_version) = info
@@ -49,7 +51,7 @@ def get_packages_list(info):
 def move_result(dest_dir, info, debuilder):
     if not osp.isdir(dest_dir):
         os.mkdir(dest_dir)
-    
+
     packages = get_packages_list(info)
     binary_packages = [pkg for pkg in packages if pkg.endswith('.deb')]
     (upstream_name, upstream_version, debian_name, debian_version) = info
@@ -77,7 +79,7 @@ def move_result(dest_dir, info, debuilder):
             mv('../%s*' % package, dest_dir)
         #mv('../%s_%s.orig.tar.gz' % (debian_name, upstream_version), dest_dir)
         #mv('../%s-%s.tar.gz' % (upstream_name, upstream_version), dest_dir)
-            
+
 def create_dest_dir(dirname, distributions):
     if not osp.isdir(dirname):
         os.mkdir(dirname)
@@ -85,12 +87,12 @@ def create_dest_dir(dirname, distributions):
         target = osp.join(dirname, distname)
         if not osp.isdir(dirname):
             os.mkdir(dirname)
-    
+
 def create_orig_tarball(origdir, tmpdir, dest_dir,
                         upstream_version,
                         debian_name,
                         origpath, pkg_dir, quiet=False):
-        
+
     if not origpath:
         os.chdir(pkg_dir)
         cmd = 'python setup.py sdist --force-manifest'
@@ -106,30 +108,85 @@ def create_orig_tarball(origdir, tmpdir, dest_dir,
         origpath = osp.join(tmpdir, osp.split(origpath)[1])
     return origpath
 
-def get_all_distributions():
-    #XXX
-    return ['etch', 'lenny', 'sid']
+def get_distributions(distrib='all'):
+    """ Ensure that the target distributions exist
+
+        :param:
+            distrib: str or list
+                name of a distribution
+        :return:
+            list of target distribution
+    """
+    if distrib == 'all':
+        distrib = KNOWN_DISTRIBUTIONS
+    else:
+        if type(distrib) is str:
+            distrib = distrib.split(',')
+        for t in distrib:
+            if t not in KNOWN_DISTRIBUTIONS:
+                raise DistributionException(t)
+    return distrib
+
+def get_architectures(archi=None):
+    """ Ensure that the architectures exist
+
+        :param:
+            archi: str or list
+                name of a architecture
+        :return:
+            list of architecture
+    """
+    known_archi = Popen(["dpkg-architecture", "-L"], stdout=PIPE).communicate()[0].split()
+    if archi is None:
+        archi = Popen(["dpkg", "--print-architecture"], stdout=PIPE).communicate()[0].split()
+    else:
+        if type(archi) is str:
+            archi = archi.split(',')
+        for a in archi:
+            if a not in known_archi:
+                raise ArchitectureException(a)
+    return archi
+
 
 def build_debian(pkg_dir, dest_dir,
-                 target_distribution, arch,
+                 target_distribution='all',
+                 architecture=None,
                  pdebuild_options='',
                  origpath=None, quiet=False):
-    """build debian package and move them in <dest_dir>
-    
-    the debian package to build is expected to be in the current working
-    directory
-    """
-    assert osp.isabs(pkg_dir), "build_debian requires pkg_dir to be an absolute path"
-    assert osp.isabs(dest_dir), "build_debian requires dest_dir to be an absolute path"
-    if origpath is not None:
-        assert osp.isabs(origpath), "build_debian requires origpath to be an absolute path"
+    """ Build debian package and move them in <dest_dir>
 
-    all_known_distributions = get_all_distributions()
-    if target_distribution == 'all':
-        target_distribution = all_known_distributions
-    else:
-        assert target_distribution in all_known_distributions, 'unknown distribution %s' % target_distribution
-        target_distribution = [target_distribution]
+    The debian package to build is expected to be in the current working
+    directory
+
+    Several checks are performed here to validate the debian directory structure
+
+    :todo: drop the quiet parameter (used by apycot at the moment)
+
+    :param:
+        pkg_dir
+            package directory
+        dest_dir
+            destination directory
+        target_distribution
+            debian distribution list
+        architecture: str or list
+            compilation architecture
+        pdebuild_options
+            options for the builder
+        origpath
+            upstream source URI
+        quiet
+            silent output (needed 
+
+    :return:
+        list of compiled packages or False
+    """
+    (pkg_dir, dest_dir, origpath) = [dir and osp.abspath(dir) for dir
+                                     in (pkg_dir, dest_dir, origpath)]
+
+    target_distribution = get_distributions(target_distribution)
+    architecture = get_architectures(architecture)
+
     #sys.__stdout__.write("build_debian(%s, %s, %s, %s)\n" % (pkg_dir, dest_dir, pdebuild_options, origpath))
     # 0/ retrieve package information
     os.chdir(pkg_dir)
@@ -138,7 +195,7 @@ def build_debian(pkg_dir, dest_dir,
     upstream_version = pkginfo.version
     debian_name = pkginfo.debian_name
     debian_version = DebianChangeLog('debian/changelog').get_latest_revision()
-    
+
     if debian_version.debian_version != '1' and origpath is None:
         raise ValueError('unable to build %s %s: --orig option is required when'\
         ' not building the first version of the debian package'%( debian_name,
@@ -218,42 +275,37 @@ def add_options(parser):
                       help='the distribution targetted (e.g. etch, lenny, sid). Use all for all known distributions')
     parser.add_option('-a', '--arch', default='all', help='build for the requested debian architectures only')
     parser.add_option('--orig', help='path to orig.tar.gz file')
+    parser.add_option('-q', '--quiet', action="store_true", dest="quiet", default=False, help='run silently without confirmation')
 
 
 def run(pkgdir, options, args):
     """main"""
-    if options.orig:
-        origdir = osp.abspath(options.orig)
-    else:
-        origdir = None
-        
     try :
         packages = build_debian(pkgdir,
-                                osp.abspath(options.distdir),
+                                options.distdir,
                                 options.target_distribution,
                                 options.arch,
                                 options.debbuildopts,
-                                origdir)
+                                options.orig)
     except Exception, exc:
         print >> sys.stderr, exc
         return 1
-    # lintian
-    print SEPARATOR
-    if confirm("lancement de lintian sur les paquets générés ?"):
-        for package in packages:
-            if package.endswith('.deb'):
-                cond_exec('lintian -i %s/%s' % (options.distdir, package))
 
-    # linda
-    print SEPARATOR
-    if confirm("lancement de linda sur les paquets générés ?"):
-        for package in packages:
-            if package.endswith('.deb'):
-                cond_exec('linda -i %s/%s' % (options.distdir, package))
+    SEPARATOR = '+' * 72
 
-    # piuparts
+    # Run usual checkers
+    checkers = ('lintian', 'linda')
+    for checker in checkers:
+        print SEPARATOR
+        if options.quiet or confirm("run %s on generated debian packages ?" % checker):
+            for package in packages:
+                if package.endswith('.deb'):
+                    cond_exec('%s -i %s/%s' % (checker, options.distdir, package))
+
+    # FIXME piuparts that doesn't work automatically for all our packages
     print SEPARATOR
-    if confirm("lancement de piuparts sur les paquets générés ?"):
+    if not options.quiet and confirm("run piuparts on generated debian packages ?"):
         for package in packages:
             if package.endswith('.deb'):
                 cond_exec('sudo piuparts -p %s/%s' % (options.distdir, package))
+
