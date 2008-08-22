@@ -20,20 +20,20 @@ __docformat__ = "restructuredtext en"
 
 import os
 import sys
-import stat
 import tempfile
 import shutil
 import os.path as osp
 from subprocess import Popen, PIPE
 
 from logilab.common.shellutils import mv, cp, rm
-from logilab.common.fileutils import ensure_fs_mode, export
+from logilab.common.fileutils import export
 
 from logilab.devtools.exceptions import (ArchitectureException,
                                          DistributionException)
 from logilab.devtools.lib.utils import confirm, cond_exec
 from logilab.devtools.lib.pkginfo import PackageInfo
 from logilab.devtools.lib.changelog import DebianChangeLog
+from logilab.devtools.lib.checkpackage import check_debian_setup
 
 KNOWN_DISTRIBUTIONS = ['etch', 'lenny', 'sid']
 
@@ -80,13 +80,6 @@ def move_result(dest_dir, info, debuilder):
         #mv('../%s_%s.orig.tar.gz' % (debian_name, upstream_version), dest_dir)
         #mv('../%s-%s.tar.gz' % (upstream_name, upstream_version), dest_dir)
 
-def create_dest_dir(dirname, distributions):
-    if not osp.isdir(dirname):
-        os.mkdir(dirname)
-    for distname in distributions:
-        target = osp.join(dirname, distname)
-        if not osp.isdir(dirname):
-            os.mkdir(dirname)
 
 def create_orig_tarball(origdir, tmpdir, dest_dir,
                         upstream_version,
@@ -151,7 +144,7 @@ def get_architectures(archi=None):
 def build_debian(pkg_dir, dest_dir,
                  target_distribution='all',
                  architecture=None,
-                 pdebuild_options='',
+                 builder_options='',
                  origpath=None, quiet=False):
     """ Build debian package and move them in <dest_dir>
 
@@ -171,7 +164,7 @@ def build_debian(pkg_dir, dest_dir,
             debian distribution list
         architecture: str or list
             compilation architecture
-        pdebuild_options
+        builder_options
             options for the builder
         origpath
             upstream source URI
@@ -185,35 +178,47 @@ def build_debian(pkg_dir, dest_dir,
                                      in (pkg_dir, dest_dir, origpath)]
 
     target_distribution = get_distributions(target_distribution)
-    architecture = get_architectures(architecture)
+    architecture        = get_architectures(architecture)
 
-    #sys.__stdout__.write("build_debian(%s, %s, %s, %s)\n" % (pkg_dir, dest_dir, pdebuild_options, origpath))
-    # 0/ retrieve package information
+    # Manage a possible remote scm capabilities
+    # FIXME urlparse is limited to the rfc1738 scheme, too bad :-(
+    # find a cleaner solution for other scheme http/ftp/file. regex ?
+    if origpath.startswith('ssh://'):
+        # FIXME use vcslib ???
+        # svn export / hg archive
+        pass
+
+    #sys.__stdout__.write("build_debian(%s, %s, %s, %s)\n" % (pkg_dir, dest_dir, builder_options, origpath))
+
+    # retrieve package information
     os.chdir(pkg_dir)
-    pkginfo = PackageInfo()
-    upstream_name = pkginfo.name
+    pkginfo          = PackageInfo()
+    upstream_name    = pkginfo.name
     upstream_version = pkginfo.version
-    debian_name = pkginfo.debian_name
-    debian_version = DebianChangeLog('debian/changelog').get_latest_revision()
+    debian_name      = pkginfo.debian_name
+    debian_version   = DebianChangeLog('debian/changelog').get_latest_revision()
 
     if debian_version.debian_version != '1' and origpath is None:
         raise ValueError('unable to build %s %s: --orig option is required when'\
-        ' not building the first version of the debian package'%( debian_name,
-            debian_version, ))
-    
+                         ' not building the first version of the debian package'
+                         % (debian_name, debian_version))
+
     info = (upstream_name, upstream_version, debian_name, debian_version)
     tmpdir = tempfile.mkdtemp()
     ##  workdir = osp.join(tmpdir, '%s-%s'% (debian_name, upstream_version))
-    
-    # 1/ ensure project directory has debian/ directory
-    if not osp.isdir('debian'):
-        raise ValueError('No "debian" directory')
-    
-    # 2/ check destination directory exists, create it if necessary, 
-    create_dest_dir(dest_dir, target_distribution)
 
-    # 2bis ensure debian/rules exists and is executable
-    ensure_fs_mode('debian/rules', stat.S_IEXEC)
+
+    # TODO make a checkpackage.run() here
+    check_debian_setup(None, pkg_dir)
+
+    # check destination directories exist, create it if necessary
+    for distrib in target_distribution:
+        try:
+            os.makedirs(dest_dir + distrib)
+        except OSError:
+            # it's not a problem here to pass silently
+            # when one directory already exist
+            pass
 
     try:
         origdir = '%s-%s' % (upstream_name, upstream_version)
@@ -222,8 +227,7 @@ def build_debian(pkg_dir, dest_dir,
                                        upstream_version,
                                        debian_name,
                                        origpath, pkg_dir, quiet)
-        
-        
+
         # 4/ create build directory by extracting the .orig.tar.gz and then
         #    copying debian/ directory
         os.chdir(tmpdir)
@@ -233,12 +237,15 @@ def build_debian(pkg_dir, dest_dir,
             ' tarball (return status: %s)' % status)
         # XXX : manage debian-distname
         export(osp.join(pkg_dir, 'debian'), '%s/debian' % origdir)
-        
+
+        # ==================================================
+        # Transition to vbuild utility 
+        # ==================================================
         # 5/ build the package using fakeroot or pbuilder usually
         os.chdir(origdir)
         debuilder = os.environ.get('DEBUILDER') or 'vbuild'
-        if debuilder == 'pdebuild' and pdebuild_options:
-            cmd = '%s --debbuildopts %s' % (debuilder, pdebuild_options)
+        if debuilder == 'pdebuild' and builder_options:
+            cmd = '%s --debbuildopts %s' % (debuilder, builder_options)
         elif debuilder ==  'vbuild':
             cmd = 'vbuild -d %s -a %s XXX'
         else:
@@ -250,6 +257,14 @@ def build_debian(pkg_dir, dest_dir,
         if status:
             raise OSError('An error occured while building the debian package ' \
                       '(return status: %s)' % status)
+
+        # --------------------------------------------------
+        from logilab.devtools.autobuild.vbuild import build
+        input('test ?')
+        #for archi in architecture:
+        #    for distrib in target_distribution:
+        #        build(FILE_DSC, distrib, archi, origdir)
+
 
         try:
             # 6/ move the upstream tarball and debian package files to the destination directory
@@ -288,6 +303,7 @@ def run(pkgdir, options, args):
                                 options.debbuildopts,
                                 options.orig)
     except Exception, exc:
+        # TODO logger stdlib
         print >> sys.stderr, exc
         return 1
 

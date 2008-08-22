@@ -32,8 +32,6 @@ def run(args):
                  'check that package is ready to be built'),
                 ('info', 'logilab.devtools.info',
                  'extract info from __pkginfo__'),
-                ('import', 'logilab.devtools.importpackage',
-                 'import source from a scm resource'),
                 ]
 
     for item in COMMANDS:
