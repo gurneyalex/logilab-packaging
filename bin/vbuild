@@ -3,6 +3,7 @@
 
 import optparse
 import sys
+import os.path as osp
 import subprocess
 
 def test_arch(target_arch):
@@ -11,13 +12,20 @@ def test_arch(target_arch):
     status = subprocess.call(cmd)
     return status == 0
 
-def build(source_control, distribution, binary_arch=False, orig_tarball=None):
+def build(source_control, distribution, arch, resultdir, basetgz,
+          binary_arch=False, orig_tarball=None):
+    substitutions = {'distrib': distribution,
+                     'arch': arch,
+                     }
+    resultdir %= substitutions
+    basetgz %= substitutions
+    
     cmd = ['sudo', 'pbuilder', '--build',
-           '--buildresult', '/opt/buildd/results-%s'%distribution,
-           '--basetgz', '/opt/buildd/%s.tgz'%distribution,
+           '--buildresult', resultdir,
+           '--basetgz', basetgz,
            source_control]
     if binary_arch:
-        cmd.insert(4, '--binary-arch')
+        cmd.insert(-2, '--binary-arch')
     subprocess.check_call(cmd)
     
 
@@ -32,6 +40,16 @@ def run():
                       help="only build arch-specific targets instead of all targets")
     parser.add_option('-o', '--orig',
                       help='path to orig.tar.gz tarball (used when debian revision is > 1)')
+    parser.add_option('-r', '--result',
+                      help = 'directory where the build results is stored. '
+                             'The strings "%(distrib)s" and "%(arch)s" will be substituted '
+                             '[default: %default]',
+                      default = '/opt/buildd/%(distrib)s')
+    parser.add_option('--basetgz',
+                      help='path to the base tar.gz archive'
+                           'The strings "%(distrib)s" and "%(arch)s" will be substituted '
+                           '[default: %default]',
+                      default = '/opt/buildd/%(distrib)s.tgz')
     usage = '%prog [options] <dsc file>'
 
     options, arguments = parser.parse_args()
@@ -41,8 +59,15 @@ def run():
 
     if len(arguments) != 1:
         parser.error('Missing argument : debian source control file (package_version.dsc)')
+    dscfile = arguments[-1]
+    if not osp.isfile(dscfile):
+        parser.error('Cannot find %s' % dscfile)
+
     build(arguments[-1],
           options.distribution,
+          options.arch,
+          options.result,
+          options.basetgz,
           options.binary_arch,
           options.orig
           )
