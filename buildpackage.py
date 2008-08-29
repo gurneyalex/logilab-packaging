@@ -80,13 +80,13 @@ def move_result(dest_dir, info, debuilder):
         #mv('../%s_%s.orig.tar.gz' % (debian_name, upstream_version), dest_dir)
         #mv('../%s-%s.tar.gz' % (upstream_name, upstream_version), dest_dir)
 
-def create_dest_dir(dirname, distributions):
+def create_dest_dir(dirname, distname):
     if not osp.isdir(dirname):
         os.mkdir(dirname)
-    for distname in distributions:
-        target = osp.join(dirname, distname)
-        if not osp.isdir(dirname):
-            os.mkdir(dirname)
+    target = osp.join(dirname, distname)
+    if not osp.isdir(target):
+        os.mkdir(target)
+    return target
 
 def create_orig_tarball(origdir, tmpdir, dest_dir,
                         upstream_version,
