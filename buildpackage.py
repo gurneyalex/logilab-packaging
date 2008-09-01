@@ -261,7 +261,6 @@ def build_debian(pkg_dir, dest_dir,
                                                                        architecture)
             cmd = 'vbuild -d %s -a %s --result %s %s'
             cmd %= (target_distribution, architecture, dest_dir, dscfile,)
-            os.chdir(origdir)
         else:
             cmd= debuilder
         if quiet:
