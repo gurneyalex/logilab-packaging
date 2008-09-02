@@ -20,13 +20,14 @@ __docformat__ = "restructuredtext en"
 
 import os
 import sys
+import stat
 import tempfile
 import shutil
 import os.path as osp
 from subprocess import Popen, PIPE
 
 from logilab.common.shellutils import mv, cp, rm
-from logilab.common.fileutils import export
+from logilab.common.fileutils import ensure_fs_mode, export
 
 from logilab.devtools.exceptions import (ArchitectureException,
                                          DistributionException)
@@ -73,19 +74,26 @@ def move_result(dest_dir, info, debuilder):
 
         #cp('%s/%s_%s.orig.tar.gz' % (dest_dir, debian_name, upstream_version),
         #   '%s/%s-%s.tar.gz' % (dest_dir, upstream_name, upstream_version))
-
+    elif debuilder.startswith('vbuild'):
+        pass
     else: # fakeroot
         for package in binary_packages:
             mv('../%s*' % package, dest_dir)
         #mv('../%s_%s.orig.tar.gz' % (debian_name, upstream_version), dest_dir)
         #mv('../%s-%s.tar.gz' % (upstream_name, upstream_version), dest_dir)
 
+def create_dest_dir(dirname, distname):
+    if not osp.isdir(dirname):
+        os.mkdir(dirname)
+    target = osp.join(dirname, distname)
+    if not osp.isdir(target):
+        os.mkdir(target)
+    return target
 
 def create_orig_tarball(origdir, tmpdir, dest_dir,
                         upstream_version,
                         debian_name,
                         origpath, pkg_dir, quiet=False):
-
     if not origpath:
         os.chdir(pkg_dir)
         cmd = 'python setup.py sdist --force-manifest'
@@ -120,7 +128,7 @@ def get_distributions(distrib='all'):
                 raise DistributionException(t)
     return distrib
 
-def get_architectures(archi=None):
+def get_architectures(archi="current"):
     """ Ensure that the architectures exist
 
         :param:
@@ -130,9 +138,11 @@ def get_architectures(archi=None):
             list of architecture
     """
     known_archi = Popen(["dpkg-architecture", "-L"], stdout=PIPE).communicate()[0].split()
-    if archi is None:
+    if archi == "current":
         archi = Popen(["dpkg", "--print-architecture"], stdout=PIPE).communicate()[0].split()
     else:
+        if archi == "all":
+            return archi
         if type(archi) is str:
             archi = archi.split(',')
         for a in archi:
@@ -140,11 +150,27 @@ def get_architectures(archi=None):
                 raise ArchitectureException(a)
     return archi
 
+def make_source_package(origpath):
+    """create a debian source package
+
+    This function must be called inside an unpacked source
+    package. The source package (dsc and diff.gz files) is created in
+    the parent directory.
+    
+    :param:
+        origpath: path to orig.tar.gz tarball
+    """
+    print "creation of the Debian source package"
+    wd = os.getcwd()
+    os.chdir('..')
+    os.system('dpkg-source -b %s' % wd)
+    os.chdir(wd)
+        
 
 def build_debian(pkg_dir, dest_dir,
-                 target_distribution='all',
-                 architecture=None,
-                 builder_options='',
+                 target_distribution,
+                 architecture,
+                 pdebuild_options='',
                  origpath=None, quiet=False):
     """ Build debian package and move them in <dest_dir>
 
@@ -160,11 +186,11 @@ def build_debian(pkg_dir, dest_dir,
             package directory
         dest_dir
             destination directory
-        target_distribution
-            debian distribution list
-        architecture: str or list
-            compilation architecture
-        builder_options
+        target_distribution: str
+            name of the targe debian distribution
+        architecture: str
+            name of the compilation architecture
+        pdebuild_options
             options for the builder
         origpath
             upstream source URI
@@ -176,9 +202,6 @@ def build_debian(pkg_dir, dest_dir,
     """
     (pkg_dir, dest_dir, origpath) = [dir and osp.abspath(dir) for dir
                                      in (pkg_dir, dest_dir, origpath)]
-
-    target_distribution = get_distributions(target_distribution)
-    architecture        = get_architectures(architecture)
 
     # Manage a possible remote scm capabilities
     # FIXME urlparse is limited to the rfc1738 scheme, too bad :-(
@@ -207,6 +230,15 @@ def build_debian(pkg_dir, dest_dir,
     tmpdir = tempfile.mkdtemp()
     ##  workdir = osp.join(tmpdir, '%s-%s'% (debian_name, upstream_version))
 
+
+    # 1/ ensure project directory has debian/ directory
+    #if not osp.isdir('debian'):
+    #    raise ValueError('No "debian" directory')
+    
+    # 2/ check destination directory exists, create it if necessary, 
+    dest_dir = create_dest_dir(dest_dir, target_distribution)
+    # 2bis ensure debian/rules exists and is executable
+    #ensure_fs_mode('debian/rules', stat.S_IEXEC)
 
     # TODO make a checkpackage.run() here
     check_debian_setup(None, pkg_dir)
@@ -238,25 +270,30 @@ def build_debian(pkg_dir, dest_dir,
         # XXX : manage debian-distname
         export(osp.join(pkg_dir, 'debian'), '%s/debian' % origdir)
 
-        # ==================================================
-        # Transition to vbuild utility 
-        # ==================================================
         # 5/ build the package using fakeroot or pbuilder usually
         os.chdir(origdir)
         debuilder = os.environ.get('DEBUILDER') or 'vbuild'
-        if debuilder == 'pdebuild' and builder_options:
-            cmd = '%s --debbuildopts %s' % (debuilder, builder_options)
+        if debuilder == 'pdebuild' and pdebuild_options:
+            cmd = '%s --debbuildopts %s' % (debuilder, pdebuild_options)
         elif debuilder ==  'vbuild':
-            cmd = 'vbuild -d %s -a %s XXX'
+            make_source_package(origpath)
+            os.chdir('..')
+            dscfile = '%s_%s.dsc' % (debian_name, debian_version)
+            print "Building debian for distribution %s and arch %s" % (target_distribution,
+                                                                       architecture)
+            cmd = 'vbuild -d %s -a %s --result %s %s'
+            cmd %= (target_distribution, architecture, dest_dir, dscfile,)
         else:
             cmd = debuilder
         if quiet:
             cmd += ' 1>/dev/null 2>/dev/null'
+        print os.getcwd()
+        print os.listdir('.')
         print cmd
         status = os.system(cmd)
         if status:
             raise OSError('An error occured while building the debian package ' \
-                      '(return status: %s)' % status)
+                          '(return status: %s)' % status)
 
         # --------------------------------------------------
         from logilab.devtools.autobuild.vbuild import build
@@ -286,9 +323,9 @@ def add_options(parser):
                       help="options passed to pdebuild's --debbuildopts option")
     parser.add_option('--dist', dest='distdir', default=osp.expanduser('~/dist'),
                       help='where to put results')
-    parser.add_option('-t', '--target-distribution', default=osp.expanduser('sid'),
+    parser.add_option('-t', '--target-distribution', default='sid',
                       help='the distribution targetted (e.g. etch, lenny, sid). Use all for all known distributions')
-    parser.add_option('-a', '--arch', default='all', help='build for the requested debian architectures only')
+    parser.add_option('-a', '--arch', default='all', help='build for the requested debian architectures only', default="current")
     parser.add_option('--orig', help='path to orig.tar.gz file')
     parser.add_option('-q', '--quiet', action="store_true", dest="quiet", default=False, help='run silently without confirmation')
 
@@ -296,32 +333,40 @@ def add_options(parser):
 def run(pkgdir, options, args):
     """main"""
     try :
-        packages = build_debian(pkgdir,
-                                options.distdir,
-                                options.target_distribution,
-                                options.arch,
-                                options.debbuildopts,
-                                options.orig)
+        distributions = get_distributions(options.target_distribution)
+        architectures = get_architectures(options.arch)
+        for arch in architectures:
+            for distrib in distributions:
+                packages = build_debian(pkgdir,
+                                        options.distdir,
+                                        distrib,
+                                        arch,
+                                        options.debbuildopts,
+                                        options.orig)
+                run_checkers(packages,
+                             options.distdir,
+                             options.quiet)
     except Exception, exc:
         # TODO logger stdlib
         print >> sys.stderr, exc
         return 1
 
-    SEPARATOR = '+' * 72
 
+def run_checkers(packages, distdir, quiet=True):
+    separator = '+' * 72
     # Run usual checkers
     checkers = ('lintian', 'linda')
     for checker in checkers:
-        print SEPARATOR
-        if options.quiet or confirm("run %s on generated debian packages ?" % checker):
+        print separator
+        if quiet or confirm("run %s on generated debian packages ?" % checker):
             for package in packages:
-                if package.endswith('.deb'):
-                    cond_exec('%s -i %s/%s' % (checker, options.distdir, package))
+                if package.endswith('.deb'): # XXX : run on .changes file ? 
+                    cond_exec('%s -i %s/%s' % (checker, distdir, package))
 
     # FIXME piuparts that doesn't work automatically for all our packages
-    print SEPARATOR
-    if not options.quiet and confirm("run piuparts on generated debian packages ?"):
+    print separator
+    if not quiet and confirm("run piuparts on generated debian packages ?"):
         for package in packages:
             if package.endswith('.deb'):
-                cond_exec('sudo piuparts -p %s/%s' % (options.distdir, package))
+                cond_exec('sudo piuparts -p %s/%s' % (distdir, package))
 
