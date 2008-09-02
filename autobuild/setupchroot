@@ -2,5 +2,6 @@
 command=$1
 for dist in etch lenny sid 
 do 
-    sudo pbuilder ${command} --distribution ${dist} --basetgz /opt/buildd/${dist}.tgz --mirror http://ftp.fr.debian.org/debian --othermirror "deb http://intranet.logilab.fr/debian/logilab-private/debian sid/|deb http://intranet.logilab.fr/debian/logilab-public/debian sid/"
+    sudo pbuilder ${command} --distribution ${dist} --basetgz /opt/buildd/${dist}.tgz --mirror http://ftp.fr.debian.org/debian \
+                             --othermirror "deb http://intranet.logilab.fr/debian/logilab-private/debian ${dist}/ |deb http://intranet.logilab.fr/debian/logilab-public/debian ${dist}/"
 done
