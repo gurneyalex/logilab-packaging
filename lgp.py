@@ -30,10 +30,11 @@ def run(args):
                  'tag package repository'),
                 ('check', 'logilab.devtools.checkpackage',
                  'check that package is ready to be built'),
+                # TODO
+                #('setup', 'logilab.devtools.setupbuild',
+                # 'prepare a debian arborescence'),
                 ('info', 'logilab.devtools.info',
                  'extract info from __pkginfo__'),
-                ('import', 'logilab.devtools.importpackage',
-                 'import source from a scm resource'),
                 ]
 
     for item in COMMANDS:
