@@ -23,6 +23,7 @@ import sys
 import stat
 import tempfile
 import shutil
+import logging
 import os.path as osp
 from subprocess import Popen, PIPE
 
@@ -34,7 +35,6 @@ from logilab.devtools.exceptions import (ArchitectureException,
 from logilab.devtools.lib.utils import confirm, cond_exec
 from logilab.devtools.lib.pkginfo import PackageInfo
 from logilab.devtools.lib.changelog import DebianChangeLog
-from logilab.devtools.lib.checkpackage import check_debian_setup
 
 KNOWN_DISTRIBUTIONS = ['etch', 'lenny', 'sid']
 
@@ -63,7 +63,7 @@ def move_result(dest_dir, info, debuilder):
 
         # XXX : are we sure that's not "%s_%s.orig.tar.gz" ?
         source_dist = '%s_%s.tar.gz' % (upstream_name, debian_version)
-        print "looking for %s in .." % source_dist
+        logging.debug("looking for %s in .." % source_dist)
         if osp.isfile('../%s' % source_dist):
             rm('../%s' % source_dist)
 
@@ -82,18 +82,12 @@ def move_result(dest_dir, info, debuilder):
         #mv('../%s_%s.orig.tar.gz' % (debian_name, upstream_version), dest_dir)
         #mv('../%s-%s.tar.gz' % (upstream_name, upstream_version), dest_dir)
 
-def create_dest_dir(dirname, distname):
-    if not osp.isdir(dirname):
-        os.mkdir(dirname)
-    target = osp.join(dirname, distname)
-    if not osp.isdir(target):
-        os.mkdir(target)
-    return target
-
 def create_orig_tarball(origdir, tmpdir, dest_dir,
                         upstream_version,
                         debian_name,
                         origpath, pkg_dir, quiet=False):
+    """ Create an origin tarball by the way of setuptools utility
+    """
     if not origpath:
         os.chdir(pkg_dir)
         cmd = 'python setup.py sdist --force-manifest'
@@ -104,6 +98,11 @@ def create_orig_tarball(origdir, tmpdir, dest_dir,
         origpath = osp.join(tmpdir, '%s_%s.orig.tar.gz' % (debian_name, upstream_version))
         cp(tarball, dest_dir)
         cp(tarball, origpath)
+
+        # Another method : use scm capabilities
+        # tarball = '%s_%s.orig.tar.gz' % (debian_name, upstream_version)
+        # origpath = osp.join(tmpdir, tarball)
+        # logging.critical(Popen(["hg", "archive", "-X", "debian", "-t", "tgz", "-p", origdir, origpath], stderr=PIPE).communicate())
     else:
         cp(origpath, tmpdir)
         origpath = osp.join(tmpdir, osp.split(origpath)[1])
@@ -156,16 +155,12 @@ def make_source_package(origpath):
     This function must be called inside an unpacked source
     package. The source package (dsc and diff.gz files) is created in
     the parent directory.
-    
+
     :param:
         origpath: path to orig.tar.gz tarball
     """
-    print "creation of the Debian source package"
-    wd = os.getcwd()
-    os.chdir('..')
-    os.system('dpkg-source -b %s' % wd)
-    os.chdir(wd)
-        
+    logging.info("Creation of the Debian source package")
+    os.system('dpkg-source -b %s' % origpath)
 
 def build_debian(pkg_dir, dest_dir,
                  target_distribution,
@@ -203,54 +198,71 @@ def build_debian(pkg_dir, dest_dir,
     (pkg_dir, dest_dir, origpath) = [dir and osp.abspath(dir) for dir
                                      in (pkg_dir, dest_dir, origpath)]
 
-    # Manage a possible remote scm capabilities
-    # FIXME urlparse is limited to the rfc1738 scheme, too bad :-(
-    # find a cleaner solution for other scheme http/ftp/file. regex ?
-    if origpath.startswith('ssh://'):
-        # FIXME use vcslib ???
-        # svn export / hg archive
-        pass
-
-    #sys.__stdout__.write("build_debian(%s, %s, %s, %s)\n" % (pkg_dir, dest_dir, builder_options, origpath))
-
-    # retrieve package information
     os.chdir(pkg_dir)
-    pkginfo          = PackageInfo()
-    upstream_name    = pkginfo.name
-    upstream_version = pkginfo.version
-    debian_name      = pkginfo.debian_name
-    debian_version   = DebianChangeLog('debian/changelog').get_latest_revision()
 
+    # Retrieve upstream information
+    # - use setuptools format and improve __pkginfo__ ?
+    # - use a generic Makefile iand environment variable (unix standard) ?
+    # - use a transitional format (.ini, .doap) ?
+    # - use a generic tool aka 'lgp info' (rebirth) ?
+    #
+    # Dispute: quel format utiliser pour les informations upstream ? Nous
+    # devons partir du postulat que nous ne maitrîsons pas obligatoirement le
+    # format utilisé par les développeurs
+    #
+    # Avantages et inconvénients de __pkginfo__ pose plusieurs problèmes
+    # (+) pourrait faciliter la création de pseudo-standard eggs (non encore finalisés dans stdlib)
+    #     Utile seulement dans le cas de code python
+    # (+) Le MANIFEST.in permet la (dé)sélection de fichiers indépendamment du scm
+    # (+) ...
+    # (-) La machinerie setuptools doit être embarquée et tout paquet est dépendant de python :-\
+    # (-) Le format __pkginfo__.py est propre à Logilab est difficilement utilisable par d'autres
+    #     Plusieurs fichiers sont ajoutés comme : announce.txt, setup.py, DEPENDS, ...
+    # (-) ...
+    try:
+        pkginfo          = PackageInfo()
+        upstream_name    = pkginfo.name
+        upstream_version = pkginfo.version
+        debian_name      = pkginfo.debian_name
+    except ImportError, err:
+        logging.critical(err)
+        sys.exit(1)
+
+    # Debian version is the last numeric part of the package name
+    # <sourcepackage>_<upstreamversion>-<debian_version>
+    debian_version   = DebianChangeLog('debian/changelog').get_latest_revision()
     if debian_version.debian_version != '1' and origpath is None:
-        raise ValueError('unable to build %s %s: --orig option is required when'\
-                         ' not building the first version of the debian package'
+        raise ValueError('unable to build %s %s: --orig option is required when '\
+                         'not building the first version of the debian package'
                          % (debian_name, debian_version))
 
     info = (upstream_name, upstream_version, debian_name, debian_version)
     tmpdir = tempfile.mkdtemp()
-    ##  workdir = osp.join(tmpdir, '%s-%s'% (debian_name, upstream_version))
 
+    # FIXME Merge code with check_debian_setup() in checkpackage.py
+    # TODO add possible debhelper tests here ?
+    if not osp.isdir(pkg_dir+ '/debian'):
+        logging.fatal("Missing directory: 'debian/'")
+        sys.exit(1)
+    if not osp.isfile('README') and not osp.isfile('README.txt'):
+        logging.fatal("Missing file: 'README[.txt]'")
+        sys.exit(1)
+    if not osp.isfile(pkg_dir + '/debian/rules'):
+        logging.fatal("Missing file: 'debian/rules'")
+        sys.exit(1)
+    if not osp.isfile(pkg_dir + '/debian/copyright'):
+        logging.fatal("Missing file: 'debian/copyright'")
+        sys.exit(1)
+    ensure_fs_mode('debian/rules', stat.S_IEXEC)
 
-    # 1/ ensure project directory has debian/ directory
-    #if not osp.isdir('debian'):
-    #    raise ValueError('No "debian" directory')
-    
-    # 2/ check destination directory exists, create it if necessary, 
-    dest_dir = create_dest_dir(dest_dir, target_distribution)
-    # 2bis ensure debian/rules exists and is executable
-    #ensure_fs_mode('debian/rules', stat.S_IEXEC)
-
-    # TODO make a checkpackage.run() here
-    check_debian_setup(None, pkg_dir)
-
-    # check destination directories exist, create it if necessary
-    for distrib in target_distribution:
-        try:
-            os.makedirs(dest_dir + distrib)
-        except OSError:
-            # it's not a problem here to pass silently
-            # when one directory already exist
-            pass
+    # check if destination directories exists, create it if necessary
+    dest_dir = osp.join(dest_dir, target_distribution)
+    try:
+        os.makedirs(dest_dir)
+    except OSError:
+        # it's not a problem here to pass silently # when the directory
+        # already exists
+        pass
 
     try:
         origdir = '%s-%s' % (upstream_name, upstream_version)
@@ -265,10 +277,10 @@ def build_debian(pkg_dir, dest_dir,
         os.chdir(tmpdir)
         status = os.system('tar xzf %s' % origpath)
         if status:
-            raise IOError('An error occured while extracting the upstream'\
-            ' tarball (return status: %s)' % status)
+            raise IOError('An error occured while extracting the upstream '\
+                          'tarball (return status: %s)' % status)
         # XXX : manage debian-distname
-        export(osp.join(pkg_dir, 'debian'), '%s/debian' % origdir)
+        export(osp.join(pkg_dir, 'debian'), '%s/debian' % origdir, verbose=not quiet)
 
         # 5/ build the package using fakeroot or pbuilder usually
         os.chdir(origdir)
@@ -276,28 +288,24 @@ def build_debian(pkg_dir, dest_dir,
         if debuilder == 'pdebuild' and pdebuild_options:
             cmd = '%s --debbuildopts %s' % (debuilder, pdebuild_options)
         elif debuilder ==  'vbuild':
-            make_source_package(origpath)
+            make_source_package(osp.join(tmpdir, origdir))
             os.chdir('..')
             dscfile = '%s_%s.dsc' % (debian_name, debian_version)
-            print "Building debian for distribution %s and arch %s" % (target_distribution,
-                                                                       architecture)
+            logging.info("Building debian for distribution %s and arch %s" % (target_distribution,
+                                                                              architecture))
             cmd = 'vbuild -d %s -a %s --result %s %s'
-            cmd %= (target_distribution, architecture, dest_dir, dscfile,)
+            cmd %= (target_distribution, architecture, dest_dir, osp.join(tmpdir, origdir, dscfile))
         else:
             cmd = debuilder
         if quiet:
             cmd += ' 1>/dev/null 2>/dev/null'
-        print os.getcwd()
-        print os.listdir('.')
-        print cmd
         status = os.system(cmd)
         if status:
             raise OSError('An error occured while building the debian package ' \
                           '(return status: %s)' % status)
+        os.chdir(pkg_dir)
 
         # --------------------------------------------------
-        from logilab.devtools.autobuild.vbuild import build
-        input('test ?')
         #for archi in architecture:
         #    for distrib in target_distribution:
         #        build(FILE_DSC, distrib, archi, origdir)
@@ -313,7 +321,7 @@ def build_debian(pkg_dir, dest_dir,
             raise IOError("An exception occured while moving files (%s)" % exc)
     finally:
         os.chdir(pkg_dir)
-        # print "please visit", tmpdir
+        logging.debug("please visit: %s" % tmpdir)
         shutil.rmtree(tmpdir)
 
 
@@ -325,16 +333,30 @@ def add_options(parser):
                       help='where to put results')
     parser.add_option('-t', '--target-distribution', default='sid',
                       help='the distribution targetted (e.g. etch, lenny, sid). Use all for all known distributions')
-    parser.add_option('-a', '--arch', default='all', help='build for the requested debian architectures only', default="current")
+    parser.add_option('-a', '--arch', default='current', help='build for the requested debian architectures only')
     parser.add_option('--orig', help='path to orig.tar.gz file')
+    parser.add_option('--vcs', help='path to remote vcs source files')
+    parser.add_option('-r', '--revision', help='set a specific revision to build the debian package')
     parser.add_option('-q', '--quiet', action="store_true", dest="quiet", default=False, help='run silently without confirmation')
 
 
 def run(pkgdir, options, args):
-    """main"""
+    """ main function of lgp build command"""
+    logging.basicConfig(level=logging.DEBUG)
     try :
         distributions = get_distributions(options.target_distribution)
         architectures = get_architectures(options.arch)
+
+        if options.vcs and options.vcs.startswith('ssh://'):
+            # Manage a possible remote vcs capabilities
+            # FIXME urlparse is limited to the rfc1738 scheme, too bad :-(
+            # find a cleaner solution for other scheme http/ftp/file. regex ?
+            # FIXME reorganize and use vcslib ?
+            logging.critical(Popen(["hg", "clone", options.vcs], stderr=PIPE).communicate())
+
+        if options.revision :
+            logging.critical(Popen(["hg", "update", options.revision], stderr=PIPE).communicate())
+
         for arch in architectures:
             for distrib in distributions:
                 packages = build_debian(pkgdir,
@@ -344,29 +366,27 @@ def run(pkgdir, options, args):
                                         options.debbuildopts,
                                         options.orig)
                 run_checkers(packages,
-                             options.distdir,
+                             osp.join(options.distdir, distrib),
                              options.quiet)
     except Exception, exc:
-        # TODO logger stdlib
-        print >> sys.stderr, exc
+        logging.error(exc)
         return 1
 
 
 def run_checkers(packages, distdir, quiet=True):
-    separator = '+' * 72
+    separator = '+' * 15 + ' %s'
     # Run usual checkers
     checkers = ('lintian', 'linda')
     for checker in checkers:
-        print separator
         if quiet or confirm("run %s on generated debian packages ?" % checker):
             for package in packages:
-                if package.endswith('.deb'): # XXX : run on .changes file ? 
+                print separator % package
+                if not package.endswith('.diff.gz'):
                     cond_exec('%s -i %s/%s' % (checker, distdir, package))
 
-    # FIXME piuparts that doesn't work automatically for all our packages
-    print separator
+    # FIXME piuparts that doesn't work automatically for all of our packages
     if not quiet and confirm("run piuparts on generated debian packages ?"):
         for package in packages:
+            print separator % package
             if package.endswith('.deb'):
                 cond_exec('sudo piuparts -p %s/%s' % (distdir, package))
-
