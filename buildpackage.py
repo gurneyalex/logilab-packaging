@@ -295,7 +295,7 @@ def add_options(parser):
                       help='where to put results')
     parser.add_option('-t', '--target-distribution', default='sid',
                       help='the distribution targetted (e.g. etch, lenny, sid). Use all for all known distributions')
-    parser.add_option('-a', '--arch', default='all', help='build for the requested debian architectures only', default="current")
+    parser.add_option('-a', '--arch', help='build for the requested debian architectures only', default="current")
     parser.add_option('--orig', help='path to orig.tar.gz file')
     parser.add_option('-q', '--quiet', action="store_true", dest="quiet", default=False, help='run silently without confirmation')
 
