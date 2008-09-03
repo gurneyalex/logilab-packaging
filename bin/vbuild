@@ -1,5 +1,22 @@
-#!/usr/bin/python
-
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# Copyright (c) 2008 LOGILAB S.A. (Paris, FRANCE).
+# http://www.logilab.fr/ -- mailto:contact@logilab.fr
+#
+# This program is free software; you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the Free Software
+# Foundation; either version 2 of the License, or (at your option) any later
+# version.
+#
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along with
+# this program; if not, write to the Free Software Foundation, Inc.,
+# 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+""" Provides a generic wrapper of the pbuilder debian utility """
+__docformat__ = "restructuredtext en"
 
 import optparse
 import sys
@@ -7,27 +24,27 @@ import os.path as osp
 import subprocess
 
 def test_arch(target_arch):
-    """return True if the arch of localhost is target_arch"""
+    """ Return True if the arch of localhost is target_arch """
     cmd = ['dpkg-architecture', '-e%s' % target_arch]
-    status = subprocess.call(cmd)
-    return status == 0
+    return 0 == subprocess.call(cmd)
 
 def build(source_control, distribution, arch, resultdir, basetgz,
           binary_arch=False, orig_tarball=None):
+
     substitutions = {'distrib': distribution,
-                     'arch': arch,
-                     }
+                     'arch': arch,}
     resultdir %= substitutions
-    basetgz %= substitutions
-    
+    basetgz   %= substitutions
+
     cmd = ['sudo', 'pbuilder', '--build',
            '--buildresult', resultdir,
            '--basetgz', basetgz,
            source_control]
     if binary_arch:
         cmd.insert(-2, '--binary-arch')
-    subprocess.check_call(cmd)
-    
+
+    return subprocess.check_call(cmd)
+
 
 def run():
     parser = optparse.OptionParser()
@@ -53,8 +70,8 @@ def run():
     usage = '%prog [options] <dsc file>'
 
     options, arguments = parser.parse_args()
-    
-    if not(options.arch is None or test_arch(options.arch)):           
+
+    if not(options.arch is None or test_arch(options.arch)):
         parser.error('Cross building not supported for now')
 
     if len(arguments) != 1:
@@ -63,15 +80,14 @@ def run():
     if not osp.isfile(dscfile):
         parser.error('Cannot find %s' % dscfile)
 
-    build(arguments[-1],
-          options.distribution,
-          options.arch,
-          options.result,
-          options.basetgz,
-          options.binary_arch,
-          options.orig
-          )
-    
-    
+    return build(arguments[-1],
+                 options.distribution,
+                 options.arch,
+                 options.result,
+                 options.basetgz,
+                 options.binary_arch,
+                 options.orig
+                )
+
 if __name__ == '__main__':
-    run()
+    sys.exit(run())
