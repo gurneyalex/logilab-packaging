@@ -29,7 +29,7 @@ import os
 import stat
 import re
 import commands
-from os.path import basename, join, exists, isdir
+from os.path import basename, join, exists, isdir, isfile
 
 from logilab.common.compat import set
 from logilab.common.fileutils import ensure_fs_mode
@@ -206,12 +206,16 @@ def check_release_number(reporter, dirname, info_module='__pkginfo__'):
     return status
 
 # FIXME reporter object can be None with lgp build.
-def check_debian_setup(reporter=None, dirname):
+# FIXME merge with buildpackage
+def check_debian_setup(reporter=None, dirname='.'):
     status = 1
-    if not osp.isdir(dirname + '/debian'):
+    if not isdir(dirname + '/debian'):
         if reporter: reporter.fatal('debian/', None, 'Missing directory')
         status = 0
-    if not osp.isfile(dirname + '/debian/rules'):
+    if not isfile('README') and not isfile('README.txt'):
+        if reporter: reporter.fatal('README', None, 'Missing file')
+        status = 0
+    if not isfile(dirname + '/debian/rules'):
         if reporter: reporter.fatal('debian/rules', None, 'Missing file')
         status = 0
     ensure_fs_mode('debian/rules', stat.S_IEXEC)

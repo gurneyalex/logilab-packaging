@@ -56,7 +56,7 @@ except ImportError:
 
 BASE_BLACKLIST = ('CVS', 'debian', 'dist', 'build', '__buildlog')
 IGNORED_EXTENSIONS = ('.pyc', '.pyo', '.elc')
-    
+
 
 def ensure_scripts(linux_scripts):
     """
@@ -152,7 +152,7 @@ class MyInstallLib(install_lib.install_lib):
             for directory in include_dirs:
                 dest = join(self.install_dir, base, directory)
                 export(directory, dest)
-        
+
 def install(**kwargs):
     """setup entry point"""
     if subpackage_of:
@@ -177,6 +177,6 @@ def install(**kwargs):
                  cmdclass={'install_lib': MyInstallLib},
                  **kwargs
                  )
-            
+
 if __name__ == '__main__' :
     install()
