@@ -29,9 +29,10 @@ import os
 import stat
 import re
 import commands
-from os.path import basename, join, exists, isdir
+from os.path import basename, join, exists, isdir, isfile
 
 from logilab.common.compat import set
+from logilab.common.fileutils import ensure_fs_mode
 
 from logilab.devtools.lib import TextReporter
 from logilab.devtools.lib.pkginfo import PackageInfo, check_info_module
@@ -204,9 +205,25 @@ def check_release_number(reporter, dirname, info_module='__pkginfo__'):
                 status = 0
     return status
 
-DEFAULT_CHECKS = ('info_module', 'release_number', 'manifest_in',
-                  'bin', 'test', 'setup_py', 'announce')
+# FIXME reporter object can be None with lgp build.
+# FIXME merge with buildpackage
+def check_debian_setup(reporter=None, dirname='.'):
+    status = 1
+    if not isdir(dirname + '/debian'):
+        if reporter: reporter.fatal('debian/', None, 'Missing directory')
+        status = 0
+    if not isfile('README') and not isfile('README.txt'):
+        if reporter: reporter.fatal('README', None, 'Missing file')
+        status = 0
+    if not isfile(dirname + '/debian/rules'):
+        if reporter: reporter.fatal('debian/rules', None, 'Missing file')
+        status = 0
+    ensure_fs_mode('debian/rules', stat.S_IEXEC)
+    return status
 
+
+DEFAULT_CHECKS = ('debian_setup', 'info_module', 'release_number',
+                  'manifest_in', 'bin', 'test', 'setup_py', 'announce')
 
 CHECKERS = dict([(name, value) for name, value in globals().items()
                  if name.startswith('check_') and name[6:] in DEFAULT_CHECKS and callable(value)])
@@ -224,7 +241,6 @@ def start_checks(package_dir, package_info='__pkginfo__', checks=DEFAULT_CHECKS)
         except TypeError:
             check_func(reporter, package_dir)
     return reporter.errors
-
 
 
 def add_options(parser):
