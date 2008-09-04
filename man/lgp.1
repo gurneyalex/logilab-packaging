@@ -1,22 +1,67 @@
-.TH lgp 1 "2006-08-01" "logilab-packaging"
+.TH lgp 1 "2008-09-01" "logilab-packaging"
 
 .SH NAME
 lgp \- logilab packaging tool to ease projects' maintenance
 
 
 .SH SYNOPSIS
-.B lgp command
-.RI [ options ]
-.br
+.B lgp
+.IR command
+.IR [options]
+
+.BR
 
 .SH DESCRIPTION
+lgp is a generic command to suit the logilab conventions about package management
 Try lgp -h for more information.
 
+.SH COMMANDS
+
+.SS check
+check and report problems about the code source directories and files
+
+.SS prepare
+run assurance quality tools on the source directory
+
+.SS build
+run the creation of a distribution package (source and/or binary)
+
+.RS
+.B --debbuildopts
+options passed to pdebuild's --debbuildopts option
+
+.B --dist
+where to put results
+
+.B -t, --target-distribution
+the distribution targetted (e.g. etch, lenny, sid). Use all for all known distributions
+
+.B -a, --arch
+build for the requested debian architectures only
+
+.B --orig
+path to orig.tar.gz file
+
+.B -r, --revision
+set a specific revision to build the debian package
+
+.B -q, --quiet
+run silently without confirmation
+
+.SS tag
+put a release tag on source repository
+
+.SS info
+extract info from package configuration files
+
+
 .SH LICENCE
-(c) 2006 Logilab. General Public Licence.
+(c) 2006-2008 Logilab. General Public Licence.
 
 .SH SEE ALSO
 pycoverage(1)
+
+.SH BUGS
 
 .SH AUTHOR
 Logilab <contact@logilab.fr>

@@ -4,8 +4,6 @@ Outils de développements Logilab
 Base
 ----
 
-- `architecture standard`_ d'un paquet source
-
 -  le fichier `__pkginfo__.py`_
 
 
@@ -20,21 +18,7 @@ Utilitaires CVS
 Gestion des paquets
 -------------------
 
-- mkproj_
-
-- pkginfo_
-
 - changelog_
-
-- checkpackage_
-
-- buildpackage_
-
-- tagpackage_
-
-- preparedistrib_
-
-- makedistrib_
 
 
 How-to
@@ -42,19 +26,11 @@ How-to
 
 - `packaging how-to`_
 
-.. _`architecture standard`: standard_source_tree.html
 .. _`__pkginfo__.py`: pkginfo_variables.html
 
 .. _cvslog: cvslog.html
 .. _cvstatus: cvstatus.html
 
-.. _mkproj: mkproj.html
-.. _pkginfo: pkginfo.html
 .. _changelog: changelog.html
-.. _checkpackage: checkpackage.html
-.. _buildpackage: buildpackage.html
-.. _tagpackage: tagpackage.html
-.. _preparedistrib: preparedistrib.html
-.. _makedistrib: makedistrib.html
 
 .. _`packaging how-to`: packaging_howto.html
