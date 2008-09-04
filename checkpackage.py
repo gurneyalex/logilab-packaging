@@ -161,6 +161,14 @@ def check_test(reporter, dirname):
         return 1
     return 1
 
+# TODO
+def check_changelog():
+    pass
+
+# TODO
+def check_documentation():
+    pass
+
 def normalize_version(version):
     """remove trailing .0 in version if necessary (i.e. 1.1.0 -> 1.1,
     2.0.0 -> 2)
