@@ -35,7 +35,11 @@ def run(args):
                 # 'prepare a debian arborescence'),
                 ('info', 'logilab.devtools.info',
                  'extract info from __pkginfo__'),
-                ]
+                ('announce', 'logilab.devtools.announce',
+                 'print a announce'),
+                ('clean', 'logilab.devtools.clean',
+                 'clean repository'),
+               ]
 
     for item in COMMANDS:
         parser.add_command(*item)

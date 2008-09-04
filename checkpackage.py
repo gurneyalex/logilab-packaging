@@ -162,11 +162,26 @@ def check_test(reporter, dirname):
     return 1
 
 # TODO
+def check_repository():
+    pass
+
+# TODO
+def check_pylint():
+    pass
+
+# TODO
+def check_copying():
+    # see preparedist.py:install_copying
+    pass
+
+# TODO
 def check_changelog():
+    # see preparedist.py:close_changelog
     pass
 
 # TODO
 def check_documentation():
+    # see preparedist.py:build_documentation
     pass
 
 def normalize_version(version):
