@@ -24,7 +24,7 @@ from logilab.devtools.lib import TextReporter
 from logilab.devtools.lib.pkginfo import PKGINFO, PKGINFO_ATTRIBUTES
 from logilab.devtools.lib.pkginfo import PackageInfo
 
-    
+
 def dump_values(pkginfo, values):
     """dump a list of values from the package info
     dump everything in no specific attributes specifed
@@ -52,7 +52,7 @@ def dump_values(pkginfo, values):
                     value = value()
                 if not value:
                     continue
-                
+
                 print '%s: %s' % (opt_name, value)
             print
 
@@ -79,8 +79,7 @@ def print_list(values=()):
                 if not opt_def.has_key('default'):
                     print '(required)'
                 else:
-                    print 
-                    
+                    print
                 print normalize_text(opt_def['help'], indent='  ')
                 print
             print
@@ -89,7 +88,7 @@ def print_list(values=()):
 def add_options(parser):
     parser.usage = "lgp info [options] <args>"
     parser.add_option("-f", "--field", help="print field value read from package info")
-    parser.add_option("--list", action="store_true", default=False,
+    parser.add_option("-l", "--list", action="store_true", default=False,
                       help="list all pkginfo fields")
     parser.max_args = 1
 

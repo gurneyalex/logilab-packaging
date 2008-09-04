@@ -94,6 +94,7 @@ def create_orig_tarball(origdir, tmpdir, dest_dir,
         if quiet:
             cmd += ' 1>/dev/null 2>/dev/null'
         os.system(cmd)
+
         tarball = osp.join('dist', '%s.tar.gz' % origdir)
         origpath = osp.join(tmpdir, '%s_%s.orig.tar.gz' % (debian_name, upstream_version))
         cp(tarball, dest_dir)
@@ -283,13 +284,11 @@ def build_debian(pkg_dir, dest_dir,
         export(osp.join(pkg_dir, 'debian'), '%s/debian' % origdir, verbose=not quiet)
 
         # 5/ build the package using fakeroot or pbuilder usually
-        os.chdir(origdir)
         debuilder = os.environ.get('DEBUILDER') or 'vbuild'
         if debuilder == 'pdebuild' and pdebuild_options:
             cmd = '%s --debbuildopts %s' % (debuilder, pdebuild_options)
         elif debuilder ==  'vbuild':
             make_source_package(osp.join(tmpdir, origdir))
-            os.chdir('..')
             dscfile = '%s_%s.dsc' % (debian_name, debian_version)
             logging.info("Building debian for distribution %s and arch %s" % (target_distribution,
                                                                               architecture))
