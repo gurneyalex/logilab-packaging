@@ -1,5 +1,5 @@
 MKHTML=mkdoc
-MKHTMLOPTS=--doctype book --param toc.section.depth=2  --target html --stylesheet single-file
+MKHTMLOPTS=--doctype book --param toc.section.depth=2  --target html --stylesheet standard
 SRC=.
 
 TXTFILES:= $(wildcard *.txt)

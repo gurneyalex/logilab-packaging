@@ -229,9 +229,17 @@ def build_debian(pkg_dir, dest_dir,
         logging.critical(err)
         sys.exit(1)
 
+    # The convention is :
+    # debian/ is for sid distrib
+    # debian.$OTHER id for $OTHER distrib 
+    if target_distribution == 'sid':
+        debiandir = 'debian'
+    else:
+        debiandir = 'debian.%s' % target_distribution
+
     # Debian version is the last numeric part of the package name
     # <sourcepackage>_<upstreamversion>-<debian_version>
-    debian_version   = DebianChangeLog('debian/changelog').get_latest_revision()
+    debian_version   = DebianChangeLog('%s/changelog' % debiandir).get_latest_revision()
     if debian_version.debian_version != '1' and origpath is None:
         raise ValueError('unable to build %s %s: --orig option is required when '\
                          'not building the first version of the debian package'
@@ -242,19 +250,19 @@ def build_debian(pkg_dir, dest_dir,
 
     # FIXME Merge code with check_debian_setup() in checkpackage.py
     # TODO add possible debhelper tests here ?
-    if not osp.isdir(pkg_dir+ '/debian'):
-        logging.fatal("Missing directory: 'debian/'")
-        sys.exit(1)
-    if not osp.isfile('README') and not osp.isfile('README.txt'):
-        logging.fatal("Missing file: 'README[.txt]'")
-        sys.exit(1)
-    if not osp.isfile(pkg_dir + '/debian/rules'):
-        logging.fatal("Missing file: 'debian/rules'")
-        sys.exit(1)
-    if not osp.isfile(pkg_dir + '/debian/copyright'):
-        logging.fatal("Missing file: 'debian/copyright'")
-        sys.exit(1)
-    ensure_fs_mode('debian/rules', stat.S_IEXEC)
+    #if not osp.isdir(pkg_dir+ '/debian'):
+    #    logging.fatal("Missing directory: 'debian/'")
+    #    sys.exit(1)
+    #if not osp.isfile('README') and not osp.isfile('README.txt'):
+    #    logging.fatal("Missing file: 'README[.txt]'")
+    #    sys.exit(1)
+    #if not osp.isfile(pkg_dir + '/debian/rules'):
+    #    logging.fatal("Missing file: 'debian/rules'")
+    #    sys.exit(1)
+    #if not osp.isfile(pkg_dir + '/debian/copyright'):
+    #    logging.fatal("Missing file: 'debian/copyright'")
+    #    sys.exit(1)
+    #ensure_fs_mode('debian/rules', stat.S_IEXEC)
 
     # check if destination directories exists, create it if necessary
     dest_dir = osp.join(dest_dir, target_distribution)
@@ -267,37 +275,44 @@ def build_debian(pkg_dir, dest_dir,
 
     try:
         origdir = '%s-%s' % (upstream_name, upstream_version)
-        # 3/ if needed create archive projectname-version.orig.tar.gz using setup.py sdist
+        # if needed create archive projectname-version.orig.tar.gz using setup.py sdist into tmpdir
         origpath = create_orig_tarball(origdir, tmpdir, dest_dir,
                                        upstream_version,
                                        debian_name,
                                        origpath, pkg_dir, quiet)
 
-        # 4/ create build directory by extracting the .orig.tar.gz and then
-        #    copying debian/ directory
+        # create tmp build directory by extracting the .orig.tar.gz
         os.chdir(tmpdir)
         status = os.system('tar xzf %s' % origpath)
         if status:
             raise IOError('An error occured while extracting the upstream '\
                           'tarball (return status: %s)' % status)
-        # XXX : manage debian-distname
-        export(osp.join(pkg_dir, 'debian'), '%s/debian' % origdir, verbose=not quiet)
 
-        # 5/ build the package using fakeroot or pbuilder usually
+        # copying debiandir directory into tmp build depending of the target distribution
+        # in all cases, we copy the debian directory of the sid version
+        #export(osp.join(pkg_dir, debiandir), '%s/debian' % origdir, verbose=quiet)
+        # FIXME why not copytree ?
+        if target_distribution != 'sid':
+            shutil.copytree(osp.join(pkg_dir, 'debian/'), osp.join(origdir, 'debian'))
+        shutil.copytree(osp.join(pkg_dir, debiandir), osp.join(origdir, 'debian'))
+        # DOC If a file should not be included, touch an empty file in the overlay directory
+
+        # build the package using vbuild or default to fakeroot
         debuilder = os.environ.get('DEBUILDER') or 'vbuild'
-        if debuilder == 'pdebuild' and pdebuild_options:
-            cmd = '%s --debbuildopts %s' % (debuilder, pdebuild_options)
-        elif debuilder ==  'vbuild':
+        if debuilder ==  'vbuild':
             make_source_package(osp.join(tmpdir, origdir))
             dscfile = '%s_%s.dsc' % (debian_name, debian_version)
-            logging.info("Building debian for distribution %s and arch %s" % (target_distribution,
-                                                                              architecture))
+            logging.info("Building debian for distribution '%s' and arch '%s'" % (target_distribution,
+                                                                                  architecture))
             cmd = 'vbuild -d %s -a %s --result %s %s'
-            cmd %= (target_distribution, architecture, dest_dir, osp.join(tmpdir, origdir, dscfile))
+            cmd %= (target_distribution, architecture, dest_dir, osp.join(tmpdir, dscfile))
+            # TODO
+            #cmd += ' --debbuildopts %s' % pdebuild_options
         else:
             cmd = debuilder
         if quiet:
             cmd += ' 1>/dev/null 2>/dev/null'
+        logging.debug("[VBUILD] " + ''.join(cmd))
         status = os.system(cmd)
         if status:
             raise OSError('An error occured while building the debian package ' \
@@ -321,7 +336,7 @@ def build_debian(pkg_dir, dest_dir,
     finally:
         os.chdir(pkg_dir)
         logging.debug("please visit: %s" % tmpdir)
-        shutil.rmtree(tmpdir)
+        #shutil.rmtree(tmpdir)
 
 
 def add_options(parser):
