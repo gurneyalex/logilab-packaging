@@ -9,9 +9,9 @@ from logilab.common.shellutils import cp
 import logilab.devtools
 from logilab.devtools.vcslib import get_vcs_agent
 from logilab.devtools.lib import TextReporter
-from logilab.devtools.lib.utils import cond_exec, confirm
 from logilab.devtools.lib.pkginfo import PackageInfo
-from logilab.devtools.lib.changelog import ChangeLog
+from logilab.devtools.lgp.utils import cond_exec, confirm
+from logilab.devtools.lgp.changelog import ChangeLog
 
 
 TEMPLATE_DIR = osp.join(logilab.devtools.__path__[0], 'templates')

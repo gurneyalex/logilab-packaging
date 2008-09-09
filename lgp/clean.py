@@ -18,7 +18,7 @@
 
 import os
 import sys
-from logilab.devtools.lib.utils import confirm
+from logilab.devtools.lgp.utils import confirm
 
 def add_options(parser):
     parser.usage = "lgp clean"

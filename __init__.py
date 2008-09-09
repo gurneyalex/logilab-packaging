@@ -12,5 +12,4 @@
   `General Public License version 2
   <http://www.gnu.org/licenses/old-licenses/gpl-2.0.html>`_
 """
-
-from logilab.devtools.__pkginfo__ import version as __version__
+__import__('pkg_resources').declare_namespace(__name__)

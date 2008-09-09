@@ -21,8 +21,7 @@ import sys
 
 from logilab.common.textutils import normalize_text
 from logilab.devtools.lib import TextReporter
-from logilab.devtools.lib.pkginfo import PKGINFO, PKGINFO_ATTRIBUTES
-from logilab.devtools.lib.pkginfo import PackageInfo
+from logilab.devtools.lib.pkginfo import PackageInfo, PKGINFO, PKGINFO_ATTRIBUTES
 
 
 def dump_values(pkginfo, values):

@@ -32,9 +32,9 @@ from logilab.common.fileutils import ensure_fs_mode, export
 
 from logilab.devtools.exceptions import (ArchitectureException,
                                          DistributionException)
-from logilab.devtools.lib.utils import confirm, cond_exec
 from logilab.devtools.lib.pkginfo import PackageInfo
-from logilab.devtools.lib.changelog import DebianChangeLog
+from logilab.devtools.lgp.utils import confirm, cond_exec
+from logilab.devtools.lgp.changelog import DebianChangeLog
 
 KNOWN_DISTRIBUTIONS = ['etch', 'lenny', 'sid']
 
