@@ -20,9 +20,8 @@ import sys
 from string import Template
 from cStringIO import StringIO
 
-from logilab.devtools.lib.pkginfo import PKGINFO, PKGINFO_ATTRIBUTES
-from logilab.devtools.lib.pkginfo import PackageInfo
-from logilab.devtools.lib.changelog import ChangeLog
+from logilab.devtools.lib.pkginfo import PackageInfo, PKGINFO, PKGINFO_ATTRIBUTES
+from logilab.devtools.lgp.changelog import ChangeLog
 from logilab.devtools.lib import TextReporter
 
 

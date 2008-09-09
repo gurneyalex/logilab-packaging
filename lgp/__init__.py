@@ -22,22 +22,22 @@ from logilab.common.optparser import OptionParser
 def run(args):
     parser = OptionParser()
     parser.usage = 'lgp COMMAND [options] <pkgdir> ...'
-    COMMANDS = [('prepare', 'logilab.devtools.preparedist',
+    COMMANDS = [('prepare', 'logilab.devtools.lgp.preparedist',
                  'process to prepare distrib'),
-                ('build', 'logilab.devtools.buildpackage',
+                ('build', 'logilab.devtools.lgp.build',
                  'build debian and source packages'),
-                ('tag', 'logilab.devtools.tagpackage',
+                ('tag', 'logilab.devtools.lgp.tag',
                  'tag package repository'),
-                ('check', 'logilab.devtools.checkpackage',
+                ('check', 'logilab.devtools.lgp.check',
                  'check that package is ready to be built'),
                 # TODO
                 #('setup', 'logilab.devtools.setupbuild',
                 # 'prepare a debian arborescence'),
-                ('info', 'logilab.devtools.info',
+                ('info', 'logilab.devtools.lgp.info',
                  'extract info from __pkginfo__'),
-                ('announce', 'logilab.devtools.announce',
+                ('announce', 'logilab.devtools.lgp.announce',
                  'print a announce'),
-                ('clean', 'logilab.devtools.clean',
+                ('clean', 'logilab.devtools.lgp.clean',
                  'clean repository'),
                ]
 

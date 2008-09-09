@@ -25,7 +25,7 @@ from os.path import exists, abspath
 
 from logilab.common.modutils import get_module_files
 
-from logilab.devtools.lib.utils import cond_exec, confirm
+from logilab.devtools.lgp.utils import cond_exec, confirm
 from logilab.devtools.lib.manifest import read_manifest_in
 from logilab.devtools.lib import TextReporter
 from logilab.devtools.lib.pkginfo import PackageInfo

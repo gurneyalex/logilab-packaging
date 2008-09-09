@@ -39,7 +39,7 @@ from logilab.devtools.lib.pkginfo import PackageInfo, check_info_module
 from logilab.devtools.lib.manifest import check_manifest_in
 from logilab.devtools.vcslib import BASE_EXCLUDE
 from logilab.devtools import templates
-from logilab.devtools.lib.changelog import ChangeLog, ChangeLogNotFound, \
+from logilab.devtools.lgp.changelog import ChangeLog, ChangeLogNotFound, \
      find_ChangeLog
 
 def is_executable(filename):
