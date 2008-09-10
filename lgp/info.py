@@ -14,97 +14,23 @@
 # You should have received a copy of the GNU General Public License along with
 # this program; if not, write to the Free Software Foundation, Inc.,
 # 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-"""You should use grep instead
-"""
+""" Info command """
 
 import sys
+import logging
+from pprint import pprint
+logging.basicConfig(level=logging.DEBUG)
 
-from logilab.common.textutils import normalize_text
-from logilab.devtools.lib import TextReporter
-from logilab.devtools.lib.pkginfo import PackageInfo, PKGINFO, PKGINFO_ATTRIBUTES
-
-
-def dump_values(pkginfo, values):
-    """dump a list of values from the package info
-    dump everything in no specific attributes specifed
-    """
-    if values:
-        print_arg_name = len(values) > 1
-        for arg in values:
-            try:
-                value = getattr(pkginfo, arg)
-                if callable(value):
-                    value = value()
-                if print_arg_name:
-                    print '%s: ' % arg,
-                print value
-            except AttributeError:
-                print 'No such attribute %s' % arg
-    else:
-        for cat, cat_def in PKGINFO:
-            print cat
-            print '=' * len(cat)
-            for opt_def in cat_def:
-                opt_name = opt_def['name']
-                value = pkginfo.getattr(opt_name)
-                if callable(value):
-                    value = value()
-                if not value:
-                    continue
-
-                print '%s: %s' % (opt_name, value)
-            print
-
-def print_list(values=()):
-    """get help for a list of variables from the package info
-    """
-    if values:
-        for arg in values:
-            try:
-                print '%s:' % arg, PKGINFO_ATTRIBUTES[arg]['help']
-            except KeyError:
-                print 'No such attribute %s' % arg
-    else:
-        print '__pkginfo__ variables description'
-        print '================================='
-        print
-        print 
-        for cat, cat_def in PKGINFO:
-            print cat
-            print '-' * len(cat)
-            print
-            for opt_def in cat_def:
-                print opt_def['name'],
-                if not opt_def.has_key('default'):
-                    print '(required)'
-                else:
-                    print
-                print normalize_text(opt_def['help'], indent='  ')
-                print
-            print
-
+from logilab.devtools.lgp.setupinfo import SetupInfo
 
 def add_options(parser):
-    parser.usage = "lgp info [options] <args>"
-    parser.add_option("-f", "--field", help="print field value read from package info")
-    parser.add_option("-l", "--list", action="store_true", default=False,
-                      help="list all pkginfo fields")
-    parser.max_args = 1
-
+    parser.usage = "lgp announce"
 
 def run(pkgdir, options, args):
-    """extract package info according to command line arguments
-    """
-    if options.list:
-        print_list()
-    elif options.field:
-        try:
-            out = sys.stderr
-            reporter = TextReporter(out, color=out.isatty())
-            pi = PackageInfo(reporter, pkgdir)
-            dump_values(pi, [options.field])
-        except ImportError:
-            sys.stderr.write("%r does not appear to be a valid package " % pkgdir)
-            sys.stderr.write("(no __pkginfo__ found)\n")
-            return 1
+    """ display announce """
+    logging.debug(pkgdir)
+    pkginfo = SetupInfo(pkgdir)
+    pprint(pkginfo._package.__class__)
+    pprint(pkginfo._package)
+    pprint(pkginfo._package.get_license())
     return 0
