@@ -19,6 +19,7 @@ import sys
 import os, os.path as osp
 from logilab.common.optparser import OptionParser
 
+
 def run(args):
     parser = OptionParser()
     parser.usage = 'lgp COMMAND [options] <pkgdir> ...'
@@ -31,12 +32,10 @@ def run(args):
                 ('check', 'logilab.devtools.lgp.check',
                  'check that package is ready to be built'),
                 # TODO
-                #('setup', 'logilab.devtools.setupbuild',
+                #('setupbuild', 'logilab.devtools.lgp.setupbuild',
                 # 'prepare a debian arborescence'),
                 ('info', 'logilab.devtools.lgp.info',
                  'extract info from __pkginfo__'),
-                ('announce', 'logilab.devtools.lgp.announce',
-                 'print a announce'),
                 ('clean', 'logilab.devtools.lgp.clean',
                  'clean repository'),
                ]
@@ -47,6 +46,6 @@ def run(args):
     pkgdir = osp.abspath(args and args[0] or os.getcwd())
     return run_(pkgdir, options, args[1:])
 
+
 if __name__ == '__main__':
     sys.exit(run(sys.argv[1:]))
-

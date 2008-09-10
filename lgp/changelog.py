@@ -118,6 +118,24 @@ class ChangeLog(BaseChangeLog):
 
 # debian change log ###########################################################
 
+def debian_version(self):
+    """return current debian version
+    """
+    cwd = os.getcwd()
+    os.chdir(self.base_directory)
+    try:
+        status, output = getstatusoutput('dpkg-parsechangelog')
+        if status != 0:
+            msg = 'dpkg-parsechangelog exited with status %s' % status
+            raise Exception(msg)
+        for line in output.split('\n'):
+            line = line.strip()
+            if line and line.startswith('Version:'):
+                return line.split(' ', 1)[1].strip()
+        raise Exception('Debian version not found')
+    finally:
+        os.chdir(cwd)
+
 class Version(object):
     def __init__(self, versionstr):
         self.value = versionstr
@@ -237,4 +255,3 @@ class DebianChangeLog(ChangeLog):
                 elif last.messages:
                     last.complete_latest_message(line)
         stream.close()
-

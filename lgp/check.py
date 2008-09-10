@@ -161,29 +161,6 @@ def check_test(reporter, dirname):
         return 1
     return 1
 
-# TODO
-def check_repository():
-    pass
-
-# TODO
-def check_pylint():
-    pass
-
-# TODO
-def check_copying():
-    # see preparedist.py:install_copying
-    pass
-
-# TODO
-def check_changelog():
-    # see preparedist.py:close_changelog
-    pass
-
-# TODO
-def check_documentation():
-    # see preparedist.py:build_documentation
-    pass
-
 def normalize_version(version):
     """remove trailing .0 in version if necessary (i.e. 1.1.0 -> 1.1,
     2.0.0 -> 2)
@@ -294,4 +271,45 @@ def run(pkgdir, options, args):
     to_test = options.only or (set(DEFAULT_CHECKS) - set(options.exclude))
     return start_checks(pkgdir, options.package_info, to_test)
 
+
+
+
     
+    # TODO add possible debhelper tests here ?
+    #if not osp.isdir(pkg_dir+ '/debian'):
+    #    logging.fatal("Missing directory: 'debian/'")
+    #    sys.exit(1)
+    #if not osp.isfile('README') and not osp.isfile('README.txt'):
+    #    logging.fatal("Missing file: 'README[.txt]'")
+    #    sys.exit(1)
+    #if not osp.isfile(pkg_dir + '/debian/rules'):
+    #    logging.fatal("Missing file: 'debian/rules'")
+    #    sys.exit(1)
+    #if not osp.isfile(pkg_dir + '/debian/copyright'):
+    #    logging.fatal("Missing file: 'debian/copyright'")
+    #    sys.exit(1)
+    #ensure_fs_mode('debian/rules', stat.S_IEXEC)
+
+# TODO
+def check_repository():
+    pass
+
+# TODO
+def check_pylint():
+    pass
+
+# TODO
+def check_copying():
+    # see preparedist.py:install_copying
+    pass
+
+# TODO
+def check_changelog():
+    # see preparedist.py:close_changelog
+    pass
+
+# TODO
+def check_documentation():
+    # see preparedist.py:build_documentation
+    pass
+
