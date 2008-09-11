@@ -14,14 +14,12 @@
 # You should have received a copy of the GNU General Public License along with
 # this program; if not, write to the Free Software Foundation, Inc.,
 # 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-""" %prog build [options]
+""" lgp build [options]
 
     Provides functions to build a debian package for a python package
     You can use a setup.cfg file with the [LGP-BUILD] section
 """
 __docformat__ = "restructuredtext en"
-
-KNOWN_DISTRIBUTIONS = ('etch', 'lenny', 'stable', 'unstable', 'experimental', 'sid')
 
 import os
 import sys
@@ -35,53 +33,11 @@ from subprocess import Popen, PIPE
 from logilab.common.shellutils import mv
 from logilab.common.fileutils import ensure_fs_mode, export
 
-from logilab.devtools.lgp.exceptions import (ArchitectureException,
-                                             DistributionException)
-from logilab.devtools.lgp.utils import confirm, cond_exec
 from logilab.devtools.lgp.setupinfo import SetupInfo
 from logilab.devtools.lgp.changelog import DebianChangeLog
+from logilab.devtools.lgp.utils import get_distributions, get_architectures
+from logilab.devtools.lgp.utils import confirm, cond_exec
 
-
-def get_distributions(distrib='sid'):
-    """ Ensure that the target distributions exist
-
-        :param:
-            distrib: str or list
-                name of a distribution
-        :return:
-            list of target distribution
-    """
-    if distrib == 'all':
-        distrib = KNOWN_DISTRIBUTIONS
-    else:
-        if type(distrib) is str:
-            distrib = distrib.split(',')
-        for t in distrib:
-            if t not in KNOWN_DISTRIBUTIONS:
-                raise DistributionException(t)
-    return distrib
-
-def get_architectures(archi="current"):
-    """ Ensure that the architectures exist
-
-        :param:
-            archi: str or list
-                name of a architecture
-        :return:
-            list of architecture
-    """
-    known_archi = Popen(["dpkg-architecture", "-L"], stdout=PIPE).communicate()[0].split()
-    if archi == "current":
-        archi = Popen(["dpkg", "--print-architecture"], stdout=PIPE).communicate()[0].split()
-    else:
-        if archi == "all":
-            return archi
-        if type(archi) is str:
-            archi = archi.split(',')
-        for a in archi:
-            if a not in known_archi:
-                raise ArchitectureException(a)
-    return archi
 
 def run(args):
     """ Main function of lgp build command """
@@ -99,7 +55,7 @@ def run(args):
                 run_checkers(packages, builder.get_distrib_dir(),
                              not builder.config.verbose)
     except Exception, exc:
-        logging.error(exc)
+        logging.critical(exc)
         return 1
 
 def run_checkers(packages, distdir, quiet=True):
@@ -136,11 +92,11 @@ class Builder(SetupInfo):
                 }),
                ('distrib',
                 {'type': 'choice',
-                 'choices': KNOWN_DISTRIBUTIONS,
+                 'choices': get_distributions(),
                  'dest': 'distrib',
                  #'default' : 'sid',
                  'metavar' : "<distribution>",
-                 'help': "the distribution targetted (e.g. etch, lenny, sid). Use 'all' for all known distributions"
+                 'help': "the distribution targetted (e.g. stable, unstable, sid). Use 'all' for all known distributions"
                 }),
                ('arch',
                 {'type': 'string',
@@ -158,16 +114,13 @@ class Builder(SetupInfo):
                 }),
               ),
 
-    def __init__(self, *args):
+    def __init__(self, args):
         # Retrieve upstream information
-        super(Builder, self).__init__(options=self.options, usage=__doc__)
-        # FIXME
-        self.load_file_configuration('./setup.cfg')
-        args = self.load_command_line_configuration(*args)
-        if self.config.pkg_dir is None:
-            self.config.pkg_dir = osp.abspath(args and args[0] or os.getcwd())
+        super(Builder, self).__init__(arguments=args, options=self.options, usage=__doc__)
+        #print self.generate_config(); sys.exit()
 
         # FIXME logilab.common.configuration doesn't like default values :-(
+        # FIXME Duplicated code between commands
         # Be sure to have absolute path here
         if self.config.orig_tarball is not None:
             self.config.orig_tarball = osp.abspath(osp.expanduser(self.config.orig_tarball))
@@ -212,8 +165,10 @@ class Builder(SetupInfo):
         # in all cases, we copy the debian directory of the sid version
         # DOC If a file should not be included, touch an empty file in the overlay directory
         if distrib != 'sid':
-            shutil.copytree(osp.join(self.config.pkg_dir, 'debian'), osp.join(origpath, 'debian'))
-        shutil.copytree(osp.join(self.config.pkg_dir, self.get_debian_dir()), osp.join(origpath, 'debian'))
+            export(osp.join(self.config.pkg_dir, 'debian'), osp.join(origpath, 'debian'))
+            logging.debug("Overriding files...")
+        export(osp.join(self.config.pkg_dir, self.get_debian_dir()), osp.join(origpath, 'debian/'),
+               verbose=self.config.verbose)
 
         # build the package using vbuild or default to fakeroot
         debuilder = os.environ.get('DEBUILDER') or 'vbuild'
@@ -238,18 +193,6 @@ class Builder(SetupInfo):
         # clean tmpdir
         shutil.rmtree(tmpdir)
         return self.get_packages()
-
-    def get_debian_dir(self):
-        """ get the dynamic debian directory for the configuration override
-
-        The convention is :
-        - 'debian/' is for sid distribution
-        - 'debian.$OTHER' id for $OTHER distribution
-        """
-        if self.config.distrib == 'sid':
-            return 'debian/'
-        else:
-            return 'debian.%s/' % self.config.distrib
 
     def get_debian_version(self):
         """ get the debian version depending of the last changelog entry

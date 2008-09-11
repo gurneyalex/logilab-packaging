@@ -30,3 +30,9 @@ def run(pkgdir, options, args):
     os.system('find . "(" %s ")" -a -ls' % search)
     if confirm("nettoyage du répertoire de travail ?"):
         os.system('find . "(" %s ")" -a -exec rm -f \{\} \; 2>/dev/null' % search)
+
+# TODO make clean dans doc/
+#          patterns = ['*~', '*.pyc', '*.pyo', '*.o', '\#*', '.\#*']
+#           search = ' -o '.join(['-name "%s" '%item for item in patterns])
+#            os.system('find . "(" %s ")" -a -exec rm -f \{\} \; 2>/dev/null' % search)
+

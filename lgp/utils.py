@@ -21,11 +21,17 @@ import os
 import glob
 import sys
 from os.path import basename, join, split, exists
+from subprocess import Popen, PIPE
+
+from logilab.devtools.lgp.exceptions import (ArchitectureException,
+                                             DistributionException)
 
 #from logilab.devtools.vcslib import BASE_EXCLUDE
 BASE_EXCLUDE = ('CVS', '.svn', '.hg', 'bzr')
 
 PUBLIC_RGX = re.compile('PUBLIC\s+"-//(?P<group>.*)//DTD (?P<pubid>.*)//(?P<lang>\w\w)(//XML)?"\s*"(?P<dtd>.*)"')
+
+KNOWN_DISTRIBUTIONS = ('etch', 'lenny', 'stable', 'unstable', 'experimental', 'sid')
 
 class SGMLCatalog:
     """ handle SGML catalog information
@@ -124,3 +130,46 @@ def cond_exec(cmd, confirm=False, retry=False):
                 sys.exit(0)
         else:
             return False
+
+def get_distributions(distrib=None):
+    """ Ensure that the target distributions exist or return all the valid distributions
+
+        :param:
+            distrib: str or list
+                name of a distribution
+        :return:
+            list of target distribution
+    """
+    if distrib is None:
+        return KNOWN_DISTRIBUTIONS
+    if distrib == 'all':
+        distrib = KNOWN_DISTRIBUTIONS
+    else:
+        if type(distrib) is str:
+            distrib = distrib.split(',')
+        for t in distrib:
+            if t not in KNOWN_DISTRIBUTIONS:
+                raise DistributionException(t)
+    return distrib
+
+def get_architectures(archi="current"):
+    """ Ensure that the architectures exist
+
+        :param:
+            archi: str or list
+                name of a architecture
+        :return:
+            list of architecture
+    """
+    known_archi = Popen(["dpkg-architecture", "-L"], stdout=PIPE).communicate()[0].split()
+    if archi == "current":
+        archi = Popen(["dpkg", "--print-architecture"], stdout=PIPE).communicate()[0].split()
+    else:
+        if archi == "all":
+            return archi
+        if type(archi) is str:
+            archi = archi.split(',')
+        for a in archi:
+            if a not in known_archi:
+                raise ArchitectureException(a)
+    return archi

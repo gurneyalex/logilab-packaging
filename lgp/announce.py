@@ -16,6 +16,8 @@
 # 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 """ Announce command """
 
+TEMPLATE_DIR = osp.join(logilab.devtools.__path__[0], 'templates')
+
 import sys
 from string import Template
 from cStringIO import StringIO
@@ -26,7 +28,7 @@ from logilab.devtools.lib import TextReporter
 
 
 
-ANNOUNCE="""I'm pleased to announce the ${VERSION} release of ${DISTNAME}.
+ANNOUNCE = """I'm pleased to announce the ${VERSION} release of ${DISTNAME}.
 
 What's new ?
 ------------
@@ -53,7 +55,7 @@ ${MAILINGLIST}
 ${ADDITIONAL_DESCR}
 """
 
-ADDITIONAL_DESCR="""LOGILAB provides services in the fields of XML techniques and advanced
+ADDITIONAL_DESCR = """LOGILAB provides services in the fields of XML techniques and advanced
 computing (implementation of intelligent agents, knowledge management,
 natural language processing, statistical analysis, data mining, etc.),
 and also trainings on Python, XML, UML, Object Oriented design, design
