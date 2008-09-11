@@ -40,8 +40,8 @@ def run(args):
                  'clean repository'),
                ]
 
-    if sys.argv[1] == "build":
-        from logilab.devtools.lgp.build import run
+    if sys.argv[1] in ("build", "check"):
+        exec 'from logilab.devtools.lgp.%s import run' % sys.argv[1]
         return run(args[1:])
     else:
         for item in COMMANDS:

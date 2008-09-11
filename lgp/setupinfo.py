@@ -21,7 +21,6 @@ import sys
 import os.path
 import logging
 from subprocess import Popen, PIPE
-
 from distutils.core import run_setup
 
 from logilab.common.configuration import Configuration
@@ -42,7 +41,7 @@ class SetupInfo(Configuration):
     """ a setup class to handle several package setup information """
     _package_format = None
 
-    def __init__(self, options, **args):
+    def __init__(self, arguments, options, **args):
         self.options = (
                ('verbose',
                 {'action': 'store_true',
@@ -68,6 +67,7 @@ class SetupInfo(Configuration):
         for opt in options:
             self.options += opt
         super(SetupInfo, self).__init__(options=self.options, **args)
+        self.logger = logging.getLogger('lgp')
 
         if os.path.isfile('__pkginfo__.py'):
             self._package_format = 'pkginfo'
@@ -75,7 +75,7 @@ class SetupInfo(Configuration):
             print dir(self._package)
         elif os.path.isfile('setup.py'):
             self._package_format = 'setuptools'
-            self._package = run_setup('./setup.py', None, stop_after="commandline")
+            self._package = run_setup('./setup.py', None, stop_after="init")
         elif os.path.isfile('Makefile'):
             self._package_format = 'makefile'
         if self.config.verbose:
@@ -83,6 +83,11 @@ class SetupInfo(Configuration):
         else:
             logging.basicConfig(level=logging.INFO)
         logging.debug("package format: %s" % self._package_format)
+        # FIXME
+        self.load_file_configuration('./setup.cfg')
+        arguments = self.load_command_line_configuration(arguments)
+        if self.config.pkg_dir is None:
+            self.config.pkg_dir = os.path.abspath(arguments and arguments[0] or os.getcwd())
 
     def get_debian_name(self):
         if self._package_format == 'pkginfo':
@@ -91,6 +96,18 @@ class SetupInfo(Configuration):
             return self.get_upstream_name()
         else:
             return self._package.get_name()
+
+    def get_debian_dir(self):
+        """ get the dynamic debian directory for the configuration override
+
+        The convention is :
+        - 'debian/' is for sid distribution
+        - 'debian.$OTHER' id for $OTHER distribution
+        """
+        if self.config.distrib == 'sid':
+            return 'debian/'
+        else:
+            return 'debian.%s/' % self.config.distrib
 
     def get_upstream_name(self):
         if self._package_format == 'pkginfo':
