@@ -2,15 +2,15 @@ import unittest
 from subprocess import Popen, PIPE
 
 from logilab.common.testlib import TestCase
-from logilab.devtools.buildpackage import get_distributions, KNOWN_DISTRIBUTIONS
-from logilab.devtools.exceptions import DistributionException
+from logilab.devtools.lgp.utils import get_distributions, KNOWN_DISTRIBUTIONS
+from logilab.devtools.lgp.exceptions import DistributionException
 
 
 class DistributionTC(TestCase):
 
     def test_default_distribution(self):
         self.assertEquals(get_distributions(), KNOWN_DISTRIBUTIONS)
-        self.assertEquals(get_distributions('all'), KNOWN_DISTRIBUTIONS)
+        self.assertEquals(get_distributions(None), KNOWN_DISTRIBUTIONS)
 
     def test_one_valid_distribution(self):
         distrib = 'lenny'
@@ -28,7 +28,7 @@ class DistributionTC(TestCase):
         self.assertRaises(DistributionException, get_distributions, distrib)
 
     def test_mixed_unvalid_distributions(self):
-        distrib = KNOWN_DISTRIBUTIONS + ['winnie the pooh']
+        distrib = get_distributions() + ('winnie the pooh',)
         self.assertRaises(DistributionException, get_distributions, distrib)
 
 if __name__  == '__main__':
