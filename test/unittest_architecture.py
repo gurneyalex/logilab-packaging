@@ -2,8 +2,8 @@ import unittest
 from subprocess import Popen, PIPE
 
 from logilab.common.testlib import TestCase
-from logilab.devtools.buildpackage import get_architectures
-from logilab.devtools.exceptions import ArchitectureException
+from logilab.devtools.lgp.utils import get_architectures
+from logilab.devtools.lgp.exceptions import ArchitectureException
 
 
 class ArchitectureTC(TestCase):
