@@ -130,26 +130,3 @@ def get_manifest_files(dirname=os.getcwd(), junk_extensions=JUNK_EXTENSIONS,
         elif not match_extensions(absfile, junk_extensions):
             result.append(absfile[len(prefix):])
     return result
-
-
-def check_manifest_in(reporter, dirname=os.getcwd(),
-                      info_module=None, # avoid pb with check_package
-                      junk_extensions=JUNK_EXTENSIONS):
-    """checks MANIFEST.in file"""
-    status = 1
-    # check matched files
-    should_be_in = get_manifest_files(dirname=dirname)
-    matched = read_manifest_in(reporter, dirname=dirname)
-    absfile = join(dirname, 'MANIFEST.in')
-    for path in should_be_in:
-        try:
-            i = matched.index(path)
-            matched.pop(i)
-        except ValueError:
-            reporter.error(absfile, None, '%s is not matched' % path)
-            status = 0
-    # check garbage
-    for filename in matched:
-        if match_extensions(filename, junk_extensions):
-            reporter.warning(absfile, None, 'match %s' % filename)
-    return status

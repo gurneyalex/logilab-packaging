@@ -33,7 +33,7 @@ from logilab.common.shellutils import find
 
 import logilab.devtools
 from logilab.devtools.lib import TextReporter
-from logilab.devtools.lib.utils import SGMLCatalog, get_scripts, glob_match
+from logilab.devtools.lgp.utils import SGMLCatalog, get_scripts, glob_match
 from logilab.devtools.vcslib import BASE_EXCLUDE
 
 try:
@@ -601,8 +601,7 @@ def check_url(reporter, file, var, url):
       
 def check_info_module(reporter,
                       dirname=os.getcwd(), info_module='__pkginfo__'):
-    """Checking package information module and source tree structure
-    """
+    """ checking package information module and source tree structure """
     absfile = join(dirname, info_module + '.py')
     try:
         mp_file, mp_filename, mp_desc = find_module(info_module,
