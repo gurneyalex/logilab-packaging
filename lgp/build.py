@@ -14,9 +14,14 @@
 # You should have received a copy of the GNU General Public License along with
 # this program; if not, write to the Free Software Foundation, Inc.,
 # 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-""" Provides functions to build a debian package for a python package
+""" %prog build [options]
+
+    Provides functions to build a debian package for a python package
+    You can use a setup.cfg file with the [LGP-BUILD] section
 """
 __docformat__ = "restructuredtext en"
+
+KNOWN_DISTRIBUTIONS = ('etch', 'lenny', 'stable', 'unstable', 'experimental', 'sid')
 
 import os
 import sys
@@ -34,10 +39,10 @@ from logilab.devtools.lgp.exceptions import (ArchitectureException,
                                              DistributionException)
 from logilab.devtools.lgp.utils import confirm, cond_exec
 from logilab.devtools.lgp.setupinfo import SetupInfo
+from logilab.devtools.lgp.changelog import DebianChangeLog
 
-KNOWN_DISTRIBUTIONS = ['etch', 'lenny', 'sid']
 
-def get_distributions(distrib='all'):
+def get_distributions(distrib='sid'):
     """ Ensure that the target distributions exist
 
         :param:
@@ -78,189 +83,27 @@ def get_architectures(archi="current"):
                 raise ArchitectureException(a)
     return archi
 
-def make_source_package(origpath):
-    """create a debian source package
-
-    This function must be called inside an unpacked source
-    package. The source package (dsc and diff.gz files) is created in
-    the parent directory.
-
-    :param:
-        origpath: path to orig.tar.gz tarball
-    """
-    logging.info("Creation of the Debian source package: %s" % origpath)
-    os.system('dpkg-source -b %s' % origpath)
-
-def build_debian(pkg_dir, dist_dir,
-                 target_distribution,
-                 architecture,
-                 pdebuild_options='',
-                 origpath=None, quiet=False):
-    """ Build debian package and move them in <dist_dir>
-
-    The debian package to build is expected to be in the current working
-    directory
-
-    Several checks are performed here to validate the debian directory structure
-
-    :todo: drop the quiet parameter (used by apycot at the moment)
-
-    :param:
-        pkg_dir
-            package directory
-        dist_dir
-            destination directory
-        target_distribution: str
-            name of the targe debian distribution
-        architecture: str
-            name of the compilation architecture
-        pdebuild_options
-            options for the builder
-        origpath
-            upstream source URI
-        quiet
-            silent output (needed 
-
-    :return:
-        list of compiled packages or False
-    """
-    (pkg_dir, dist_dir, origpath) = [dir and osp.abspath(dir) for dir
-                                     in (pkg_dir, dist_dir, origpath)]
-
-    os.chdir(pkg_dir)
-
-    # The convention is :
-    # debian/ is for sid distrib
-    # debian.$OTHER id for $OTHER distrib
-    if target_distribution == 'sid':
-        debiandir = 'debian'
-    else:
-        debiandir = 'debian.%s' % target_distribution
-
-    # Retrieve upstream information
-    try:
-        pkginfo          = SetupInfo()
-        upstream_name    = pkginfo.get_upstream_name()
-        upstream_version = pkginfo.get_version()
-        debian_name      = pkginfo.get_debian_name()
-        debian_version   = pkginfo.get_debian_version(debiandir, origpath)
-    except ImportError, err:
-        logging.critical(err)
-        sys.exit(1)
-
-    info = (upstream_name, upstream_version, debian_name, debian_version)
-    tmpdir = tempfile.mkdtemp()
-
-    # check if destination directories exists, create it if necessary
-    dist_dir = osp.join(dist_dir, target_distribution)
-    try:
-        os.makedirs(dist_dir)
-    except OSError:
-        # it's not a problem here to pass silently # when the directory
-        # already exists
-        pass
-
-    try:
-        # the upstream archive tarball is depending of the setup method
-        tarball = pkginfo.create_orig_tarball(tmpdir, dist_dir,
-                                               upstream_version,
-                                               debian_name,
-                                               origpath, pkg_dir, quiet)
-
-        # create tmp build directory by extracting the .orig.tar.gz
-        os.chdir(tmpdir)
-        logging.debug("Extracting %s..." % tarball)
-        status = os.system('tar xzf %s' % tarball)
-        if status:
-            raise IOError('An error occured while extracting the upstream '\
-                          'tarball (return status: %s)' % status)
-
-        # origpath is depending of the upstream convention
-        origpath = tarball.rsplit('.orig.tar.gz')[0].replace('_', '-')
-
-        # copying debiandir directory into tmp build depending of the target distribution
-        # in all cases, we copy the debian directory of the sid version
-        # DOC If a file should not be included, touch an empty file in the overlay directory
-        if target_distribution != 'sid':
-            shutil.copytree(osp.join(pkg_dir, 'debian'), osp.join(origpath, 'debian'))
-        shutil.copytree(osp.join(pkg_dir, debiandir), osp.join(origpath, 'debian'))
-
-        # build the package using vbuild or default to fakeroot
-        debuilder = os.environ.get('DEBUILDER') or 'vbuild'
-        if debuilder ==  'vbuild':
-            make_source_package(origpath)
-            dscfile = '%s_%s.dsc' % (debian_name, debian_version)
-            logging.info("Building debian for distribution '%s' and arch '%s'" % (target_distribution,
-                                                                                  architecture))
-            cmd = 'vbuild -d %s -a %s --result %s %s'
-            cmd %= (target_distribution, architecture, dist_dir, osp.join(tmpdir, dscfile))
-            # TODO
-            #cmd += ' --debbuildopts %s' % pdebuild_options
-        else:
-            cmd = debuilder
-        if quiet:
-            cmd += ' 1>/dev/null 2>/dev/null'
-        logging.debug("[VBUILD] " + ''.join(cmd))
-        status = os.system(cmd)
-        if status:
-            raise OSError('An error occured while building the debian package ' \
-                          '(return status: %s)' % status)
-    finally:
-        logging.debug("please visit: %s" % tmpdir)
-        #shutil.rmtree(tmpdir)
-    os.chdir(pkg_dir)
-    return pkginfo.get_packages()
-
-
-def add_options(parser):
-    parser.usage = 'lgp build [options] <args>'
-    parser.add_option('--debbuildopts', default='',
-                      help="options passed to pdebuild's --debbuildopts option")
-    parser.add_option('--dist', dest='distdir', default=osp.expanduser('~/dist'),
-                      help='where to put results')
-    parser.add_option('-t', '--target-distribution', default='sid',
-                      help='the distribution targetted (e.g. etch, lenny, sid). Use all for all known distributions')
-    parser.add_option('-a', '--arch', default='current', help='build for the requested debian architectures only')
-    parser.add_option('--orig', help='path to orig.tar.gz file')
-    parser.add_option('--vcs', help='path to remote vcs source files')
-    parser.add_option('-r', '--revision', help='set a specific revision to build the debian package')
-    parser.add_option('-q', '--quiet', action="store_true", dest="quiet", default=False, help='run silently without confirmation')
-
-
-def run(pkgdir, options, args):
-    """ main function of lgp build command """
-    logging.basicConfig(level=logging.DEBUG)
+def run(args):
+    """ Main function of lgp build command """
+    builder = Builder(args)
     try :
-        distributions = get_distributions(options.target_distribution)
-        architectures = get_architectures(options.arch)
+        distributions = get_distributions(builder.config.distrib)
+        architectures = get_architectures(builder.config.archi)
 
-        if options.vcs and options.vcs.startswith('ssh://'):
-            # Manage a possible remote vcs capabilities
-            # FIXME urlparse is limited to the rfc1738 scheme, too bad :-(
-            # find a cleaner solution for other scheme http/ftp/file. regex ?
-            # FIXME reorganize and use vcslib ?
-            logging.critical(Popen(["hg", "clone", options.vcs], stderr=PIPE).communicate())
-
-        if options.revision :
-            logging.critical(Popen(["hg", "update", options.revision], stderr=PIPE).communicate())
+        if builder.config.revision :
+            logging.critical(Popen(["hg", "update", builder.config.revision], stderr=PIPE).communicate())
 
         for arch in architectures:
             for distrib in distributions:
-                packages = build_debian(pkgdir,
-                                        options.distdir,
-                                        distrib,
-                                        arch,
-                                        options.debbuildopts,
-                                        options.orig)
-                run_checkers(packages,
-                             osp.join(options.distdir, distrib),
-                             options.quiet)
+                packages = builder.compile(distrib=distrib, arch=arch)
+                run_checkers(packages, builder.get_distrib_dir(),
+                             not builder.config.verbose)
     except Exception, exc:
         logging.error(exc)
         return 1
 
-
 def run_checkers(packages, distdir, quiet=True):
+    """ Run common used checkers with Debian """
     separator = '+' * 15 + ' %s'
     # Run usual checkers
     checkers = ('lintian', 'linda')
@@ -277,3 +120,166 @@ def run_checkers(packages, distdir, quiet=True):
             print separator % package
             if package.endswith('.deb'):
                 cond_exec('sudo piuparts -p %s/%s' % (distdir, package))
+
+class Builder(SetupInfo):
+    """ Debian builder class
+
+    Specific options are added. See lgp build --help
+    """
+    name = "lgp-build"
+    options = (('dist',
+                {'type': 'string',
+                 #'default' : osp.expanduser('~/dist'),
+                 'dest' : "dist_dir",
+                 'metavar': "<directory>",
+                 'help': "where to put compilation results"
+                }),
+               ('distrib',
+                {'type': 'choice',
+                 'choices': KNOWN_DISTRIBUTIONS,
+                 'dest': 'distrib',
+                 #'default' : 'sid',
+                 'metavar' : "<distribution>",
+                 'help': "the distribution targetted (e.g. etch, lenny, sid). Use 'all' for all known distributions"
+                }),
+               ('arch',
+                {'type': 'string',
+                 'dest': 'archi',
+                 #'default' : 'current',
+                 'metavar' : "<architecture>",
+                 'help': "build for the requested debian architectures only"
+                }),
+               ('orig-tarball',
+                {'type': 'string',
+                 'default' : None,
+                 'dest': 'orig_tarball',
+                 'metavar' : "<tarball>",
+                 'help': "path to orig.tar.gz file"
+                }),
+              ),
+
+    def __init__(self, *args):
+        # Retrieve upstream information
+        super(Builder, self).__init__(options=self.options, usage=__doc__)
+        # FIXME
+        self.load_file_configuration('./setup.cfg')
+        args = self.load_command_line_configuration(*args)
+        if self.config.pkg_dir is None:
+            self.config.pkg_dir = osp.abspath(args and args[0] or os.getcwd())
+
+        # FIXME logilab.common.configuration doesn't like default values :-(
+        # Be sure to have absolute path here
+        if self.config.orig_tarball is not None:
+            self.config.orig_tarball = osp.abspath(osp.expanduser(self.config.orig_tarball))
+        if self.config.dist_dir is None:
+            self.config.dist_dir = osp.expanduser("~/dist")
+        else:
+            self.config.dist_dir = osp.abspath(self.config.dist_dir)
+        if self.config.archi is None:
+            self.config.archi = 'current'
+        if self.config.distrib is None:
+            self.config.distrib = 'sid'
+
+        # check if distribution directory exists, create it if necessary
+        try:
+            os.makedirs(self.get_distrib_dir())
+        except OSError:
+            # it's not a problem here to pass silently # when the directory
+            # already exists
+            pass
+
+    def compile(self, distrib, arch):
+        # Go to package directory
+        os.chdir(self.config.pkg_dir)
+
+        tmpdir = tempfile.mkdtemp()
+
+        # the upstream archive tarball is depending of the setup method
+        tarball = self.create_orig_tarball(tmpdir)
+
+        # create tmp build directory by extracting the .orig.tar.gz
+        os.chdir(tmpdir)
+        logging.debug("Extracting %s..." % tarball)
+        status = os.system('tar xzf %s' % tarball)
+        if status:
+            raise IOError('An error occured while extracting the upstream '\
+                          'tarball (return status: %s)' % status)
+
+        # origpath is depending of the upstream convention
+        origpath = tarball.rsplit('.orig.tar.gz')[0].replace('_', '-')
+
+        # copying debian_dir directory into tmp build depending of the target distribution
+        # in all cases, we copy the debian directory of the sid version
+        # DOC If a file should not be included, touch an empty file in the overlay directory
+        if distrib != 'sid':
+            shutil.copytree(osp.join(self.config.pkg_dir, 'debian'), osp.join(origpath, 'debian'))
+        shutil.copytree(osp.join(self.config.pkg_dir, self.get_debian_dir()), osp.join(origpath, 'debian'))
+
+        # build the package using vbuild or default to fakeroot
+        debuilder = os.environ.get('DEBUILDER') or 'vbuild'
+        if debuilder ==  'vbuild':
+            self.make_source_package(origpath)
+            dscfile = '%s_%s.dsc' % (self.get_debian_name(), self.get_debian_version())
+            logging.info("Building debian for distribution '%s' and arch '%s'" % (distrib,
+                                                                                  arch))
+            cmd = 'vbuild -d %s -a %s --result %s %s'
+            cmd %= (distrib, arch, self.get_distrib_dir(), osp.join(tmpdir, dscfile))
+            # TODO
+            #cmd += ' --debbuildopts %s' % pdebuild_options
+        else:
+            cmd = debuilder
+        if not self.config.verbose:
+            cmd += ' 1>/dev/null 2>/dev/null'
+        logging.debug("[VBUILD] " + ''.join(cmd))
+        status = os.system(cmd)
+        if status:
+            raise OSError('An error occured while building the debian package ' \
+                          '(return status: %s)' % status)
+        # clean tmpdir
+        shutil.rmtree(tmpdir)
+        return self.get_packages()
+
+    def get_debian_dir(self):
+        """ get the dynamic debian directory for the configuration override
+
+        The convention is :
+        - 'debian/' is for sid distribution
+        - 'debian.$OTHER' id for $OTHER distribution
+        """
+        if self.config.distrib == 'sid':
+            return 'debian/'
+        else:
+            return 'debian.%s/' % self.config.distrib
+
+    def get_debian_version(self):
+        """ get the debian version depending of the last changelog entry
+
+            Format of Debian package: <sourcepackage>_<upstreamversion>-<debian_version>
+        """
+        debian_version = DebianChangeLog('%s/%s/changelog' % 
+                (self.config.pkg_dir, self.get_debian_dir())).get_latest_revision()
+        if debian_version.debian_version != '1' and self.config.orig_tarball is None:
+            raise ValueError('unable to build %s %s: --orig-tarball option is required when '\
+                             'not building the first version of the debian package'
+                             % (self.get_debian_name(), self.get_debian_version()))
+        return debian_version
+
+    def get_distrib_dir(self):
+        """ get the dynamic target release directory """
+        return osp.join(self.config.dist_dir, self.config.distrib)
+
+    def make_source_package(self, origpath):
+        """create a debian source package
+
+        This function must be called inside an unpacked source
+        package. The source package (dsc and diff.gz files) is created in
+        the parent directory.
+
+        :param:
+            origpath: path to orig.tar.gz tarball
+        """
+        logging.info("Creation of the Debian source package: %s" % origpath)
+        cmd = 'dpkg-source -b %s' % origpath
+        if not self.config.verbose:
+                cmd += ' 1>/dev/null 2>/dev/null'
+        os.system(cmd)

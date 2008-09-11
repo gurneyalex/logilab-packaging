@@ -40,11 +40,15 @@ def run(args):
                  'clean repository'),
                ]
 
-    for item in COMMANDS:
-        parser.add_command(*item)
-    run_, options, args = parser.parse_command(sys.argv[1:])
-    pkgdir = osp.abspath(args and args[0] or os.getcwd())
-    return run_(pkgdir, options, args[1:])
+    if sys.argv[1] == "build":
+        from logilab.devtools.lgp.build import run
+        return run(args[1:])
+    else:
+        for item in COMMANDS:
+            parser.add_command(*item)
+        run_, options, args = parser.parse_command(sys.argv[1:])
+        pkgdir = osp.abspath(args and args[0] or os.getcwd())
+        return run_(pkgdir, options, args[1:])
 
 
 if __name__ == '__main__':
