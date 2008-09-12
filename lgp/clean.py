@@ -14,25 +14,27 @@
 # You should have received a copy of the GNU General Public License along with
 # this program; if not, write to the Free Software Foundation, Inc.,
 # 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-""" Clean command """
+""" lgp clean [options]
+
+    Clean project's directory
+"""
+__docformat__ = "restructuredtext en"
 
 import os
-import sys
-from logilab.devtools.lgp.utils import confirm
+import os.path
+from logilab.devtools.lgp.utils import confirm, cond_exec
 
-def add_options(parser):
-    parser.usage = "lgp clean"
 
-def run(pkgdir, options, args):
-    """ display announce """
+def run(args):
+    """ Main function of lgp clean command """
+
     patterns = ['*~', '*.pyc', '*.pyo', '*.o', '\#*', '.\#*']
     search = ' -o '.join(['-name "%s" '%item for item in patterns])
     os.system('find . "(" %s ")" -a -ls' % search)
     if confirm("nettoyage du répertoire de travail ?"):
         os.system('find . "(" %s ")" -a -exec rm -f \{\} \; 2>/dev/null' % search)
-
-# TODO make clean dans doc/
-#          patterns = ['*~', '*.pyc', '*.pyo', '*.o', '\#*', '.\#*']
-#           search = ' -o '.join(['-name "%s" '%item for item in patterns])
-#            os.system('find . "(" %s ")" -a -exec rm -f \{\} \; 2>/dev/null' % search)
+    if os.path.isdir('doc') and os.path.isfile('doc/makefile'):
+        if confirm("nettoyage du répertoire de documentation ?"):
+        os.chdir('doc')
+        cond_exec('make clean', retry=True)
 
