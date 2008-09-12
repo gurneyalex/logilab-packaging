@@ -56,7 +56,7 @@ def read_manifest_in(reporter,
                 msg%=args
             except TypeError,e:
                 raise TypeError(str((first,msg,args)))
-        reporter.warning(absfile,None,msg)
+        #reporter.warning(absfile,None,msg)
     filelist.warn = warn
     __warn = distutils.log.warn
     distutils.log.warn = warn
@@ -73,7 +73,8 @@ def read_manifest_in(reporter,
             try:
                 filelist.process_template_line(line)
             except DistutilsTemplateError, msg:
-                reporter.error(absfile, template.current_line, msg)
+                #reporter.error(absfile, template.current_line, msg)
+                pass
         filelist.sort()
         filelist.remove_duplicates()
         for pattern in exclude_patterns:
