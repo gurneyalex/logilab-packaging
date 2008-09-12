@@ -42,13 +42,32 @@ from logilab.common.compat import set
 from logilab.common.fileutils import ensure_fs_mode
 
 from logilab.devtools.vcslib import get_vcs_agent, BASE_EXCLUDE
+from logilab.devtools.lib.pkginfo import PackageInfo
+from logilab.devtools.lib.pkginfo import check_url as _check_url, spell_check, get_default_scripts, sequence_equal
+from logilab.devtools.lib.manifest import (get_manifest_files, read_manifest_in,
+                                           match_extensions, JUNK_EXTENSIONS)
 
 from logilab.devtools import templates
 from logilab.devtools.lgp.changelog import ChangeLog, ChangeLogNotFound, \
-     find_ChangeLog
+     find_ChangeLog, CHANGEFILE
 from logilab.devtools.lgp.setupinfo import SetupInfo
 from logilab.devtools.lgp.utils import get_distributions, get_architectures
 from logilab.devtools.lgp.utils import cond_exec
+
+
+MANDATORY_SETUP_FIELDS = ('name','version','author','author_email','license',
+                          'copyright','short_desc','long_desc')
+
+CHECKS = { 'default'    : ['debian_dir', 'debian_rules', 'debian_copying',
+                           'debian_changelog', 'package_info', 'readme',
+                           'changelog', 'bin', 'tests_directory', 'setup_py',
+                           'repository', 'copying'],
+           'pkginfo'    : ['release_number', 'manifest_in', 'announce', 'include_dirs', 'scripts'],
+           'setuptools' : ['scripts'],
+           'makefile'   : ['makefile'],
+         }
+
+REV_LINE = re.compile('__revision__.*')
 
 
 def is_executable(filename):
@@ -128,20 +147,23 @@ def _check_bat(checker, bat_file):
 def run(args):
     """ Main function of lgp check command """
     checker = Checker(args)
-    try :
-        distributions = get_distributions(checker.config.distrib)
+    # FIXME when production version is ready
+    #try :
+    distributions = get_distributions(checker.config.distrib)
 
-        if checker.config.list_checks:
-            checker.list_checks()
+    if checker.config.list_checks:
+        checker.list_checks()
 
-        checker.start_checks()
+    checker.start_checks()
 
-        # Return the number of invalid tests
-        return len(checker.get_checklist())-checker.counter
+    # Return the number of invalid tests
+    return len(checker.get_checklist())-checker.counter
 
-    except Exception, exc:
-        checker.logger.critical(exc)
-        return 1
+    #except NotImplementedError, exc:
+    #    checker.logger.error(exc)
+    #except Exception, exc:
+    #    checker.logger.critical(exc)
+    #    return 1
 
 
 class Checker(SetupInfo):
@@ -160,16 +182,16 @@ class Checker(SetupInfo):
                  'metavar' : "<distribution>",
                  'help': "the distribution targetted (e.g. etch, lenny, sid). Use 'all' for all known distributions"
                 }),
-               ('includes',
+               ('include',
                 {'type': 'csv',
-                 'dest': 'includes_checks',
+                 'dest': 'include_checks',
                  #'default' : [],
                  'metavar' : "<comma separated names of check functions>",
                  'help': "force the inclusion of other check functions"
                 }),
-               ('excludes',
+               ('exclude',
                 {'type': 'csv',
-                 'dest': 'excludes_checks',
+                 'dest': 'exclude_checks',
                  #'default' : [],
                  'metavar' : "<comma separated names of check functions>",
                  'help': "force the exclusion of other check functions"
@@ -184,13 +206,13 @@ class Checker(SetupInfo):
                 {'action': 'store_true',
                  'default': False,
                  'dest' : "only_one_check",
-                 'help': "run only one single test (not available)"
+                 'help': "run only one single test"
                 }),
-               ('repare',
+               ('try-to-repare',
                 {'action': 'store_true',
                  'default': False,
-                 'dest' : "repare_attempt",
-                 'help': "try to repare detected problems (not available)"
+                 'dest' : "try_to_fix",
+                 'help': "try to fix detected problems (not available)"
                 }),
               ),
 
@@ -204,25 +226,21 @@ class Checker(SetupInfo):
             self.config.distrib = 'sid'
 
     def get_checklist(self, all=False):
-        checks = ['debian_dir', 'debian_rules', 'debian_copying', 'debian_changelog',
-                  'readme', 'changelog', 'bin', 'tests_directory', 'setup_py', 'repository']
-        if self._package == "pkginfo":
-            checks += ['info_module', 'release_number', 'manifest_in', 'announce']
-        elif self._package == "setuptools":
-            checks += ['changelog',]
-        elif self._package == "makefile":
-            checks += ['makefile',]
-
-        if self.config.includes_checks is not None:
-            for check in self.config.includes_checks:
-                checks.append(check)
-        if self.config.excludes_checks is not None:
-            for check in self.config.excludes_checks:
-                checks.remove(check)
         if all:
             return [funct for (name, funct) in globals().items() if name.startswith('check_')]
-        else:
-            self.checklist = [globals()["check_%s" % name] for name in checks]
+
+        checks = CHECKS['default'] + CHECKS[self._package_format]
+
+        if self.config.include_checks is not None:
+            for check in self.config.include_checks:
+                checks.append(check)
+        if self.config.exclude_checks is not None:
+            for check in self.config.exclude_checks:
+                checks.remove(check)
+        if self.config.only_one_check:
+            checks = (checks[-1],)
+
+        self.checklist = [globals()["check_%s" % name] for name in checks]
         return self.checklist
 
     def start_checks(self):
@@ -233,8 +251,6 @@ class Checker(SetupInfo):
             else:
                 self.logger.error(func.__doc__)
             self.counter += result
-            if self.config.only_one_check:
-                break
 
     def list_checks(self):
         all_checks = self.get_checklist(all=True)
@@ -242,8 +258,8 @@ class Checker(SetupInfo):
         if len(checks)==0:
             print "No available check."
         else:
-            print "You can use the --excludes or --includes options\n"
-            msg = "Current checks"
+            print "You can use the --exclude or --include options\n"
+            msg = "Current active checks"
             print msg; print len(msg) * '='
             for check in checks:
                 print "%-25s: %s" % (check.__name__[6:], check.__doc__)
@@ -262,12 +278,12 @@ class Checker(SetupInfo):
 # ======================================
 
 def check_debian_dir(checker):
-    """ check the debian* directory """
+    """check the debian* directory """
     debian_dir = checker.get_debian_dir()
     return os.path.isdir(debian_dir)
 
 def check_debian_rules(checker):
-    """ check the debian*/rules file (filemode) """
+    """check the debian*/rules file (filemode) """
     debian_dir = checker.get_debian_dir()
     status = 1
     status = status and os.path.isfile(debian_dir + '/rules')
@@ -275,43 +291,45 @@ def check_debian_rules(checker):
     return status
 
 def check_debian_copying(checker):
-    """ check debian*/copyright file """
+    """check debian*/copyright file """
     debian_dir = checker.get_debian_dir()
     return os.path.isfile(debian_dir + '/copyright')
 
 def check_debian_changelog(checker):
-    """ check debian*/changelog file """
+    """check debian*/changelog file """
     debian_dir = checker.get_debian_dir()
-    return os.path.isfile(debian_dir + '/changelog')
+    if os.path.isfile(debian_dir + '/changelog'):
+        cmd = "dpkg-parsechangelog >/dev/null"
+        _, output = commands.getstatusoutput(cmd)
+        if output: return 0
+    return 1
 
 def check_readme(checker):
-    """ check the upstream README[.txt] file """
-    return isfile('README') or isfile('README.txt')
+    """check the upstream README file """
+    return isfile('README')
 
 def check_changelog(checker):
-    """ check the upstream ChangeLog """
+    """check the upstream ChangeLog """
+    # TODO --try-to-fix
     # see preparedist.py:close_changelog
-    # TODO --repare
-    status = 1
-    status = status and isfile('ChangeLog')
-    cmd = "grep -E '^[[:space:]]+--' ChangeLog"
-    cmdstatus, output = commands.getstatusoutput(cmd)
-    print cmdstatus, output
-    status = status and not cmdstatus
+    if not isfile(CHANGEFILE):
+        return 0
+    cmd = "grep -E '^[[:space:]]+--' %s" % CHANGEFILE
+    status, _ = commands.getstatusoutput(cmd)
     return status
 
 def check_copying(checker):
-    """ check copyright file """
+    """check copying file """
+    # TODO --try-to-fix
     # see preparedist.py:install_copying
-    # TODO --repare
     return os.path.isfile('COPYING')
 
 def check_tests_directory(checker):
-    """ check the tests? directory """
+    """check the tests? directory """
     return isdir('test') or isdir('tests')
 
 def check_run_tests(checker):
-    """ run the unit tests """
+    """run the unit tests """
     testdirs = ('test', 'tests')
     for testdir in testdirs:
         if os.path.isdir(testdir):
@@ -321,23 +339,23 @@ def check_run_tests(checker):
     return 1
 
 def check_setup_py(checker):
-    """ check the setup.py file """
+    """check the setup.py file """
     return isfile('setup.py')
 
 def check_makefile(checker):
-    """ check makefile file and dependencies """
+    """check makefile file and dependencies """
     status = 1
     status = status and os.path.isfile("Makefile")
     #status = status and _check_make_dependencies()
     return status
 
 def check_announce(checker):
-    """ checking the announce.txt file """
-    # TODO --repare
+    """check the announce.txt file """
+    # TODO --try-to-fix
     return isfile('announce.txt')
 
 def check_bin(checker):
-    """ check executable script files in bin/ """
+    """check executable script files in bin/ """
     status = 1
     if not exists('bin/'):
         return status
@@ -358,196 +376,143 @@ def check_bin(checker):
     return status
 
 def check_documentation(checker):
-    """ check build of project's documentation"""
-    if osp.isdir('doc') and (osp.isfile('doc/makefile') or osp.isfile('doc/Makefile')) and \
-           confirm('build documentation ?'):
+    """check build of project's documentation"""
+    if osp.isdir('doc') and osp.isfile('doc/Makefile') \
+                        and confirm('build documentation ?'):
         os.chdir('doc')
         cond_exec('make', retry=True)
     return 0
 
 def check_repository(checker):
-    """ check repository status (modified files) """
+    """check repository status (modified files) """
     try:
         vcs_agent = get_vcs_agent(checker.config.pkg_dir)
         result = vcs_agent.not_up_to_date(checker.config.pkg_dir)
         if result:
             return 0
     except NotImplementedError:
-        checker.logger.warn("the vcs agent isn't yet supported")
+        checker.logger.warn("the current vcs agent isn't yet supported")
     return 1
 
-def check_pylint(checker):
-    """ check with pylint """
-    'pylint --ignore doc %s'
-    return 0
-
-
-
-
-###############################################################################
-        
-
-REV_LINE = re.compile('__revision__.*')
-    
-def check_release_number(checker, dirname, info_module='__pkginfo__'):
-    """ check inconsistency with release number """
-    try:
-        pi = PackageInfo(checker, dirname, info_module=info_module)
-    except ImportError:
-        return 0
+def check_release_number(checker):
+    """check inconsistency with release number """
+    dirname = checker.config.pkg_dir
+    pi = checker._package
     version = normalize_version(pi.version)
     status = 1
     try:
         cl_version = ChangeLog(find_ChangeLog(dirname)).get_latest_revision()
         cl_version = normalize_version(cl_version)
         if cl_version != version:
-            msg = 'Version inconsistency : found %s in ChangeLog \
+            msg = 'version inconsistency : found %s in ChangeLog \
 (reference is %s)'
-            checker.logger.error('ChangeLog', None, msg % (cl_version, version))
+            checker.logger.error(msg % (cl_version, version))
             status = 0
     except ChangeLogNotFound:
-        checker.logger.warn('ChangeLog', None, 'Missing file')
-    if exists(join(dirname, 'debian')):
-        if not exists(join(dirname, 'debian', 'changelog')):
-            checker.logger.error('debian/changelog', None, 'Missing file')
-            status = 0
-        else:
-            deb_version = pi.debian_version()
-            deb_version = normalize_version(deb_version.split('-', 1)[0])
-            if deb_version != version:
-                msg = 'Version inconsistency : found %s in debian/changelog \
+        checker.logger.warn('missing file')
+
+    deb_version = pi.debian_version()
+    deb_version = normalize_version(deb_version.split('-', 1)[0])
+    if deb_version != version:
+        msg = 'version inconsistency : found %s in debian/changelog \
 (reference is %s)'
-                checker.logger.error('debian/changelog', None,
-                               msg % (deb_version, version))
-                status = 0
+        checker.logger.error('debian/changelog', None,
+                       msg % (deb_version, version))
+        status = 0
     return status
 
-#def check_manifest_in(reporter, dirname=os.getcwd(),
-#                      info_module=None, # avoid pb with check_package
-#                      junk_extensions=JUNK_EXTENSIONS):
-#    """checks MANIFEST.in file"""
-#    status = 1
-#    # check matched files
-#    should_be_in = get_manifest_files(dirname=dirname)
-#    matched = read_manifest_in(reporter, dirname=dirname)
-#    absfile = join(dirname, 'MANIFEST.in')
-#    for path in should_be_in:
-#        try:
-#            i = matched.index(path)
-#            matched.pop(i)
-#        except ValueError:
-#            reporter.error(absfile, None, '%s is not matched' % path)
-#            status = 0
-#    # check garbage
-#    for filename in matched:
-#        if match_extensions(filename, junk_extensions):
-#            reporter.warning(absfile, None, 'match %s' % filename)
-#    return status
+def check_manifest_in(checker):
+    """check MANIFEST.in content"""
+    status = 1
+    dirname = checker.config.pkg_dir
+    # check matched files
+    should_be_in = get_manifest_files(dirname=dirname)
+    matched = read_manifest_in(None, dirname=dirname)
+    absfile = join(dirname, 'MANIFEST.in')
+    for path in should_be_in:
+        try:
+            i = matched.index(path)
+            matched.pop(i)
+        except ValueError:
+            checker.logger.warn('%s is not matched' % path)
+            status = 0
+    # check garbage
+    for filename in matched:
+        if match_extensions(filename, JUNK_EXTENSIONS):
+            checker.logger.warn('a junk extension is matched: %s' % filename)
+    return status
 
-#from logilab.devtools.lib.pkginfo import PackageInfo, check_info_module
-#def check_info_module(reporter,
-#                      dirname=os.getcwd(), info_module='__pkginfo__'):
-#    """ checking package information module and source tree structure """
-#    absfile = join(dirname, info_module + '.py')
-#    try:
-#        mp_file, mp_filename, mp_desc = find_module(info_module,
-#                                                    [dirname])
-#        module = load_module(info_module, mp_file, mp_filename, mp_desc)
-#    except Exception, ex:
-#        reporter.error(absfile, None, str(ex))
-#        return 0
-#    # this will check for missing required attribute
-#    pi = PackageInfo(reporter, dirname, info_module, init=0)
-#    status = pi.init_from_module()
-#    pi.initialization_end()
-#    
-#    # check package name
-###     if not getattr(module, 'name', None) and \
-###            not getattr(module, 'modname', None):
-###         msg = 'No required "name" nor "modname" attribute'
-###         reporter.error(info_module, None, msg)
-###         status = 0
-#        
-#    # check scripts
-#    detected_scripts = get_default_scripts(pi)
-#    scripts = getattr(module, 'scripts', []) or []
-#    if not sequence_equal(detected_scripts, scripts):
-#        msg = 'Detected %r as default "scripts" value, found %r'
-#        reporter.warning(absfile, None, msg % (detected_scripts, scripts))
+def check_include_dirs(checker):
+    """check include_dirs"""
+    if hasattr(checker._package, 'include_dirs'):
+        for directory in checker._package.include_dirs:
+            if not exists(directory):
+                msg = 'include inexistant directory %r' % directory
+                checker.logger.error(msg)
+                return 0
+    return 1
 
-#    # check license
-#    if not (getattr(module, 'license', None) or
-#            getattr(module, 'license_text', None)):
-#        msg = 'No "license" nor "license_text" attribute'
-#        reporter.error(absfile, None, msg)
-#        status = 0
+def check_scripts(checker):
+    """check declared scripts"""
+    pi = checker._package
+    detected_scripts = get_default_scripts(pi)
+    scripts = getattr(pi, 'scripts', []) or []
+    if not sequence_equal(detected_scripts, scripts):
+        msg = 'detected %r as default "scripts" value, found %r' % (detected_scripts, scripts)
+        checker.logger.warn(msg)
+        return 0
+    return 1
 
-#    # check copyright
-#    copyright = getattr(module, 'copyright', '') 
-#    if not copyright:
-#        msg = 'No copyright notice'
-#        reporter.error(absfile, None, msg)
-#        status = 0
-#    else:
-#        match = COPYRIGHT_RGX.search(copyright)
-#        if match:
-#            end = match.group('to') or match.group('from')
-#            thisyear = localtime(time())[0]
-#            if int(end) < thisyear:
-#                msg = 'Copyright is outdated (%s)' % end
-#                reporter.warning(absfile, None, msg)
-#                
-#        else:
-#            msg = 'Copyright doesn\'t match %s' % COPYRIGHT_RGX.pattern
-#            reporter.warning(absfile, None, msg)
-#            
-#    # check include_dirs
-#    if getattr(module, 'include_dirs', None):
-#        for directory in module.include_dirs:
-#            if not exists(join(dirname, directory)):
-#                msg = 'Include inexistant directory %r' % directory
-#                reporter.error(absfile, None, msg)
+def check_package_info(checker):
+    """check package information """
+    status = 1
+    for field in MANDATORY_SETUP_FIELDS:
+        pi = checker._package
+        if not hasattr(pi, field):
+            checker.logger.error("%s field missing" % field)
+            status = 0
+        if field == "long_desc":
+            for word in spell_check(pi.long_desc, ignore=(pi.name.lower(),)):
+                msg = 'possibly mispelled word %r' % word
+                checker.logger.warn(msg)
+            for line in pi.long_desc.splitlines():
+                if len(line) > 79:
+                    msg = 'long description contains lines longer than 80 characters'
+                    checker.logger.warn(msg)
+        if field == "short_desc":
+            if len(pi.short_desc) > 80:
+                msg = 'short description longer than 80 characters'
+                checker.logger.warn(msg)
+            desc = pi.short_desc.lower().split()
+            if pi.name.lower() in desc or checker.get_debian_name().lower() in desc:
+                msg = 'short description contains the package name'
+                checker.logger.warn(msg)
+            if pi.short_desc[0].isupper():
+                msg = 'short description starts with a capitalized letter'
+                checker.logger.warn(msg)
+            if pi.short_desc[-1] == '.':
+                msg = 'short description ends with a period'
+                checker.logger.warn(msg)
+            for word in spell_check(pi.short_desc, ignore=(pi.name.lower(),)):
+                msg = 'possibly mispelled word %r' % word
+                checker.logger.warn(msg)
+    return status
 
-#    # check web site and ftp
-#    check_url(reporter, absfile, 'web', pi.web)
-#    check_url(reporter, absfile, 'ftp', pi.ftp)
 
-#    # check descriptions
-#    if not pi.short_desc:
-#        msg = 'No short description'
-#        reporter.error(absfile, None, msg)
-#    else:
-#        if len(pi.short_desc) > 80:
-#            msg = 'Short description longer than 80 characters'
-#            reporter.error(absfile, None, msg)
-#        desc = pi.short_desc.lower().split()
-#        if pi.name.lower() in desc or pi.debian_name.lower() in desc:
-#            msg = 'Short description contains the package name'
-#            reporter.error(absfile, None, msg)
-#        if pi.short_desc[0].isupper():
-#            msg = 'Short description starts with a capitalized letter'
-#            reporter.error(absfile, None, msg)
-#        if pi.short_desc[-1] == '.':
-#            msg = 'Short description ends with a period'
-#            reporter.error(absfile, None, msg)
-#        for word in spell_check(pi.short_desc, ignore=(pi.name.lower(),)):
-#            msg = 'Possiply mispelled word %r' % word
-#            reporter.warning(absfile, None, msg)
-#            
-#    if not pi.long_desc:
-#        msg = 'No long description'
-#        reporter.error(absfile, None, msg)
-#    else:
-#        for word in spell_check(pi.long_desc, ignore=(pi.name.lower(),)):
-#            msg = 'Possiply mispelled word %r' % word
-#            reporter.warning(absfile, None, msg)
-#        for line in pi.long_desc.splitlines():
-#            if len(line) > 79:
-#                msg = 'Long description contains lines longer than 80 characters'
-#                reporter.warning(absfile, None, msg)
-#        
-#    # standard source tree ####################################################
-#    
+
+# ===============================
+#
+# Not implemented check functions
+#
+# ===============================
+
+def check_pylint(checker):
+    """check with pylint (not implemented) """
+    raise NotImplementedError("pylint: find right options")
+
+def check_dtd_and_catalogs(checkers):
+    """check dtd and catalogs (not implemented) """
+    raise NotImplementedError("dtd_and_catalog needs to be fixed !")
 #    # DTDs and catalog
 #    detected_dtds = get_default_dtd_files(pi)
 #    dtds = getattr(module, 'dtd_files', None)
@@ -587,4 +552,25 @@ def check_release_number(checker, dirname, info_module='__pkginfo__'):
 #    # FIXME: examples_directory, doc_files, html_doc_files
 #    # FIXME: find a generic way to checks values found in config !
 #    return status
-#    
+
+def check_copyright(checker):
+    """check copyright year (not implemented) """
+    raise NotImplementedError("year could be updated automatically")
+#    match = COPYRIGHT_RGX.search(copyright)
+#    if match:
+#        end = match.group('to') or match.group('from')
+#        thisyear = localtime(time())[0]
+#        if int(end) < thisyear:
+#            msg = 'Copyright is outdated (%s)' % end
+#            reporter.warning(absfile, None, msg)
+#        else:
+#            msg = 'Copyright doesn\'t match %s' % COPYRIGHT_RGX.pattern
+#            reporter.warning(absfile, None, msg)
+
+def check_web_and_ftp(checker):
+    """check web and ftp external resources (not implemented)"""
+    raise NotImplementedError("unrelated if new package !")
+#   # check web site and ftp
+#   _check_url(reporter, absfile, 'web', pi.web)
+#   _check_url(reporter, absfile, 'ftp', pi.ftp)
+

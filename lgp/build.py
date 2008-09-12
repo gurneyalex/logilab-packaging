@@ -149,9 +149,6 @@ class Builder(SetupInfo):
             pass
 
     def compile(self, distrib, arch):
-        # Go to package directory
-        os.chdir(self.config.pkg_dir)
-
         tmpdir = tempfile.mkdtemp()
 
         # the upstream archive tarball is depending of the setup method
