@@ -42,21 +42,22 @@ from logilab.devtools.lgp.utils import confirm, cond_exec
 def run(args):
     """ Main function of lgp build command """
     builder = Builder(args)
-    try :
-        distributions = get_distributions(builder.config.distrib)
-        architectures = get_architectures(builder.config.archi)
+    # FIXME when production version is ready
+    #try :
+    distributions = get_distributions(builder.config.distrib)
+    architectures = get_architectures(builder.config.archi)
 
-        if builder.config.revision :
-            logging.critical(Popen(["hg", "update", builder.config.revision], stderr=PIPE).communicate())
+    if builder.config.revision :
+        logging.critical(Popen(["hg", "update", builder.config.revision], stderr=PIPE).communicate())
 
-        for arch in architectures:
-            for distrib in distributions:
-                packages = builder.compile(distrib=distrib, arch=arch)
-                run_checkers(packages, builder.get_distrib_dir(),
-                             not builder.config.verbose)
-    except Exception, exc:
-        logging.critical(exc)
-        return 1
+    for arch in architectures:
+        for distrib in distributions:
+            packages = builder.compile(distrib=distrib, arch=arch)
+            run_checkers(packages, builder.get_distrib_dir(),
+                         not builder.config.verbose)
+    #except Exception, exc:
+    #    logging.critical(exc)
+    return 1
 
 def run_checkers(packages, distdir, quiet=True):
     """ Run common used checkers with Debian """
@@ -111,6 +112,12 @@ class Builder(SetupInfo):
                  'dest': 'orig_tarball',
                  'metavar' : "<tarball>",
                  'help': "path to orig.tar.gz file"
+                }),
+               ('keep-tmpdir',
+                {'action': 'store_true',
+                 'default': False,
+                 'dest' : "keep_tmpdir",
+                 'help': "keep the temporary build directory"
                 }),
               ),
 
@@ -183,15 +190,16 @@ class Builder(SetupInfo):
             #cmd += ' --debbuildopts %s' % pdebuild_options
         else:
             cmd = debuilder
-        if not self.config.verbose:
-            cmd += ' 1>/dev/null 2>/dev/null'
-        logging.debug("[VBUILD] " + ''.join(cmd))
+        #if not self.config.verbose:
+        #    cmd += ' 1>/dev/null 2>/dev/null'
         status = os.system(cmd)
         if status:
+            logging.error("[VBUILD] " + ''.join(cmd))
             raise OSError('An error occured while building the debian package ' \
                           '(return status: %s)' % status)
         # clean tmpdir
-        shutil.rmtree(tmpdir)
+        if not self.config.keep_tmpdir:
+            shutil.rmtree(tmpdir)
         return self.get_packages()
 
     def get_debian_version(self):
