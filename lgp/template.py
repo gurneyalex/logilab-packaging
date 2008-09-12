@@ -14,19 +14,25 @@
 # You should have received a copy of the GNU General Public License along with
 # this program; if not, write to the Free Software Foundation, Inc.,
 # 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-""" Announce command """
+""" lgp template [options]
 
-TEMPLATE_DIR = osp.join(logilab.devtools.__path__[0], 'templates')
+    Provides some template output during the configuration
+"""
+__docformat__ = "restructuredtext en"
 
 import sys
+import os.path
 from string import Template
 from cStringIO import StringIO
 
+import logilab
 from logilab.devtools.lib.pkginfo import PackageInfo, PKGINFO, PKGINFO_ATTRIBUTES
+from logilab.devtools.lgp.setupinfo import SetupInfo
 from logilab.devtools.lgp.changelog import ChangeLog
-from logilab.devtools.lib import TextReporter
 
 
+TEMPLATE_DIR = os.path.join(logilab.devtools.__path__[0], 'templates')
+TEMPLATES = ('announce',)
 
 ANNOUNCE = """I'm pleased to announce the ${VERSION} release of ${DISTNAME}.
 
@@ -67,30 +73,58 @@ active member of the Python and Debian communities. Logilab's open
 source projects can be found on http://www.logilab.org/."""
 
 
-def add_options(parser):
-    parser.usage = "lgp announce"
-
-
-def run(pkgdir, options, args):
-    """ display announce """
+def run(args):
+    """ Main function of lgp template command """
+    templater = Templater(args)
     try:
-        out = sys.stderr
-        reporter = TextReporter(out, color=out.isatty())
-        pkginfo = PackageInfo(reporter, pkgdir)
+        templater.output()
+    except Exception, err:
+        templater.logger.critical(err)
+        return 1
+
+
+class Templater(SetupInfo):
+    """ Templater class
+
+    Specific options are added. See lgp template --help
+    """
+    options = (('style',
+                {'type': 'choice',
+                 'choices': TEMPLATES,
+                 'dest': 'style',
+                 'default': 'announce',
+                 'metavar' : "<template style>",
+                 'help': "a specific template %s" % str(TEMPLATES)
+                }),
+              ),
+
+    def __init__(self, args):
+        # Retrieve upstream information
+        super(Templater, self).__init__(arguments=args, options=self.options, usage=__doc__)
+        # FIXME logilab.common.configuration doesn't like default values :-(
+        # FIXME Duplicated code between commands
+        # Be sure to have absolute path here
+        if self.config.style is None:
+            self.config.style = 'announce'
+        elif self.config.style not in TEMPLATES:
+            raise Exception('template not available')
+
+    def output(self):
+        func = getattr(self, "get_%s" % self.config.style)
+        func()
+        return 1
+
+    def get_announce(self):
         content = Template(ANNOUNCE)
         content.delimiter = '%'
         stream = StringIO()
         chglog = ChangeLog('ChangeLog')
         chglog.extract(stream=stream)
         whatsnew = stream.getvalue()
+        pkginfo = self._package
         values = dict(CHANGELOG=whatsnew, VERSION=pkginfo.version,
                       WEB=pkginfo.web, FTP=pkginfo.ftp,
                       MAILINGLIST=pkginfo.mailinglist,
                       LONG_DESC=pkginfo.long_desc, DISTNAME=pkginfo.name,
                       ADDITIONAL_DESCR=ADDITIONAL_DESCR)
         print content.substitute(values)
-    except ImportError:
-        sys.stderr.write("%r does not appear to be a valid package " % pkgdir)
-        sys.stderr.write("(no __pkginfo__ found)\n")
-        return 1
-    return 0

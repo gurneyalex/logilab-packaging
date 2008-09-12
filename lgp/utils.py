@@ -31,6 +31,7 @@ BASE_EXCLUDE = ('CVS', '.svn', '.hg', 'bzr')
 
 PUBLIC_RGX = re.compile('PUBLIC\s+"-//(?P<group>.*)//DTD (?P<pubid>.*)//(?P<lang>\w\w)(//XML)?"\s*"(?P<dtd>.*)"')
 
+# FIXME don't use duplicated distributions (lenny or stable ?)
 KNOWN_DISTRIBUTIONS = ('etch', 'lenny', 'stable', 'unstable', 'experimental', 'sid')
 
 class SGMLCatalog:

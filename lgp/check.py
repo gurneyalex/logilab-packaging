@@ -30,7 +30,6 @@ __docformat__ = "restructuredtext en"
 __all__ = ('check_info_module', 'check_release_number', 'check_manifest_in',
            'check_bin', 'check_test', 'check_setup_py', 'check_announce')
 
-import sys
 import os
 import stat
 import re
@@ -52,16 +51,16 @@ from logilab.devtools.lgp.changelog import ChangeLog, ChangeLogNotFound, \
      find_ChangeLog, CHANGEFILE
 from logilab.devtools.lgp.setupinfo import SetupInfo
 from logilab.devtools.lgp.utils import get_distributions, get_architectures
-from logilab.devtools.lgp.utils import cond_exec
+from logilab.devtools.lgp.utils import cond_exec, confirm
 
 
-MANDATORY_SETUP_FIELDS = ('name','version','author','author_email','license',
-                          'copyright','short_desc','long_desc')
+MANDATORY_SETUP_FIELDS = ('name', 'version', 'author', 'author_email', 'license',
+                          'copyright', 'short_desc', 'long_desc')
 
 CHECKS = { 'default'    : ['debian_dir', 'debian_rules', 'debian_copying',
                            'debian_changelog', 'package_info', 'readme',
                            'changelog', 'bin', 'tests_directory', 'setup_py',
-                           'repository', 'copying'],
+                           'repository', 'copying', 'documentation'],
            'pkginfo'    : ['release_number', 'manifest_in', 'announce', 'include_dirs', 'scripts'],
            'setuptools' : ['scripts'],
            'makefile'   : ['makefile'],
@@ -149,10 +148,9 @@ def run(args):
     checker = Checker(args)
     # FIXME when production version is ready
     #try :
-    distributions = get_distributions(checker.config.distrib)
-
     if checker.config.list_checks:
         checker.list_checks()
+        return 0
 
     checker.start_checks()
 
@@ -267,7 +265,6 @@ class Checker(SetupInfo):
             print "\n" + msg; print len(msg) * '='
             for check in (set(all_checks) - set(checks)):
                 print "%-25s: %s" % (check.__name__[6:], check.__doc__)
-        sys.exit()
 
 
 
@@ -377,11 +374,16 @@ def check_bin(checker):
 
 def check_documentation(checker):
     """check build of project's documentation"""
-    if osp.isdir('doc') and osp.isfile('doc/Makefile') \
-                        and confirm('build documentation ?'):
-        os.chdir('doc')
-        cond_exec('make', retry=True)
-    return 0
+    status = 1
+    if not os.path.isdir('doc'):
+        status = 0
+    elif os.path.isfile('doc/Makefile') or os.path.isfile('doc/makefile'):
+        # TODO
+        #if confirm('build documentation ?'):
+        #os.chdir('doc')
+        #status = cond_exec('make', retry=True)
+        pass
+    return status
 
 def check_repository(checker):
     """check repository status (modified files) """
@@ -508,7 +510,7 @@ def check_package_info(checker):
 
 def check_pylint(checker):
     """check with pylint (not implemented) """
-    raise NotImplementedError("pylint: find right options")
+    raise NotImplementedError("use right pylint options")
 
 def check_dtd_and_catalogs(checkers):
     """check dtd and catalogs (not implemented) """
