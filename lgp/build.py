@@ -119,6 +119,13 @@ class Builder(SetupInfo):
                  'dest' : "keep_tmpdir",
                  'help': "keep the temporary build directory"
                 }),
+               ('deb-src',
+                {'action': 'store_true',
+                 'default': False,
+                 'dest' : "deb_src",
+                 # TODO #4667: generate debian source package
+                 'help': "obtain a debian source package (not implemented)"
+                }),
               ),
 
     def __init__(self, args):
@@ -168,11 +175,11 @@ class Builder(SetupInfo):
         # copying debian_dir directory into tmp build depending of the target distribution
         # in all cases, we copy the debian directory of the sid version
         # DOC If a file should not be included, touch an empty file in the overlay directory
-        if distrib != 'sid':
-            export(osp.join(self.config.pkg_dir, 'debian'), osp.join(origpath, 'debian'))
+        export(osp.join(self.config.pkg_dir, 'debian'), osp.join(origpath, 'debian'))
+        if self.get_debian_dir() != 'debian/':
             logging.debug("Overriding files...")
-        export(osp.join(self.config.pkg_dir, self.get_debian_dir()), osp.join(origpath, 'debian/'),
-               verbose=self.config.verbose)
+            export(osp.join(self.config.pkg_dir, self.get_debian_dir()), osp.join(origpath, 'debian/'),
+                   verbose=self.config.verbose)
 
         # build the package using vbuild or default to fakeroot
         debuilder = os.environ.get('DEBUILDER') or 'vbuild'
