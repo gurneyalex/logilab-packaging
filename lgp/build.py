@@ -229,5 +229,5 @@ class Builder(SetupInfo):
         logging.info("Creation of the Debian source package: %s" % origpath)
         cmd = 'dpkg-source -b %s' % origpath
         if not self.config.verbose:
-                cmd += ' 1>/dev/null 2>/dev/null'
+            cmd += ' 1>/dev/null 2>/dev/null'
         os.system(cmd)

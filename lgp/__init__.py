@@ -38,9 +38,11 @@ def run(args):
                  'extract info from __pkginfo__'),
                 ('clean', 'logilab.devtools.lgp.clean',
                  'clean repository'),
+                ('template', 'logilab.devtools.lgp.template',
+                 'use template files'),
                ]
 
-    if sys.argv[1] in ("build", "check"):
+    if sys.argv[1] in ("build", "check", "clean", "template"):
         exec 'from logilab.devtools.lgp.%s import run' % sys.argv[1]
         return run(args[1:])
     else:
