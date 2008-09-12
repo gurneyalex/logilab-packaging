@@ -41,7 +41,8 @@ from pprint import pprint
 from logilab.common.compat import set
 from logilab.common.fileutils import ensure_fs_mode
 
-from logilab.devtools.vcslib import BASE_EXCLUDE
+from logilab.devtools.vcslib import get_vcs_agent, BASE_EXCLUDE
+
 from logilab.devtools import templates
 from logilab.devtools.lgp.changelog import ChangeLog, ChangeLogNotFound, \
      find_ChangeLog
@@ -185,6 +186,12 @@ class Checker(SetupInfo):
                  'dest' : "only_one_check",
                  'help': "run only one single test (not available)"
                 }),
+               ('repare',
+                {'action': 'store_true',
+                 'default': False,
+                 'dest' : "repare_attempt",
+                 'help': "try to repare detected problems (not available)"
+                }),
               ),
 
     def __init__(self, args):
@@ -197,7 +204,15 @@ class Checker(SetupInfo):
             self.config.distrib = 'sid'
 
     def get_checklist(self, all=False):
-        checks = ['debian_dir', 'debian_rules', 'debian_copying', 'debian_changelog', 'readme', 'changelog', 'tests_directory', 'setup_py', 'bin', 'run_tests']
+        checks = ['debian_dir', 'debian_rules', 'debian_copying', 'debian_changelog',
+                  'readme', 'changelog', 'bin', 'tests_directory', 'setup_py', 'repository']
+        if self._package == "pkginfo":
+            checks += ['info_module', 'release_number', 'manifest_in', 'announce']
+        elif self._package == "setuptools":
+            checks += ['changelog',]
+        elif self._package == "makefile":
+            checks += ['makefile',]
+
         if self.config.includes_checks is not None:
             for check in self.config.includes_checks:
                 checks.append(check)
@@ -209,11 +224,6 @@ class Checker(SetupInfo):
         else:
             self.checklist = [globals()["check_%s" % name] for name in checks]
         return self.checklist
-
-        # pkginfo
-        return set(('debian_setup', 'info_module', 'release_number', 'manifest_in', 'bin', 'tests_directory', 'setup_py', 'announce'))
-        # make
-        #return set(('makefile' ...))
 
     def start_checks(self):
         for func in self.get_checklist():
@@ -279,15 +289,21 @@ def check_readme(checker):
     return isfile('README') or isfile('README.txt')
 
 def check_changelog(checker):
-    """ check the upstream ChangeLog or CHANGELOG """
+    """ check the upstream ChangeLog """
     # see preparedist.py:close_changelog
-    # FIXME --repare
-    return isfile('ChangeLog') or isfile('CHANGELOG')
+    # TODO --repare
+    status = 1
+    status = status and isfile('ChangeLog')
+    cmd = "grep -E '^[[:space:]]+--' ChangeLog"
+    cmdstatus, output = commands.getstatusoutput(cmd)
+    print cmdstatus, output
+    status = status and not cmdstatus
+    return status
 
 def check_copying(checker):
     """ check copyright file """
     # see preparedist.py:install_copying
-    # FIXME --repare
+    # TODO --repare
     return os.path.isfile('COPYING')
 
 def check_tests_directory(checker):
@@ -302,7 +318,6 @@ def check_run_tests(checker):
             os.chdir(testdir)
             cond_exec('pytest', confirm=True, retry=True)
             break
-    # FIXME
     return 1
 
 def check_setup_py(checker):
@@ -351,17 +366,15 @@ def check_documentation(checker):
     return 0
 
 def check_repository(checker):
-    """ check repository status """
-    #try:
-    #    vcs_agent = get_vcs_agent(pkgdir)
-    #    result = vcs_agent.not_up_to_date(pkgdir)
-    #    if result:
-    #        print '\n'.join(["%s: %s"%r for r in result])
-    #        if not confirm('Continue ?'):
-    #            return 0
-    #except NotImplementedError:
-    #    print 'ERROR'
-    return 0
+    """ check repository status (modified files) """
+    try:
+        vcs_agent = get_vcs_agent(checker.config.pkg_dir)
+        result = vcs_agent.not_up_to_date(checker.config.pkg_dir)
+        if result:
+            return 0
+    except NotImplementedError:
+        checker.logger.warn("the vcs agent isn't yet supported")
+    return 1
 
 def check_pylint(checker):
     """ check with pylint """
