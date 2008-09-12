@@ -1,4 +1,5 @@
 include bin/lgp
+include bin/vbuild
 include bin/changelog
 include bin/update_gettext
 include bin/pycoverage
@@ -13,6 +14,8 @@ include elisp/startup
 include doc/*.xml
 include doc/*.txt
 include doc/makefile
+
+include autobuild/setupchroot
 
 recursive-include templates *.txt *.py 
 include templates/compat
