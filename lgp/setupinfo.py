@@ -26,7 +26,7 @@ from distutils.core import run_setup
 from logilab.common.configuration import Configuration
 
 from logilab.devtools.lib.pkginfo import PackageInfo
-from logilab.common.shellutils import mv, cp, rm
+from logilab.common.shellutils import cp
 
 
 COMMANDS = {
@@ -121,6 +121,7 @@ class SetupInfo(Configuration):
             try:
                 from __pkginfo__ import distname
             except ImportError:
+                from __pkginfo__ import modname
                 distname = modname
             return distname
         else:
