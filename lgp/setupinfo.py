@@ -69,6 +69,16 @@ class SetupInfo(Configuration):
         super(SetupInfo, self).__init__(options=self.options, **args)
         self.logger = logging.getLogger('lgp')
 
+        arguments = self.load_command_line_configuration(arguments)
+
+        # Go to package directory
+        if self.config.pkg_dir is None:
+            self.config.pkg_dir = os.path.abspath(arguments and arguments[0] or os.getcwd())
+        os.chdir(self.config.pkg_dir)
+
+        # Load the optional config file 
+        self.load_file_configuration('setup.cfg')
+
         if os.path.isfile('__pkginfo__.py'):
             self._package_format = 'pkginfo'
             self._package = PackageInfo(None, self.config.pkg_dir)
@@ -77,16 +87,13 @@ class SetupInfo(Configuration):
             self._package = run_setup('./setup.py', None, stop_after="init")
         elif os.path.isfile('Makefile'):
             self._package_format = 'makefile'
+        else:
+            raise Exception('no valid setup file')
         if self.config.verbose:
             logging.basicConfig(level=logging.DEBUG)
         else:
             logging.basicConfig(level=logging.INFO)
         logging.debug("package format: %s" % self._package_format)
-        # FIXME
-        self.load_file_configuration('./setup.cfg')
-        arguments = self.load_command_line_configuration(arguments)
-        if self.config.pkg_dir is None:
-            self.config.pkg_dir = os.path.abspath(arguments and arguments[0] or os.getcwd())
 
     def get_debian_name(self):
         if self._package_format == 'pkginfo':
@@ -101,12 +108,13 @@ class SetupInfo(Configuration):
 
         The convention is :
         - 'debian/' is for sid distribution
-        - 'debian.$OTHER' id for $OTHER distribution
+        - 'debian.$OTHER' id for $OTHER distribution and if it exists
         """
-        if self.config.distrib == 'sid':
-            return 'debian/'
-        else:
-            return 'debian.%s/' % self.config.distrib
+        if self.config.distrib != 'sid':
+            debiandir = 'debian.%s/' % self.config.distrib
+            if os.path.isdir(debiandir):
+                return debiandir
+        return 'debian/'
 
     def get_upstream_name(self):
         if self._package_format == 'pkginfo':
