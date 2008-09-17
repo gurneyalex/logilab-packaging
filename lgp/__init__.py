@@ -39,8 +39,12 @@ def run(args):
                 ('clean', 'logilab.devtools.lgp.clean',
                  'clean repository'),
                ]
+    
+    if len(sys.argv) <= 1:
+        print >> sys.stderr, parser.usage
+        return 1
 
-    if sys.argv[1] in ("build", "check"):
+    elif sys.argv[1] in ("build", "check"):
         exec 'from logilab.devtools.lgp.%s import run' % sys.argv[1]
         return run(args[1:])
     else:
