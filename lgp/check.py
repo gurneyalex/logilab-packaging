@@ -245,9 +245,9 @@ class Checker(SetupInfo):
         for func in self.get_checklist():
             result = func(self)
             if result:
-                self.logger.info(func.__doc__)
+                self.logger.info(func.__name__)
             else:
-                self.logger.error(func.__doc__)
+                self.logger.error("%s: %s" % (func.__name__, func.__doc__))
             self.counter += result
 
     def list_checks(self):
@@ -316,7 +316,7 @@ def check_changelog(checker):
     return status
 
 def check_copying(checker):
-    """check copying file """
+    """check COPYING file """
     # TODO --try-to-fix
     # see preparedist.py:install_copying
     return os.path.isfile('COPYING')
@@ -375,10 +375,9 @@ def check_bin(checker):
 def check_documentation(checker):
     """check build of project's documentation"""
     status = 1
-    if not os.path.isdir('doc'):
-        status = 0
-    elif os.path.isfile('doc/Makefile') or os.path.isfile('doc/makefile'):
-        # TODO
+    if os.path.isdir('doc') and os.path.isfile('doc/Makefile') \
+                            or os.path.isfile('doc/makefile'):
+        # TODO --try-to-fix
         #if confirm('build documentation ?'):
         #os.chdir('doc')
         #status = cond_exec('make', retry=True)
@@ -481,12 +480,12 @@ def check_package_info(checker):
                 if len(line) > 79:
                     msg = 'long description contains lines longer than 80 characters'
                     checker.logger.warn(msg)
-        if field == "short_desc":
+        elif field == "short_desc":
             if len(pi.short_desc) > 80:
                 msg = 'short description longer than 80 characters'
                 checker.logger.warn(msg)
             desc = pi.short_desc.lower().split()
-            if pi.name.lower() in desc or checker.get_debian_name().lower() in desc:
+            if pi.name.lower() in desc or checker.get_upstream_name().lower() in desc:
                 msg = 'short description contains the package name'
                 checker.logger.warn(msg)
             if pi.short_desc[0].isupper():
@@ -557,7 +556,7 @@ def check_dtd_and_catalogs(checkers):
 
 def check_copyright(checker):
     """check copyright year (not implemented) """
-    raise NotImplementedError("year could be updated automatically")
+    raise NotImplementedError("year could be updated automatically by templating")
 #    match = COPYRIGHT_RGX.search(copyright)
 #    if match:
 #        end = match.group('to') or match.group('from')
