@@ -22,7 +22,7 @@ Description: set of development tools used at Logilab for source management
 Package: logilab-packaging
 Architecture: all
 Suggests: logilab-doctools
-Recommends: piuparts, linda, lintian, sudo, emacsen-common, cvs, mercurial (>= 0.9.3), subversion
+Recommends: piuparts, lintian, sudo, emacsen-common, cvs, mercurial (>= 0.9.3), subversion
 Depends: ${python:Depends}, pymacs, python-vcslib, python-logilab-common (>= 0.32.0), pbuilder, debinstall, devscripts, debhelper
 Conflicts: devtools, simh
 Replaces: devtools
