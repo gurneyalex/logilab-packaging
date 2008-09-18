@@ -34,7 +34,6 @@ from logilab.common.shellutils import mv
 from logilab.common.fileutils import ensure_fs_mode, export
 
 from logilab.devtools.lgp.setupinfo import SetupInfo
-from logilab.devtools.lgp.changelog import DebianChangeLog
 from logilab.devtools.lgp.utils import get_distributions, get_architectures
 from logilab.devtools.lgp.utils import confirm, cond_exec
 
@@ -53,30 +52,32 @@ def run(args):
     for arch in architectures:
         for distrib in distributions:
             packages = builder.compile(distrib=distrib, arch=arch)
-            run_checkers(packages, builder.get_distrib_dir(),
-                         not builder.config.verbose)
+            logging.info("New compiled packages are waiting in %s. Enjoy." %
+                         builder.config.dist_dir)
+            run_checkers(packages, builder.get_distrib_dir(), distrib,
+                         builder.config.verbose)
     #except Exception, exc:
     #    logging.critical(exc)
     return 1
 
-def run_checkers(packages, distdir, quiet=True):
+def run_checkers(packages, distdir, distrib, verbose=False):
     """ Run common used checkers with Debian """
     separator = '+' * 15 + ' %s'
     # Run usual checkers
-    checkers = ('lintian', 'linda')
+    checkers = ('lintian',)
     for checker in checkers:
-        if quiet or confirm("run %s on generated debian packages ?" % checker):
+        if not verbose or confirm("run %s on generated debian packages ?" % checker):
             for package in packages:
-                print separator % package
-                if not package.endswith('.diff.gz'):
+                if package.endswith('.changes'):
+                    print separator % package
                     cond_exec('%s -i %s/%s' % (checker, distdir, package))
 
     # FIXME piuparts that doesn't work automatically for all of our packages
-    if not quiet and confirm("run piuparts on generated debian packages ?"):
+    if verbose and confirm("run piuparts on generated debian packages ?"):
         for package in packages:
             print separator % package
             if package.endswith('.deb'):
-                cond_exec('sudo piuparts -p %s/%s' % (distdir, package))
+                cond_exec('sudo piuparts -d %s -p %s/%s' % (distrib, distdir, package))
 
 class Builder(SetupInfo):
     """ Debian builder class
@@ -205,19 +206,6 @@ class Builder(SetupInfo):
         if not self.config.keep_tmpdir:
             shutil.rmtree(tmpdir)
         return self.get_packages()
-
-    def get_debian_version(self):
-        """ get the debian version depending of the last changelog entry
-
-            Format of Debian package: <sourcepackage>_<upstreamversion>-<debian_version>
-        """
-        debian_version = DebianChangeLog('%s/%s/changelog' % 
-                (self.config.pkg_dir, self.get_debian_dir())).get_latest_revision()
-        if debian_version.debian_version != '1' and self.config.orig_tarball is None:
-            raise ValueError('unable to build %s %s: --orig-tarball option is required when '\
-                             'not building the first version of the debian package'
-                             % (self.get_debian_name(), self.get_debian_version()))
-        return debian_version
 
     def get_distrib_dir(self):
         """ get the dynamic target release directory """
