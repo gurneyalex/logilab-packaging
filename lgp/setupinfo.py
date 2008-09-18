@@ -24,9 +24,10 @@ from subprocess import Popen, PIPE
 from distutils.core import run_setup
 
 from logilab.common.configuration import Configuration
+from logilab.common.shellutils import cp
 
 from logilab.devtools.lib.pkginfo import PackageInfo
-from logilab.common.shellutils import cp
+from logilab.devtools.lgp.changelog import DebianChangeLog
 
 
 COMMANDS = {
@@ -96,12 +97,18 @@ class SetupInfo(Configuration):
         logging.debug("package format: %s" % self._package_format)
 
     def get_debian_name(self):
+        # by default, we use the upstream name as debian name
+        # we can override the name of debian package with 'distname'
+        # TODO use the dh_listpackage command ?
         if self._package_format == 'pkginfo':
-            # by default, we use a tarball namle following the debian name
-            # see http://ftp.logilab.org/pub/devtools/
-            return self.get_upstream_name()
+            try:
+                from __pkginfo__ import distname
+            except ImportError:
+                from __pkginfo__ import modname
+                distname = modname
+            return distname
         else:
-            return self._package.get_name()
+            return self.get_upstream_name()
 
     def get_debian_dir(self):
         """ get the dynamic debian directory for the configuration override
@@ -116,16 +123,29 @@ class SetupInfo(Configuration):
                 return debiandir
         return 'debian/'
 
+    def get_debian_version(self):
+        """ get the debian version depending of the last changelog entry
+
+            Format of Debian package: <sourcepackage>_<upstreamversion>-<debian_version>
+        """
+        debian_version = DebianChangeLog('%s/%s/changelog' % 
+                (self.config.pkg_dir, self.get_debian_dir())).get_latest_revision()
+        if debian_version.debian_version != '1' and self.config.orig_tarball is None:
+            raise ValueError('unable to build %s %s: --orig-tarball option is required when '\
+                             'not building the first version of the debian package'
+                             % (self.get_debian_name(), debian_version))
+        return debian_version
+
     def get_upstream_name(self):
-        if self._package_format == 'pkginfo':
-            try:
-                from __pkginfo__ import distname
-            except ImportError:
-                from __pkginfo__ import modname
-                distname = modname
-            return distname
-        else:
+        if hasattr(self._package, 'get_name'):
             return self._package.get_name()
+        elif self._package_format == 'pkginfo':
+            try:
+                from __pkginfo__ import modname
+            except ImportError:
+                from __pkginfo__ import name
+                modname = name
+            return modname
 
     def get_upstream_version(self):
         if self._package_format == 'pkginfo':
@@ -154,7 +174,7 @@ class SetupInfo(Configuration):
         """ Create an origin tarball 
         """
         tarball = os.path.join(tmpdir, '%s_%s.orig.tar.gz' %
-                    (self.get_debian_name(), self.get_upstream_version()))
+                    (self.get_upstream_name(), self.get_upstream_version()))
         if self.config.orig_tarball is None:
             if self._package_format in COMMANDS["sdist"]:
                 cmd = COMMANDS["sdist"][self._package_format] % self.config.dist_dir
@@ -167,7 +187,7 @@ class SetupInfo(Configuration):
             os.system(cmd)
 
             upstream_tarball = os.path.join(self.config.dist_dir, '%s-%s.tar.gz' %
-                (self.get_debian_name(), self.get_upstream_version()))
+                (self.get_upstream_name(), self.get_upstream_version()))
         else:
             upstream_tarball = self.config.orig_tarball
             # TODO check the upstream version with the new tarball 
