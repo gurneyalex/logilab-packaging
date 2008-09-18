@@ -52,8 +52,8 @@ def run(args):
     for arch in architectures:
         for distrib in distributions:
             packages = builder.compile(distrib=distrib, arch=arch)
-            logging.info("New compiled packages are waiting in %s. Enjoy." %
-                         builder.config.dist_dir)
+            logging.info("New compiled packages (%s) are waiting in %s. Enjoy." %
+                         (",".join(packages), builder.config.dist_dir))
             run_checkers(packages, builder.get_distrib_dir(), distrib,
                          builder.config.verbose)
     #except Exception, exc:
