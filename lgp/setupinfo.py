@@ -97,18 +97,16 @@ class SetupInfo(Configuration):
         logging.debug("package format: %s" % self._package_format)
 
     def get_debian_name(self):
-        # by default, we use the upstream name as debian name
-        # we can override the name of debian package with 'distname'
-        # TODO use the dh_listpackage command ?
-        if self._package_format == 'pkginfo':
-            try:
-                from __pkginfo__ import distname
-            except ImportError:
-                from __pkginfo__ import modname
-                distname = modname
-            return distname
-        else:
-            return self.get_upstream_name()
+        """ obtain the debian package name
+
+        The information is found in debian/control withe the 'Source:' field
+        """
+        for line in open('%s/%s/control' % (self.config.pkg_dir,
+                                            self.get_debian_dir())):
+            line = line.split()
+            print line
+            if line[0] == "Source:":
+                return line[1]
 
     def get_debian_dir(self):
         """ get the dynamic debian directory for the configuration override

@@ -4,7 +4,7 @@ Priority: optional
 Maintainer: Sylvain Thénault <sylvain.thenault@logilab.fr> 
 Uploaders: Alexandre Fayolle <afayolle@debian.org>, Adrien Di Mascio <adrien.dimascio@logilab.fr>
 Build-Depends: debhelper (>= 5.0.37.2), python-dev (>=2.3.5-7), python-central (>=0.5)
-Standards-Version: 3.7.2
+Standards-Version: 3.8.0
 Homepage: http://www.logilab.org/projects/devtools
 XS-Python-Version: current
 
