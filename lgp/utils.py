@@ -32,7 +32,9 @@ BASE_EXCLUDE = ('CVS', '.svn', '.hg', 'bzr')
 PUBLIC_RGX = re.compile('PUBLIC\s+"-//(?P<group>.*)//DTD (?P<pubid>.*)//(?P<lang>\w\w)(//XML)?"\s*"(?P<dtd>.*)"')
 
 # FIXME don't use duplicated distributions (lenny or stable ?)
-KNOWN_DISTRIBUTIONS = ('etch', 'lenny', 'stable', 'unstable', 'experimental', 'sid')
+# The known distribution are depending on the pbuilder setup in /opt/buildd
+# Find a way to retrieve dynamically
+KNOWN_DISTRIBUTIONS = ('etch', 'lenny', 'experimental', 'sid')
 
 class SGMLCatalog:
     """ handle SGML catalog information
