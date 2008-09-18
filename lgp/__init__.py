@@ -42,7 +42,9 @@ def run(args):
                  'use template files'),
                ]
 
-    if sys.argv[1] in ("build", "check", "clean", "template"):
+    if len(sys.argv) <= 1:
+        return parser.usage
+    elif sys.argv[1] in ("build", "check", "clean", "template"):
         exec 'from logilab.devtools.lgp.%s import run' % sys.argv[1]
         return run(args[1:])
     else:
