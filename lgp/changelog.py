@@ -15,11 +15,13 @@ import sys
 import os
 import time
 from os.path import join, isfile, dirname, exists
+import subprocess
+from commands import getstatusoutput
 
 from logilab.common.changelog import ChangeLog as BaseChangeLog, ChangeLogEntry
-import subprocess
 
 CHANGEFILE = 'ChangeLog'
+
 
 class ChangeLogNotFound(Exception):
     """raised when we are unable to locate the change log"""
@@ -176,10 +178,12 @@ class DebianVersion(Version):
         
 
 class DebianChangeLogEntry(ChangeLogEntry):
-    """object representation of a debian/changelog entry"""
+    """object representation of a debian/changelog entry
+    """
     version_class = DebianVersion
     def write(self, stream=sys.stdout):
         """write the entry to file """
+        # pylint: disable-msg=E1101
         write = stream.write
         write('%s (%s) %s; urgency=%s\n\n' % (self.package, self.version,
                                               self.distrib, self.urgency))
@@ -205,7 +209,7 @@ class DebianChangeLog(ChangeLog):
         entry = self.get_entry(create=create)
         today = self.formatted_date()
         if len(self.entries) > 1:
-            centry = chlg.entries[1]
+            centry = self.entries[1]
             upstream_version = centry.version.upstream_version
             assert upstream_version <= version
             assert centry.date < today
