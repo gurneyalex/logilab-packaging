@@ -139,11 +139,11 @@ class SetupInfo(Configuration):
             return self._package.get_name()
         elif self._package_format == 'pkginfo':
             try:
-                from __pkginfo__ import modname
+                from __pkginfo__ import distname
             except ImportError:
                 from __pkginfo__ import name
-                modname = name
-            return modname
+                distname = name
+            return distname
 
     def get_upstream_version(self):
         if self._package_format == 'pkginfo':
