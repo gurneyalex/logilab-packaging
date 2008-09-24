@@ -19,6 +19,7 @@
 
 import sys
 import os.path
+import os
 import logging
 from subprocess import Popen, PIPE
 from distutils.core import run_setup
@@ -103,10 +104,9 @@ class SetupInfo(Configuration):
         """
         for line in open('%s/%s/control' % (self.config.pkg_dir,
                                             self.get_debian_dir())):
-            line = line.split()
-            print line
+            line = line.split(' ', 1)
             if line[0] == "Source:":
-                return line[1]
+                return line[1].rstrip()
 
     def get_debian_dir(self):
         """ get the dynamic debian directory for the configuration override
