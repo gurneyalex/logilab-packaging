@@ -60,7 +60,7 @@ MANDATORY_SETUP_FIELDS = ('name', 'version', 'author', 'author_email', 'license'
 CHECKS = { 'default'    : ['debian_dir', 'debian_rules', 'debian_copying',
                            'debian_changelog', 'package_info', 'readme',
                            'changelog', 'bin', 'tests_directory', 'setup_py',
-                           'repository', 'copying', 'documentation'],
+                           'repository', 'copying', 'documentation', 'deprecated'],
            'pkginfo'    : ['release_number', 'manifest_in', 'announce', 'include_dirs', 'scripts'],
            'setuptools' : ['scripts'],
            'makefile'   : ['makefile'],
@@ -383,6 +383,10 @@ def check_documentation(checker):
         #status = cond_exec('make', retry=True)
         pass
     return status
+
+def check_deprecated(checker):
+    """check attributes in deprecation"""
+    return 1
 
 def check_repository(checker):
     """check repository status (modified files) """

@@ -53,9 +53,10 @@ def run(args):
         for distrib in distributions:
             packages = builder.compile(distrib=distrib, arch=arch)
             logging.info("New compiled packages (%s) are waiting in %s. Enjoy." %
-                         (",".join(packages), builder.config.dist_dir))
-            run_checkers(packages, builder.get_distrib_dir(), distrib,
-                         builder.config.verbose)
+                         (",".join(packages), builder.get_distrib_dir()))
+            if builder.config.post_treatments:
+                run_checkers(packages, builder.get_distrib_dir(), distrib,
+                             builder.config.verbose)
     #except Exception, exc:
     #    logging.critical(exc)
     return 1
@@ -119,6 +120,12 @@ class Builder(SetupInfo):
                  'default': False,
                  'dest' : "keep_tmpdir",
                  'help': "keep the temporary build directory"
+                }),
+               ('only-build',
+                {'action': 'store_false',
+                 'default': True,
+                 'dest' : "post_treatments",
+                 'help': "compile only packages without post-treatments"
                 }),
                ('deb-src',
                 {'action': 'store_true',
