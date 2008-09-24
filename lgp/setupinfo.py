@@ -104,7 +104,6 @@ class SetupInfo(Configuration):
         for line in open('%s/%s/control' % (self.config.pkg_dir,
                                             self.get_debian_dir())):
             line = line.split()
-            print line
             if line[0] == "Source:":
                 return line[1]
 
