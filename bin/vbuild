@@ -20,6 +20,7 @@ __docformat__ = "restructuredtext en"
 
 import optparse
 import sys
+import os
 import os.path as osp
 import subprocess
 
@@ -35,6 +36,9 @@ def build(source_control, distribution, arch, resultdir, basetgz,
                      'arch': arch,}
     resultdir %= substitutions
     basetgz   %= substitutions
+
+    if not osp.isdir(resultdir):
+        os.makedirs(resultdir)
 
     cmd = ['sudo', 'pbuilder', '--build',
            '--buildresult', resultdir,
