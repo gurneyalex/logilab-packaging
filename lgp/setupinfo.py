@@ -83,7 +83,7 @@ class SetupInfo(Configuration):
 
         if os.path.isfile('__pkginfo__.py'):
             self._package_format = 'pkginfo'
-            self._package = PackageInfo(None, self.config.pkg_dir)
+            self._package = PackageInfo(directory=self.config.pkg_dir)
         elif os.path.isfile('setup.py'):
             self._package_format = 'setuptools'
             self._package = run_setup('./setup.py', None, stop_after="init")
