@@ -141,8 +141,8 @@ class SetupInfo(Configuration):
             try:
                 from __pkginfo__ import distname
             except ImportError:
-                from __pkginfo__ import name
-                distname = name
+                from __pkginfo__ import modname
+                distname = modname
             return distname
 
     def get_upstream_version(self):
