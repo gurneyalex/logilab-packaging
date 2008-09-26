@@ -46,8 +46,8 @@ def run(args):
     distributions = get_distributions(builder.config.distrib)
     architectures = get_architectures(builder.config.archi)
 
-    if builder.config.revision :
-        logging.critical(Popen(["hg", "update", builder.config.revision], stderr=PIPE).communicate())
+    #if builder.config.revision :
+    #    logging.critical(Popen(["hg", "update", builder.config.revision], stderr=PIPE).communicate())
 
     for arch in architectures:
         for distrib in distributions:
@@ -55,15 +55,23 @@ def run(args):
             logging.info("New compiled packages (%s) are waiting in %s. Enjoy." %
                          (",".join(packages), builder.get_distrib_dir()))
             if builder.config.post_treatments:
-                run_checkers(packages, builder.get_distrib_dir(), distrib,
+                run_post_treatments(packages, builder.get_distrib_dir(), distrib,
                              builder.config.verbose)
     #except Exception, exc:
     #    logging.critical(exc)
     return 1
 
-def run_checkers(packages, distdir, distrib, verbose=False):
-    """ Run common used checkers with Debian """
+def run_post_treatments(packages, distdir, distrib, verbose=False):
+    """ Run actions after package compiling """
     separator = '+' * 15 + ' %s'
+
+    # Try Debian signing immediately if possible
+    if 'DEBSIGN_KEYID' in os.environ and not verbose or confirm("debsign your packages ?"):
+        for package in packages:
+            if package.endswith('.changes'):
+                print separator % package
+                cond_exec('debsign %s' % osp.join(distdir, package))
+
     # Run usual checkers
     checkers = ('lintian',)
     for checker in checkers:
@@ -121,11 +129,11 @@ class Builder(SetupInfo):
                  'dest' : "keep_tmpdir",
                  'help': "keep the temporary build directory"
                 }),
-               ('only-build',
+               ('post-treatments',
                 {'action': 'store_false',
                  'default': True,
                  'dest' : "post_treatments",
-                 'help': "compile only packages without post-treatments"
+                 'help': "compile packages with post treatments"
                 }),
                ('deb-src',
                 {'action': 'store_true',

@@ -15,10 +15,39 @@ lgp \- logilab packaging tool to ease projects' maintenance
 lgp is a generic command to suit the logilab conventions about package management
 Try lgp -h for more information.
 
+.SH GENERAL OPTIONS
+
+.RS
+.B --verbose
+run silently without confirmation
+
+.B --pkg_dir
+set a specific project directory
+
+.B --revision
+set a specific revision or tag to build the debian package
+
+
 .SH COMMANDS
 
 .SS check
 check and report problems about the code source directories and files
+
+.RS
+.B --distrib
+the distribution targetted (e.g. etch, lenny, sid). Use 'all' for all known distributions
+
+.B --include
+force the inclusion of other check functions
+
+.B --exclude
+force the exclusion of other check functions
+
+.B --list
+return a list of all available check functions
+
+.B --only
+run only one single test
 
 .SS prepare
 run assurance quality tools on the source directory
@@ -27,26 +56,23 @@ run assurance quality tools on the source directory
 run the creation of a distribution package (source and/or binary)
 
 .RS
-.B --debbuildopts
-options passed to pdebuild's --debbuildopts option
-
 .B --dist
-where to put results
+where to put compilation results
 
-.B -t, --target-distribution
-the distribution targetted (e.g. etch, lenny, sid). Use all for all known distributions
+.B --distrib
+the distribution targetted (e.g. etch, lenny, sid). Use 'all' for all known distributions
 
-.B -a, --arch
+.B --arch
 build for the requested debian architectures only
 
-.B --orig
+.B --orig-tarball
 path to orig.tar.gz file
 
-.B -r, --revision
-set a specific revision to build the debian package
+.B --keep-tmpdir
+keep the temporary build directory
 
-.B -q, --quiet
-run silently without confirmation
+.B --post-treatments
+compile packages with post treatments
 
 .SS tag
 put a release tag on source repository
