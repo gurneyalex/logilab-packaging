@@ -9,19 +9,19 @@ from logilab.devtools.lgp.exceptions import DistributionException
 class DistributionTC(TestCase):
 
     def test_default_distribution(self):
-        self.assertEquals(get_distributions(), KNOWN_DISTRIBUTIONS)
-        self.assertEquals(get_distributions(None), KNOWN_DISTRIBUTIONS)
+        self.assertEquals(get_distributions(),     tuple(set(KNOWN_DISTRIBUTIONS.values())))
+        self.assertEquals(get_distributions(None), tuple(set(KNOWN_DISTRIBUTIONS.values())))
 
     def test_one_valid_distribution(self):
         distrib = 'lenny'
-        self.assertEquals(get_distributions(distrib), [distrib])
-        self.assertEquals(get_distributions([distrib]), [distrib])
+        self.assertEquals(get_distributions(distrib),    (distrib,))
+        self.assertEquals(get_distributions((distrib,)), (distrib,))
 
     def test_several_valid_distributions(self):
-        distrib = ['lenny', 'sid']
-        self.assertEquals(get_distributions(distrib), distrib)
-        distrib_str = "lenny,sid"
-        self.assertEquals(get_distributions(distrib_str), distrib)
+        distrib = ('sid', 'lenny')
+        self.assertEquals(sorted(get_distributions(distrib)), sorted(distrib))
+        distrib_str = "sid,lenny"
+        self.assertEquals(sorted(get_distributions(distrib_str)), sorted(distrib))
 
     def test_one_unvalid_distribution(self):
         distrib = ['winnie the pooh']

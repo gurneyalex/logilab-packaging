@@ -31,10 +31,10 @@ BASE_EXCLUDE = ('CVS', '.svn', '.hg', 'bzr')
 
 PUBLIC_RGX = re.compile('PUBLIC\s+"-//(?P<group>.*)//DTD (?P<pubid>.*)//(?P<lang>\w\w)(//XML)?"\s*"(?P<dtd>.*)"')
 
-# FIXME don't use duplicated distributions (lenny or stable ?)
 # The known distribution are depending on the pbuilder setup in /opt/buildd
 # Find a way to retrieve dynamically
-KNOWN_DISTRIBUTIONS = ('etch', 'lenny', 'experimental', 'sid')
+KNOWN_DISTRIBUTIONS = {'etch': 'etch', 'stable': 'etch', 'lenny': 'lenny',
+                       'testing': 'lenny', 'sid': 'sid'}
 
 class SGMLCatalog:
     """ handle SGML catalog information
@@ -130,7 +130,7 @@ def cond_exec(cmd, confirm=False, retry=False):
             elif retry and answer == 'r':
                 continue 
             else:
-                sys.exit(0)
+                sys.exit()
         else:
             return False
 
@@ -144,16 +144,17 @@ def get_distributions(distrib=None):
             list of target distribution
     """
     if distrib is None:
-        return KNOWN_DISTRIBUTIONS
-    if distrib == 'all':
-        distrib = KNOWN_DISTRIBUTIONS
+        distrib = KNOWN_DISTRIBUTIONS.values()
     else:
+        mapped = ()
         if type(distrib) is str:
             distrib = distrib.split(',')
         for t in distrib:
             if t not in KNOWN_DISTRIBUTIONS:
                 raise DistributionException(t)
-    return distrib
+            mapped += (KNOWN_DISTRIBUTIONS[t],)
+        distrib = mapped
+    return tuple(set(distrib))
 
 def get_architectures(archi="current"):
     """ Ensure that the architectures exist
