@@ -30,12 +30,16 @@ from logilab.common.shellutils import cp
 from logilab.devtools.lib.pkginfo import PackageInfo
 from logilab.devtools.lgp.changelog import DebianChangeLog
 
-
 COMMANDS = {
         "sdist" : {
             "pkginfo": 'python setup.py sdist --force-manifest -d %s',
             "setuptools": 'python setup.py sdist -d %s',
-            "makefile": 'make dist-gzip',
+            "makefile": 'make -f setup.mk dist-gzip -e DIST_DIR=%s',
+        },
+        "clean" : {
+            "pkginfo": 'python setup.py clean',
+            "setuptools": 'python setup.py clean',
+            "makefile": 'make -f setup.mk clean',
         },
 }
 
@@ -81,14 +85,14 @@ class SetupInfo(Configuration):
         # Load the optional config file 
         self.load_file_configuration('setup.cfg')
 
-        if os.path.isfile('__pkginfo__.py'):
+        if os.path.isfile('setup.mk'):
+            self._package_format = 'makefile'
+        elif os.path.isfile('__pkginfo__.py'):
             self._package_format = 'pkginfo'
             self._package = PackageInfo(directory=self.config.pkg_dir)
         elif os.path.isfile('setup.py'):
             self._package_format = 'setuptools'
             self._package = run_setup('./setup.py', None, stop_after="init")
-        elif os.path.isfile('Makefile'):
-            self._package_format = 'makefile'
         else:
             raise Exception('no valid setup file')
         if self.config.verbose:
@@ -135,7 +139,12 @@ class SetupInfo(Configuration):
         return debian_version
 
     def get_upstream_name(self):
-        if hasattr(self._package, 'get_name'):
+        if self._package_format == 'makefile':
+            p1 = Popen(["make", "-f", "setup.mk", "-p"], stdout=PIPE)
+            p2 = Popen(["grep", "^NAME"], stdin=p1.stdout, stdout=PIPE)
+            output = p2.communicate()[0]
+            return output.rsplit()[2]
+        elif hasattr(self._package, 'get_name'):
             return self._package.get_name()
         elif self._package_format == 'pkginfo':
             try:
@@ -150,7 +159,7 @@ class SetupInfo(Configuration):
             from __pkginfo__ import version
             return version
         elif self._package_format == 'makefile':
-            p1 = Popen(["make", "-p"], stdout=PIPE)
+            p1 = Popen(["make", "-f", "setup.mk", "-p"], stdout=PIPE)
             p2 = Popen(["grep", "^VERSION"], stdin=p1.stdout, stdout=PIPE)
             output = p2.communicate()[0]
             return output.rsplit()[2]
