@@ -59,11 +59,13 @@ MANDATORY_SETUP_FIELDS = ('name', 'version', 'author', 'author_email', 'license'
 
 CHECKS = { 'default'    : ['debian_dir', 'debian_rules', 'debian_copying',
                            'debian_changelog', 'package_info', 'readme',
-                           'changelog', 'bin', 'tests_directory', 'setup_py',
-                           'repository', 'copying', 'documentation', 'deprecated'],
+                           'changelog', 'bin', 'tests_directory', 'setup_file',
+                           'repository', 'copying', 'documentation', 'deprecated',
+                           'debsign'],
            'pkginfo'    : ['release_number', 'manifest_in', 'announce', 'include_dirs', 'scripts'],
            'setuptools' : ['scripts'],
-           'makefile'   : ['makefile'],
+           'makefile'   : [],
+           #'makefile'   : ['makefile'],
          }
 
 REV_LINE = re.compile('__revision__.*')
@@ -245,7 +247,7 @@ class Checker(SetupInfo):
         for func in self.get_checklist():
             result = func(self)
             if result:
-                self.logger.info(func.__name__)
+                self.logger.debug("`--> " + func.__name__)
             else:
                 self.logger.error("%s: %s" % (func.__name__, func.__doc__))
             self.counter += result
@@ -335,9 +337,9 @@ def check_run_tests(checker):
             break
     return 1
 
-def check_setup_py(checker):
-    """check the setup.py file """
-    return isfile('setup.py')
+def check_setup_file(checker):
+    """check the setup.[py|mk] file """
+    return isfile('setup.py') or isfile('setup.mk')
 
 def check_makefile(checker):
     """check makefile file and dependencies """
@@ -457,6 +459,12 @@ def check_include_dirs(checker):
                 return 0
     return 1
 
+def check_debsign(checker):
+    """add the DEBSIGN_KEYID environment variable to sign directly """
+    if 'DEBSIGN_KEYID' not in os.environ:
+        checker.logger.info(check_debsign.__doc__)
+    return 1
+
 def check_scripts(checker):
     """check declared scripts"""
     pi = checker._package
@@ -471,8 +479,12 @@ def check_scripts(checker):
 def check_package_info(checker):
     """check package information """
     status = 1
-    for field in MANDATORY_SETUP_FIELDS:
+    if hasattr(checker, "_package"):
         pi = checker._package
+    else:
+        return status
+
+    for field in MANDATORY_SETUP_FIELDS:
         if not hasattr(pi, field):
             checker.logger.error("%s field missing" % field)
             status = 0
