@@ -34,6 +34,7 @@ install: build
 	dh_testroot
 	dh_clean -k
 	dh_installdirs
+	make -f doc/makefile doc
 	python setup.py -q install --no-compile --prefix=debian/logilab-packaging/usr
 	# remove sub-package __init__ file (created by another package)
 	rm debian/logilab-packaging/usr/lib/${PYVER}/site-packages/logilab/__init__.py
