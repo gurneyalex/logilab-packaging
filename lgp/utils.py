@@ -144,7 +144,7 @@ def get_distributions(distrib=None):
             list of target distribution
     """
     if distrib is None:
-        distrib = KNOWN_DISTRIBUTIONS.values()
+        distrib = KNOWN_DISTRIBUTIONS.keys()
     else:
         mapped = ()
         if type(distrib) is str:
