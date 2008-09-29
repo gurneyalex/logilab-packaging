@@ -34,6 +34,7 @@ import os
 import stat
 import re
 import commands
+import logging
 from os.path import basename, join, exists, isdir, isfile
 from pprint import pprint
 
@@ -60,8 +61,7 @@ MANDATORY_SETUP_FIELDS = ('name', 'version', 'author', 'author_email', 'license'
 CHECKS = { 'default'    : ['debian_dir', 'debian_rules', 'debian_copying',
                            'debian_changelog', 'package_info', 'readme',
                            'changelog', 'bin', 'tests_directory', 'setup_file',
-                           'repository', 'copying', 'documentation', 'deprecated',
-                           'debsign'],
+                           'repository', 'copying', 'documentation', 'debsign'],
            'pkginfo'    : ['release_number', 'manifest_in', 'announce', 'include_dirs', 'scripts'],
            'setuptools' : ['scripts'],
            'makefile'   : [],
@@ -224,6 +224,7 @@ class Checker(SetupInfo):
         # Be sure to have absolute path here
         if self.config.distrib is None:
             self.config.distrib = 'sid'
+        self.logger = logging.getLogger(__name__)
 
     def get_checklist(self, all=False):
         if all:
@@ -386,10 +387,6 @@ def check_documentation(checker):
         pass
     return status
 
-def check_deprecated(checker):
-    """check attributes in deprecation"""
-    return 1
-
 def check_repository(checker):
     """check repository status (modified files) """
     try:
@@ -522,6 +519,14 @@ def check_package_info(checker):
 # Not implemented check functions
 #
 # ===============================
+
+def check_shebang(checker):
+    """check #! signature for shell and python script """
+    raise NotImplementedError("use best practises")
+
+def check_deprecated(checker):
+    """check attributes in deprecation"""
+    raise NotImplementedError("use right pylint options")
 
 def check_pylint(checker):
     """check with pylint (not implemented) """

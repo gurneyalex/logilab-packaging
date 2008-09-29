@@ -25,6 +25,7 @@ from subprocess import Popen, PIPE
 from distutils.core import run_setup
 
 from logilab.common.configuration import Configuration
+from logilab.common.logging_ext import ColorFormatter
 from logilab.common.shellutils import cp
 
 from logilab.devtools.lib.pkginfo import PackageInfo
@@ -73,8 +74,14 @@ class SetupInfo(Configuration):
         for opt in options:
             self.options += opt
         super(SetupInfo, self).__init__(options=self.options, **args)
-        self.logger = logging.getLogger('lgp')
 
+        # Instanciate the default logger configuration
+        console = logging.StreamHandler()
+        console.setFormatter(ColorFormatter('%(levelname)1.1s:%(name)s: %(message)s'))
+        logging.getLogger().addHandler(console)
+        self.logger = logging.getLogger(__name__).addHandler(console)
+
+        # Manage arguments (project path essentialy)
         arguments = self.load_command_line_configuration(arguments)
 
         # Go to package directory
