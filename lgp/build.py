@@ -148,6 +148,7 @@ class Builder(SetupInfo):
         # Retrieve upstream information
         super(Builder, self).__init__(arguments=args, options=self.options, usage=__doc__)
         #print self.generate_config(); sys.exit()
+        self.logger = logging.getLogger(__name__)
 
         # FIXME logilab.common.configuration doesn't like default values :-(
         # FIXME Duplicated code between commands
