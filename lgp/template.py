@@ -30,6 +30,10 @@ from logilab.devtools.lib.pkginfo import PackageInfo, PKGINFO, PKGINFO_ATTRIBUTE
 from logilab.devtools.lgp.setupinfo import SetupInfo
 from logilab.devtools.lgp.changelog import ChangeLog
 
+# FIXME
+# Give a try to python paster
+# http://pythonpaste.org/script/modules/templates.html
+# http://svn.pythonpaste.org/Paste/Script/trunk/paste/script/templates.py
 
 TEMPLATE_DIR = os.path.join(logilab.devtools.__path__[0], 'templates')
 TEMPLATES = ('announce',)

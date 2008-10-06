@@ -76,10 +76,11 @@ class SetupInfo(Configuration):
         super(SetupInfo, self).__init__(options=self.options, **args)
 
         # Instanciate the default logger configuration
+        logging.basicConfig(level=logging.DEBUG, filename="/dev/null")
         console = logging.StreamHandler()
         console.setFormatter(ColorFormatter('%(levelname)1.1s:%(name)s: %(message)s'))
         logging.getLogger().addHandler(console)
-        self.logger = logging.getLogger(__name__).addHandler(console)
+        self.logger = logging.getLogger(__name__)
 
         # Manage arguments (project path essentialy)
         arguments = self.load_command_line_configuration(arguments)
@@ -103,10 +104,10 @@ class SetupInfo(Configuration):
         else:
             raise Exception('no valid setup file')
         if self.config.verbose:
-            logging.basicConfig(level=logging.DEBUG)
+            self.logger.setLevel(logging.DEBUG)
         else:
-            logging.basicConfig(level=logging.INFO)
-        logging.debug("package format: %s" % self._package_format)
+            self.logger.setLevel(logging.INFO)
+        self.logger.debug("package format: %s" % self._package_format)
 
     def get_debian_name(self):
         """ obtain the debian package name
@@ -184,6 +185,18 @@ class SetupInfo(Configuration):
         packages.append('%s_%s_*.changes' % (self.get_debian_name(), self.get_debian_version()))
         return packages
 
+    def clean_repository(self):
+        if self._package_format in COMMANDS["clean"]:
+            cmd = COMMANDS["clean"][self._package_format]
+        else:
+            self.logger.critical("No way to clean the repository")
+            sys.exit(1)
+
+        if not self.config.verbose:
+            cmd += ' 1>/dev/null 2>/dev/null'
+        self.logger.info("Cleaning repository...")
+        os.system(cmd)
+
     def create_orig_tarball(self, tmpdir):
         """ Create an origin tarball 
         """
@@ -193,7 +206,7 @@ class SetupInfo(Configuration):
             if self._package_format in COMMANDS["sdist"]:
                 cmd = COMMANDS["sdist"][self._package_format] % self.config.dist_dir
             else:
-                logging.critical("No way to create a source distribution")
+                self.logger.critical("No way to create the source distribution")
                 sys.exit(1)
 
             if not self.config.verbose:
@@ -205,9 +218,9 @@ class SetupInfo(Configuration):
         else:
             upstream_tarball = self.config.orig_tarball
             # TODO check the upstream version with the new tarball 
-            logging.info("Use '%s' as source distribution" % upstream_tarball)
+            self.logger.info("Use '%s' as source distribution" % upstream_tarball)
 
-        logging.debug("Copy '%s' to '%s'" % (upstream_tarball, tarball))
+        self.logger.info("Copy '%s' to '%s'" % (upstream_tarball, tarball))
         cp(upstream_tarball, tarball)
 
         return tarball

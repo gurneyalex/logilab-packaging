@@ -52,8 +52,8 @@ def run(args):
     for arch in architectures:
         for distrib in distributions:
             packages = builder.compile(distrib=distrib, arch=arch)
-            logging.info("New compiled packages (%s) are waiting in %s. Enjoy." %
-                         (",".join(packages), builder.get_distrib_dir()))
+            builder.logger.info("New compiled packages (%s) are waiting in %s. Enjoy." %
+                                (",".join(packages), builder.get_distrib_dir()))
             if builder.config.post_treatments:
                 run_post_treatments(packages, builder.get_distrib_dir(), distrib,
                              builder.config.verbose)
@@ -175,12 +175,12 @@ class Builder(SetupInfo):
     def compile(self, distrib, arch):
         tmpdir = tempfile.mkdtemp()
 
-        # the upstream archive tarball is depending of the setup method
+        self.clean_repository()
         tarball = self.create_orig_tarball(tmpdir)
 
         # create tmp build directory by extracting the .orig.tar.gz
         os.chdir(tmpdir)
-        logging.debug("Extracting %s..." % tarball)
+        self.logger.debug("Extracting %s..." % tarball)
         status = os.system('tar xzf %s' % tarball)
         if status:
             raise IOError('An error occured while extracting the upstream '\
@@ -194,7 +194,7 @@ class Builder(SetupInfo):
         # DOC If a file should not be included, touch an empty file in the overlay directory
         export(osp.join(self.config.pkg_dir, 'debian'), osp.join(origpath, 'debian'))
         if self.get_debian_dir() != 'debian/':
-            logging.debug("Overriding files...")
+            self.logger.debug("Overriding files...")
             export(osp.join(self.config.pkg_dir, self.get_debian_dir()), osp.join(origpath, 'debian/'),
                    verbose=self.config.verbose)
 
@@ -203,8 +203,13 @@ class Builder(SetupInfo):
         if debuilder ==  'vbuild':
             self.make_source_package(origpath)
             dscfile = '%s_%s.dsc' % (self.get_debian_name(), self.get_debian_version())
-            logging.info("Building debian for distribution '%s' and arch '%s'" % (distrib,
-                                                                                  arch))
+            if osp.isfile(dscfile):
+                self.logger.info("Building dsc file: %s" % dscfile)
+            else:
+                self.logger.critical("Cannot build valid dsc file '%s'" % dscfile)
+                sys.exit(1)
+            self.logger.info("Building debian for distribution '%s' and arch '%s'" % (distrib,
+                                                                                      arch))
             cmd = 'vbuild -d %s -a %s --result %s %s'
             cmd %= (distrib, arch, self.get_distrib_dir(), osp.join(tmpdir, dscfile))
             # TODO
@@ -213,9 +218,9 @@ class Builder(SetupInfo):
             cmd = debuilder
         #if not self.config.verbose:
         #    cmd += ' 1>/dev/null 2>/dev/null'
+        self.logger.debug("[subprocess] " + ''.join(cmd))
         status = os.system(cmd)
         if status:
-            logging.error("[VBUILD] " + ''.join(cmd))
             raise OSError('An error occured while building the debian package ' \
                           '(return status: %s)' % status)
         # clean tmpdir
@@ -237,7 +242,7 @@ class Builder(SetupInfo):
         :param:
             origpath: path to orig.tar.gz tarball
         """
-        logging.info("Creation of the Debian source package: %s" % origpath)
+        self.logger.info("Creation of the Debian source package: %s" % origpath)
         cmd = 'dpkg-source -b %s' % origpath
         if not self.config.verbose:
             cmd += ' 1>/dev/null 2>/dev/null'
