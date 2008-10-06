@@ -61,11 +61,11 @@ MANDATORY_SETUP_FIELDS = ('name', 'version', 'author', 'author_email', 'license'
 CHECKS = { 'default'    : ['debian_dir', 'debian_rules', 'debian_copying',
                            'debian_changelog', 'package_info', 'readme',
                            'changelog', 'bin', 'tests_directory', 'setup_file',
-                           'repository', 'copying', 'documentation', 'debsign'],
+                           'repository', 'copying', 'documentation', 'debsign',
+                           'homepage'],
            'pkginfo'    : ['release_number', 'manifest_in', 'announce', 'include_dirs', 'scripts'],
            'setuptools' : ['scripts'],
-           'makefile'   : [],
-           #'makefile'   : ['makefile'],
+           'makefile'   : ['makefile'],
          }
 
 REV_LINE = re.compile('__revision__.*')
@@ -345,8 +345,15 @@ def check_setup_file(checker):
 def check_makefile(checker):
     """check makefile file and dependencies """
     status = 1
-    status = status and os.path.isfile("Makefile")
+    status = status and os.path.isfile("setup.mk")
     #status = status and _check_make_dependencies()
+    return status
+
+def check_homepage(checker):
+    """check the homepage field"""
+    status, _ = commands.getstatusoutput('grep ^Homepage debian/control')
+    if not status:
+        status, _ = commands.getstatusoutput('grep "Homepage: http://www.logilab.org/projects" debian/control')
     return status
 
 def check_announce(checker):
@@ -376,10 +383,12 @@ def check_bin(checker):
     return status
 
 def check_documentation(checker):
-    """check build of project's documentation"""
+    """check project's documentation"""
     status = 1
-    if os.path.isdir('doc') and os.path.isfile('doc/Makefile') \
-                            or os.path.isfile('doc/makefile'):
+    if os.path.isdir('doc'):
+        # FIXME
+        # should be a clean target in setup.mk for example
+        # and os.path.isfile('doc/Makefile') or os.path.isfile('doc/makefile'):
         # TODO --try-to-fix
         #if confirm('build documentation ?'):
         #os.chdir('doc')
