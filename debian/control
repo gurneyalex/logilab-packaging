@@ -21,16 +21,17 @@ Description: set of development tools used at Logilab for source management
 
 Package: logilab-packaging
 Architecture: all
-Suggests: logilab-doctools
-Recommends: piuparts, lintian, sudo, emacsen-common, cvs, mercurial (>= 0.9.3), subversion
-Depends: ${python:Depends}, pymacs, python-vcslib, python-logilab-common (>= 0.32.0), pbuilder, debinstall, devscripts, debhelper
+Suggests: logilab-doctools, pymacs, emacsen-common, cvs
+Recommends: piuparts, sudo, mercurial (>= 0.9.3), subversion, debinstall
+Depends: ${python:Depends}, python-debian, lintian, pbuilder, devscripts, debhelper,
+         python-vcslib, python-logilab-common
 Conflicts: devtools, simh
 Replaces: devtools
 XB-Python-Version: ${python:Versions}
 Description: set of development tools used at Logilab
  Set of tools which aims to help the developpement process, including :
-  * standard for zope and Python packages
   * tools to check and build source and/or Debian packages
+  * standard for zope and Python packages
 
 Package: pycoverage
 Architecture: all
