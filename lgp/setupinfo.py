@@ -76,11 +76,11 @@ class SetupInfo(Configuration):
         super(SetupInfo, self).__init__(options=self.options, **args)
 
         # Instanciate the default logger configuration
-        logging.basicConfig(level=logging.DEBUG, filename="/dev/null")
+        logging.basicConfig(level=logging.INFO, filename="/dev/null")
         console = logging.StreamHandler()
         console.setFormatter(ColorFormatter('%(levelname)1.1s:%(name)s: %(message)s'))
         logging.getLogger().addHandler(console)
-        self.logger = logging.getLogger(__name__)
+        self.logger = logging.getLogger()
 
         # Manage arguments (project path essentialy)
         arguments = self.load_command_line_configuration(arguments)
@@ -175,6 +175,9 @@ class SetupInfo(Configuration):
             return self._package.get_version()
 
     def get_packages(self):
+        # FIXME
+        # Move the Detect native package code here in order to list packages
+        # cleanly
         os.chdir(self.config.pkg_dir)
         pipe = os.popen('dh_listpackages')
         packages = ['%s_%s_*.deb' % (line.strip(), self.get_debian_version()) for line in pipe.readlines()]
@@ -189,7 +192,7 @@ class SetupInfo(Configuration):
         if self._package_format in COMMANDS["clean"]:
             cmd = COMMANDS["clean"][self._package_format]
         else:
-            self.logger.critical("No way to clean the repository")
+            self.logger.error("No way to clean the repository...")
             sys.exit(1)
 
         if not self.config.verbose:
@@ -217,10 +220,10 @@ class SetupInfo(Configuration):
                 (self.get_upstream_name(), self.get_upstream_version()))
         else:
             upstream_tarball = self.config.orig_tarball
-            # TODO check the upstream version with the new tarball 
-            self.logger.info("Use '%s' as source distribution" % upstream_tarball)
 
-        self.logger.info("Copy '%s' to '%s'" % (upstream_tarball, tarball))
+        # TODO check the upstream version with the new tarball 
+        self.logger.info("Use '%s' as original source archive (tarball)" % upstream_tarball)
+        self.logger.debug("Copy '%s' to '%s'" % (upstream_tarball, tarball))
         cp(upstream_tarball, tarball)
 
         return tarball
