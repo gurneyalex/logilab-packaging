@@ -20,21 +20,11 @@
 """
 __docformat__ = "restructuredtext en"
 
-import os
-import os.path
-from logilab.devtools.lgp.utils import confirm, cond_exec
+from logilab.devtools.lgp.build import Builder
 
 
 def run(args):
     """ Main function of lgp clean command """
 
-    patterns = ['*~', '*.pyc', '*.pyo', '*.o', '\#*', '.\#*']
-    search = ' -o '.join(['-name "%s" '%item for item in patterns])
-    os.system('find . "(" %s ")" -a -ls' % search)
-    if confirm("nettoyage du répertoire de travail ?"):
-        os.system('find . "(" %s ")" -a -exec rm -f \{\} \; 2>/dev/null' % search)
-    if os.path.isdir('doc') and os.path.isfile('doc/makefile'):
-        if confirm("nettoyage du répertoire de documentation ?"):
-        os.chdir('doc')
-        cond_exec('make clean', retry=True)
-
+    cleaner = Builder(args)
+    cleaner.clean_repository()

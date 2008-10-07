@@ -24,11 +24,13 @@ __docformat__ = "restructuredtext en"
 import os
 import sys
 import stat
+import glob
 import tempfile
 import shutil
 import logging
 import os.path as osp
-from subprocess import Popen, PIPE
+from subprocess import Popen, PIPE, check_call, CalledProcessError
+from debian_bundle import deb822
 
 from logilab.common.shellutils import mv
 from logilab.common.fileutils import ensure_fs_mode, export
@@ -56,7 +58,7 @@ def run(args):
                                 (",".join(packages), builder.get_distrib_dir()))
             if builder.config.post_treatments:
                 run_post_treatments(packages, builder.get_distrib_dir(), distrib,
-                             builder.config.verbose)
+                                    builder.config.verbose)
     #except Exception, exc:
     #    logging.critical(exc)
     return 1
@@ -64,6 +66,22 @@ def run(args):
 def run_post_treatments(packages, distdir, distrib, verbose=False):
     """ Run actions after package compiling """
     separator = '+' * 15 + ' %s'
+
+    # Detect native package
+    for package in packages:
+        if package.endswith('.dsc'):
+            package = glob.glob(osp.join(distdir, package))[0]
+            dsc = deb822.Dsc(file(package))
+            orig = None
+            for dscfile in dsc['Files']:
+                if dscfile['name'].endswith('orig.tar.gz'):
+                    orig = dscfile
+                    break
+            # There is no orig.tar.gz file in the dsc file. This is probably a native package.
+            if orig is None:
+                if not confirm("No orig.tar.gz file found in %s.\n"
+                               "Really a native package (suspect) ?" % package):
+                    return
 
     # Try Debian signing immediately if possible
     if 'DEBSIGN_KEYID' in os.environ and not verbose or confirm("debsign your packages ?"):
@@ -200,6 +218,7 @@ class Builder(SetupInfo):
 
         # build the package using vbuild or default to fakeroot
         debuilder = os.environ.get('DEBUILDER') or 'vbuild'
+        self.logger.info("Request to change internal builder to command '%s'" % debuilder)
         if debuilder ==  'vbuild':
             self.make_source_package(origpath)
             dscfile = '%s_%s.dsc' % (self.get_debian_name(), self.get_debian_version())
@@ -208,21 +227,22 @@ class Builder(SetupInfo):
             else:
                 self.logger.critical("Cannot build valid dsc file '%s'" % dscfile)
                 sys.exit(1)
-            self.logger.info("Building debian for distribution '%s' and arch '%s'" % (distrib,
-                                                                                      arch))
+            self.logger.info("Building debian package for distribution '%s' and arch '%s'"
+                             % (distrib, arch))
             cmd = 'vbuild -d %s -a %s --result %s %s'
             cmd %= (distrib, arch, self.get_distrib_dir(), osp.join(tmpdir, dscfile))
             # TODO
             #cmd += ' --debbuildopts %s' % pdebuild_options
         else:
             cmd = debuilder
-        #if not self.config.verbose:
-        #    cmd += ' 1>/dev/null 2>/dev/null'
-        self.logger.debug("[subprocess] " + ''.join(cmd))
-        status = os.system(cmd)
-        if status:
-            raise OSError('An error occured while building the debian package ' \
-                          '(return status: %s)' % status)
+        if not self.config.verbose:
+            cmd += ' 1>/dev/null 2>/dev/null'
+        try:
+            check_call(cmd.split())
+        except (OSError, CalledProcessError), err:
+            self.logger.critical(err)
+            sys.exit(cmd)
+
         # clean tmpdir
         if not self.config.keep_tmpdir:
             shutil.rmtree(tmpdir)
@@ -242,7 +262,7 @@ class Builder(SetupInfo):
         :param:
             origpath: path to orig.tar.gz tarball
         """
-        self.logger.info("Creation of the Debian source package: %s" % origpath)
+        self.logger.info("Creation of the debian source package in '%s'" % origpath)
         cmd = 'dpkg-source -b %s' % origpath
         if not self.config.verbose:
             cmd += ' 1>/dev/null 2>/dev/null'

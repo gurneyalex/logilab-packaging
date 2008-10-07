@@ -62,7 +62,7 @@ CHECKS = { 'default'    : ['debian_dir', 'debian_rules', 'debian_copying',
                            'debian_changelog', 'package_info', 'readme',
                            'changelog', 'bin', 'tests_directory', 'setup_file',
                            'repository', 'copying', 'documentation', 'debsign',
-                           'homepage'],
+                           'homepage', 'builder'],
            'pkginfo'    : ['release_number', 'manifest_in', 'announce', 'include_dirs', 'scripts'],
            'setuptools' : ['scripts'],
            'makefile'   : ['makefile'],
@@ -276,6 +276,12 @@ class Checker(SetupInfo):
 # Check functions collection starts here
 #
 # ======================================
+def check_builder(checker):
+    """check if the builder is correct """
+    debuilder = os.environ.get('DEBUILDER') or False
+    if debuilder:
+        checker.logger.warn('you have set a different builder in DEBUILDER. Unset it if in doubt')
+    return 1
 
 def check_debian_dir(checker):
     """check the debian* directory """
