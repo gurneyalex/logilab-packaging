@@ -2,8 +2,10 @@ Source: logilab-devtools
 Section: python
 Priority: optional
 Maintainer: Sylvain Thénault <sylvain.thenault@logilab.fr> 
-Uploaders: Alexandre Fayolle <afayolle@debian.org>, Adrien Di Mascio <adrien.dimascio@logilab.fr>
-Build-Depends: debhelper (>= 5.0.37.2), python-dev (>=2.3.5-7), python-central (>=0.5)
+Uploaders: Alexandre Fayolle <afayolle@debian.org>,
+           Adrien Di Mascio <adrien.dimascio@logilab.fr>,
+           Julien Jehannet <julien.jehannet@logilab.fr>
+Build-Depends: debhelper (>= 7.0), python-dev (>=2.3.5-7), python-central (>=0.5)
 Standards-Version: 3.8.0
 Homepage: http://www.logilab.org/projects/devtools
 XS-Python-Version: current
@@ -56,9 +58,9 @@ Description: emacs lisp code for logilab development tools
 
 Package: logilab-dev-environment
 Architecture: all
-Depends: python-all-dev, python-all-dbg, emacs, python-ropemacs, logilab-packaging, pycoverage, logilab-elisp, build-essentials, pylint, mercurial, subversion, debinstall, hgview, meld, rcs, commit-tool
+Depends: python-all-dev, python-all-dbg, emacs, python-ropemacs, logilab-packaging, pycoverage, logilab-elisp, build-essential, pylint, mercurial, subversion, debinstall, hgview, meld, rcs, commit-tool
 Recommends: vim-python | gvim
-Description: minimum set of packages for development at Logilab
+Description: Minimum set of packages for development at Logilab
  This meta-package ensures Python and pylint are available, as well as
- emacs, Logilab's packaging tools, and the version control tools used
- at Logilab (mercurial and subversion). 
+ Emacs, Logilab's packaging tools and the version control tools used
+ at Logilab (mercurial and subversion).
