@@ -1,0 +1,9 @@
+- utiliser dpkg-name pour valider le nom du paquet
+- ajouter les options courtes
+- faire un test sur la variable d'environnement DEBUILDER
+- un champ pour l'entrepôt dans debian/control ?
+- distrib=all correspond à la liste des répertoires debian dans le dépôt
+- check: __pkginfo__ dans le .deb
+- doc/*.html dans doc/html/
+- vérifier environnement setup.py (~/.pydistutils.cfg pour certains format pkginfo/setuptools)
+- génération de la documentation (problème dépendance à l'install, -> trouver une autre solution)
