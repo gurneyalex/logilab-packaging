@@ -217,8 +217,8 @@ class Builder(SetupInfo):
                    verbose=self.config.verbose)
 
         # build the package using vbuild or default to fakeroot
-        debuilder = os.environ.get('DEBUILDER') or 'vbuild'
-        self.logger.info("Request to change internal builder to command '%s'" % debuilder)
+        debuilder = os.environ.get('DEBUILDER', 'vbuild')
+        self.logger.debug("Use builder: '%s'" % debuilder)
         if debuilder ==  'vbuild':
             self.make_source_package(origpath)
             dscfile = '%s_%s.dsc' % (self.get_debian_name(), self.get_debian_version())
@@ -235,10 +235,12 @@ class Builder(SetupInfo):
             #cmd += ' --debbuildopts %s' % pdebuild_options
         else:
             cmd = debuilder
+        stdout, stderr = None, None
         if not self.config.verbose:
-            cmd += ' 1>/dev/null 2>/dev/null'
+            stdout = open(os.devnull,"w")
+            stderr = open(os.devnull,"w")
         try:
-            check_call(cmd.split())
+            check_call(cmd.split(), stdout=stdout, stderr=stderr)
         except (OSError, CalledProcessError), err:
             self.logger.critical(err)
             sys.exit(cmd)
