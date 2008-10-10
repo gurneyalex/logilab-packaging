@@ -38,8 +38,8 @@ COMMANDS = {
             "makefile": 'make -f setup.mk dist-gzip -e DIST_DIR=%s',
         },
         "clean" : {
-            "pkginfo": 'python setup.py clean',
-            "setuptools": 'python setup.py clean',
+            "pkginfo": 'fakeroot debian/rules clean',
+            "setuptools": 'fakeroot debian/rules clean',
             "makefile": 'make -f setup.mk clean',
         },
 }
