@@ -1,0 +1,33 @@
+#!/bin/bash
+command=$1
+
+AVAILABLE_DISTRIB="etch lenny sid"
+BASE_LOCATION='/opt/buildd/'
+MIRROR="http://ftp.fr.debian.org/debian"
+OTHER_MIRROR_1="deb http://intranet.logilab.fr/debian/logilab-private/debian"
+OTHER_MIRROR_2="deb http://intranet.logilab.fr/debian/logilab-public/debian"
+
+
+case "${command}" in
+	"--help")
+		echo "lgp maintenance pbuilder utility"
+		echo "Usage: $0 command"
+		echo
+		echo "          new    <project name>"
+		echo "          remove <project name>"
+		echo "          clone <project source> <new project>"
+		;;
+	"create"|"update"|"build")
+		for dist in $AVAILABLE_DISTRIB
+		do 
+			sudo pbuilder --${command} --distribution ${dist}
+						               --basetgz ${BASE_LOCATION}/${dist}.tgz
+						               --mirror http://ftp.fr.debian.org/debian \
+						               --othermirror "${OTHER_MIRROR_1} ${dist}/ | ${OTHER_MIRROR_2} ${dist}/"
+		done
+		;;
+	*)
+		echo "$0: invalid command '$1'."
+		exit 1
+		;;
+esac
