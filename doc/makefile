@@ -6,7 +6,7 @@ TXTFILES:= $(wildcard *.txt)
 XMLFILES:= $(wildcard *.xml)
 TARGET := $(TXTFILES:.txt=.html) $(XMLFILES:.xml=.html)
 
-all: ${TARGET} apydoc
+all: ${TARGET}
 
 %.html: %.txt
 	${MKHTML} ${MKHTMLOPTS} $<
