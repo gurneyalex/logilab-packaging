@@ -1,7 +1,21 @@
 #!/bin/bash
 command=$1
-for dist in etch lenny sid 
-do 
-    sudo pbuilder ${command} --distribution ${dist} --basetgz /opt/buildd/${dist}.tgz --mirror http://ftp.fr.debian.org/debian \
+
+if [ -f /usr/share/keyrings/debian-archive-keyring.gpg ]
+then
+    for dist in etch lenny sid 
+    do 
+        sudo pbuilder ${command} --distribution ${dist} --basetgz /opt/buildd/${dist}.tgz --mirror http://ftp.fr.debian.org/debian \
                              --othermirror "deb http://intranet.logilab.fr/debian/logilab-private/debian ${dist}/ |deb http://intranet.logilab.fr/debian/logilab-public/debian ${dist}/"
-done
+    done
+fi
+
+if [ -f /usr/share/keyrings/ubuntu-archive-keyring.gpg ]
+then
+    for dist in dapper feisty gutsy hardy intrepid
+    do 
+        sudo pbuilder ${command} --distribution ${dist} --basetgz /opt/buildd/${dist}.tgz --mirror http://ftp.archive.ubuntu.com/ubuntu 
+#                             --othermirror "deb http://intranet.logilab.fr/debian/logilab-private/ubuntu ${dist}/ |deb http://intranet.logilab.fr/debian/logilab-public/ubuntu ${dist}/"
+    done
+fi
+
