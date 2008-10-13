@@ -12,4 +12,3 @@
   `General Public License version 2
   <http://www.gnu.org/licenses/old-licenses/gpl-2.0.html>`_
 """
-__import__('pkg_resources').declare_namespace(__name__)

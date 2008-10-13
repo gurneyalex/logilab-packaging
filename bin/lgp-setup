@@ -20,8 +20,8 @@ case "${command}" in
 	"create"|"update"|"build")
 		for dist in $AVAILABLE_DISTRIB
 		do 
-			sudo pbuilder --${command} --distribution ${dist}
-						               --basetgz ${BASE_LOCATION}/${dist}.tgz
+			sudo pbuilder --${command} --distribution ${dist} \
+						               --basetgz ${BASE_LOCATION}/${dist}.tgz \
 						               --mirror http://ftp.fr.debian.org/debian \
 						               --othermirror "${OTHER_MIRROR_1} ${dist}/ | ${OTHER_MIRROR_2} ${dist}/"
 		done
