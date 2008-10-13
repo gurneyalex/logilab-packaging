@@ -100,11 +100,12 @@ def run_post_treatments(packages, distdir, distrib, verbose=False):
                     cond_exec('%s -i %s/%s' % (checker, distdir, package))
 
     # FIXME piuparts that doesn't work automatically for all of our packages
+    # FIXME manage correctly options.verbose and options.keep_tmp by piuparts
     if verbose and confirm("run piuparts on generated debian packages ?"):
         for package in packages:
             print separator % package
             if package.endswith('.deb'):
-                cond_exec('sudo piuparts -d %s -p %s/%s' % (distrib, distdir, package))
+                cond_exec('sudo piuparts -v -d %s -p %s/%s' % (distrib, distdir, package))
 
 class Builder(SetupInfo):
     """ Debian builder class
