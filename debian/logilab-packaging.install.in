@@ -3,7 +3,7 @@ debian/tmp/usr/lib/PY_VERSION/site-packages/logilab/devtools/templates
 debian/tmp/usr/lib/PY_VERSION/site-packages/logilab/devtools/lib/manifest.py
 debian/tmp/usr/lib/PY_VERSION/site-packages/logilab/devtools/lib/pkginfo.py
 debian/tmp/usr/bin/lgp
-debian/tmp/usr/bin/lgp-setup
+debian/tmp/usr/bin/setupchroot
 debian/tmp/usr/bin/vbuild
 debian/tmp/usr/bin/update_gettext
 debian/tmp/usr/bin/changelog
