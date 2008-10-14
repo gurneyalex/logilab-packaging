@@ -33,7 +33,7 @@ PUBLIC_RGX = re.compile('PUBLIC\s+"-//(?P<group>.*)//DTD (?P<pubid>.*)//(?P<lang
 
 # The known distribution are depending on the pbuilder setup in /opt/buildd
 # Find a way to retrieve dynamically
-KNOWN_DISTRIBUTIONS = {'etch': 'etch', 
+KNOWN_DISTRIBUTIONS = {'etch': 'etch',
                        'stable': 'etch',
                        'lenny': 'lenny',
                        'testing': 'lenny',
@@ -42,7 +42,7 @@ KNOWN_DISTRIBUTIONS = {'etch': 'etch',
                        'gutsy':'gutsy',
                        'hardy':'hardy',
                        'intrepid':'intrepid'
-                       }
+                      }
 
 class SGMLCatalog:
     """ handle SGML catalog information
@@ -152,16 +152,20 @@ def get_distributions(distrib=None):
             list of target distribution
     """
     if distrib is None:
-        return KNOWN_DISTRIBUTIONS
-    if distrib == 'all':
+        distrib = KNOWN_DISTRIBUTIONS.keys()
+    elif distrib == 'all':
         distrib = KNOWN_DISTRIBUTIONS
     else:
+        mapped = ()
         if type(distrib) is str:
             distrib = distrib.split(',')
         for t in distrib:
             if t not in KNOWN_DISTRIBUTIONS:
                 raise DistributionException(t)
-    return distrib
+            mapped += (KNOWN_DISTRIBUTIONS[t],)
+        distrib = mapped
+    return tuple(set(distrib))
+
 
 def get_architectures(archi="current"):
     """ Ensure that the architectures exist

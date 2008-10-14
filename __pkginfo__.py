@@ -60,7 +60,7 @@ scripts = [
     'bin/changelog',
     'bin/update_gettext',
     'bin/lgp',
-    'bin/lgp-setup',
+    'bin/setupchroot',
     'bin/vbuild',
     ] 
 
