@@ -149,22 +149,21 @@ def _check_bat(checker, bat_file):
 def run(args):
     """ Main function of lgp check command """
     checker = Checker(args)
-    # FIXME when production version is ready
-    #try :
-    if checker.config.list_checks:
-        checker.list_checks()
-        return 0
+    try :
+        if checker.config.list_checks:
+            checker.list_checks()
+            return 0
 
-    checker.start_checks()
+        checker.start_checks()
 
-    # Return the number of invalid tests
-    return len(checker.get_checklist())-checker.counter
+        # Return the number of invalid tests
+        return len(checker.get_checklist())-checker.counter
 
-    #except NotImplementedError, exc:
-    #    checker.logger.error(exc)
-    #except Exception, exc:
-    #    checker.logger.critical(exc)
-    #    return 1
+    except NotImplementedError, exc:
+        checker.logger.error(exc)
+    except Exception, exc:
+        checker.logger.critical(exc)
+        return 1
 
 
 class Checker(SetupInfo):
