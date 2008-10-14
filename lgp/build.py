@@ -43,24 +43,23 @@ from logilab.devtools.lgp.utils import confirm, cond_exec
 def run(args):
     """ Main function of lgp build command """
     builder = Builder(args)
-    # FIXME when production version is ready
-    #try :
-    distributions = get_distributions(builder.config.distrib)
-    architectures = get_architectures(builder.config.archi)
+    try :
+        distributions = get_distributions(builder.config.distrib)
+        architectures = get_architectures(builder.config.archi)
 
-    #if builder.config.revision :
-    #    logging.critical(Popen(["hg", "update", builder.config.revision], stderr=PIPE).communicate())
+        #if builder.config.revision :
+        #    logging.critical(Popen(["hg", "update", builder.config.revision], stderr=PIPE).communicate())
 
-    for arch in architectures:
-        for distrib in distributions:
-            packages = builder.compile(distrib=distrib, arch=arch)
-            builder.logger.info("New compiled packages (%s) are waiting in %s. Enjoy." %
-                                (",".join(packages), builder.get_distrib_dir()))
-            if builder.config.post_treatments:
-                run_post_treatments(packages, builder.get_distrib_dir(), distrib,
-                                    builder.config.verbose)
-    #except Exception, exc:
-    #    logging.critical(exc)
+        for arch in architectures:
+            for distrib in distributions:
+                packages = builder.compile(distrib=distrib, arch=arch)
+                builder.logger.info("New compiled packages (%s) are waiting in %s. Enjoy." %
+                                    (",".join(packages), builder.get_distrib_dir()))
+                if builder.config.post_treatments:
+                    run_post_treatments(packages, builder.get_distrib_dir(), distrib,
+                                        builder.config.verbose)
+    except Exception, exc:
+        logging.critical(exc)
     return 1
 
 def run_post_treatments(packages, distdir, distrib, verbose=False):
