@@ -1,10 +1,10 @@
 ChangeLog for logilab.devtools
 ==============================
 
-  --  
-    * changelog: support for debian NMU version
+2008-10-14  --  0.12
+    * lgp: start rewriting
 
-    * close changelog before checking package
+    * changelog: support for debian NMU version
 
     * .pycoveragerc at the root of your project can specify omit and directory options
 

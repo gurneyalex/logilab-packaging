@@ -63,8 +63,9 @@ CHECKS = { 'default'    : ['debian_dir', 'debian_rules', 'debian_copying',
                            'changelog', 'bin', 'tests_directory', 'setup_file',
                            'repository', 'copying', 'documentation', 'debsign',
                            'homepage', 'builder'],
-           'pkginfo'    : ['release_number', 'manifest_in', 'announce', 'include_dirs', 'scripts'],
-           'setuptools' : ['scripts'],
+           'pkginfo'    : ['release_number', 'manifest_in', 'announce',
+                           'include_dirs', 'scripts', 'pydistutils'],
+           'setuptools' : ['scripts', 'pydistutils'],
            'makefile'   : ['makefile'],
          }
 
@@ -246,10 +247,10 @@ class Checker(SetupInfo):
 
     def start_checks(self):
         for func in self.get_checklist():
+            self.logger = logging.getLogger(func.__name__)
+            self.logger.debug("description=[%s]" % func.__doc__)
             result = func(self)
-            if result:
-                self.logger.debug("`--> " + func.__name__)
-            else:
+            if not result:
                 self.logger.error("%s: %s" % (func.__name__, func.__doc__))
             self.counter += result
 
@@ -276,6 +277,12 @@ class Checker(SetupInfo):
 # Check functions collection starts here
 #
 # ======================================
+def check_pydistutils(checker):
+    """check a .pydistutils.cfg file in your home firectory"""
+    if isfile(os.path.join(os.environ['HOME'], '.pydistutils.cfg')):
+        checker.logger.error('your ~/.pydistutils.cfg conflicts with distutils commands')
+    return 1
+
 def check_builder(checker):
     """check if the builder is correct """
     debuilder = os.environ.get('DEBUILDER') or False
@@ -325,10 +332,10 @@ def check_changelog(checker):
     return status
 
 def check_copying(checker):
-    """check COPYING file """
-    # TODO --try-to-fix
-    # see preparedist.py:install_copying
-    return os.path.isfile('COPYING')
+    """check upstream COPYING file """
+    if not os.path.isfile('COPYING'):
+        checker.logger.warn(check_copying.__doc__)
+    return 1
 
 def check_tests_directory(checker):
     """check the tests? directory """

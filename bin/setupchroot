@@ -1,6 +1,11 @@
 #!/bin/bash
 command=$1
 
+if [[ "$1" == "--help" ]]; then
+	# needed by lgp check
+	exit
+fi
+
 if [ -f /usr/share/keyrings/debian-archive-keyring.gpg ]
 then
     for dist in etch lenny sid 
