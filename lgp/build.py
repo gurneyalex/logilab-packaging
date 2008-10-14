@@ -96,7 +96,7 @@ def run_post_treatments(packages, distdir, distrib, verbose=False):
             for package in packages:
                 if package.endswith('.changes'):
                     print separator % package
-                    cond_exec('%s -i %s/%s' % (checker, distdir, package))
+                    cond_exec('%s -vIi %s/%s' % (checker, distdir, package))
 
     # FIXME piuparts that doesn't work automatically for all of our packages
     # FIXME manage correctly options.verbose and options.keep_tmp by piuparts
@@ -104,7 +104,8 @@ def run_post_treatments(packages, distdir, distrib, verbose=False):
         for package in packages:
             print separator % package
             if package.endswith('.deb'):
-                cond_exec('sudo piuparts -v -d %s -p %s/%s' % (distrib, distdir, package))
+                cond_exec('sudo piuparts -v -d %s -b /opt/buildd/%s.tgz %s/%s' %
+                          (distrib, distrib, distdir, package))
 
 class Builder(SetupInfo):
     """ Debian builder class
