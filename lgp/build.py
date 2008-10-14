@@ -206,7 +206,9 @@ class Builder(SetupInfo):
                           'tarball (return status: %s)' % status)
 
         # origpath is depending of the upstream convention
-        origpath = tarball.rsplit('.orig.tar.gz')[0].replace('_', '-')
+        tarball = os.path.basename(tarball)
+        tarball = tarball.rsplit('.orig.tar.gz')[0].replace('_', '-')
+        origpath = os.path.join(tmpdir, tarball)
 
         # copying debian_dir directory into tmp build depending of the target distribution
         # in all cases, we copy the debian directory of the sid version
