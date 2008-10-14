@@ -180,7 +180,7 @@ class Checker(SetupInfo):
                  'dest': 'distrib',
                  #'default' : 'sid',
                  'metavar' : "<distribution>",
-                 'help': "the distribution targetted (e.g. etch, lenny, sid). Use 'all' for all known distributions"
+                 'help': "the distribution targetted (e.g. etch, lenny, sid, dapper...). Use 'all' for all known distributions"
                 }),
                ('include',
                 {'type': 'csv',
