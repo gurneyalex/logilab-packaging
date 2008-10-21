@@ -61,6 +61,6 @@ Architecture: all
 Depends: python-all-dev, python-all-dbg, emacs, python-ropemacs, logilab-packaging, pycoverage, logilab-elisp, build-essential, pylint, mercurial, subversion, debinstall, hgview, meld, rcs, commit-tool
 Recommends: vim-python | gvim
 Description: Minimum set of packages for development at Logilab
- This meta-package ensures Python and pylint are available, as well as
+ This metapackage ensures Python and pylint are available, as well as
  Emacs, Logilab's packaging tools and the version control tools used
  at Logilab (mercurial and subversion).
