@@ -126,11 +126,11 @@ class SetupInfo(Configuration):
 
         The convention is :
         - 'debian/' is for sid distribution
-        - 'debian.$OTHER' id for $OTHER distribution and if it exists
+        - 'debian.$OTHER/' id for $OTHER distribution and if it exists
         """
         if self.config.distrib != 'sid':
             debiandir = 'debian.%s/' % self.config.distrib
-            if os.path.isdir(debiandir):
+            if os.path.isdir(os.path.join(self.config.pkg_dir, debiandir)):
                 return debiandir
         return 'debian/'
 

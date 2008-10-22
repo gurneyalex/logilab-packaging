@@ -216,9 +216,10 @@ class Builder(SetupInfo):
         # in all cases, we copy the debian directory of the sid version
         # DOC If a file should not be included, touch an empty file in the overlay directory
         export(osp.join(self.config.pkg_dir, 'debian'), osp.join(origpath, 'debian'))
-        if self.get_debian_dir() != 'debian/':
+        debiandir = self.get_debian_dir()
+        if debiandir != 'debian/':
             self.logger.debug("Overriding files...")
-            export(osp.join(self.config.pkg_dir, self.get_debian_dir()), osp.join(origpath, 'debian/'),
+            export(osp.join(self.config.pkg_dir, debiandir), osp.join(origpath, 'debian/'),
                    verbose=self.config.verbose)
 
         # build the package using vbuild or default to fakeroot
