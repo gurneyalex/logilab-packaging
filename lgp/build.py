@@ -42,8 +42,8 @@ from logilab.devtools.lgp.utils import confirm, cond_exec
 
 def run(args):
     """ Main function of lgp build command """
-    builder = Builder(args)
     try :
+        builder = Builder(args)
         distributions = get_distributions(builder.config.distrib)
         architectures = get_architectures(builder.config.archi)
 

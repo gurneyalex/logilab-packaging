@@ -1,5 +1,5 @@
 include bin/lgp
-include bin/lgp-setup
+include bin/setupchroot
 include bin/vbuild
 include bin/changelog
 include bin/update_gettext
@@ -16,7 +16,6 @@ include doc/*.xml
 include doc/*.txt
 include doc/makefile
 
-include autobuild/setupchroot
 
 recursive-include templates *.txt *.py 
 include templates/compat
