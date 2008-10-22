@@ -38,7 +38,7 @@ from logilab.common.fileutils import ensure_fs_mode, export
 from logilab.devtools.lgp.setupinfo import SetupInfo
 from logilab.devtools.lgp.utils import get_distributions, get_architectures
 from logilab.devtools.lgp.utils import confirm, cond_exec
-
+from logilab.devtools.lgp.exceptions import LGPException
 
 def run(args):
     """ Main function of lgp build command """
@@ -60,6 +60,8 @@ def run(args):
                                         builder.config.verbose)
     except Exception, exc:
         logging.critical(exc)
+        if builder.config.verbose and not isinstance(exc, LGPException):
+            raise
     return 1
 
 def run_post_treatments(packages, distdir, distrib, verbose=False):
