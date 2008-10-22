@@ -148,8 +148,8 @@ def _check_bat(checker, bat_file):
 
 def run(args):
     """ Main function of lgp check command """
-    checker = Checker(args)
     try :
+        checker = Checker(args)
         if checker.config.list_checks:
             checker.list_checks()
             return 0
@@ -160,10 +160,10 @@ def run(args):
         return len(checker.get_checklist())-checker.counter
 
     except NotImplementedError, exc:
-        checker.logger.error(exc)
+        logging.error(exc)
     except Exception, exc:
-        checker.logger.critical(exc)
-        return 1
+        logging.critical(exc)
+    return 1
 
 
 class Checker(SetupInfo):
@@ -249,9 +249,14 @@ class Checker(SetupInfo):
             self.logger = logging.getLogger(func.__name__)
             self.logger.debug("description=[%s]" % func.__doc__)
             result = func(self)
-            if not result:
+            # result possible values:
+            #   zero or negative -> error
+            #   zero use a generic report function
+            #   positive -> ok (we count it)
+            if result==0 :
                 self.logger.error("%s: %s" % (func.__name__, func.__doc__))
-            self.counter += result
+            elif result>0:
+                self.counter += 1
 
     def list_checks(self):
         all_checks = self.get_checklist(all=True)
@@ -280,6 +285,7 @@ def check_pydistutils(checker):
     """check a .pydistutils.cfg file in your home firectory"""
     if isfile(os.path.join(os.environ['HOME'], '.pydistutils.cfg')):
         checker.logger.error('your ~/.pydistutils.cfg conflicts with distutils commands')
+        return 0
     return 1
 
 def check_builder(checker):
@@ -345,7 +351,6 @@ def check_run_tests(checker):
     testdirs = ('test', 'tests')
     for testdir in testdirs:
         if os.path.isdir(testdir):
-            os.chdir(testdir)
             cond_exec('pytest', confirm=True, retry=True)
             break
     return 1
