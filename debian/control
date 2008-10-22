@@ -38,7 +38,7 @@ Description: set of development tools used at Logilab
 Package: pycoverage
 Architecture: all
 Recommends: emacsen-common
-Depends: ${python:Depends}
+Depends: ${python:Depends}, logilab-packaging
 XB-Python-Version: ${python:Versions}
 Conflicts: devtools
 Replaces: devtools
