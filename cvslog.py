@@ -69,10 +69,10 @@ def print_stats(loginfo, html=0, mincommit=None):
         data['%'] = round(float(data['changed']*100)/nb_lines)
 
     if html:
-        from logilab.devtools.lib.cvsparse import LogResultHTMLPrinter
+        from logilab.devtools.vcslib.cvsparse import LogResultHTMLPrinter
         LogResultHTMLPrinter().format(results)
     else:
-        from logilab.devtools.lib.cvsparse import LogResultTextPrinter
+        from logilab.devtools.vcslib.cvsparse import LogResultTextPrinter
         LogResultTextPrinter().format(results)
         
         
