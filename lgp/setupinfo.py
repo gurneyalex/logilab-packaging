@@ -30,6 +30,7 @@ from logilab.common.shellutils import cp
 
 from logilab.devtools.lib.pkginfo import PackageInfo
 from logilab.devtools.lgp.changelog import DebianChangeLog
+from logilab.devtools.lgp.exceptions import LGPException
 
 COMMANDS = {
         "sdist" : {
@@ -141,9 +142,9 @@ class SetupInfo(Configuration):
         debian_version = DebianChangeLog('%s/%s/changelog' % 
                 (self.config.pkg_dir, self.get_debian_dir())).get_latest_revision()
         if debian_version.debian_version != '1' and self.config.orig_tarball is None:
-            raise ValueError('unable to build %s %s: --orig-tarball option is required when '\
-                             'not building the first version of the debian package'
-                             % (self.get_debian_name(), debian_version))
+            raise LGPException('unable to build %s %s: --orig-tarball option is required when '\
+                               'not building the first version of the debian package'
+                               % (self.get_debian_name(), debian_version))
         return debian_version
 
     def get_upstream_name(self):

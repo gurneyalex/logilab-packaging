@@ -6,14 +6,16 @@
 """
 __docformat__ = "restructuredtext en"
 
-class ArchitectureException(Exception):
+class LGPException(Exception):
     def __init__(self, value):
         self.value = value
     def __str__(self):
+        return self.value
+ 
+class ArchitectureException(LGPException):
+   def __str__(self):
         return "unknown architecture '%s'" % self.value
 
-class DistributionException(Exception):
-    def __init__(self, value):
-        self.value = value
+class DistributionException(LGPException):
     def __str__(self):
         return "unknown distribution '%s'" % self.value
