@@ -46,8 +46,9 @@ def run(args):
     try :
         builder = Builder(args)
         distributions = get_distributions(builder.config.distrib)
-        builder.logger.info("Compilation for the distribution(s): %s" %
-                            str(distributions))
+        if builder.config.distrib == "all":
+            builder.logger.info("Retrieved distribution(s) with 'all': %s" %
+                                str(distributions))
         architectures = get_architectures(builder.config.archi)
 
         #if builder.config.revision :
@@ -56,8 +57,11 @@ def run(args):
         for arch in architectures:
             for distrib in distributions:
                 packages = builder.compile(distrib=distrib, arch=arch)
-                builder.logger.info("New compiled packages (%s) are waiting in %s. Enjoy." %
-                                    (",".join(packages), builder.get_distrib_dir()))
+                builder.logger.info("Compiled packages: %s" % packages)
+                builder.logger.info("Debian changes file is: %s" %
+                                    builder.get_changes_file())
+                builder.logger.info("New files are waiting in %s. Enjoy." %
+                                    builder.get_distrib_dir())
                 if builder.config.post_treatments:
                     run_post_treatments(packages, builder.get_distrib_dir(), distrib,
                                         builder.config.verbose)
@@ -122,7 +126,7 @@ class Builder(SetupInfo):
     name = "lgp-build"
     options = (('dist',
                 {'type': 'string',
-                 #'default' : osp.expanduser('~/dist'),
+                 'default' : osp.expanduser('~/dist'),
                  'dest' : "dist_dir",
                  'metavar': "<directory>",
                  'help': "where to put compilation results"
@@ -131,7 +135,7 @@ class Builder(SetupInfo):
                 {'type': 'choice',
                  'choices': get_distributions() + ('all',),
                  'dest': 'distrib',
-                 #'default' : 'sid',
+                 'default' : 'sid',
                  'short': 'd',
                  'metavar': "<distribution>",
                  'help': "the distribution targetted (e.g. stable, unstable, sid). Use 'all' for all known distributions"
@@ -139,7 +143,7 @@ class Builder(SetupInfo):
                ('arch',
                 {'type': 'string',
                  'dest': 'archi',
-                 #'default' : 'current',
+                 'default' : 'current',
                  'short': 'a',
                  'metavar' : "<architecture>",
                  'help': "build for the requested debian architectures only"
@@ -178,19 +182,10 @@ class Builder(SetupInfo):
         #print self.generate_config(); sys.exit()
         self.logger = logging.getLogger(__name__)
 
-        # FIXME logilab.common.configuration doesn't like default values :-(
-        # FIXME Duplicated code between commands
-        # Be sure to have absolute path here
         if self.config.orig_tarball is not None:
             self.config.orig_tarball = osp.abspath(osp.expanduser(self.config.orig_tarball))
-        if self.config.dist_dir is None:
-            self.config.dist_dir = osp.expanduser("~/dist")
-        else:
+        if self.config.dist_dir is not None:
             self.config.dist_dir = osp.abspath(self.config.dist_dir)
-        if self.config.archi is None:
-            self.config.archi = 'current'
-        if self.config.distrib is None:
-            self.config.distrib = 'sid'
 
         # check if distribution directory exists, create it if necessary
         try:
@@ -201,6 +196,9 @@ class Builder(SetupInfo):
             pass
 
     def compile(self, distrib, arch):
+        # rewrite distrib to manage the 'all' case
+        self.config.distrib = distrib
+
         tmpdir = tempfile.mkdtemp()
 
         self.clean_repository()
@@ -277,7 +275,7 @@ class Builder(SetupInfo):
         :param:
             origpath: path to orig.tar.gz tarball
         """
-        self.logger.info("Creation of the debian source package in '%s'" % origpath)
+        self.logger.debug("Creation of the debian source package in '%s'" % origpath)
         cmd = 'dpkg-source -b %s' % origpath
         if not self.config.verbose:
             cmd += ' 1>/dev/null 2>/dev/null'

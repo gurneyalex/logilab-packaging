@@ -20,6 +20,7 @@
 import sys
 import os.path
 import os
+import glob
 import logging
 from subprocess import Popen, PIPE
 from distutils.core import run_setup
@@ -87,11 +88,11 @@ class SetupInfo(Configuration):
         self.logger = logging.getLogger()
 
         # Manage arguments (project path essentialy)
-        arguments = self.load_command_line_configuration(arguments)
+        self.arguments = self.load_command_line_configuration(arguments)
 
         # Go to package directory
         if self.config.pkg_dir is None:
-            self.config.pkg_dir = os.path.abspath(arguments and arguments[0] or os.getcwd())
+            self.config.pkg_dir = os.path.abspath(self.arguments and self.arguments[0] or os.getcwd())
         os.chdir(self.config.pkg_dir)
 
         # Load the optional config file 
@@ -178,6 +179,11 @@ class SetupInfo(Configuration):
         else:
             return self._package.get_version()
 
+    def get_changes_file(self):
+        changes = '%s_%s_*.changes' % (self.get_debian_name(), self.get_debian_version())
+        changes = glob.glob(os.path.join(self.get_distrib_dir(), changes))
+        return changes[0]
+
     def get_packages(self):
         # FIXME
         # Move the Detect native package code here in order to list packages
@@ -187,9 +193,9 @@ class SetupInfo(Configuration):
         packages = ['%s_%s_*.deb' % (line.strip(), self.get_debian_version()) for line in pipe.readlines()]
         pipe.close()
         #packages.append('%s_%s.orig.tar.gz' % (debian_name, upstream_version))
-        packages.append('%s_%s.diff.gz' % (self.get_debian_name(), self.get_debian_version()))
-        packages.append('%s_%s.dsc' % (self.get_debian_name(), self.get_debian_version()))
-        packages.append('%s_%s_*.changes' % (self.get_debian_name(), self.get_debian_version()))
+        #packages.append('%s_%s.diff.gz' % (self.get_debian_name(), self.get_debian_version()))
+        #packages.append('%s_%s.dsc' % (self.get_debian_name(), self.get_debian_version()))
+        #packages.append('%s_%s_*.changes' % (self.get_debian_name(), self.get_debian_version()))
         return packages
 
     def clean_repository(self):
@@ -201,7 +207,7 @@ class SetupInfo(Configuration):
 
         if not self.config.verbose:
             cmd += ' 1>/dev/null 2>/dev/null'
-        self.logger.info("Cleaning repository...")
+        self.logger.debug("Cleaning repository...")
         os.system(cmd)
 
     def create_orig_tarball(self, tmpdir):
