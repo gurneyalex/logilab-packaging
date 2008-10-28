@@ -153,17 +153,23 @@ def get_distributions(distrib=None):
     """
     if distrib is None:
         distrib = KNOWN_DISTRIBUTIONS.keys()
-    elif distrib == 'all':
+    elif distrib == 'known':
         distrib = KNOWN_DISTRIBUTIONS
-    else:
-        mapped = ()
-        if type(distrib) is str:
-            distrib = distrib.split(',')
-        for t in distrib:
-            if t not in KNOWN_DISTRIBUTIONS:
-                raise DistributionException(t)
-            mapped += (KNOWN_DISTRIBUTIONS[t],)
-        distrib = mapped
+        return tuple(set(distrib))
+    elif distrib == 'all':
+        directories = glob.glob(join(os.getcwd(), "debian.*"))
+        distrib = [basename(d).split('.')[1] for d in directories]
+        # 'sid' distribution should be always present
+        distrib.append('sid')
+
+    mapped = ()
+    if type(distrib) is str:
+        distrib = distrib.split(',')
+    for t in distrib:
+        if t not in KNOWN_DISTRIBUTIONS:
+            raise DistributionException(t)
+        mapped += (KNOWN_DISTRIBUTIONS[t],)
+    distrib = mapped
     return tuple(set(distrib))
 
 
