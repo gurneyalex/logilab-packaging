@@ -40,6 +40,7 @@ from logilab.devtools.lgp.utils import get_distributions, get_architectures
 from logilab.devtools.lgp.utils import confirm, cond_exec
 from logilab.devtools.lgp.exceptions import LGPException
 
+
 def run(args):
     """ Main function of lgp build command """
     try :
@@ -60,10 +61,12 @@ def run(args):
                 if builder.config.post_treatments:
                     run_post_treatments(packages, builder.get_distrib_dir(), distrib,
                                         builder.config.verbose)
+    except LGPException, exc:
+        logging.critical(exc)
+        if builder.config.verbose:
+            raise
     except Exception, exc:
         logging.critical(exc)
-        if builder.config.verbose and not isinstance(exc, LGPException):
-            raise
     return 1
 
 def run_post_treatments(packages, distdir, distrib, verbose=False):
@@ -129,13 +132,15 @@ class Builder(SetupInfo):
                  'choices': get_distributions() + ('all',),
                  'dest': 'distrib',
                  #'default' : 'sid',
-                 'metavar' : "<distribution>",
+                 'short': 'd',
+                 'metavar': "<distribution>",
                  'help': "the distribution targetted (e.g. stable, unstable, sid). Use 'all' for all known distributions"
                 }),
                ('arch',
                 {'type': 'string',
                  'dest': 'archi',
                  #'default' : 'current',
+                 'short': 'a',
                  'metavar' : "<architecture>",
                  'help': "build for the requested debian architectures only"
                 }),

@@ -54,6 +54,7 @@ class SetupInfo(Configuration):
                ('verbose',
                 {'action': 'store_true',
                  'default': False,
+                 'short': 'v',
                  'dest' : "verbose",
                  'help': "run silently without confirmation"
                 }),
@@ -61,6 +62,7 @@ class SetupInfo(Configuration):
                 {'type': 'string',
                  #'default' : os.getcwd(),
                  'dest': "pkg_dir",
+                 'short': 'p',
                  'metavar' : "<project directory>",
                  'help': "set a specific project directory"
                 }),
@@ -68,6 +70,7 @@ class SetupInfo(Configuration):
                 {'type': 'string',
                  'default' : None,
                  'dest': "revision",
+                 'short': 'r',
                  'metavar' : "<scm revision>",
                  'help': "set a specific revision or tag to build the debian package"
                 }),
@@ -103,7 +106,7 @@ class SetupInfo(Configuration):
             self._package_format = 'setuptools'
             self._package = run_setup('./setup.py', None, stop_after="init")
         else:
-            raise Exception('no valid setup file')
+            raise Exception('no valid setup file (setup.py or setup.mk)')
         if self.config.verbose:
             self.logger.setLevel(logging.DEBUG)
         else:
