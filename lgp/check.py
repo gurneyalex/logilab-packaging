@@ -63,7 +63,7 @@ CHECKS = { 'default'    : ['debian_dir', 'debian_rules', 'debian_copying',
                            'debian_changelog', 'package_info', 'readme',
                            'changelog', 'bin', 'tests_directory', 'setup_file',
                            'repository', 'copying', 'documentation', 'debsign',
-                           'homepage', 'builder'],
+                           'homepage', 'builder', 'keyrings'],
            'pkginfo'    : ['release_number', 'manifest_in', 'announce',
                            'include_dirs', 'scripts', 'pydistutils'],
            'setuptools' : ['scripts', 'pydistutils'],
@@ -273,6 +273,13 @@ class Checker(SetupInfo):
 # Check functions collection starts here
 #
 # ======================================
+def check_keyrings(checker):
+    """check the mandatory keyrings for debian and ubuntu in /usr/share/keyrings/"""
+    if isfile("/usr/share/keyrings/ubuntu-archive-keyring.gpg") and \
+       isfile("/usr/share/keyrings/debian-archive-keyring.gpg"):
+        return 1
+    return 0
+
 def check_pydistutils(checker):
     """check a .pydistutils.cfg file in your home firectory"""
     if isfile(os.path.join(os.environ['HOME'], '.pydistutils.cfg')):
