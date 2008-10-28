@@ -8,3 +8,4 @@
 - vérifier environnement setup.py (~/.pydistutils.cfg pour certains format pkginfo/setuptools)
 - génération de la documentation (problème dépendance à l'install, -> trouver une autre solution)
 - si une commande externe est utilisé, il faut l'afficher en sortie pour faciliter le débogage (cas des post-treatments)
+- lgp check seulement sur debian/ pas sur les autres distributions disponibles

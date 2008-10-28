@@ -53,6 +53,7 @@ from logilab.devtools.lgp.changelog import ChangeLog, ChangeLogNotFound, \
 from logilab.devtools.lgp.setupinfo import SetupInfo
 from logilab.devtools.lgp.utils import get_distributions, get_architectures
 from logilab.devtools.lgp.utils import cond_exec, confirm
+from logilab.devtools.lgp.exceptions import LGPException
 
 
 MANDATORY_SETUP_FIELDS = ('name', 'version', 'author', 'author_email', 'license',
@@ -161,6 +162,10 @@ def run(args):
 
     except NotImplementedError, exc:
         logging.error(exc)
+    except LGPException, exc:
+        logging.critical(exc)
+        if checker.config.verbose:
+            raise
     except Exception, exc:
         logging.critical(exc)
     return 1
@@ -174,18 +179,11 @@ class Checker(SetupInfo):
     checklist = []
     counter = 0
     name = "lgp-check"
-    options = (('distrib',
-                {'type': 'choice',
-                 'choices': get_distributions(),
-                 'dest': 'distrib',
-                 #'default' : 'sid',
-                 'metavar' : "<distribution>",
-                 'help': "the distribution targetted (e.g. etch, lenny, sid, dapper...). Use 'all' for all known distributions"
-                }),
-               ('include',
+    options = (('include',
                 {'type': 'csv',
                  'dest': 'include_checks',
                  #'default' : [],
+                 'short': 'i',
                  'metavar' : "<comma separated names of check functions>",
                  'help': "force the inclusion of other check functions"
                 }),
@@ -193,6 +191,7 @@ class Checker(SetupInfo):
                 {'type': 'csv',
                  'dest': 'exclude_checks',
                  #'default' : [],
+                 'short': 'e',
                  'metavar' : "<comma separated names of check functions>",
                  'help': "force the exclusion of other check functions"
                 }),
@@ -200,30 +199,23 @@ class Checker(SetupInfo):
                 {'action': 'store_true',
                  'default': False,
                  'dest' : "list_checks",
+                 'short': 'l',
                  'help': "return a list of all available check functions"
                 }),
                ('only',
                 {'action': 'store_true',
                  'default': False,
                  'dest' : "only_one_check",
+                 'short': 'o',
                  'help': "run only one single test"
-                }),
-               ('try-to-repare',
-                {'action': 'store_true',
-                 'default': False,
-                 'dest' : "try_to_fix",
-                 'help': "try to fix detected problems (not available)"
                 }),
               ),
 
     def __init__(self, args):
         # Retrieve upstream information
         super(Checker, self).__init__(arguments=args, options=self.options, usage=__doc__)
-        # FIXME logilab.common.configuration doesn't like default values :-(
-        # FIXME Duplicated code between commands
-        # Be sure to have absolute path here
-        if self.config.distrib is None:
-            self.config.distrib = 'sid'
+        # We force debian check only for 'sid' distribution
+        self.config.distrib = 'sid'
         self.logger = logging.getLogger(__name__)
 
     def get_checklist(self, all=False):
@@ -328,8 +320,6 @@ def check_readme(checker):
 
 def check_changelog(checker):
     """check the upstream ChangeLog """
-    # TODO --try-to-fix
-    # see preparedist.py:close_changelog
     if not isfile(CHANGEFILE):
         return 0
     cmd = "grep -E '^[[:space:]]+--' %s" % CHANGEFILE
@@ -411,7 +401,6 @@ def check_documentation(checker):
         # FIXME
         # should be a clean target in setup.mk for example
         # and os.path.isfile('doc/Makefile') or os.path.isfile('doc/makefile'):
-        # TODO --try-to-fix
         #if confirm('build documentation ?'):
         #os.chdir('doc')
         #status = cond_exec('make', retry=True)
