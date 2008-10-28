@@ -371,12 +371,17 @@ def check_homepage(checker):
     status, _ = commands.getstatusoutput('grep ^Homepage debian/control')
     if not status:
         status, _ = commands.getstatusoutput('grep "Homepage: http://www.logilab.org/projects" debian/control')
+        if not status:
+            checker.logger.warn('rename "projects" to "project" in the "Homepage:" value in debian/control')
+    else:
+        checker.logger.error('add a valid "Homepage:" field in debian/control')
     return status
 
 def check_announce(checker):
     """check the announce.txt file """
-    # TODO --try-to-fix
-    return isfile('announce.txt')
+    if not isfile('announce.txt'):
+        checker.logger.warn('announce.txt not present')
+    return 1
 
 def check_bin(checker):
     """check executable script files in bin/ """
