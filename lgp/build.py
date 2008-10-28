@@ -45,6 +45,8 @@ def run(args):
     try :
         builder = Builder(args)
         distributions = get_distributions(builder.config.distrib)
+        builder.logger.info("Compilation for the distribution(s): %s" %
+                            str(distributions))
         architectures = get_architectures(builder.config.archi)
 
         #if builder.config.revision :
@@ -124,7 +126,7 @@ class Builder(SetupInfo):
                 }),
                ('distrib',
                 {'type': 'choice',
-                 'choices': get_distributions(),
+                 'choices': get_distributions() + ('all',),
                  'dest': 'distrib',
                  #'default' : 'sid',
                  'metavar' : "<distribution>",
