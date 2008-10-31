@@ -147,7 +147,9 @@ class SetupInfo(Configuration):
                 (self.config.pkg_dir, self.get_debian_dir())).get_latest_revision()
         if debian_version.debian_version != '1' and self.config.orig_tarball is None:
             raise LGPException('unable to build %s %s: --orig-tarball option is required when '\
-                               'not building the first version of the debian package'
+                               'not building the first version of the debian package.\n' \
+                               'If you haven\'t the original tarball version, ' \
+                               'please do an apt-get source of the source package.'
                                % (self.get_debian_name(), debian_version))
         return debian_version
 
@@ -215,7 +217,7 @@ class SetupInfo(Configuration):
         """
         tarball = os.path.join(tmpdir, '%s_%s.orig.tar.gz' %
                     (self.get_upstream_name(), self.get_upstream_version()))
-        if self.config.orig_tarball is None:
+        if self.config.orig_tarball is None and self.get_debian_version():
             if self._package_format in COMMANDS["sdist"]:
                 cmd = COMMANDS["sdist"][self._package_format] % self.config.dist_dir
             else:
