@@ -239,7 +239,6 @@ class Checker(SetupInfo):
     def start_checks(self):
         for func in self.get_checklist():
             self.logger = logging.getLogger(func.__name__)
-            self.logger.debug("description=[%s]" % func.__doc__)
             result = func(self)
             # result possible values:
             #   zero or negative -> error
@@ -313,11 +312,17 @@ def check_debian_copying(checker):
     return os.path.isfile(debian_dir + '/copyright')
 
 def check_debian_changelog(checker):
-    """check debian*/changelog file """
+    """your debian changelog is not parsable"""
     debian_dir = checker.get_debian_dir()
-    if os.path.isfile(debian_dir + '/changelog'):
+    CHANGELOG = debian_dir + '/changelog'
+    if os.path.isfile(CHANGELOG):
         cmd = "dpkg-parsechangelog >/dev/null"
         _, output = commands.getstatusoutput(cmd)
+        cmd = "grep DISTRIBUTION %s" % CHANGELOG
+        status, _ = commands.getstatusoutput(cmd)
+        if status:
+            checker.logger.warn("use the constant DISTRIBUTION in changelog "\
+                                "file in case of multi-distribution")
         if output: return 0
     return 1
 
