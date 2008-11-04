@@ -196,6 +196,11 @@ class Builder(SetupInfo):
             pass
 
     def compile(self, distrib, arch):
+        stdout, stderr = None, None
+        if not self.config.verbose:
+            stdout = open(os.devnull,"w")
+            stderr = open(os.devnull,"w")
+
         # rewrite distrib to manage the 'all' case
         self.config.distrib = distrib
 
@@ -227,6 +232,16 @@ class Builder(SetupInfo):
             export(osp.join(self.config.pkg_dir, debiandir), osp.join(origpath, 'debian/'),
                    verbose=self.config.verbose)
 
+        # update changelog if DISTRIBUTION is present
+        # debchange --release-heuristic changelog --release --distribution %s --force-distribution "New upstream release"
+        cmd = 'sed -i s/DISTRIBUTION/%s/ %s' \
+              % (distrib, os.path.join(origpath, 'debian/changelog'))
+        try:
+            check_call(cmd.split(), stdout=stdout, stderr=stderr)
+        except (OSError, CalledProcessError), err:
+            self.logger.critical(err)
+            sys.exit(cmd)
+
         # build the package using vbuild or default to fakeroot
         debuilder = os.environ.get('DEBUILDER', 'vbuild')
         self.logger.debug("Use builder: '%s'" % debuilder)
@@ -246,10 +261,6 @@ class Builder(SetupInfo):
             #cmd += ' --debbuildopts %s' % pdebuild_options
         else:
             cmd = debuilder
-        stdout, stderr = None, None
-        if not self.config.verbose:
-            stdout = open(os.devnull,"w")
-            stderr = open(os.devnull,"w")
         try:
             check_call(cmd.split(), stdout=stdout, stderr=stderr)
         except (OSError, CalledProcessError), err:
