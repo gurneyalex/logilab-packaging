@@ -245,7 +245,7 @@ class Checker(SetupInfo):
             #   zero use a generic report function
             #   positive -> ok (we count it)
             if result==0 :
-                self.logger.error("%s: %s" % (func.__name__, func.__doc__))
+                self.logger.error(func.__doc__)
             elif result>0:
                 self.counter += 1
 
@@ -315,16 +315,23 @@ def check_debian_changelog(checker):
     """your debian changelog is not parsable"""
     debian_dir = checker.get_debian_dir()
     CHANGELOG = debian_dir + '/changelog'
+    status= 1
     if os.path.isfile(CHANGELOG):
+        cmd = "sed -ne '/UNRELEASED/p' debian/changelog"
+        _, output = commands.getstatusoutput(cmd)
+        if output:
+            status = 0
+            checker.logger.error('UNRELEASED distribution(s) in debian changelog:')
+            print output
         cmd = "dpkg-parsechangelog >/dev/null"
         _, output = commands.getstatusoutput(cmd)
+        if output:
+            status = 0
         cmd = "grep DISTRIBUTION %s" % CHANGELOG
-        status, _ = commands.getstatusoutput(cmd)
-        if status:
-            checker.logger.warn("use the constant DISTRIBUTION in changelog "\
-                                "file in case of multi-distribution")
-        if output: return 0
-    return 1
+        if commands.getstatusoutput(cmd)[0]:
+            checker.logger.warn("use the constant DISTRIBUTION "\
+                                "in case of multi-distributions")
+    return status
 
 def check_readme(checker):
     """check the upstream README file """
