@@ -1,6 +1,0 @@
-logilab-devtools (0.12.0-1ubuntu1) unstable; urgency=low
-
-  * adapt control file to Ubuntu 8.04 Hardy has only debhelper 6.0.4
-
- -- Nicolas Chauvat <nicolas.chauvat@logilab.fr>  Wed, 22 Oct 2008 21:02:19 +0200
-
