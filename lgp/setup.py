@@ -77,10 +77,10 @@ class Setup(SetupInfo):
                 {'type': 'choice',
                  'choices': get_distributions() + ('all',),
                  'dest': 'distrib',
-                 'default' : 'sid',
                  'short': 'd',
                  'metavar': "<distribution>",
-                 'help': "the distribution targetted (e.g. stable, unstable, sid). Use 'all' for all known distributions"
+                 'help': "particular distribution to set up (by default create %s)"
+                         % ",".join(get_distributions())
                 }),
                ('command',
                 {'type': 'choice',

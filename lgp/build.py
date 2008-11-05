@@ -115,8 +115,10 @@ def run_post_treatments(packages, distdir, distrib, verbose=False):
         for package in packages:
             print separator % package
             if package.endswith('.deb'):
-                cond_exec('sudo piuparts -v -d %s -b /opt/buildd/%s.tgz %s/%s' %
-                          (distrib, distrib, distdir, package))
+                if not cond_exec('sudo piuparts -v -d %s -b /opt/buildd/%s.tgz %s/%s' %
+                                 (distrib, distrib, distdir, package)):
+                    self.logger.error("piuparts exits with error")
+
 
 class Builder(SetupInfo):
     """ Debian builder class
