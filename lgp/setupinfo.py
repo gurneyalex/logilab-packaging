@@ -87,6 +87,9 @@ class SetupInfo(Configuration):
         logging.getLogger().addHandler(console)
         self.logger = logging.getLogger()
 
+        # TODO
+        #self.load_file_configuration('etc/lgp/rc')
+
         # Manage arguments (project path essentialy)
         self.arguments = self.load_command_line_configuration(arguments)
 

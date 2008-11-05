@@ -48,3 +48,4 @@ include logging.conf
 include doc/*.html
 
 include man/*.1
+recursive-include etc *

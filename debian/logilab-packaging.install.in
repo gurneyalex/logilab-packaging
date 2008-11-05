@@ -8,3 +8,6 @@ debian/tmp/usr/bin/setupchroot
 debian/tmp/usr/bin/vbuild
 debian/tmp/usr/bin/update_gettext
 debian/tmp/usr/bin/changelog
+etc/lgp/pbuilder/debian
+etc/lgp/pbuilder/ubuntu
+
