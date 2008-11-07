@@ -15,7 +15,9 @@ BUILDPLACE=/var/cache/pbuilder/build/
 
 MIRRORSITE=http://fr.archive.ubuntu.com/ubuntu 
 
-OTHERMIRROR="deb http://intranet.logilab.fr/debian/logilab-private-${DISTRIBUTION}/debian ${DISTRIBUTION}/ |deb http://security.ubuntu.com/ubuntu ${DISTRIBUTION}-security main restricted | deb http://fr.archive.ubuntu.com/ubuntu/ ${DISTRIBUTION}-updates main restricted"
+# [EDIT HERE] In this variable, add your personal repositories in a sources.list format
+# They will be used in the distribution image to fetch developped packages
+OTHERMIRROR="deb http://localhost/dists/private ${DISTRIBUTION} |deb http://localhost/dists/public ${DISTRIBUTION} |deb http://security.ubuntu.com/ubuntu ${DISTRIBUTION}-security main restricted | deb http://fr.archive.ubuntu.com/ubuntu/ ${DISTRIBUTION}-updates main restricted"
 
 #export http_proxy=http://your-proxy:8080/
 USEPROC=yes
