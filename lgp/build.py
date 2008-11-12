@@ -107,7 +107,7 @@ def run_post_treatments(packages, distdir, distrib, verbose=False):
             for package in packages:
                 if package.endswith('.changes'):
                     print separator % package
-                    cond_exec('%s -vIi %s/%s' % (checker, distdir, package))
+                    cond_exec('%s -vi %s/%s' % (checker, distdir, package))
 
     # FIXME piuparts that doesn't work automatically for all of our packages
     # FIXME manage correctly options.verbose and options.keep_tmp by piuparts
@@ -137,10 +137,10 @@ class Builder(SetupInfo):
                 {'type': 'choice',
                  'choices': get_distributions() + ('all',),
                  'dest': 'distrib',
-                 'default' : 'sid',
+                 'default' : 'unstable',
                  'short': 'd',
                  'metavar': "<distribution>",
-                 'help': "the distribution targetted (e.g. stable, unstable, sid). Use 'all' for all known distributions"
+                 'help': "the distribution targetted (e.g. stable, unstable). Use 'all' for all known distributions"
                 }),
                ('arch',
                 {'type': 'string',
@@ -203,7 +203,7 @@ class Builder(SetupInfo):
             stdout = open(os.devnull,"w")
             stderr = open(os.devnull,"w")
 
-        # rewrite distrib to manage the 'all' case
+        # rewrite distrib to manage the 'all' case in run()
         self.config.distrib = distrib
 
         tmpdir = tempfile.mkdtemp()
@@ -225,7 +225,7 @@ class Builder(SetupInfo):
         origpath = os.path.join(tmpdir, tarball)
 
         # copying debian_dir directory into tmp build depending of the target distribution
-        # in all cases, we copy the debian directory of the sid version
+        # in all cases, we copy the debian directory of the unstable version
         # DOC If a file should not be included, touch an empty file in the overlay directory
         export(osp.join(self.config.pkg_dir, 'debian'), osp.join(origpath, 'debian'))
         debiandir = self.get_debian_dir()
@@ -236,8 +236,14 @@ class Builder(SetupInfo):
 
         # update changelog if DISTRIBUTION is present
         # debchange --release-heuristic changelog --release --distribution %s --force-distribution "New upstream release"
+        # FIXME quickfix for lintian error
+        # FIXME #6551: Fix the default distribution name
+        if distrib == 'sid':
+            distrib2 = 'unstable'
+        else:
+            distrib2 = distrib
         cmd = 'sed -i s/DISTRIBUTION/%s/ %s' \
-              % (distrib, os.path.join(origpath, 'debian/changelog'))
+              % (distrib2, os.path.join(origpath, 'debian/changelog'))
         try:
             check_call(cmd.split(), stdout=stdout, stderr=stderr)
         except (OSError, CalledProcessError), err:

@@ -35,6 +35,7 @@ PUBLIC_RGX = re.compile('PUBLIC\s+"-//(?P<group>.*)//DTD (?P<pubid>.*)//(?P<lang
 # Find a way to retrieve dynamically
 KNOWN_DISTRIBUTIONS = {'etch': 'etch',
                        'stable': 'etch',
+                       'unstable': 'sid',
                        'lenny': 'lenny',
                        'testing': 'lenny',
                        'sid': 'sid',
@@ -153,14 +154,15 @@ def get_distributions(distrib=None):
     """
     if distrib is None:
         distrib = KNOWN_DISTRIBUTIONS.keys()
+        return tuple(set(distrib))
     elif distrib == 'known':
         distrib = KNOWN_DISTRIBUTIONS
         return tuple(set(distrib))
     elif distrib == 'all':
         directories = glob.glob(join(os.getcwd(), "debian.*"))
         distrib = [basename(d).split('.')[1] for d in directories]
-        # 'sid' distribution should be always present
-        distrib.append('sid')
+        # 'unstable' distribution should be always present
+        distrib.append('unstable')
 
     mapped = ()
     if type(distrib) is str:

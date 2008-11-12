@@ -214,8 +214,8 @@ class Checker(SetupInfo):
     def __init__(self, args):
         # Retrieve upstream information
         super(Checker, self).__init__(arguments=args, options=self.options, usage=__doc__)
-        # We force debian check only for 'sid' distribution
-        self.config.distrib = 'sid'
+        # We force debian check only for 'unstable' distribution
+        self.config.distrib = 'unstable'
         self.logger = logging.getLogger(__name__)
 
     def get_checklist(self, all=False):
