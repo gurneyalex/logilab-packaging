@@ -132,10 +132,10 @@ class SetupInfo(Configuration):
         """ get the dynamic debian directory for the configuration override
 
         The convention is :
-        - 'debian/' is for sid distribution
+        - 'debian/' is for unstable distribution
         - 'debian.$OTHER/' id for $OTHER distribution and if it exists
         """
-        if self.config.distrib != 'sid':
+        if self.config.distrib != 'unstable':
             debiandir = 'debian.%s/' % self.config.distrib
             if os.path.isdir(os.path.join(self.config.pkg_dir, debiandir)):
                 return debiandir
@@ -205,7 +205,7 @@ class SetupInfo(Configuration):
         #packages.append('%s_%s.orig.tar.gz' % (debian_name, upstream_version))
         #packages.append('%s_%s.diff.gz' % (self.get_debian_name(), self.get_debian_version()))
         #packages.append('%s_%s.dsc' % (self.get_debian_name(), self.get_debian_version()))
-        #packages.append('%s_%s_*.changes' % (self.get_debian_name(), self.get_debian_version()))
+        packages.append('%s_%s_*.changes' % (self.get_debian_name(), self.get_debian_version()))
         return packages
 
     def clean_repository(self):
