@@ -50,7 +50,7 @@ class SetupInfo(Configuration):
     """ a setup class to handle several package setup information """
     _package_format = None
 
-    def __init__(self, arguments, options, **args):
+    def __init__(self, arguments, options=None, **args):
         self.options = (
                ('verbose',
                 {'action': 'store_true',
@@ -76,8 +76,9 @@ class SetupInfo(Configuration):
                  'help': "set a specific revision or tag to build the debian package"
                 }),
                )
-        for opt in options:
-            self.options += opt
+        if options:
+            for opt in options:
+                self.options += opt
         super(SetupInfo, self).__init__(options=self.options, **args)
 
         # Instanciate the default logger configuration
