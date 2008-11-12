@@ -22,6 +22,7 @@ import os.path
 import os
 import glob
 import logging
+import commands
 from subprocess import Popen, PIPE
 from distutils.core import run_setup
 
@@ -30,7 +31,6 @@ from logilab.common.logging_ext import ColorFormatter
 from logilab.common.shellutils import cp
 
 from logilab.devtools.lib.pkginfo import PackageInfo
-from logilab.devtools.lgp.changelog import DebianChangeLog
 from logilab.devtools.lgp.exceptions import LGPException
 
 COMMANDS = {
@@ -133,10 +133,10 @@ class SetupInfo(Configuration):
         """ get the dynamic debian directory for the configuration override
 
         The convention is :
-        - 'debian/' is for sid distribution
+        - 'debian/' is for unstable distribution
         - 'debian.$OTHER/' id for $OTHER distribution and if it exists
         """
-        if self.config.distrib != 'sid':
+        if self.config.distrib != 'unstable':
             debiandir = 'debian.%s/' % self.config.distrib
             if os.path.isdir(os.path.join(self.config.pkg_dir, debiandir)):
                 return debiandir
@@ -147,15 +147,20 @@ class SetupInfo(Configuration):
 
             Format of Debian package: <sourcepackage>_<upstreamversion>-<debian_version>
         """
-        debian_version = DebianChangeLog('%s/%s/changelog' % 
-                (self.config.pkg_dir, self.get_debian_dir())).get_latest_revision()
-        if debian_version.debian_version != '1' and self.config.orig_tarball is None:
-            raise LGPException('unable to build %s %s: --orig-tarball option is required when '\
-                               'not building the first version of the debian package.\n' \
-                               'If you haven\'t the original tarball version, ' \
-                               'please do an apt-get source of the source package.'
-                               % (self.get_debian_name(), debian_version))
-        return debian_version
+        cwd = os.getcwd()
+        os.chdir(self.config.pkg_dir)
+        try:
+            status, output = commands.getstatusoutput('dpkg-parsechangelog')
+            if status != 0:
+                msg = 'dpkg-parsechangelog exited with status %s' % status
+                raise LgpException(msg)
+            for line in output.split('\n'):
+                line = line.strip()
+                if line and line.startswith('Version:'):
+                    return line.split(' ', 1)[1].strip()
+            raise LGPException('Debian version not found')
+        finally:
+            os.chdir(cwd)
 
     def get_upstream_name(self):
         if self._package_format == 'makefile':
@@ -201,7 +206,7 @@ class SetupInfo(Configuration):
         #packages.append('%s_%s.orig.tar.gz' % (debian_name, upstream_version))
         #packages.append('%s_%s.diff.gz' % (self.get_debian_name(), self.get_debian_version()))
         #packages.append('%s_%s.dsc' % (self.get_debian_name(), self.get_debian_version()))
-        #packages.append('%s_%s_*.changes' % (self.get_debian_name(), self.get_debian_version()))
+        packages.append('%s_%s_*.changes' % (self.get_debian_name(), self.get_debian_version()))
         return packages
 
     def clean_repository(self):
@@ -221,7 +226,14 @@ class SetupInfo(Configuration):
         """
         tarball = os.path.join(tmpdir, '%s_%s.orig.tar.gz' %
                     (self.get_upstream_name(), self.get_upstream_version()))
-        if self.config.orig_tarball is None and self.get_debian_version():
+        if self.config.orig_tarball is None:
+            debian_version = self.get_debian_version()
+            if debian_version[-2:] != '-1':
+                raise LGPException('unable to build %s %s: --orig-tarball option is required when '\
+                                   'not building the first version of the debian package.\n' \
+                                   'If you haven\'t the original tarball version, ' \
+                                   'please do an apt-get source of the source package.'
+                                    % (self.get_debian_name(), debian_version))
             if self._package_format in COMMANDS["sdist"]:
                 cmd = COMMANDS["sdist"][self._package_format] % self.config.dist_dir
             else:
