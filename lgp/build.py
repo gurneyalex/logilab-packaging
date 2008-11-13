@@ -71,6 +71,8 @@ def run(args):
             raise
     except Exception, exc:
         logging.critical(exc)
+        if builder.config.verbose:
+            raise
     return 1
 
 def run_post_treatments(packages, distdir, distrib, verbose=False):
