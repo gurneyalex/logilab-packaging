@@ -57,7 +57,7 @@ def run(args):
         for arch in architectures:
             for distrib in distributions:
                 packages = builder.compile(distrib=distrib, arch=arch)
-                builder.logger.info("Compiled packages: %s" % packages)
+                builder.logger.info("Compiled packages: %s." % ', '.join(packages))
                 builder.logger.info("Debian changes file is: %s" %
                                     builder.get_changes_file())
                 builder.logger.info("New files are waiting in %s. Enjoy." %
@@ -255,7 +255,7 @@ class Builder(SetupInfo):
         # build the package using vbuild or default to fakeroot
         debuilder = os.environ.get('DEBUILDER', 'vbuild')
         self.logger.debug("Use builder: '%s'" % debuilder)
-        if debuilder ==  'vbuild':
+        if debuilder.endswith('vbuild'):
             self.make_source_package(origpath)
             dscfile = '%s_%s.dsc' % (self.get_debian_name(), self.get_debian_version())
             if osp.isfile(dscfile):
@@ -265,17 +265,24 @@ class Builder(SetupInfo):
                 sys.exit(1)
             self.logger.info("Building debian package for distribution '%s' and arch '%s'"
                              % (distrib, arch))
-            cmd = 'vbuild -d %s -a %s --result %s %s'
-            cmd %= (distrib, arch, self.get_distrib_dir(), osp.join(tmpdir, dscfile))
+            cmd = '%s -d %s -a %s --result %s %s'
+            cmd %= (debuilder, distrib, arch, self.get_distrib_dir(), osp.join(tmpdir, dscfile))
             # TODO
             #cmd += ' --debbuildopts %s' % pdebuild_options
         else:
             cmd = debuilder
         try:
+            self.logger.debug(cmd)
             check_call(cmd.split(), stdout=stdout, stderr=stderr)
         except (OSError, CalledProcessError), err:
             self.logger.critical(err)
             sys.exit(cmd)
+
+        # double check vbuild results
+        for pack in self.get_packages():
+            fullpath = os.path.join(self.get_distrib_dir(),pack)
+            if not glob.glob(fullpath):
+                raise Exception('vbuild ran, but %s not found' % fullpath) 
 
         # clean tmpdir
         if not self.config.keep_tmpdir:
