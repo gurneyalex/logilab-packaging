@@ -1,3 +1,9 @@
+logilab-devtools (0.12.2-1) DISTRIBUTION; urgency=low
+
+  * new upstream release
+
+ -- Nicolas Chauvat <nicolas.chauvat@logilab.fr>  Wed, 14 Nov 2008 00:13:39 +0100
+
 logilab-devtools (0.12.1-1) DISTRIBUTION; urgency=low
 
   * New upstream release.
