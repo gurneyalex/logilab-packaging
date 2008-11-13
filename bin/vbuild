@@ -23,6 +23,7 @@ import sys
 import os
 import os.path as osp
 import subprocess
+import shutil
 
 def test_arch(target_arch):
     """ Return True if the arch of localhost is target_arch """
@@ -31,6 +32,8 @@ def test_arch(target_arch):
 
 def build(source_control, distribution, arch, resultdir, basetgz,
           binary_arch=False, orig_tarball=None):
+
+    srcdir = osp.dirname(source_control)
 
     substitutions = {'distrib': distribution,
                      'arch': arch,}
@@ -41,13 +44,17 @@ def build(source_control, distribution, arch, resultdir, basetgz,
         os.makedirs(resultdir)
 
     cmd = ['sudo', 'pbuilder', '--build',
-           '--buildresult', resultdir,
+           '--buildresult', srcdir,
            '--basetgz', basetgz,
            source_control]
     if binary_arch:
         cmd.insert(-2, '--binary-arch')
 
-    return subprocess.check_call(cmd)
+    result = subprocess.check_call(cmd)
+    for filename in os.listdir(srcdir): # FIXME double-check condition below
+        if osp.isfile(filename):
+            shutil.copy(osp.join(srcdir, filename), resultdir)
+    return result
 
 
 def run():
@@ -67,7 +74,7 @@ def run():
                              '[default: %default]',
                       default = '/opt/buildd/%(distrib)s')
     parser.add_option('--basetgz',
-                      help='path to the base tar.gz archive'
+                      help='path to the base tar.gz archive. '
                            'The strings "%(distrib)s" and "%(arch)s" will be substituted '
                            '[default: %default]',
                       default = '/opt/buildd/%(distrib)s.tgz')
