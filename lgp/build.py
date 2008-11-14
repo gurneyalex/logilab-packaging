@@ -130,7 +130,7 @@ class Builder(SetupInfo):
     name = "lgp-build"
     options = (('dist',
                 {'type': 'string',
-                 'default' : osp.expanduser('~/dist'),
+                 'default' : osp.expanduser('~/dists'),
                  'dest' : "dist_dir",
                  'metavar': "<directory>",
                  'help': "where to put compilation results"
