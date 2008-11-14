@@ -246,6 +246,7 @@ class SetupInfo(Configuration):
 
             upstream_tarball = os.path.join(self.config.dist_dir, '%s-%s.tar.gz' %
                 (self.get_upstream_name(), self.get_upstream_version()))
+            self.logger.debug("Build new source archive '%s'" % upstream_tarball)
         else:
             upstream_tarball = self.config.orig_tarball
 
