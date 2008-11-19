@@ -1,0 +1,3 @@
+deb http://security.ubuntu.com/ubuntu ${DIST}-security main restricted
+deb http://fr.archive.ubuntu.com/ubuntu/ ${DIST}-updates main restricted
+
