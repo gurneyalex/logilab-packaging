@@ -153,7 +153,7 @@ class SetupInfo(Configuration):
             status, output = commands.getstatusoutput('dpkg-parsechangelog')
             if status != 0:
                 msg = 'dpkg-parsechangelog exited with status %s' % status
-                raise LgpException(msg)
+                raise LGPException(msg)
             for line in output.split('\n'):
                 line = line.strip()
                 if line and line.startswith('Version:'):
@@ -212,14 +212,12 @@ class SetupInfo(Configuration):
     def clean_repository(self):
         if self._package_format in COMMANDS["clean"]:
             cmd = COMMANDS["clean"][self._package_format]
+            if not self.config.verbose:
+                cmd += ' 1>/dev/null 2>/dev/null'
+            self.logger.debug("Cleaning repository...")
+            os.system(cmd)
         else:
-            self.logger.error("No way to clean the repository...")
-            sys.exit(1)
-
-        if not self.config.verbose:
-            cmd += ' 1>/dev/null 2>/dev/null'
-        self.logger.debug("Cleaning repository...")
-        os.system(cmd)
+            self.logger.error("no way to clean the repository...")
 
     def create_orig_tarball(self, tmpdir):
         """ Create an origin tarball 
@@ -237,8 +235,7 @@ class SetupInfo(Configuration):
             if self._package_format in COMMANDS["sdist"]:
                 cmd = COMMANDS["sdist"][self._package_format] % self.config.dist_dir
             else:
-                self.logger.critical("No way to create the source distribution")
-                sys.exit(1)
+                raise LGPException("no way to create the source distribution")
 
             if not self.config.verbose:
                 cmd += ' 1>/dev/null 2>/dev/null'
@@ -251,21 +248,10 @@ class SetupInfo(Configuration):
             upstream_tarball = self.config.orig_tarball
 
         # TODO check the upstream version with the new tarball 
+        if not os.path.isfile(upstream_tarball):
+            raise LGPException("source distribution wasn't properly built")
         self.logger.info("Use '%s' as original source archive (tarball)" % upstream_tarball)
         self.logger.debug("Copy '%s' to '%s'" % (upstream_tarball, tarball))
         cp(upstream_tarball, tarball)
 
         return tarball
-
-    #def move_result(self, dist_dir, info, debuilder):
-    #    packages = get_packages_list(info)
-    #    binary_packages = [pkg for pkg in packages if pkg.endswith('.deb')]
-    #    (upstream_name, upstream_version, debian_name, debian_version) = info
-    #    if debuilder.startswith('vbuild'):
-    #        pass
-    #    else: # fakeroot
-    #        for package in binary_packages:
-    #            mv('../%s*' % package, dist_dir)
-    #        #mv('../%s_%s.orig.tar.gz' % (debian_name, upstream_version), dist_dir)
-    #        #mv('../%s-%s.tar.gz' % (upstream_name, upstream_version), dist_dir)
-
