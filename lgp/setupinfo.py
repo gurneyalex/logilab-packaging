@@ -23,8 +23,8 @@ import os
 import glob
 import logging
 import commands
-from subprocess import Popen, PIPE
 from distutils.core import run_setup
+from subprocess import Popen, PIPE, check_call, CalledProcessError
 
 from logilab.common.configuration import Configuration
 from logilab.common.logging_ext import ColorFormatter
@@ -87,6 +87,12 @@ class SetupInfo(Configuration):
         console.setFormatter(ColorFormatter('%(levelname)1.1s:%(name)s: %(message)s'))
         logging.getLogger().addHandler(console)
         self.logger = logging.getLogger()
+
+        # Redirect subprocesses stdout output only in case of verbose mode
+        # We always allow subprocesses to print on the stderr (more convenient)
+        if not self.config.verbose:
+            sys.stdout = open(os.devnull,"w")
+            #sys.stderr = open(os.devnull,"w")
 
         # TODO
         #self.load_file_configuration('etc/lgp/rc')
@@ -214,7 +220,7 @@ class SetupInfo(Configuration):
             cmd = COMMANDS["clean"][self._package_format]
             if not self.config.verbose:
                 cmd += ' 1>/dev/null 2>/dev/null'
-            self.logger.debug("Cleaning repository...")
+            self.logger.debug("cleaning repository...")
             os.system(cmd)
         else:
             self.logger.error("no way to clean the repository...")
@@ -225,6 +231,7 @@ class SetupInfo(Configuration):
         tarball = os.path.join(tmpdir, '%s_%s.orig.tar.gz' %
                     (self.get_upstream_name(), self.get_upstream_version()))
         if self.config.orig_tarball is None:
+            self.logger.debug("creating a new source archive (tarball)...")
             debian_version = self.get_debian_version()
             if debian_version[-2:] != '-1':
                 raise LGPException('unable to build %s %s: --orig-tarball option is required when '\
@@ -235,23 +242,25 @@ class SetupInfo(Configuration):
             if self._package_format in COMMANDS["sdist"]:
                 cmd = COMMANDS["sdist"][self._package_format] % self.config.dist_dir
             else:
-                raise LGPException("no way to create the source distribution")
+                raise LGPException("no way to create the source archive (tarball)")
 
-            if not self.config.verbose:
-                cmd += ' 1>/dev/null 2>/dev/null'
-            os.system(cmd)
+            try:
+                check_call(cmd.split(), stdout=sys.stdout, stderr=sys.stderr)
+            except CalledProcessError, err:
+                self.logger.error("creation of the source archive failed")
+                self.logger.error("check if the version '%s' is really taggued in"\
+                                  " your repository" % self.get_upstream_version())
+                raise LGPException("source distribution wasn't properly built")
 
             upstream_tarball = os.path.join(self.config.dist_dir, '%s-%s.tar.gz' %
                 (self.get_upstream_name(), self.get_upstream_version()))
-            self.logger.debug("Build new source archive '%s'" % upstream_tarball)
         else:
             upstream_tarball = self.config.orig_tarball
 
         # TODO check the upstream version with the new tarball 
-        if not os.path.isfile(upstream_tarball):
-            raise LGPException("source distribution wasn't properly built")
-        self.logger.info("Use '%s' as original source archive (tarball)" % upstream_tarball)
-        self.logger.debug("Copy '%s' to '%s'" % (upstream_tarball, tarball))
+
+        self.logger.info("use '%s' as original source archive (tarball)" % upstream_tarball)
+        self.logger.debug("copy '%s' to '%s'" % (upstream_tarball, tarball))
         cp(upstream_tarball, tarball)
 
         return tarball
