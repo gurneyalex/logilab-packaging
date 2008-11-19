@@ -6,6 +6,8 @@ if [[ "$1" == "--help" ]]; then
 	exit
 fi
 
+mkdir -p /opt/buildd 2>/dev/null
+
 if [ -f /usr/share/keyrings/debian-archive-keyring.gpg ]
 then
     for dist in etch lenny sid 
