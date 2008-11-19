@@ -27,8 +27,7 @@
     You can use a setup.cfg file with the [LGP-CHECK] section
 """
 __docformat__ = "restructuredtext en"
-__all__ = ('check_info_module', 'check_release_number', 'check_manifest_in',
-           'check_bin', 'check_test', 'check_setup_py', 'check_announce')
+
 
 import os
 import stat

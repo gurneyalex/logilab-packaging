@@ -107,7 +107,7 @@ def add_options(parser):
     parser.add_option('-o', '--only', action="append", dest="only",
                       help="perform only that action (this option can be passed several times)",
                       metavar='<ACTIONS>', default=[])
-    parser.add_option('--dist', dest='distdir', default=osp.expanduser('~/dist'),
+    parser.add_option('--dist', dest='distdir', default=osp.expanduser('~/dists'),
                       help='where to put results')
     parser.max_args = 1
 
