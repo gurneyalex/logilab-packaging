@@ -17,14 +17,13 @@ Try lgp -h for more information.
 
 .SH GENERAL OPTIONS
 
-.RS
-.B --verbose
+.B --verbose, -v
 run silently without confirmation
 
-.B --pkg_dir
+.B --pkg_dir, -p
 set a specific project directory
 
-.B --revision
+.B --revision, -r
 set a specific revision or tag to build the debian package
 
 
@@ -33,8 +32,7 @@ set a specific revision or tag to build the debian package
 .SS check
 check and report problems about the code source directories and files
 
-.RS
-.B --distrib
+.B --distrib, -d
 the distribution targetted (e.g. stable, unstable). Use 'all' for all known distributions
 
 .B --include
@@ -55,14 +53,13 @@ run assurance quality tools on the source directory
 .SS build
 run the creation of a distribution package (source and/or binary)
 
-.RS
 .B --dist
 where to put compilation results
 
-.B --distrib
+.B --distrib, -d
 the distribution targetted (e.g. stable, unstable). Use 'all' for all known distributions
 
-.B --arch
+.B --arch, -a
 build for the requested debian architectures only
 
 .B --orig-tarball
@@ -80,6 +77,10 @@ put a release tag on source repository
 .SS info
 extract info from package configuration files
 
+.SH EXAMPLE
+.B lgp build -d etch -v <source_dir>
+
+will run in verbose mode and build the etch packages for <source_dir>
 
 .SH LICENCE
 (c) 2006-2008 Logilab. General Public Licence.
