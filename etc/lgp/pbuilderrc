@@ -11,17 +11,16 @@
 # https://wiki.ubuntu.com/PbuilderHowto
 # Thanks a lot guys !
 
-# Codenames for Debian suites according to their alias. Update these when
-# needed.
+# Codenames for Debian suites according to their alias. Update these when needed
 UNSTABLE_CODENAME="sid"
 TESTING_CODENAME="lenny"
 STABLE_CODENAME="etch"
 
-# List of Debian suites.
+# List of Debian suites
 DEBIAN_SUITES=($UNSTABLE_CODENAME $TESTING_CODENAME $STABLE_CODENAME
     "unstable" "testing" "stable")
 
-# List of Ubuntu suites. Update these when needed.
+# List of Ubuntu suites. Update these when needed
 UBUNTU_SUITES=("jaunty" "intrepid" "hardy" "gutsy")
 
 # Mirrors to use. Update these to your preferred mirror.
@@ -30,7 +29,6 @@ DEBIAN_MIRROR="ftp.fr.debian.org"
 UBUNTU_MIRROR="ftp.archive.ubuntu.com"
 
 # You can use valid sources.list files to add your personal repositories...
-# FIXME ${DIST} to evaluate
 DEBIAN_SOURCESLIST="/etc/lgp/sources.list.debian"
 UBUNTU_SOURCESLIST="/etc/lgp/sources.list.ubuntu"
 # Note: files matching *_SOURCESLIST.${DIST} in the same directory can be used
@@ -86,14 +84,14 @@ if $(echo ${DEBIAN_SUITES[@]} | grep -q $DIST); then
     # Debian configuration
     MIRRORSITE="http://$DEBIAN_MIRROR/debian/"
     COMPONENTS="main contrib non-free"
-    OTHERMIRROR=$(cat $DEBIAN_SOURCESLIST | tr '\n' '|')
+    OTHERMIRROR=eval "OTHERMIRROR=\"$(cat $DEBIAN_SOURCESLIST | tr '\n' '|')\""
     [[ -f $DEBIAN_SOURCESLIST.$DIST ]] && OTHERMIRROR=$(cat $DEBIAN_SOURCESLIST.$DIST | tr '\n' '|')
     OTHERMIRROR=${OTHERMIRROR:-$DEBIAN_OTHERMIRROR}
 elif $(echo ${UBUNTU_SUITES[@]} | grep -q $DIST); then
     # Ubuntu configuration
     MIRRORSITE="http://$UBUNTU_MIRROR/ubuntu/"
     COMPONENTS="main restricted universe multiverse"
-    OTHERMIRROR=$(cat $UBUNTU_SOURCESLIST | tr '\n' '|')
+    OTHERMIRROR=eval "OTHERMIRROR=\"$(cat $UBUNTU_SOURCESLIST | tr '\n' '|')\""
     [[ -f $UBUNTU_SOURCESLIST.$DIST ]] && OTHERMIRROR=$(cat $UBUNTU_SOURCESLIST.$DIST | tr '\n' '|')
     OTHERMIRROR=${OTHERMIRROR:-$UBUNTU_OTHERMIRROR}
 else
