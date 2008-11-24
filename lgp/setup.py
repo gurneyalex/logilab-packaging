@@ -139,15 +139,8 @@ class Setup(SetupInfo):
                  'default' : 'dumpconfig',
                  'short': 'c',
                  'metavar': "<command>",
-                 'help': "Front  end  program to the pbuilder utility"
+                 'help': "command to run with pbuilder"
                 }),
-               #('configfile',
-               # {'type': 'string',
-               #  'dest': 'configfile',
-               #  'short': 'f',
-               #  'metavar' : "<configfile>",
-               #  'help': "configuration file to read after pbuilder configuration files have been read"
-               # }),
               ),
 
     def __init__(self, args):
