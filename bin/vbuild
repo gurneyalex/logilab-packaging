@@ -22,13 +22,19 @@ import optparse
 import sys
 import os
 import os.path as osp
-import subprocess
 import shutil
+from subprocess import Popen, PIPE
+try:
+    from subprocess import call, check_call
+except ImportError:
+    from logilab.common.compat import call, check_call
+
+from logilab.devtools.lgp import CONFIG_FILE
 
 def test_arch(target_arch):
     """ Return True if the arch of localhost is target_arch """
     cmd = ['dpkg-architecture', '-e%s' % target_arch]
-    return 0 == subprocess.call(cmd)
+    return 0 == call(cmd)
 
 def build(source_control, distribution, arch, resultdir, basetgz,
           binary_arch=False, orig_tarball=None):
@@ -50,7 +56,7 @@ def build(source_control, distribution, arch, resultdir, basetgz,
     if binary_arch:
         cmd.insert(-2, '--binary-arch')
 
-    result = subprocess.check_call(cmd)
+    result = check_call(cmd)
     for filename in os.listdir(srcdir): # FIXME double-check condition below
         if osp.isfile(filename):
             shutil.copy(osp.join(srcdir, filename), resultdir)
