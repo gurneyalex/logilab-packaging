@@ -161,13 +161,10 @@ def run(args):
 
     except NotImplementedError, exc:
         logging.error(exc)
+        return 1
     except LGPException, exc:
         logging.critical(exc)
-        if checker.config.verbose:
-            raise
-    except Exception, exc:
-        logging.critical(exc)
-    return 1
+        return 1
 
 
 class Checker(SetupInfo):
