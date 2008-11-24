@@ -1,3 +1,9 @@
+logilab-devtools (0.12.3-1) DISTRIBUTION; urgency=low
+
+  * New upstream release
+
+ -- Julien Jehannet <julien.jehannet@logilab.fr>  Mon, 24 Nov 2008 12:22:13 +0100
+
 logilab-devtools (0.12.2-1) DISTRIBUTION; urgency=low
 
   * new upstream release
@@ -6,7 +12,7 @@ logilab-devtools (0.12.2-1) DISTRIBUTION; urgency=low
 
 logilab-devtools (0.12.1-1) DISTRIBUTION; urgency=low
 
-  * New upstream release.
+  * New upstream release
 
  -- Julien Jehannet <julien.jehannet@logilab.fr>  Wed, 05 Nov 2008 18:54:15 +0100
 
