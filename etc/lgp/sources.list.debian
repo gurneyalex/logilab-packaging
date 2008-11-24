@@ -1,0 +1,3 @@
+# Debian sources.list
+#
+# Note that you have to use the environment variable ${DIST} in this file instead of a fixed codename

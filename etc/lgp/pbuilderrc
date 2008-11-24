@@ -21,7 +21,7 @@ DEBIAN_SUITES=($UNSTABLE_CODENAME $TESTING_CODENAME $STABLE_CODENAME
     "unstable" "testing" "stable")
 
 # List of Ubuntu suites. Update these when needed
-UBUNTU_SUITES=("jaunty" "intrepid" "hardy" "gutsy")
+UBUNTU_SUITES=("jaunty" "intrepid" "hardy" "gutsy" "feisty" "dapper")
 
 # Mirrors to use. Update these to your preferred mirror.
 #DEBIAN_MIRROR="cdn.debian.net/debian"
@@ -40,13 +40,13 @@ UBUNTU_OTHERMIRROR=
 
 # Optionally use the changelog of a package to determine the suite to use if
 # none set.
-if [ -z "${DIST}" ] && [ -r "debian/changelog" ]; then
-    DIST=$(dpkg-parsechangelog | awk '/^Distribution: / {print $2}')
-    # Use the unstable suite for Debian experimental packages.
-    if [ "${DIST}" == "experimental" ]; then
-        DIST="unstable"
-    fi
-fi
+#if [ -z "${DIST}" ] && [ -r "debian/changelog" ]; then
+#    DIST=$(dpkg-parsechangelog | awk '/^Distribution: / {print $2}')
+#    # Use the unstable suite for Debian experimental packages.
+#    if [ "${DIST}" == "experimental" ]; then
+#        DIST="unstable"
+#    fi
+#fi
 
 # Optionally set a default distribution if none is used. Note that you can set
 # your own default (i.e. ${DIST:="unstable"}).
@@ -84,15 +84,15 @@ if $(echo ${DEBIAN_SUITES[@]} | grep -q $DIST); then
     # Debian configuration
     MIRRORSITE="http://$DEBIAN_MIRROR/debian/"
     COMPONENTS="main contrib non-free"
-    OTHERMIRROR=eval "OTHERMIRROR=\"$(cat $DEBIAN_SOURCESLIST | tr '\n' '|')\""
-    [[ -f $DEBIAN_SOURCESLIST.$DIST ]] && OTHERMIRROR=$(cat $DEBIAN_SOURCESLIST.$DIST | tr '\n' '|')
+    eval "OTHERMIRROR=\"$(grep -v '#' $DEBIAN_SOURCESLIST | tr '\n' '|')\""
+    [[ -f $DEBIAN_SOURCESLIST.$DIST ]] && OTHERMIRROR=$(grep -v '#' $DEBIAN_SOURCESLIST.$DIST | tr '\n' '|')
     OTHERMIRROR=${OTHERMIRROR:-$DEBIAN_OTHERMIRROR}
 elif $(echo ${UBUNTU_SUITES[@]} | grep -q $DIST); then
     # Ubuntu configuration
     MIRRORSITE="http://$UBUNTU_MIRROR/ubuntu/"
     COMPONENTS="main restricted universe multiverse"
-    OTHERMIRROR=eval "OTHERMIRROR=\"$(cat $UBUNTU_SOURCESLIST | tr '\n' '|')\""
-    [[ -f $UBUNTU_SOURCESLIST.$DIST ]] && OTHERMIRROR=$(cat $UBUNTU_SOURCESLIST.$DIST | tr '\n' '|')
+    eval "OTHERMIRROR=\"$(grep -v '#' $UBUNTU_SOURCESLIST | tr '\n' '|')\""
+    [[ -f $UBUNTU_SOURCESLIST.$DIST ]] && OTHERMIRROR=$(grep -v '#' $UBUNTU_SOURCESLIST.$DIST | tr '\n' '|')
     OTHERMIRROR=${OTHERMIRROR:-$UBUNTU_OTHERMIRROR}
 else
     echo "Unknown distribution: $DIST"
