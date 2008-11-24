@@ -14,7 +14,6 @@
 # 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 """ generic package information container
 
-    FIXME Ugly class for rapid prototyping, sorry !!!
 """
 
 import sys
@@ -24,7 +23,11 @@ import glob
 import logging
 import commands
 from distutils.core import run_setup
-from subprocess import Popen, PIPE, check_call, CalledProcessError
+from subprocess import Popen, PIPE
+try:
+    from subprocess import check_call, CalledProcessError # only python2.5
+except ImportError:
+    from logilab.common.compat import check_call, CalledProcessError
 
 from logilab.common.configuration import Configuration
 from logilab.common.logging_ext import ColorFormatter
@@ -54,9 +57,8 @@ class SetupInfo(Configuration):
         self.options = (
                ('verbose',
                 {'action': 'store_true',
-                 'default': False,
-                 'short': 'v',
                  'dest' : "verbose",
+                 'short': 'v',
                  'help': "run silently without confirmation"
                 }),
                ('pkg_dir',
@@ -71,7 +73,7 @@ class SetupInfo(Configuration):
                 {'type': 'string',
                  'default' : None,
                  'dest': "revision",
-                 'short': 'r',
+                 'short': 'R',
                  'metavar' : "<scm revision>",
                  'help': "set a specific revision or tag to build the debian package"
                 }),
@@ -81,24 +83,16 @@ class SetupInfo(Configuration):
                 self.options += opt
         super(SetupInfo, self).__init__(options=self.options, **args)
 
+        # Manage arguments (project path essentialy)
+        self.arguments = self.load_command_line_configuration(arguments)
+
         # Instanciate the default logger configuration
         logging.basicConfig(level=logging.INFO, filename="/dev/null")
         console = logging.StreamHandler()
         console.setFormatter(ColorFormatter('%(levelname)1.1s:%(name)s: %(message)s'))
         logging.getLogger().addHandler(console)
-        self.logger = logging.getLogger()
-
-        # Redirect subprocesses stdout output only in case of verbose mode
-        # We always allow subprocesses to print on the stderr (more convenient)
-        if not self.config.verbose:
-            sys.stdout = open(os.devnull,"w")
-            #sys.stderr = open(os.devnull,"w")
-
-        # TODO
-        #self.load_file_configuration('etc/lgp/rc')
-
-        # Manage arguments (project path essentialy)
-        self.arguments = self.load_command_line_configuration(arguments)
+        if self.config.verbose:
+            logging.getLogger().setLevel(logging.DEBUG)
 
         # Go to package directory
         if self.config.pkg_dir is None:
@@ -106,7 +100,9 @@ class SetupInfo(Configuration):
         os.chdir(self.config.pkg_dir)
 
         # Load the optional config file 
-        self.load_file_configuration('setup.cfg')
+        # FIXME caution ! wrong place in constructor
+        #self.load_file_configuration('setup.cfg')
+        #self.load_file_configuration('etc/lgp/rc')
 
         if os.path.isfile('setup.mk'):
             self._package_format = 'makefile'
@@ -117,12 +113,8 @@ class SetupInfo(Configuration):
             self._package_format = 'setuptools'
             self._package = run_setup('./setup.py', None, stop_after="init")
         else:
-            raise Exception('no valid setup file (setup.py or setup.mk)')
-        if self.config.verbose:
-            self.logger.setLevel(logging.DEBUG)
-        else:
-            self.logger.setLevel(logging.INFO)
-        self.logger.debug("package format: %s" % self._package_format)
+            raise LGPException('no valid setup file (setup.py or setup.mk)')
+        logging.debug("package format: %s" % self._package_format)
 
     def get_debian_name(self):
         """ obtain the debian package name
@@ -220,10 +212,10 @@ class SetupInfo(Configuration):
             cmd = COMMANDS["clean"][self._package_format]
             if not self.config.verbose:
                 cmd += ' 1>/dev/null 2>/dev/null'
-            self.logger.debug("cleaning repository...")
+            logging.debug("cleaning repository...")
             os.system(cmd)
         else:
-            self.logger.error("no way to clean the repository...")
+            logging.error("no way to clean the repository...")
 
     def create_orig_tarball(self, tmpdir):
         """ Create an origin tarball 
@@ -231,7 +223,7 @@ class SetupInfo(Configuration):
         tarball = os.path.join(tmpdir, '%s_%s.orig.tar.gz' %
                     (self.get_upstream_name(), self.get_upstream_version()))
         if self.config.orig_tarball is None:
-            self.logger.debug("creating a new source archive (tarball)...")
+            logging.debug("creating a new source archive (tarball)...")
             debian_version = self.get_debian_version()
             if debian_version[-2:] != '-1':
                 raise LGPException('unable to build %s %s: --orig-tarball option is required when '\
@@ -247,8 +239,8 @@ class SetupInfo(Configuration):
             try:
                 check_call(cmd.split(), stdout=sys.stdout, stderr=sys.stderr)
             except CalledProcessError, err:
-                self.logger.error("creation of the source archive failed")
-                self.logger.error("check if the version '%s' is really taggued in"\
+                logging.error("creation of the source archive failed")
+                logging.error("check if the version '%s' is really taggued in"\
                                   " your repository" % self.get_upstream_version())
                 raise LGPException("source distribution wasn't properly built")
 
@@ -259,8 +251,8 @@ class SetupInfo(Configuration):
 
         # TODO check the upstream version with the new tarball 
 
-        self.logger.info("use '%s' as original source archive (tarball)" % upstream_tarball)
-        self.logger.debug("copy '%s' to '%s'" % (upstream_tarball, tarball))
+        logging.info("use '%s' as original source archive (tarball)" % upstream_tarball)
+        logging.debug("copy '%s' to '%s'" % (upstream_tarball, tarball))
         cp(upstream_tarball, tarball)
 
         return tarball
