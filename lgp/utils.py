@@ -146,16 +146,13 @@ def cond_exec(cmd, confirm=False, retry=False):
             return False
 
 def get_distributions(distrib=None):
-    """ Ensure that the target distributions exist or return all the valid distributions
-
-        :param:
-            distrib: str or list
-                name of a distribution
-        :return:
-            list of target distribution
+    """ensure that the target distributions exist or return all the valid distributions
     """
     if distrib is None:
         distrib = KNOWN_DISTRIBUTIONS.keys()
+        return tuple(set(distrib))
+    elif distrib == 'target':
+        distrib = KNOWN_DISTRIBUTIONS.values()
         return tuple(set(distrib))
     elif distrib == 'known':
         distrib = KNOWN_DISTRIBUTIONS
