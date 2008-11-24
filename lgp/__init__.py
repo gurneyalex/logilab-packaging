@@ -17,7 +17,10 @@
 
 import sys
 import os, os.path as osp
+import logging
 from logilab.common.optparser import OptionParser
+
+CONFIG_FILE = '/etc/lgp/pbuilderrc'
 
 
 def run(args):
@@ -33,17 +36,14 @@ def run(args):
                  'check that package is ready to be built'),
                 ('setup', 'logilab.devtools.lgp.setupbuild',
                  'prepare a chrooted distribution'),
-                ('info', 'logilab.devtools.lgp.info',
-                 'extract info from __pkginfo__'),
                 ('clean', 'logilab.devtools.lgp.clean',
                  'clean repository'),
-                ('template', 'logilab.devtools.lgp.template',
-                 'use template files'),
                ]
 
     if len(sys.argv) <= 1:
         return parser.usage
     elif sys.argv[1] in ("build", "check", "clean", "template", "setup"):
+        logging.getLogger().name = sys.argv[1]
         exec 'from logilab.devtools.lgp.%s import run' % sys.argv[1]
         return run(args[1:])
     else:

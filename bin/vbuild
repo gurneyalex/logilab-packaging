@@ -49,10 +49,9 @@ def build(source_control, distribution, arch, resultdir, basetgz,
     if not osp.isdir(resultdir):
         os.makedirs(resultdir)
 
-    cmd = ['sudo', 'pbuilder', '--build',
-           '--buildresult', srcdir,
-           '--basetgz', basetgz,
-           source_control]
+    cmd = ['sudo', 'DIST=%s' % distribution, 'pbuilder', '--build',
+           '--configfile', CONFIG_FILE, '--buildresult', srcdir, source_control]
+
     if binary_arch:
         cmd.insert(-2, '--binary-arch')
 
