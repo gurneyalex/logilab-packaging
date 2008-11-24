@@ -29,7 +29,12 @@ import tempfile
 import shutil
 import logging
 import os.path as osp
-from subprocess import Popen, PIPE, check_call, CalledProcessError
+from subprocess import Popen, PIPE
+try:
+    from subprocess import check_call, CalledProcessError # only python2.5
+except ImportError:
+    from logilab.common.compat import check_call, CalledProcessError
+
 from debian_bundle import deb822
 
 from logilab.common.shellutils import mv
@@ -38,17 +43,17 @@ from logilab.common.fileutils import ensure_fs_mode, export
 from logilab.devtools.lgp.setupinfo import SetupInfo
 from logilab.devtools.lgp.utils import get_distributions, get_architectures
 from logilab.devtools.lgp.utils import confirm, cond_exec
-from logilab.devtools.lgp.exceptions import LGPException
+from logilab.devtools.lgp.exceptions import LGPException, LGPCommandException
 
 
 def run(args):
-    """ Main function of lgp build command """
+    """main function of lgp build command"""
     try :
         builder = Builder(args)
         distributions = get_distributions(builder.config.distrib)
         if builder.config.distrib == "all":
-            builder.logger.info("retrieved distribution(s) with 'all': %s" %
-                                str(distributions))
+            logging.info("retrieved distribution(s) with 'all': %s" %
+                         str(distributions))
         architectures = get_architectures(builder.config.archi)
 
         #if builder.config.revision :
@@ -57,19 +62,20 @@ def run(args):
         for arch in architectures:
             for distrib in distributions:
                 packages = builder.compile(distrib=distrib, arch=arch)
-                builder.logger.info("compiled packages: %s." % ', '.join(packages))
-                builder.logger.info("Debian changes file is: %s" %
-                                    builder.get_changes_file())
-                builder.logger.info("new files are waiting in %s. Enjoy." %
-                                    builder.get_distrib_dir())
+                logging.info("compiled packages: %s." % ', '.join(packages))
+                logging.info("Debian changes file is: %s" %
+                             builder.get_changes_file())
+                logging.info("new files are waiting in %s. Enjoy." %
+                             builder.get_distrib_dir())
                 if builder.config.post_treatments:
                     run_post_treatments(packages, builder.get_distrib_dir(), distrib,
                                         builder.config.verbose)
-    except (LGPException,Exception), exc:
+    except LGPException, exc:
         logging.critical(exc)
-        if builder.config.verbose:
-            raise
-    return 1
+        #if hasattr(builder, "config") and builder.config.verbose:
+        #    logging.debug("printing traceback...")
+        #    raise
+        return 1
 
 def run_post_treatments(packages, distdir, distrib, verbose=False):
     """ Run actions after package compiling """
@@ -115,7 +121,7 @@ def run_post_treatments(packages, distdir, distrib, verbose=False):
             if package.endswith('.deb'):
                 if not cond_exec('sudo piuparts -v -d %s -b /opt/buildd/%s.tgz %s/%s' %
                                  (distrib, distrib, distdir, package)):
-                    self.logger.error("piuparts exits with error")
+                    logging.error("piuparts exits with error")
 
 
 class Builder(SetupInfo):
@@ -124,10 +130,11 @@ class Builder(SetupInfo):
     Specific options are added. See lgp build --help
     """
     name = "lgp-build"
-    options = (('dist',
+    options = (('result',
                 {'type': 'string',
                  'default' : osp.expanduser('~/dists'),
                  'dest' : "dist_dir",
+                 'short': 'r',
                  'metavar': "<directory>",
                  'help': "where to put compilation results"
                 }),
@@ -180,12 +187,17 @@ class Builder(SetupInfo):
         # Retrieve upstream information
         super(Builder, self).__init__(arguments=args, options=self.options, usage=__doc__)
         #print self.generate_config(); sys.exit()
-        self.logger = logging.getLogger(__name__)
 
         if self.config.orig_tarball is not None:
             self.config.orig_tarball = osp.abspath(osp.expanduser(self.config.orig_tarball))
         if self.config.dist_dir is not None:
             self.config.dist_dir = osp.abspath(self.config.dist_dir)
+
+        # Redirect subprocesses stdout output only in case of verbose mode
+        # We always allow subprocesses to print on the stderr (more convenient)
+        if not self.config.verbose:
+            sys.stdout = open(os.devnull,"w")
+            #sys.stderr = open(os.devnull,"w")
 
         # check if distribution directory exists, create it if necessary
         try:
@@ -206,13 +218,13 @@ class Builder(SetupInfo):
 
         # create tmp build directory by extracting the .orig.tar.gz
         os.chdir(tmpdir)
-        self.logger.debug("extracting %s..." % tarball)
+        logging.debug("extracting %s..." % tarball)
         try:
             check_call(('tar xzf %s' % tarball).split(), stdout=sys.stdout,
                                                          stderr=sys.stderr)
         except CalledProcessError, err:
-            raise LGPException('an error occured while extracting the upstream '\
-                               'tarball')
+            raise LGPCommandException('an error occured while extracting the '
+                                      'upstream tarball', err)
 
         # origpath is depending of the upstream convention
         tarball = os.path.basename(tarball)
@@ -225,7 +237,7 @@ class Builder(SetupInfo):
         export(osp.join(self.config.pkg_dir, 'debian'), osp.join(origpath, 'debian'))
         debiandir = self.get_debian_dir()
         if debiandir != 'debian/':
-            self.logger.debug("overriding files...")
+            logging.debug("overriding files...")
             export(osp.join(self.config.pkg_dir, debiandir), osp.join(origpath, 'debian/'),
                    verbose=self.config.verbose)
 
@@ -233,36 +245,43 @@ class Builder(SetupInfo):
         # debchange --release-heuristic changelog --release --distribution %s --force-distribution "New upstream release"
         # FIXME quickfix for lintian error
         # FIXME #6551: Fix the default distribution name
+        # FIXME python2.4 sed: couldn't close stdout: Bad file descriptor
         if distrib == 'sid':
             distrib2 = 'unstable'
         else:
             distrib2 = distrib
         cmd = 'sed -i s/DISTRIBUTION/%s/ %s' \
               % (distrib2, os.path.join(origpath, 'debian/changelog'))
-        check_call(cmd.split(), stdout=sys.stdout, stderr=sys.stderr)
+        try:
+            check_call(cmd.split(), stdout=sys.stdout) #, stderr=sys.stderr)
+        except CalledProcessError, err:
+            raise LGPCommandException("bad substitution for DISTRIBUTION string", err)
 
         # build the package using vbuild or default to fakeroot
         debuilder = os.environ.get('DEBUILDER', 'vbuild')
-        self.logger.debug("use builder: '%s'" % debuilder)
+        logging.debug("use builder: '%s'" % debuilder)
         if debuilder.endswith('vbuild'):
             dscfile = self.make_debian_source_package(origpath)
-            self.logger.info("building debian package for distribution '%s' and arch '%s'"
+            logging.info("building debian package for distribution '%s' and arch '%s'"
                              % (distrib, arch))
             cmd = '%s -d %s -a %s --result %s %s'
-            cmd %= (debuilder, distrib, arch, self.get_distrib_dir(), osp.join(tmpdir, dscfile))
+            cmd %= (debuilder, distrib, arch, self.get_distrib_dir(),
+                    osp.join(tmpdir, dscfile))
             # TODO
             #cmd += ' --debbuildopts %s' % pdebuild_options
         else:
             cmd = debuilder
 
-        self.logger.debug(cmd)
-        check_call(cmd.split(), stdout=sys.stdout, stderr=sys.stderr)
+        try:
+            check_call(cmd.split(), stdout=sys.stdout) #, stderr=sys.stderr)
+        except CalledProcessError, err:
+            raise LGPCommandException("failed autobuilding of package", err)
 
         # double check vbuild results
         for pack in self.get_packages():
             fullpath = os.path.join(self.get_distrib_dir(),pack)
             if not glob.glob(fullpath):
-                raise Exception('vbuild ran, but %s not found' % fullpath) 
+                raise LGPException('vbuild ran, but %s not found' % fullpath)
 
         # clean tmpdir
         if not self.config.keep_tmpdir:
@@ -284,14 +303,14 @@ class Builder(SetupInfo):
             origpath: path to orig.tar.gz tarball
         """
         dscfile = '%s_%s.dsc' % (self.get_debian_name(), self.get_debian_version())
-        self.logger.debug("creation of the debian source package '%s' in '%s'"
-                          % (dscfile, origpath))
+        logging.debug("creation of the debian source package '%s'"
+                      % osp.join(osp.dirname(origpath), dscfile))
         try:
             cmd = 'dpkg-source -b %s' % origpath
-            check_call(cmd.split(), stdout=sys.stdout, stderr=sys.stderr)
+            returncode = check_call(cmd.split(), stdout=sys.stdout, stderr=sys.stderr)
         except CalledProcessError, err:
-            self.logger.error("command '%s' returned non-zero exit status %s"
-                                % (cmd, err.returncode))
-            raise LGPException("cannot build valid dsc file '%s' with command %s"
-                               % (dscfile, cmd))
+            msg = "cannot build valid dsc file '%s' with command %s" % (dscfile, cmd)
+            raise LGPCommandException(msg, err)
+        if self.config.deb_src:
+            sys.exit(returncode)
         return dscfile
