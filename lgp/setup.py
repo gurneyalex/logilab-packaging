@@ -40,7 +40,11 @@ def run(args):
     """ Main function of lgp setup command """
 
     try :
-        setup = Setup(args)
+        # we should be able to run setup for any directory
+        try:
+            setup = Setup(args)
+        except LGPException, err:
+            pass
 
         if setup.config.command == "create":
             if not os.path.isfile(CONFIG_FILE):
