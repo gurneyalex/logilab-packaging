@@ -7,6 +7,6 @@ debian/tmp/usr/bin/lgp
 debian/tmp/usr/bin/vbuild
 debian/tmp/usr/bin/update_gettext
 debian/tmp/usr/bin/changelog
-etc/pbuilderrc
-etc/sources.list.debian
-etc/sources.list.ubuntu
+etc/lgp/pbuilderrc
+etc/lgp/sources.list.debian
+etc/lgp/sources.list.ubuntu
