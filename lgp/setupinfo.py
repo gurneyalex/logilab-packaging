@@ -112,6 +112,8 @@ class SetupInfo(Configuration):
         elif os.path.isfile('setup.py'):
             self._package_format = 'setuptools'
             self._package = run_setup('./setup.py', None, stop_after="init")
+        elif sys.argv[1] == "setup":
+            pass
         else:
             raise LGPException('no valid setup file (setup.py or setup.mk)')
         logging.debug("package format: %s" % self._package_format)
