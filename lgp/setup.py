@@ -21,6 +21,7 @@
 __docformat__ = "restructuredtext en"
 
 import os
+import sys
 import logging
 from subprocess import Popen, PIPE
 try:
@@ -40,22 +41,21 @@ def run(args):
     """ Main function of lgp setup command """
 
     try :
-        # we should be able to run setup for any directory
-        try:
-            setup = Setup(args)
-        except LGPException, err:
-            pass
+        setup = Setup(args)
 
         if setup.config.command == "create":
             if not os.path.isfile(CONFIG_FILE):
                 print("* You need to install the %s file to begin" % CONFIG_FILE)
                 sys.exit(1)
-            confirm('* Have you already set your pbuilder variables in %s ?' %
-                    CONFIG_FILE)
+            if not confirm('* Have you already set your pbuilder variables in %s ?' %
+                           CONFIG_FILE):
+                print '  Please configure to continue.'
+                sys.exit(0)
 
             while not os.path.isfile('/usr/share/keyrings/debian-archive-keyring.gpg'):
                 if not confirm("* Have you installed the debian-archive-keyring package ?"):
-                    sys.exit(1)
+                    print '  Please install it to continue.'
+                    sys.exit(0)
 
             while not os.path.isfile('/usr/share/keyrings/ubuntu-archive-keyring.gpg'):
                 print("* You need to install this keyring file if you want to build for ubuntu distributions.\n\n"
@@ -88,7 +88,7 @@ def run(args):
 
         if setup.config.command == "login":
             if not setup.config.distrib or setup.config.distrib=='all':
-                raise LGPException('You need to specify a valid distribution to log in')
+                raise LGPException('you need to specify a valid distribution to log in')
             else:
                 distribution = get_distributions(setup.config.distrib)[0]
             cmd = "sudo DIST=%s pbuilder login --configfile %s" \
@@ -100,7 +100,7 @@ def run(args):
 
         if setup.config.command == "dumpconfig":
             if not setup.config.distrib or setup.config.distrib=='all':
-                raise LGPException('You need to specify a valid distribution to dump configuration values')
+                raise LGPException('you need to specify a valid distribution to dump configuration values')
             else:
                 distribution = get_distributions(setup.config.distrib)[0]
             cmd = "sudo DIST=%s pbuilder dumpconfig --configfile %s" \
