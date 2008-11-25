@@ -244,14 +244,9 @@ class Builder(SetupInfo):
         # update changelog if DISTRIBUTION is present
         # debchange --release-heuristic changelog --release --distribution %s --force-distribution "New upstream release"
         # FIXME quickfix for lintian error
-        # FIXME #6551: Fix the default distribution name
         # FIXME python2.4 sed: couldn't close stdout: Bad file descriptor
-        if distrib == 'sid':
-            distrib2 = 'unstable'
-        else:
-            distrib2 = distrib
         cmd = 'sed -i s/DISTRIBUTION/%s/ %s' \
-              % (distrib2, os.path.join(origpath, 'debian/changelog'))
+              % (distrib, os.path.join(origpath, 'debian/changelog'))
         try:
             check_call(cmd.split(), stdout=sys.stdout) #, stderr=sys.stderr)
         except CalledProcessError, err:
