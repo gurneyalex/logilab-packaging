@@ -154,7 +154,7 @@ class Setup(SetupInfo):
 
     def choice_distribution(self, str):
         if self.config.distrib:
-           distributions = get_distributions(self.config.distrib)
+            distributions = get_distributions(self.config.distrib)
         else:
             print("%s\n " % str),
             print(', '.join(get_distributions('target')))
