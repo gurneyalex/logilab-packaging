@@ -240,7 +240,7 @@ class Checker(SetupInfo):
             #   zero or negative -> error
             #   zero use a generic report function
             #   positive -> ok (we count it)
-            if result==0 :
+            if result == 0 :
                 self.logger.error(func.__doc__)
             elif result>0:
                 self.counter += 1

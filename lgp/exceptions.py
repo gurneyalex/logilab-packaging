@@ -10,12 +10,14 @@ import logging
 
 
 class LGPException(Exception):
+    """generic lgp exception"""
     def __init__(self, value):
         self.value = value
     def __str__(self):
         return self.value
 
 class LGPCommandException(LGPException):
+    """subprocess lgp exception"""
     def __init__(self, value, cmd=None):
         self.value = value
         if cmd:
@@ -24,11 +26,13 @@ class LGPCommandException(LGPException):
             logging.error(msg)
     def __str__(self):
         return self.value
- 
+
 class ArchitectureException(LGPException):
-   def __str__(self):
+    """architecture availability exception"""
+    def __str__(self):
         return "unknown architecture '%s'" % self.value
 
 class DistributionException(LGPException):
+    """distribution availability exception"""
     def __str__(self):
         return "unknown distribution '%s'" % self.value

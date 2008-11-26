@@ -23,13 +23,12 @@ __docformat__ = "restructuredtext en"
 
 import os
 import sys
-import stat
 import glob
 import tempfile
 import shutil
 import logging
 import os.path as osp
-from subprocess import Popen, PIPE
+#from subprocess import Popen, PIPE
 try:
     from subprocess import check_call, CalledProcessError # only python2.5
 except ImportError:
@@ -37,8 +36,7 @@ except ImportError:
 
 from debian_bundle import deb822
 
-from logilab.common.shellutils import mv
-from logilab.common.fileutils import ensure_fs_mode, export
+from logilab.common.fileutils import export
 
 from logilab.devtools.lgp.setupinfo import SetupInfo
 from logilab.devtools.lgp.utils import get_distributions, get_architectures
@@ -274,7 +272,7 @@ class Builder(SetupInfo):
 
         # double check vbuild results
         for pack in self.get_packages():
-            fullpath = os.path.join(self.get_distrib_dir(),pack)
+            fullpath = os.path.join(self.get_distrib_dir(), pack)
             if not glob.glob(fullpath):
                 raise LGPException('vbuild ran, but %s not found' % fullpath)
 

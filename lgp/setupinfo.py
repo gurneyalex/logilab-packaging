@@ -34,7 +34,7 @@ from logilab.common.logging_ext import ColorFormatter
 from logilab.common.shellutils import cp
 
 from logilab.devtools.lib.pkginfo import PackageInfo
-from logilab.devtools.lgp.exceptions import LGPException
+from logilab.devtools.lgp.exceptions import LGPException, LGPCommandException
 
 COMMANDS = {
         "sdist" : {
@@ -244,7 +244,7 @@ class SetupInfo(Configuration):
                 logging.error("creation of the source archive failed")
                 logging.error("check if the version '%s' is really taggued in"\
                                   " your repository" % self.get_upstream_version())
-                raise LGPException("source distribution wasn't properly built")
+                raise LGPCommandException("source distribution wasn't properly built", err)
 
             upstream_tarball = os.path.join(self.config.dist_dir, '%s-%s.tar.gz' %
                 (self.get_upstream_name(), self.get_upstream_version()))
