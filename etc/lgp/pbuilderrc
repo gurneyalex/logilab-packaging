@@ -72,7 +72,7 @@ esac
 NAME="$DIST"
 if [ -n "${ARCH}" ]; then
     NAME="$NAME-$ARCH"
-    DEBOOTSTRAPOPTS=("--arch" "$ARCH" "${DEBOOTSTRAPOPTS[@]}")
+    DEBOOTSTRAPOPTS=("--include" "sysv-rc" "--debug" "-v" "--arch" "$ARCH" "${DEBOOTSTRAPOPTS[@]}")
 
 fi
 BASETGZ="/opt/buildd/$NAME.tgz"
@@ -114,7 +114,7 @@ USEDEVFS=no
 APTCACHEHARDLINK="yes"
 REMOVEPACKAGES="lilo"
 #HOOKDIR="/usr/lib/pbuilder/hooks"
-HOOKDIR="/etc/lgp/hookdir"
+HOOKDIR="/etc/lgp/hooks.d"
 
 # make debconf not interact with user
 export DEBIAN_FRONTEND="noninteractive"
@@ -145,13 +145,14 @@ APTCONFDIR="/etc/lgp/apt.d"
 # the username and ID used by pbuilder, inside chroot. Needs fakeroot, really
 #BUILDUSERID=1234
 #BUILDUSERNAME=pbuilder
+BUILDUSERID=0
 
 # BINDMOUNTS is a space separated list of things to mount
 # inside the chroot.
 BINDMOUNTS=""
 
-# Set the PATH I am going to use inside pbuilder: default is "/usr/sbin:/usr/bin:/sbin:/bin:/usr/X11R6/bin"
-export PATH="/usr/sbin:/usr/bin:/sbin:/bin:/usr/X11R6/bin"
+# Set the PATH I am going to use inside pbuilder
+#export PATH="/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/X11R6/bin"
 
 # SHELL variable is used inside pbuilder by commands like 'su'; and they need sane values
 export SHELL=/bin/bash

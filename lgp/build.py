@@ -60,7 +60,6 @@ def run(args):
         for arch in architectures:
             for distrib in distributions:
                 packages = builder.compile(distrib=distrib, arch=arch)
-                logging.info("compiled packages: %s." % ', '.join(packages))
                 logging.info("Debian changes file is: %s" %
                              builder.get_changes_file())
                 logging.info("new files are waiting in %s. Enjoy." %
@@ -96,11 +95,12 @@ def run_post_treatments(packages, distdir, distrib, verbose=False):
                     return
 
     # Try Debian signing immediately if possible
-    if 'DEBSIGN_KEYID' in os.environ and not verbose or confirm("debsign your packages ?"):
-        for package in packages:
-            if package.endswith('.changes'):
-                print separator % package
-                cond_exec('debsign %s' % osp.join(distdir, package))
+    if 'DEBSIGN_KEYID' in os.environ:
+        if not verbose or confirm("debsign your packages ?"):
+            for package in packages:
+                if package.endswith('.changes'):
+                    print separator % package
+                    cond_exec('debsign %s' % osp.join(distdir, package))
 
     # Run usual checkers
     checkers = ('lintian',)
