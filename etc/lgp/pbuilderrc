@@ -26,7 +26,7 @@ UBUNTU_SUITES=("jaunty" "intrepid" "hardy" "gutsy" "feisty" "dapper")
 # Mirrors to use. Update these to your preferred mirror.
 #DEBIAN_MIRROR="cdn.debian.net/debian"
 DEBIAN_MIRROR="ftp.fr.debian.org"
-UBUNTU_MIRROR="ftp.archive.ubuntu.com"
+UBUNTU_MIRROR="fr.archive.ubuntu.com"
 
 # You can use valid sources.list files to add your personal repositories...
 DEBIAN_SOURCESLIST="/etc/lgp/sources.list.debian"
@@ -73,6 +73,7 @@ NAME="$DIST"
 if [ -n "${ARCH}" ]; then
     NAME="$NAME-$ARCH"
     DEBOOTSTRAPOPTS=("--arch" "$ARCH" "${DEBOOTSTRAPOPTS[@]}")
+
 fi
 BASETGZ="/opt/buildd/$NAME.tgz"
 DISTRIBUTION="$DIST"
@@ -113,7 +114,7 @@ USEDEVFS=no
 APTCACHEHARDLINK="yes"
 REMOVEPACKAGES="lilo"
 #HOOKDIR="/usr/lib/pbuilder/hooks"
-HOOKDIR=""
+HOOKDIR="/etc/lgp/hookdir"
 
 # make debconf not interact with user
 export DEBIAN_FRONTEND="noninteractive"
@@ -139,7 +140,7 @@ PBUILDERSATISFYDEPENDSCMD="/usr/lib/pbuilder/pbuilder-satisfydepends"
 DEBBUILDOPTS=""
 
 #APT configuration files directory
-APTCONFDIR=""
+APTCONFDIR="/etc/lgp/apt.d"
 
 # the username and ID used by pbuilder, inside chroot. Needs fakeroot, really
 BUILDUSERID=1234
@@ -148,10 +149,6 @@ BUILDUSERNAME=pbuilder
 # BINDMOUNTS is a space separated list of things to mount
 # inside the chroot.
 BINDMOUNTS=""
-
-# Set the debootstrap variant to 'buildd' type.
-# DEBOOTSTRAPOPTS[0]='--variant=buildd'
-unset DEBOOTSTRAPOPTS
 
 # Set the PATH I am going to use inside pbuilder: default is "/usr/sbin:/usr/bin:/sbin:/bin:/usr/X11R6/bin"
 export PATH="/usr/sbin:/usr/bin:/sbin:/bin:/usr/X11R6/bin"

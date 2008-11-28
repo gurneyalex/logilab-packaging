@@ -1,3 +1,5 @@
 etc/lgp
+etc/lgp/hookdir
+etc/lgp/apt.d
 usr/bin
 opt/buildd
