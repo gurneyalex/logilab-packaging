@@ -8,18 +8,16 @@ Debian
 * edit the /etc/lgp/pbuilderrc file with your default values
   adapt these variables:
   - BASETGZ
+        location of the pbuilder chrooted images
+        the path should really exists
   - DEBIAN_SUITES / UBUNTU_SUITES
+        codenames to adapt for the debian-like distribution
   - DEBIAN_MIRROR / UBUNTU_MIRROR
+        master mirror of the distribution
   - DEBIAN_SOURCESLIST / UBUNTU_SOURCESLIST or DEBIAN_OTHERMIRROR / UBUNTU_OTHERMIRROR
-  - DEBIAN_OTHERMIRROR
-  Be sure to have already created directories
+        dynamic sources.list (using $DIST) or use the standard pbuilder format (with pipes)
 * edit the /etc/lgp/sources.list.* files if DEBIAN_SOURCESLIST and UBUNTU_SOURCESLIST are used
-* create pbuilder images with "lgp setup"
+* create pbuilder images with "lgp setup -c create"
+* you need to add sudo privilege for pbuilder command and DIST environment variable
 
 Note: you can easily remove basetgz of any created pbuilder images.
-
-
-Tarball
--------
-* untar the tgz
-* ...

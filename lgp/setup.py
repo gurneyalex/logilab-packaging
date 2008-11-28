@@ -59,9 +59,9 @@ def run(args):
 
             while not os.path.isfile('/usr/share/keyrings/ubuntu-archive-keyring.gpg'):
                 print("* You need to install this keyring file if you want to build for ubuntu distributions.\n\n"
-                      "  Please download it if necessary...\n"
-                      "  Example: wget -O /usr/share/keyrings/ubuntu-archive-keyring.gpg \\\n"
-                      "           ftp://ftp.archive.ubuntu.com/ubuntu/project/ubuntu-archive-keyring.gpg")
+                      "  You can download it from http://fr.archive.ubuntu.com/ubuntu/pool/main/u/ubuntu-keyring\n"
+                      "  or: wget -O /usr/share/keyrings/ubuntu-archive-keyring.gpg \\\n"
+                      "      ftp://ftp.archive.ubuntu.com/ubuntu/project/ubuntu-archive-keyring.gpg")
                 if confirm("  Skip the ubuntu keyring installation ?"):
                     break
 
@@ -73,7 +73,7 @@ def run(args):
                 try:
                     check_call(cmd.split(), env={'DIST': distrib})
                 except CalledProcessError, err:
-                    raise LGPCommandException('impossible to update the pbuilder image', err)
+                    raise LGPCommandException('impossible to create the pbuilder image', err)
 
         if setup.config.command == "update":
             distributions = setup.choice_distribution("* You have to select pbuilder images to update:")
