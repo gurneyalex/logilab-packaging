@@ -48,7 +48,7 @@ binary-indep: build install
 	gzip -9 -c ChangeLog > changelog.gz
 	dh_installchangelogs -i
 	dh_installexamples -i
-	dh_installdocs -i README changelog.gz
+	dh_installdocs -i README INSTALL changelog.gz
 	dh_installman -i
 	dh_installemacsen -plogilab-elisp
 	dh_pycentral -i -Nlogilab-elisp
