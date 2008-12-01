@@ -63,4 +63,4 @@ Recommends: vim-python | gvim
 Description: Minimum set of packages for development at Logilab
  This metapackage ensures Python and pylint are available, as well as
  Emacs, Logilab's packaging tools and the version control tools used
- at Logilab (mercurial and subversion).
+ at Logilab (mercurial and Subversion).

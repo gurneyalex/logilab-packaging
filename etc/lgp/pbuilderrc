@@ -72,14 +72,18 @@ esac
 NAME="$DIST"
 if [ -n "${ARCH}" ]; then
     NAME="$NAME-$ARCH"
-    DEBOOTSTRAPOPTS=("--include" "sysv-rc" "--debug" "-v" "--arch" "$ARCH" "${DEBOOTSTRAPOPTS[@]}")
+    #DEBOOTSTRAPOPTS=("--include" "sysv-rc" "--debug" "-v" "--arch" "$ARCH" "${DEBOOTSTRAPOPTS[@]}")
+    DEBOOTSTRAPOPTS=("--include" "sysv-rc" "--arch" "$ARCH" "${DEBOOTSTRAPOPTS[@]}")
 
 fi
-BASETGZ="/opt/buildd/$NAME.tgz"
 DISTRIBUTION="$DIST"
 BUILDRESULT="/var/cache/pbuilder/$NAME/result/"
 APTCACHE="/var/cache/pbuilder/$NAME/aptcache/"
 BUILDPLACE="/var/cache/pbuilder/build/"
+
+# BASETGZ directory
+BASETGZ="/opt/buildd/$NAME.tgz"
+mkdir -p $(dirname $BASETGZ) 2>/dev/null
 
 if $(echo ${DEBIAN_SUITES[@]} | grep -q $DIST); then
     # Debian configuration
@@ -108,13 +112,10 @@ fi
 USEPROC=yes
 USEDEVPTS=yes
 USEDEVFS=no
-#BUILDRESULT=/var/cache/pbuilder/result/
 
 #specify the cache for APT 
 APTCACHEHARDLINK="yes"
 REMOVEPACKAGES="lilo"
-#HOOKDIR="/usr/lib/pbuilder/hooks"
-HOOKDIR="/etc/lgp/hooks.d"
 
 # make debconf not interact with user
 export DEBIAN_FRONTEND="noninteractive"
@@ -139,8 +140,11 @@ PBUILDERSATISFYDEPENDSCMD="/usr/lib/pbuilder/pbuilder-satisfydepends"
 #DEBBUILDOPTS="-IXXX -iXXX"
 DEBBUILDOPTS=""
 
-#APT configuration files directory
-APTCONFDIR="/etc/lgp/apt.d"
+# Hooks directory for pbuilder
+#HOOKDIR="/etc/lgp/hooks.d"
+
+# APT configuration files directory
+#APTCONFDIR="/etc/lgp/apt.d"
 
 # the username and ID used by pbuilder, inside chroot. Needs fakeroot, really
 #BUILDUSERID=1234
