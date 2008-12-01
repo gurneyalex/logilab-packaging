@@ -118,9 +118,11 @@ def run_post_treatments(packages, distdir, distrib, verbose=False):
         for package in packages:
             print separator % package
             if package.endswith('.deb'):
-                if not cond_exec('sudo piuparts -v -d %s -b /opt/buildd/%s.tgz %s/%s' %
-                                 (distrib, basetgz, distdir, package)):
+                if cond_exec('sudo piuparts -v -d %s -b /opt/buildd/%s.tgz %s/%s' 
+                             % (distrib, basetgz, distdir, package)):
                     logging.error("piuparts exits with error")
+                else:
+                    logging.info("piuparts exits normally")
 
 
 class Builder(SetupInfo):
