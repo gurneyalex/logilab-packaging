@@ -2,7 +2,7 @@ ChangeLog for logilab.devtools
 ==============================
 
 2008-10-14  --  0.12
-    * lgp: start rewriting
+    * lgp: can now manage pbuilder image to create package
 
     * changelog: support for debian NMU version
 
