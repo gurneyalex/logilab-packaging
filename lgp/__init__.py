@@ -21,7 +21,6 @@ import logging
 from logilab.common.optparser import OptionParser
 
 CONFIG_FILE = '/etc/lgp/pbuilderrc'
-CONFIG_FILE = '/home/juj/src/public/logilab/devtools/etc/lgp/pbuilderrc'
 
 
 def run(args):
