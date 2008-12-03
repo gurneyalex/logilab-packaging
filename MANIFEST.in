@@ -43,8 +43,6 @@ include README
 include INSTALL
 include COPYING
 include ChangeLog
-include DEPENDS
-include RECOMMENDS
 include logging.conf
 include doc/*.html
 
