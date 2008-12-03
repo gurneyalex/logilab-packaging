@@ -226,6 +226,7 @@ class SetupInfo(Configuration):
                     (self.get_upstream_name(), self.get_upstream_version()))
         if self.config.orig_tarball is None:
             logging.debug("creating a new source archive (tarball)...")
+            logging.info("upstream version is '%s' (check tags if used)" % self.get_upstream_version())
             debian_version = self.get_debian_version()
             if debian_version[-2:] != '-1':
                 raise LGPException('unable to build %s %s: --orig-tarball option is required when '\
