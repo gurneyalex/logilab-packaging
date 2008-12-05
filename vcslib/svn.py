@@ -266,7 +266,7 @@ class SVNAgent:
         from_date = strftime('%Y-%m-%d %H:%M', localtime_to_gmtime(from_date))
         # since we want an inclusive range
         to_date = strftime('%Y-%m-%d %H:%M', localtime_to_gmtime(to_date))
-        command = 'TZ=UTC svn log --non-interactive -r "{%s}:{%s}" %s %s' % (from_date, to_date,
+        command = 'LC_ALL=C TZ=UTC svn log --non-interactive -r "{%s}:{%s}" %s %s' % (from_date, to_date,
                                                            repository or '', path)
         separator = '-' * 72
         status, msg, rev, author, date = None, '', None, None, None
