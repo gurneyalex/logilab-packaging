@@ -268,14 +268,17 @@ class HGAgent:
                     infos.append((date, cii))
         for _, info in reversed(sorted(infos)):
             yield info
-    def current_short_changeset(self,path):
+            
+    def current_short_changeset(self, path):
         """return the short id of the current changeset"""
         repopath = find_repository(path)
-        if repopath is not None:
+        if repopath is None:
             raise RuntimeError('no repository found in %s' % path)
-        ui = Ui()
-        repo = Repository(ui, path=repopath)
-        short(r.changectx().node)
+        repo = Repository(Ui(), path=repopath)
+        ctx = repo.workingctx()
+        parents = ctx.parents()
+        #assert len(parents) == 0 ?
+        return short(parents[0].node())
 
                   
 # HGAgent is a stateless object, transparent singleton thanks to its __call__
