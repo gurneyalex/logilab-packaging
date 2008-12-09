@@ -165,7 +165,7 @@ class SetupInfo(Configuration):
     def get_upstream_name(self):
         if self._package_format == 'makefile':
             p1 = Popen(["make", "-f", "setup.mk", "-p"], stdout=PIPE)
-            p2 = Popen(["grep", "^NAME"], stdin=p1.stdout, stdout=PIPE)
+            p2 = Popen(["grep", "^\(PROJECT\|NAME\)"], stdin=p1.stdout, stdout=PIPE)
             output = p2.communicate()[0]
             return output.rsplit()[2]
         elif hasattr(self._package, 'get_name'):
@@ -226,7 +226,7 @@ class SetupInfo(Configuration):
                     (self.get_upstream_name(), self.get_upstream_version()))
         if self.config.orig_tarball is None:
             logging.debug("creating a new source archive (tarball)...")
-            logging.info("upstream version is '%s' (check tags if used)" % self.get_upstream_version())
+            logging.info("upstream version is '%s' (check tag position)" % self.get_upstream_version())
             debian_version = self.get_debian_version()
             if debian_version[-2:] != '-1':
                 raise LGPException('unable to build %s %s: --orig-tarball option is required when '\
