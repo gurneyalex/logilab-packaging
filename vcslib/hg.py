@@ -228,14 +228,13 @@ class HGAgent:
             quiet = '-q '
         else:
             quiet = ''
-
-        if tag and tag != 'HEAD':
-            raise NotImplementedError("don't know how to co a given tag "
-                                      "(hg clone -r tag ?")
         #if path:
         #    print "warning: <%s> argument not needed and ignored" % path
-        return 'hg clone %s %s' % (quiet, repository)
-
+        cmd = 'hg clone %s %s' % (quiet, repository)
+        if tag:
+            cmd += '; hg up %s' % tag
+        return cmd
+        
     def log_info(self, path, from_date, to_date, repository=None, tag=None):
         """get log messages between <from_date> and <to_date> (inclusive)
         
@@ -269,14 +268,17 @@ class HGAgent:
                     infos.append((date, cii))
         for _, info in reversed(sorted(infos)):
             yield info
-    def current_short_changeset(self,path):
+            
+    def current_short_changeset(self, path):
         """return the short id of the current changeset"""
         repopath = find_repository(path)
-        if repopath is not None:
+        if repopath is None:
             raise RuntimeError('no repository found in %s' % path)
-        ui = Ui()
-        repo = Repository(ui, path=repopath)
-        short(r.changectx().node)
+        repo = Repository(Ui(), path=repopath)
+        ctx = repo.workingctx()
+        parents = ctx.parents()
+        #assert len(parents) == 0 ?
+        return short(parents[0].node())
 
                   
 # HGAgent is a stateless object, transparent singleton thanks to its __call__
