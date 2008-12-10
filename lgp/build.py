@@ -113,7 +113,8 @@ def run_post_treatments(packages, distdir, distrib, verbose=False):
 
     # FIXME piuparts that doesn't work automatically for all of our packages
     # FIXME manage correctly options.verbose and options.keep_tmp by piuparts
-    if verbose and confirm("run piuparts on generated debian packages ?"):
+    #if verbose and confirm("run piuparts on generated debian packages ?"):
+    if False and confirm("run piuparts on generated debian packages ?"):
         basetgz = "%s-%s" % (distrib, get_architectures()[0])
         for package in packages:
             print separator % package
