@@ -243,7 +243,7 @@ class SetupInfo(Configuration):
                 check_call(cmd.split(), stdout=sys.stdout, stderr=sys.stderr)
             except CalledProcessError, err:
                 logging.error("creation of the source archive failed")
-                logging.error("check if the version '%s' is really taggued in"\
+                logging.error("check if the version '%s' is really tagged in"\
                                   " your repository" % self.get_upstream_version())
                 raise LGPCommandException("source distribution wasn't properly built", err)
 
