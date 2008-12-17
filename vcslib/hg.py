@@ -26,7 +26,7 @@ __all__ = ['HGAgent', 'find_repository']
 import sys
 import os
 import datetime
-from os.path import abspath, isdir, join, dirname
+from os.path import abspath, isdir, join, dirname, basename
 from cStringIO import StringIO
 
 from logilab.common.compat import sorted, reversed
@@ -232,7 +232,7 @@ class HGAgent:
         #    print "warning: <%s> argument not needed and ignored" % path
         cmd = 'hg clone %s %s' % (quiet, repository)
         if tag:
-            cmd += '; hg up %s' % tag
+            cmd += '; hg up -R %s %s' % (basename(repository), tag)
         return cmd
         
     def log_info(self, path, from_date, to_date, repository=None, tag=None):
