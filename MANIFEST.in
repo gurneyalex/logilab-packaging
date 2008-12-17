@@ -1,5 +1,6 @@
 exclude .hgignore
-recursive-exclude debian*
+recursive-exclude debian *
+recursive-exclude debian.hardy *
 
 include bin/lgp
 include bin/setupchroot
