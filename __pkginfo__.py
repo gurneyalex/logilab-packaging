@@ -28,7 +28,7 @@ copyright = '''Copyright (c) 2003-2008 LOGILAB S.A. (Paris, FRANCE).
 http://www.logilab.fr/ -- mailto:contact@logilab.fr'''
 
 author = "Logilab"
-author_email = "devel@logilab.fr"
+author_email = "contact@logilab.fr"
 
 short_desc = "set of development tools used at Logilab"
 long_desc = """Set of tools which aims to help the developpement process, including :
