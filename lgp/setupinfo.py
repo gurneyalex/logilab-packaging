@@ -55,6 +55,9 @@ class SetupInfo(Configuration):
 
     def __init__(self, arguments, options=None, **args):
         self.options = (
+               ('version',
+                {'help': "output version information and exit"
+                }),
                ('verbose',
                 {'action': 'store_true',
                  'dest' : "verbose",
@@ -85,6 +88,12 @@ class SetupInfo(Configuration):
 
         # Manage arguments (project path essentialy)
         self.arguments = self.load_command_line_configuration(arguments)
+
+        # Version information
+        if self.config.version:
+            from logilab.devtools.__pkginfo__ import version, distname, copyright
+            print "lgp (%s) %s\n%s" % (distname, version, copyright)
+            sys.exit()
 
         # Instanciate the default logger configuration
         logging.basicConfig(level=logging.INFO, filename="/dev/null")
