@@ -209,7 +209,7 @@ class HGAgent:
                "I don't know how to deal with filepath and <hg tag>"
         return "hg tag -f %s" % tagname
 
-    def checkout(self, repository, path, tag='tip', quiet=True):
+    def checkout(self, repository, path, tag=None, quiet=True):
         """
         :type repository: str
         :param repository: the CVS repository address
@@ -228,6 +228,8 @@ class HGAgent:
             quiet = '-q '
         else:
             quiet = ''
+        if tag is None:
+            tag = 'tip'
         #if path:
         #    print "warning: <%s> argument not needed and ignored" % path
         return 'hg clone -r %s %s %s' % (tag, quiet, repository)
