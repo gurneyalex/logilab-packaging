@@ -38,7 +38,7 @@ from logilab.devtools.lgp.exceptions import LGPException, LGPCommandException
 
 COMMANDS = {
         "sdist" : {
-            "pkginfo": 'python setup.py sdist --force-manifest -d %s',
+            "pkginfo": 'python setup.py -q sdist --force-manifest -d %s',
             "setuptools": 'python setup.py sdist -d %s',
             "makefile": 'make -f setup.mk dist-gzip -e DIST_DIR=%s',
         },
