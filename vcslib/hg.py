@@ -232,7 +232,7 @@ class HGAgent:
             tag = 'tip'
         #if path:
         #    print "warning: <%s> argument not needed and ignored" % path
-        return 'hg clone -r %s %s %s' % (tag, quiet, repository)
+        return 'hg clone -r "%s" %s %s' % (tag, quiet, repository)
 
     def log_info(self, path, from_date, to_date, repository=None, tag=None):
         """get log messages between <from_date> and <to_date> (inclusive)
