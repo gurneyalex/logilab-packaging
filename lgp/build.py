@@ -233,26 +233,8 @@ class Builder(SetupInfo):
         tarball = tarball.rsplit('.orig.tar.gz')[0].replace('_', '-')
         origpath = os.path.join(tmpdir, tarball)
 
-        # copying debian_dir directory into tmp build depending of the target distribution
-        # in all cases, we copy the debian directory of the unstable version
-        # DOC If a file should not be included, touch an empty file in the overlay directory
-        export(osp.join(self.config.pkg_dir, 'debian'), osp.join(origpath, 'debian'))
-        debiandir = self.get_debian_dir()
-        if debiandir != 'debian/':
-            logging.debug("overriding files...")
-            export(osp.join(self.config.pkg_dir, debiandir), osp.join(origpath, 'debian/'),
-                   verbose=self.config.verbose)
-
-        # update changelog if DISTRIBUTION is present
-        # debchange --release-heuristic changelog --release --distribution %s --force-distribution "New upstream release"
-        # FIXME quickfix for lintian error
-        # FIXME python2.4 sed: couldn't close stdout: Bad file descriptor
-        cmd = 'sed -i s/DISTRIBUTION/%s/ %s' \
-              % (distrib, os.path.join(origpath, 'debian/changelog'))
-        try:
-            check_call(cmd.split(), stdout=sys.stdout) #, stderr=sys.stderr)
-        except CalledProcessError, err:
-            raise LGPCommandException("bad substitution for DISTRIBUTION string", err)
+        # support of the multi-distribution
+        self.manage_multi_distribution(origpath)
 
         # build the package using vbuild or default to fakeroot
         debuilder = os.environ.get('DEBUILDER', 'vbuild')
@@ -311,3 +293,26 @@ class Builder(SetupInfo):
         if self.config.deb_src:
             sys.exit(returncode)
         return dscfile
+
+    def manage_multi_distribution(self, origpath):
+        """manage debian files depending of the distrib option
+
+        We copy debian_dir directory into tmp build depending of the target distribution
+        in all cases, we copy the debian directory of the unstable version
+        If a file should not be included, touch an empty file in the overlay
+        directory"""
+        export(osp.join(self.config.pkg_dir, 'debian'), osp.join(origpath, 'debian'))
+        debiandir = self.get_debian_dir()
+        if debiandir != 'debian/':
+            logging.debug("overriding files...")
+            export(osp.join(self.config.pkg_dir, debiandir), osp.join(origpath, 'debian/'),
+                   verbose=self.config.verbose)
+
+        cmd = ['sed', '-i',
+               's/\(unstable\|DISTRIBUTION\); urgency/%s; urgency/' %
+               self.config.distrib,
+               '%s' % os.path.join(origpath, 'debian/changelog')]
+        try:
+            check_call(cmd, stdout=sys.stdout) #, stderr=sys.stderr)
+        except CalledProcessError, err:
+            raise LGPCommandException("bad substitution for distribution field", err)
