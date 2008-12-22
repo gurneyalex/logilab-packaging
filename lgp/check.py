@@ -319,14 +319,16 @@ def check_debian_changelog(checker):
             status = 0
             checker.logger.error('UNRELEASED distribution(s) in debian changelog:')
             print output
+        cmd = "sed -ne '/DISTRIBUTION/p' debian/changelog"
+        _, output = commands.getstatusoutput(cmd)
+        if output:
+            status = 0
+            checker.logger.warn('You can now use the default "unstable" string in your debian changelog:')
+            print output
         cmd = "dpkg-parsechangelog >/dev/null"
         _, output = commands.getstatusoutput(cmd)
         if output:
             status = 0
-        cmd = "grep DISTRIBUTION %s" % CHANGELOG
-        if commands.getstatusoutput(cmd)[0]:
-            checker.logger.warn("use the constant DISTRIBUTION "\
-                                "in case of multi-distributions")
     return status
 
 def check_readme(checker):
