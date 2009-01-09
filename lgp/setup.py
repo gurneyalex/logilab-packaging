@@ -132,6 +132,7 @@ class Setup(SetupInfo):
                  'choices': get_distributions(),
                  'dest': 'distrib',
                  'short': 'd',
+                 'default': 'unstable',
                  'metavar': "<distribution>",
                  'help': "particular distribution to set up (by default create %s)"
                          % ",".join(get_distributions())
