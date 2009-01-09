@@ -36,6 +36,7 @@ from logilab.common.shellutils import cp
 from logilab.devtools.lib.pkginfo import PackageInfo
 from logilab.devtools.lgp.exceptions import LGPException, LGPCommandException
 
+LOG_FORMAT='%(levelname)1.1s:%(name)s: %(message)s'
 COMMANDS = {
         "sdist" : {
             "pkginfo": 'python setup.py -q sdist --force-manifest -d %s',
@@ -80,6 +81,12 @@ class SetupInfo(Configuration):
                  'metavar' : "<scm revision>",
                  'help': "set a specific revision or tag to build the debian package"
                 }),
+               ('no-color',
+                {'action': 'store_true',
+                 'default': False,
+                 'dest': "no_color",
+                 'help': "print log messages without color"
+                }),
                )
         if options:
             for opt in options:
@@ -98,7 +105,10 @@ class SetupInfo(Configuration):
         # Instanciate the default logger configuration
         logging.basicConfig(level=logging.INFO, filename="/dev/null")
         console = logging.StreamHandler()
-        console.setFormatter(ColorFormatter('%(levelname)1.1s:%(name)s: %(message)s'))
+        if self.config.no_color:
+            console.setFormatter(logging.Formatter(LOG_FORMAT))
+        else:
+            console.setFormatter(ColorFormatter(LOG_FORMAT))
         logging.getLogger().addHandler(console)
         if self.config.verbose:
             logging.getLogger().setLevel(logging.DEBUG)
@@ -188,7 +198,9 @@ class SetupInfo(Configuration):
             return distname
 
     def get_upstream_version(self):
-        if self._package_format == 'pkginfo':
+        if self.config.revision:
+            return self.config.revision
+        elif self._package_format == 'pkginfo':
             from __pkginfo__ import version
             return version
         elif self._package_format == 'makefile':
@@ -245,6 +257,11 @@ class SetupInfo(Configuration):
                                     % (self.get_debian_name(), debian_version))
             if self._package_format in COMMANDS["sdist"]:
                 cmd = COMMANDS["sdist"][self._package_format] % self.config.dist_dir
+                if self.config.revision:
+                    if self._package_format == 'makefile':
+                        cmd += " -e VERSION=%s" % self.config.revision
+                    else:
+                        raise LGPException("revision option not available for this package format (use setup.mk instead)")
             else:
                 raise LGPException("no way to create the source archive (tarball)")
 
