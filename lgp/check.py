@@ -325,7 +325,7 @@ def check_debian_changelog(checker):
             status = 0
             checker.logger.warn('You can now use the default "unstable" string in your debian changelog:')
             print output
-        cmd = "dpkg-parsechangelog >/dev/null"
+        cmd = "dpkg-parsechangelog"
         _, output = commands.getstatusoutput(cmd)
         if output:
             status = 0
