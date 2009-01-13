@@ -232,7 +232,15 @@ class HGAgent:
             tag = 'tip'
         #if path:
         #    print "warning: <%s> argument not needed and ignored" % path
-        return 'hg clone -r "%s" %s %s' % (tag, quiet, repository)
+
+        # TODO stay compatible with mercurial 0.9 (still present in etch)
+        # Note that the following command is only available since 1.0.1
+        #return 'hg clone -r "%s" %s %s' % (tag, quiet, repository)
+        # please, continue to use this old-good-(and-slower) command
+        cmd = 'hg clone %s %s' % (quiet, repository)
+        if tag:
+            cmd += '; hg up -R %s %s' % (basename(repository), tag)
+        return cmd
 
     def log_info(self, path, from_date, to_date, repository=None, tag=None):
         """get log messages between <from_date> and <to_date> (inclusive)
