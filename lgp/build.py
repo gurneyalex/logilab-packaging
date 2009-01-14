@@ -94,6 +94,15 @@ def run_post_treatments(packages, distdir, distrib, verbose=False):
                                "Really a native package (suspect) ?" % package):
                     return
 
+    # Run usual checkers
+    checkers = {'debc': '', 'lintian': '-vi',}
+    for checker, opts in checkers.iteritems():
+        if not verbose or confirm("run %s on generated debian packages ?" % checker):
+            for package in packages:
+                if package.endswith('.changes'):
+                    print separator % package
+                    cond_exec('%s %s %s/%s' % (checker, opts, distdir, package))
+
     # Try Debian signing immediately if possible
     if 'DEBSIGN_KEYID' in os.environ:
         if not verbose or confirm("debsign your packages ?"):
@@ -101,15 +110,6 @@ def run_post_treatments(packages, distdir, distrib, verbose=False):
                 if package.endswith('.changes'):
                     print separator % package
                     cond_exec('debsign %s' % osp.join(distdir, package))
-
-    # Run usual checkers
-    checkers = ('lintian',)
-    for checker in checkers:
-        if not verbose or confirm("run %s on generated debian packages ?" % checker):
-            for package in packages:
-                if package.endswith('.changes'):
-                    print separator % package
-                    cond_exec('%s -vi %s/%s' % (checker, distdir, package))
 
     # FIXME piuparts that doesn't work automatically for all of our packages
     # FIXME manage correctly options.verbose and options.keep_tmp by piuparts
