@@ -55,6 +55,7 @@ class SetupInfo(Configuration):
     _package_format = None
 
     def __init__(self, arguments, options=None, **args):
+        isatty = hasattr(sys.stdout, 'isatty') and sys.stdout.isatty()
         self.options = (
                ('version',
                 {'help': "output version information and exit"
@@ -83,7 +84,7 @@ class SetupInfo(Configuration):
                 }),
                ('no-color',
                 {'action': 'store_true',
-                 'default': False,
+                 'default': not isatty,
                  'dest': "no_color",
                  'help': "print log messages without color"
                 }),
@@ -105,7 +106,7 @@ class SetupInfo(Configuration):
         # Instanciate the default logger configuration
         logging.basicConfig(level=logging.INFO, filename="/dev/null")
         console = logging.StreamHandler()
-        if self.config.no_color:
+        if self.config.no_color or not isatty:
             console.setFormatter(logging.Formatter(LOG_FORMAT))
         else:
             console.setFormatter(ColorFormatter(LOG_FORMAT))
