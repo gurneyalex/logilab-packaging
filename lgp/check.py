@@ -58,14 +58,16 @@ from logilab.devtools.lgp.exceptions import LGPException
 MANDATORY_SETUP_FIELDS = ('name', 'version', 'author', 'author_email', 'license',
                           'copyright', 'short_desc', 'long_desc')
 
+OK, NOK = 1, 0
 CHECKS = { 'default'    : ['debian_dir', 'debian_rules', 'debian_copying',
                            'debian_changelog', 'package_info', 'readme',
                            'changelog', 'bin', 'tests_directory', 'setup_file',
                            'repository', 'copying', 'documentation', 'debsign',
-                           'homepage', 'builder', 'keyrings'],
-           'pkginfo'    : ['release_number', 'manifest_in', 'announce',
-                           'include_dirs', 'scripts', 'pydistutils'],
-           'setuptools' : ['scripts', 'pydistutils'],
+                           'homepage', 'builder', 'keyrings', 'announce',
+                           'release_number', 'manifest_in', 'include_dirs',
+                           'scripts', 'pydistutils'],
+           'setuptools' : [],
+           'pkginfo'    : [],
            'makefile'   : ['makefile'],
          }
 
@@ -93,37 +95,37 @@ def normalize_version(version):
 
 def _check_sh(checker, sh_file):
     """ check executable script files """
-    status = 1
+    status = OK
     data = open(sh_file).read()
     if data[:2] != '#!':
         checker.logger.error('script %s doesn\'t starts with "#!"' % sh_file)
-        status = 0
+        status = NOK
     if not is_executable(sh_file):
         make_executable(sh_file)
     cmd = '%s --help' % sh_file
     cmdstatus, output = commands.getstatusoutput(cmd)
     if cmdstatus:
         checker.logger.error('%r returned status %s, ouput:\n%s' % (cmd, cmdstatus, output))
-        status = 0
+        status = NOK
     return status
 
 def _check_template(checker, filename, templatename):
     """check a file is similar to a reference template """
     if not exists(filename):
         checker.logger.warn('%s missing' % filename)
-        return 0
+        return NOK
     template = open(join(templates.__path__[0], templatename)).read()
     template = REV_LINE.sub('', template)
     actual = open(filename).read()
     actual = REV_LINE.sub('', actual)
     if actual != template:
         checker.logger.warn('%s does not match the template' % filename)
-    return 1
+    return OK
 
 def _check_bat(checker, bat_file):
     """try to check windows .bat files
     """
-    status = 1
+    status = OK
     f = open(bat_file)
     data = f.read().strip()
     if not data[:11] == '@python -c ':
@@ -137,12 +139,12 @@ def _check_bat(checker, bat_file):
     else:
         command = data
         checker.logger.error(bat_file, None, "forget arguments")
-        status = 0
+        status = NOK
     error = os.popen3('%s --help' % command)[2].read()
     if error:
         checker.logger.error(bat_file, None,
                        "error while executing (%s):\n%s"%(command, error))
-        status = 0
+        status = NOK
     return status
 
 
@@ -237,10 +239,10 @@ class Checker(SetupInfo):
             self.logger = logging.getLogger(func.__name__)
             result = func(self)
             # result possible values:
-            #   zero or negative -> error
-            #   zero use a generic report function
-            #   positive -> ok (we count it)
-            if result == 0 :
+            #   negative -> error occured !
+            #   NOK: use a generic report function
+            #   OK : add to counter
+            if result == NOK :
                 self.logger.error(func.__doc__)
             elif result>0:
                 self.counter += 1
@@ -263,31 +265,34 @@ class Checker(SetupInfo):
 
 
 
-# ======================================
+# ========================================================
 #
 # Check functions collection starts here
 #
-# ======================================
+# IMPORTANT ! all checkers have to return a valid status !
+# Example: OK or NOK
+#
+# ========================================================
 def check_keyrings(checker):
     """check the mandatory keyrings for debian and ubuntu in /usr/share/keyrings/"""
     if isfile("/usr/share/keyrings/ubuntu-archive-keyring.gpg") and \
        isfile("/usr/share/keyrings/debian-archive-keyring.gpg"):
-        return 1
-    return 0
+        return OK
+    return NOK
 
 def check_pydistutils(checker):
     """check a .pydistutils.cfg file in your home firectory"""
     if isfile(os.path.join(os.environ['HOME'], '.pydistutils.cfg')):
         checker.logger.error('your ~/.pydistutils.cfg conflicts with distutils commands')
-        return 0
-    return 1
+        return NOK
+    return OK
 
 def check_builder(checker):
     """check if the builder is correct """
     debuilder = os.environ.get('DEBUILDER') or False
     if debuilder:
         checker.logger.warn('you have set a different builder in DEBUILDER. Unset it if in doubt')
-    return 1
+    return OK
 
 def check_debian_dir(checker):
     """check the debian* directory """
@@ -297,7 +302,7 @@ def check_debian_dir(checker):
 def check_debian_rules(checker):
     """check the debian*/rules file (filemode) """
     debian_dir = checker.get_debian_dir()
-    status = 1
+    status = OK
     status = status and os.path.isfile(debian_dir + '/rules')
     status = status and is_executable(debian_dir + '/rules')
     return status
@@ -305,49 +310,55 @@ def check_debian_rules(checker):
 def check_debian_copying(checker):
     """check debian*/copyright file """
     debian_dir = checker.get_debian_dir()
-    return os.path.isfile(debian_dir + '/copyright')
+    return os.path.isfile(os.path.join(debian_dir,'copyright'))
 
 def check_debian_changelog(checker):
     """your debian changelog is not parsable"""
     debian_dir = checker.get_debian_dir()
-    CHANGELOG = debian_dir + '/changelog'
-    status= 1
+    CHANGELOG = os.path.join(debian_dir, '/changelog')
+    status= OK
     if os.path.isfile(CHANGELOG):
         cmd = "sed -ne '/UNRELEASED/p' debian/changelog"
         _, output = commands.getstatusoutput(cmd)
         if output:
-            status = 0
+            status = NOK
             checker.logger.error('UNRELEASED distribution(s) in debian changelog:')
             print output
         cmd = "sed -ne '/DISTRIBUTION/p' debian/changelog"
         _, output = commands.getstatusoutput(cmd)
         if output:
-            status = 0
+            status = NOK
             checker.logger.warn('You can now use the default "unstable" string in your debian changelog:')
             print output
         cmd = "dpkg-parsechangelog"
         _, output = commands.getstatusoutput(cmd)
         if output:
-            status = 0
+            status = NOK
     return status
 
 def check_readme(checker):
     """check the upstream README file """
-    return isfile('README')
+    if not isfile('README'):
+        checker.logger.warn(check_readme.__doc__)
+    return OK
 
 def check_changelog(checker):
     """check the upstream ChangeLog """
+    status = OK
     if not isfile(CHANGEFILE):
-        return 0
-    cmd = "grep -E '^[[:space:]]+--' %s" % CHANGEFILE
-    status, _ = commands.getstatusoutput(cmd)
+        checker.logger.warn(check_changelog.__doc__)
+    else:
+        cmd = "grep -E '^[[:space:]]+--[[:space:]]+$' %s" % CHANGEFILE
+        status, _ = commands.getstatusoutput(cmd)
+        if not status:
+            checker.logger.warn("%s doesn't seem to be closed" % CHANGEFILE)
     return status
 
 def check_copying(checker):
     """check upstream COPYING file """
     if not os.path.isfile('COPYING'):
         checker.logger.warn(check_copying.__doc__)
-    return 1
+    return OK
 
 def check_tests_directory(checker):
     """check the tests? directory """
@@ -360,7 +371,7 @@ def check_run_tests(checker):
         if os.path.isdir(testdir):
             cond_exec('pytest', confirm=True, retry=True)
             break
-    return 1
+    return OK
 
 def check_setup_file(checker):
     """check the setup.[py|mk] file """
@@ -368,8 +379,9 @@ def check_setup_file(checker):
 
 def check_makefile(checker):
     """check makefile file and dependencies """
-    status = 1
+    status = OK
     status = status and os.path.isfile("setup.mk")
+    # FIXME
     #status = status and _check_make_dependencies()
     return status
 
@@ -381,18 +393,18 @@ def check_homepage(checker):
         if not status:
             checker.logger.warn('rename "projects" to "project" in the "Homepage:" value in debian/control')
     else:
-        checker.logger.error('add a valid "Homepage:" field in debian/control')
-    return status
+        checker.logger.warn('add a valid "Homepage:" field in debian/control')
+    return OK
 
 def check_announce(checker):
     """check the announce.txt file """
-    if not isfile('announce.txt'):
-        checker.logger.warn('announce.txt not present')
-    return 1
+    if not (isfile('announce.txt') and isfile('NEWS')) :
+        checker.logger.debug('announce file not present (NEWS or announce.txt)')
+    return OK
 
 def check_bin(checker):
     """check executable script files in bin/ """
-    status = 1
+    status = OK
     if not exists('bin/'):
         return status
     for filename in os.listdir('bin/'):
@@ -413,7 +425,7 @@ def check_bin(checker):
 
 def check_documentation(checker):
     """check project's documentation"""
-    status = 1
+    status = OK
     if os.path.isdir('doc'):
         # FIXME
         # should be a clean target in setup.mk for example
@@ -422,25 +434,31 @@ def check_documentation(checker):
         #os.chdir('doc')
         #status = cond_exec('make', retry=True)
         pass
+    else:
+        checker.logger.warn("documentation directory not found")
     return status
 
 def check_repository(checker):
-    """check repository status (modified files) """
+    """check repository status (not up-to-date) """
     try:
         vcs_agent = get_vcs_agent(checker.config.pkg_dir)
         result = vcs_agent.not_up_to_date(checker.config.pkg_dir)
         if result:
-            return 0
+            checker.logger.warn("vcs_agent returns: %s" % result)
+            return NOK
     except NotImplementedError:
         checker.logger.warn("the current vcs agent isn't yet supported")
-    return 1
+    return OK
 
 def check_release_number(checker):
     """check inconsistency with release number """
+    status = OK
+    if hasattr(checker, "_package") and checker._package_format == "pkginfo":
+        pi = checker._package
+    else:
+        return status
     dirname = checker.config.pkg_dir
-    pi = checker._package
     version = normalize_version(pi.version)
-    status = 1
     try:
         cl_version = ChangeLog(find_ChangeLog(dirname)).get_latest_revision()
         cl_version = normalize_version(cl_version)
@@ -448,9 +466,9 @@ def check_release_number(checker):
             msg = 'version inconsistency : found %s in ChangeLog \
 (reference is %s)'
             checker.logger.error(msg % (cl_version, version))
-            status = 0
+            status = NOK
     except ChangeLogNotFound:
-        checker.logger.warn('missing file')
+        checker.logger.warn('upstream %s was not found' % CHANGEFILE)
 
     deb_version = pi.debian_version()
     deb_version = normalize_version(deb_version.split('-', 1)[0])
@@ -459,24 +477,28 @@ def check_release_number(checker):
 (reference is %s)'
         checker.logger.error('debian/changelog', None,
                        msg % (deb_version, version))
-        status = 0
+        status = NOK
     return status
 
 def check_manifest_in(checker):
     """check MANIFEST.in content"""
-    status = 1
+    status = OK
     dirname = checker.config.pkg_dir
+    absfile = join(dirname, 'MANIFEST.in')
+    # return immediatly if no file available
+    if not os.path.isfile(absfile):
+        return status
+
     # check matched files
     should_be_in = get_manifest_files(dirname=dirname)
     matched = read_manifest_in(None, dirname=dirname)
-    absfile = join(dirname, 'MANIFEST.in')
     for path in should_be_in:
         try:
             i = matched.index(path)
             matched.pop(i)
         except ValueError:
             checker.logger.warn('%s is not matched' % path)
-            status = 0
+            status = NOK
     # check garbage
     for filename in matched:
         if match_extensions(filename, JUNK_EXTENSIONS):
@@ -485,35 +507,35 @@ def check_manifest_in(checker):
 
 def check_include_dirs(checker):
     """check include_dirs"""
-    if hasattr(checker._package, 'include_dirs'):
+    if hasattr(checker, "_package") and hasattr(checker._package, 'include_dirs'):
         for directory in checker._package.include_dirs:
             if not exists(directory):
                 msg = 'include inexistant directory %r' % directory
                 checker.logger.error(msg)
-                return 0
-    return 1
+                return NOK
+    return OK
 
 def check_debsign(checker):
     """add the DEBSIGN_KEYID environment variable to sign directly """
     if 'DEBSIGN_KEYID' not in os.environ:
         checker.logger.info(check_debsign.__doc__)
-    return 1
+    return OK
 
 def check_scripts(checker):
     """check declared scripts"""
-    pi = checker._package
-    detected_scripts = get_default_scripts(pi)
-    scripts = getattr(pi, 'scripts', []) or []
-    if not sequence_equal(detected_scripts, scripts):
-        msg = 'detected %r as default "scripts" value, found %r' % (detected_scripts, scripts)
-        checker.logger.warn(msg)
-        return 0
-    return 1
+    if hasattr(checker, "_package") and hasattr(checker._package, 'scripts'):
+        detected_scripts = get_default_scripts(checker._package)
+        scripts = getattr(checker._package, 'scripts', [])
+        if not sequence_equal(detected_scripts, scripts):
+            msg = 'detected %r as default "scripts" value, found %r' % (detected_scripts, scripts)
+            checker.logger.warn(msg)
+            return NOK
+    return OK
 
 def check_package_info(checker):
     """check package information """
-    status = 1
-    if hasattr(checker, "_package"):
+    status = OK
+    if hasattr(checker, "_package") and checker._package_format == "pkginfo":
         pi = checker._package
     else:
         return status
@@ -521,7 +543,7 @@ def check_package_info(checker):
     for field in MANDATORY_SETUP_FIELDS:
         if not hasattr(pi, field):
             checker.logger.error("%s field missing" % field)
-            status = 0
+            status = NOK
         if field == "long_desc":
             for word in spell_check(pi.long_desc, ignore=(pi.name.lower(),)):
                 msg = 'possibly mispelled word %r' % word
@@ -612,7 +634,7 @@ def check_dtd_and_catalogs(checkers):
 #    # FIXME: find a generic way to checks values found in config !
 #    return status
 
-def check_copyright(checker):
+def check_copyright_header(checker):
     """check copyright year (not implemented) """
     raise NotImplementedError("year could be updated automatically by templating")
 #    match = COPYRIGHT_RGX.search(copyright)
