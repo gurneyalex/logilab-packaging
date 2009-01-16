@@ -37,6 +37,7 @@ except ImportError:
 from debian_bundle import deb822
 
 from logilab.common.fileutils import export
+from logilab.common.shellutils import cp
 
 from logilab.devtools.lgp.setupinfo import SetupInfo
 from logilab.devtools.lgp.utils import get_distributions, get_architectures
@@ -94,6 +95,15 @@ def run_post_treatments(packages, distdir, distrib, verbose=False):
                                "Really a native package (suspect) ?" % package):
                     return
 
+    # Run usual checkers
+    checkers = {'debc': '', 'lintian': '-vi',}
+    for checker, opts in checkers.iteritems():
+        if not verbose or confirm("run %s on generated debian packages ?" % checker):
+            for package in packages:
+                if package.endswith('.changes'):
+                    print separator % package
+                    cond_exec('%s %s %s/%s' % (checker, opts, distdir, package))
+
     # Try Debian signing immediately if possible
     if 'DEBSIGN_KEYID' in os.environ:
         if not verbose or confirm("debsign your packages ?"):
@@ -101,15 +111,6 @@ def run_post_treatments(packages, distdir, distrib, verbose=False):
                 if package.endswith('.changes'):
                     print separator % package
                     cond_exec('debsign %s' % osp.join(distdir, package))
-
-    # Run usual checkers
-    checkers = ('lintian',)
-    for checker in checkers:
-        if not verbose or confirm("run %s on generated debian packages ?" % checker):
-            for package in packages:
-                if package.endswith('.changes'):
-                    print separator % package
-                    cond_exec('%s -vi %s/%s' % (checker, distdir, package))
 
     # FIXME piuparts that doesn't work automatically for all of our packages
     # FIXME manage correctly options.verbose and options.keep_tmp by piuparts
@@ -124,6 +125,16 @@ def run_post_treatments(packages, distdir, distrib, verbose=False):
                     logging.error("piuparts exits with error")
                 else:
                     logging.info("piuparts exits normally")
+
+    # Add tag when build is successful
+    # FIXME tag format is not standardized yet
+    # Comments on card "Architecture standard d'un paquet"
+    #if verbose and confirm("Add upstream tag %s on %s ?" \
+    #                       % (builder.get_upstream_version(),
+    #                          builder.get_upstream_name())):
+    #    from logilab.devtools.vcslib import get_vcs_agent
+    #    vcs_agent = vcs_agent or get_vcs_agent('.')
+    #    os.system(vcs_agent.tag(package_dir, release_tag))
 
 
 class Builder(SetupInfo):
@@ -213,7 +224,7 @@ class Builder(SetupInfo):
         # rewrite distrib to manage the 'all' case in run()
         self.config.distrib = distrib
 
-        tmpdir = tempfile.mkdtemp()
+        self._tmpdir = tmpdir = tempfile.mkdtemp()
 
         self.clean_repository()
         tarball = self.create_orig_tarball(tmpdir)
@@ -263,9 +274,13 @@ class Builder(SetupInfo):
                 raise LGPException('vbuild ran, but %s not found' % fullpath)
 
         # clean tmpdir
-        if not self.config.keep_tmpdir:
-            shutil.rmtree(tmpdir)
+        self.clean_tmpdir()
+
         return self.get_packages()
+
+    def clean_tmpdir(self):
+        if not self.config.keep_tmpdir:
+            shutil.rmtree(self._tmpdir)
 
     def get_distrib_dir(self):
         """ get the dynamic target release directory """
@@ -282,7 +297,14 @@ class Builder(SetupInfo):
             origpath: path to orig.tar.gz tarball
         """
         dscfile = '%s_%s.dsc' % (self.get_debian_name(), self.get_debian_version())
-        logging.debug("creation of the debian source package '%s'"
+        filelist = ((dscfile,
+                     "add '%s' as debian source package control file (.dsc)"
+                    ),
+                    ('%s_%s.diff.gz' % (self.get_debian_name(), self.get_debian_version()),
+                     "add '%s' as debian specific diff (.diff.gz)")
+                   )
+
+        logging.debug("start creation of the debian source package '%s'"
                       % osp.join(osp.dirname(origpath), dscfile))
         try:
             cmd = 'dpkg-source -b %s' % origpath
@@ -290,7 +312,13 @@ class Builder(SetupInfo):
         except CalledProcessError, err:
             msg = "cannot build valid dsc file '%s' with command %s" % (dscfile, cmd)
             raise LGPCommandException(msg, err)
+
         if self.config.deb_src:
+            for filename,msg in filelist:
+                logging.debug("copy '%s' to '%s'" % (filename, self.config.dist_dir))
+                cp(filename, self.config.dist_dir)
+                logging.info(msg % osp.join(self.config.dist_dir, filename))
+            self.clean_tmpdir()
             sys.exit(returncode)
         return dscfile
 
