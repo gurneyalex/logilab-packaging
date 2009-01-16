@@ -281,7 +281,7 @@ class SetupInfo(Configuration):
 
         # TODO check the upstream version with the new tarball 
 
-        logging.info("use '%s' as original source archive (tarball)" % upstream_tarball)
+        logging.info("add '%s' as original source archive (tarball)" % upstream_tarball)
         logging.debug("copy '%s' to '%s'" % (upstream_tarball, tarball))
         cp(upstream_tarball, tarball)
 
