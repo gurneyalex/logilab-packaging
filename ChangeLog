@@ -1,6 +1,11 @@
 ChangeLog for logilab.devtools
 ==============================
 
+2009-01-16  --  0.13
+    * lgp: closes #4667: generate debian source package
+
+
+
 2008-10-14  --  0.12
     * lgp: can now manage pbuilder image to create package
 
