@@ -126,6 +126,16 @@ def run_post_treatments(packages, distdir, distrib, verbose=False):
                 else:
                     logging.info("piuparts exits normally")
 
+    # Add tag when build is successful
+    # FIXME tag format is not standardized yet
+    # Comments on card "Architecture standard d'un paquet"
+    #if verbose and confirm("Add upstream tag %s on %s ?" \
+    #                       % (builder.get_upstream_version(),
+    #                          builder.get_upstream_name())):
+    #    from logilab.devtools.vcslib import get_vcs_agent
+    #    vcs_agent = vcs_agent or get_vcs_agent('.')
+    #    os.system(vcs_agent.tag(package_dir, release_tag))
+
 
 class Builder(SetupInfo):
     """ Debian builder class
