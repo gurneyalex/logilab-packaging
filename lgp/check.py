@@ -103,9 +103,9 @@ def _check_sh(checker, sh_file):
     if not is_executable(sh_file):
         make_executable(sh_file)
     cmd = '%s --help' % sh_file
-    cmdstatus, output = commands.getstatusoutput(cmd)
+    cmdstatus, _ = commands.getstatusoutput(cmd)
     if cmdstatus:
-        checker.logger.error('%r returned status %s, ouput:\n%s' % (cmd, cmdstatus, output))
+        checker.logger.error('%s returned status %s' % (cmd, cmdstatus))
         status = NOK
     return status
 
