@@ -47,7 +47,6 @@ from os.path import join
 
 include_dirs = ['templates', join('test', 'data')]
 
-
 scripts = [
     # vcslib
     'bin/vcpull',

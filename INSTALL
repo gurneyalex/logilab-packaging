@@ -1,27 +1,28 @@
 Lgp Installation Notes
 ======================
 
-Debian
-------
-* install logilab-packaging package
-* edit the /etc/lgp/pbuilderrc file with your default values
+- install logilab-packaging package
+- edit the /etc/lgp/pbuilderrc file with your default values
   check these variables:
-  - *_CODENAME
-        be sure that the mapping is still correct fr debian
+
+  - \*_CODENAME
+    be sure that the mapping is still correct fr debian
   - DEBIAN_SUITES / UBUNTU_SUITES
-        list of codenames to adapt for the debian-like distribution
+    list of codenames to adapt for the debian-like distribution
   - DEBIAN_MIRROR / UBUNTU_MIRROR
-        master mirror of the distribution
+    master mirror of the distribution
   - DEBIAN_SOURCESLIST / UBUNTU_SOURCESLIST or DEBIAN_OTHERMIRROR / UBUNTU_OTHERMIRROR
-        dynamic sources.list (using $DIST variable) or use the standard pbuilder format (with pipes)
-        If you want to use flat files, please edit the /etc/lgp/sources.list.* files
+    dynamic sources.list (using $DIST variable) or use the standard pbuilder format (with pipes)
+    If you want to use flat files, please edit the /etc/lgp/sources.list.\* files
   - BASETGZ
-        the chosen location for the pbuilder chrooted images
-        this path will be created by installation.
-        If you want to change it, please create the directory path forst !
-* create pbuilder images with:
-        % lgp setup -c create
-* you need to add sudo privileges for pbuilder command and DIST environment variable
+    the chosen location for the pbuilder chrooted images
+    this path will be created by installation.
+    If you want to change it, please create the directory path forst !
+- create pbuilder images with:
+
+  % lgp setup -c create
+
+- you need to add sudo privileges for pbuilder command and DIST environment variable
   if you want that developpers use lgp (not necessary if only run as root)
 
 Note: you can easily remove basetgz of any created pbuilder images.
