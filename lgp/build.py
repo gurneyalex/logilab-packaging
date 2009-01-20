@@ -61,10 +61,10 @@ def run(args):
         for arch in architectures:
             for distrib in distributions:
                 packages = builder.compile(distrib=distrib, arch=arch)
-                logging.info("Debian changes file is: %s" %
-                             builder.get_changes_file())
-                logging.info("new files are waiting in %s. Enjoy." %
-                             builder.get_distrib_dir())
+                logging.info("new files are waiting in %s. Enjoy."
+                             % builder.get_distrib_dir())
+                logging.info("Debian changes file is: %s"
+                             % builder.get_changes_file())
                 if builder.config.post_treatments:
                     run_post_treatments(packages, builder.get_distrib_dir(), distrib,
                                         builder.config.verbose)
@@ -98,11 +98,28 @@ def run_post_treatments(packages, distdir, distrib, verbose=False):
     # Run usual checkers
     checkers = {'debc': '', 'lintian': '-vi',}
     for checker, opts in checkers.iteritems():
-        if not verbose or confirm("run %s on generated debian packages ?" % checker):
+        if not verbose or confirm("run %s on generated Debian changes files ?" % checker):
             for package in packages:
                 if package.endswith('.changes'):
                     print separator % package
                     cond_exec('%s %s %s/%s' % (checker, opts, distdir, package))
+
+    if verbose and confirm("run piuparts on generated Debian packages ?"):
+        basetgz = "%s-%s.tgz" % (distrib, get_architectures()[0])
+        for package in packages:
+            print separator % package
+            if package.endswith('.deb'):
+                cmdline = ['sudo', 'piuparts', '--no-symlinks',
+                           '--warn-on-others', '--keep-sources-list',
+                           '-b', '/opt/buildd/%s' % basetgz,
+                           # just violent but to many false positives
+                           '-I "/usr/share/.*"',
+                           osp.join(distdir, package)]
+                logging.debug("piuparts command: %s", ' '.join(cmdline))
+                if cond_exec(' '.join(cmdline)):
+                    logging.error("piuparts exits with error")
+                else:
+                    logging.info("piuparts exits normally")
 
     # Try Debian signing immediately if possible
     if 'DEBSIGN_KEYID' in os.environ:
@@ -111,20 +128,6 @@ def run_post_treatments(packages, distdir, distrib, verbose=False):
                 if package.endswith('.changes'):
                     print separator % package
                     cond_exec('debsign %s' % osp.join(distdir, package))
-
-    # FIXME piuparts that doesn't work automatically for all of our packages
-    # FIXME manage correctly options.verbose and options.keep_tmp by piuparts
-    #if verbose and confirm("run piuparts on generated debian packages ?"):
-    if False and confirm("run piuparts on generated debian packages ?"):
-        basetgz = "%s-%s" % (distrib, get_architectures()[0])
-        for package in packages:
-            print separator % package
-            if package.endswith('.deb'):
-                if cond_exec('sudo piuparts -v -d %s -b /opt/buildd/%s.tgz %s/%s' 
-                             % (distrib, basetgz, distdir, package)):
-                    logging.error("piuparts exits with error")
-                else:
-                    logging.info("piuparts exits normally")
 
     # Add tag when build is successful
     # FIXME tag format is not standardized yet
