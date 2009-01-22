@@ -282,7 +282,10 @@ class HGAgent:
         if repopath is None:
             raise RuntimeError('no repository found in %s' % path)
         repo = Repository(Ui(), path=repopath)
-        ctx = repo.workingctx()
+        try:
+            ctx = repo.workingctx()
+        except AttributeError:
+            ctx = repo[None]
         parents = ctx.parents()
         #assert len(parents) == 0 ?
         return short(parents[0].node())
