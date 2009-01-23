@@ -161,7 +161,9 @@ class Version(object):
         return self.__compare('gt', other)
     def __ge__(self, other):
         return self.__compare('ge', other)
-        
+
+ChangeLogEntry.version_class = Version
+
 class DebianVersion(Version):
     """simple class to handle debian version number has a tuple while
     correctly printing it as X.Y.Z-D
