@@ -112,8 +112,9 @@ def run_post_treatments(packages, distdir, distrib, verbose=False):
                 cmdline = ['sudo', 'piuparts', '--no-symlinks',
                            '--warn-on-others', '--keep-sources-list',
                            '-b', '/opt/buildd/%s' % basetgz,
-                           # just violent but to many false positives
-                           '-I "/usr/share/.*"',
+                           # just violent but too many false positives otherwise
+                           '-I', '/usr/share/pycentral-data.*',
+                           '-I', '/var/lib/dpkg/triggers/pysupport.*',
                            osp.join(distdir, package)]
                 logging.debug("piuparts command: %s", ' '.join(cmdline))
                 if cond_exec(' '.join(cmdline)):
