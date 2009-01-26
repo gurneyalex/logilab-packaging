@@ -193,6 +193,14 @@ class Checker(SetupInfo):
                  'metavar' : "<comma separated names of check functions>",
                  'help': "force the exclusion of other check functions"
                 }),
+               ('set',
+                {'type': 'csv',
+                 'dest': 'set_checks',
+                 #'default' : [],
+                 'short': 's',
+                 'metavar' : "<comma separated names of check functions>",
+                 'help': "set a specific check functions list"
+                }),
                ('list',
                 {'action': 'store_true',
                  'default': False,
@@ -220,8 +228,12 @@ class Checker(SetupInfo):
         if all:
             return [funct for (name, funct) in globals().items() if name.startswith('check_')]
 
-        checks = CHECKS['default'] + CHECKS[self._package_format]
-
+        if self.config.set_checks is not None:
+            checks = []
+            for check in self.config.set_checks:
+                checks.append(check)
+        else:
+            checks = CHECKS['default'] + CHECKS[self._package_format]
         if self.config.include_checks is not None:
             for check in self.config.include_checks:
                 checks.append(check)
