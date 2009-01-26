@@ -4,6 +4,8 @@ ChangeLog for logilab.devtools
 2009-01-16  --  0.13
     * lgp: closes #4667: generate debian source package
 
+    * vcslib: stay compatible with etch release (mercurial 0.9.1)
+
 
 
 2008-10-14  --  0.12
