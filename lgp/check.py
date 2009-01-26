@@ -461,7 +461,7 @@ def check_release_number(checker):
     version = normalize_version(pi.version)
     try:
         cl_version = ChangeLog(find_ChangeLog(dirname)).get_latest_revision()
-        cl_version = normalize_version(cl_version)
+        cl_version = normalize_version(str(cl_version))
         if cl_version != version:
             msg = 'version inconsistency : found %s in ChangeLog \
 (reference is %s)'
