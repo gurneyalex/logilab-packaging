@@ -32,10 +32,6 @@ try:
 except ImportError:
     distname = modname
 try:
-    from __pkginfo__ import classifiers
-except ImportError:
-    classifiers = []
-try:
     from __pkginfo__ import scripts
 except ImportError:
     scripts = []
@@ -97,7 +93,8 @@ def get_packages(directory, prefix):
 
 def export(from_dir, to_dir,
            blacklist=STD_BLACKLIST,
-           ignore_ext=IGNORED_EXTENSIONS):
+           ignore_ext=IGNORED_EXTENSIONS,
+           verbose=True):
     """make a mirror of from_dir in to_dir, omitting directories and files
     listed in the black list
     """
@@ -116,7 +113,8 @@ def export(from_dir, to_dir,
                 continue
             src = '%s/%s' % (directory, filename)
             dest = to_dir + src[len(from_dir):]
-            print >> sys.stderr, src, '->', dest
+            if verbose:
+                print >> sys.stderr, src, '->', dest
             if os.path.isdir(src):
                 if not exists(dest):
                     os.mkdir(dest)
@@ -164,10 +162,14 @@ class MyInstallLib(install_lib.install_lib):
                 base = modname
             for directory in include_dirs:
                 dest = join(self.install_dir, base, directory)
-                export(directory, dest)
+                export(directory, dest, verbose=False)
         
 def install(**kwargs):
     """setup entry point"""
+    try:
+        sys.argv.remove('--force-manifest')
+    except:
+        pass
     if subpackage_of:
         package = subpackage_of + '.' + modname
         kwargs['package_dir'] = {package : '.'}
@@ -188,7 +190,6 @@ def install(**kwargs):
                  author = author,
                  author_email = author_email,
                  url = web,
-                 classifiers = classifiers,
                  scripts = ensure_scripts(scripts),
                  data_files = data_files,
                  ext_modules = ext_modules,
