@@ -37,9 +37,29 @@ from logilab.devtools.vcslib import VCS_UPTODATE, VCS_MODIFIED, \
 
 from mercurial.hg import repository as Repository
 from mercurial.ui import ui as Ui
-from mercurial.cmdutil import walkchangerevs
-from mercurial.util import cachefunc, _encoding
 from mercurial.node import short
+try:
+    from mercurial.cmdutil import walkchangerevs
+    from mercurial.util import cachefunc, _encoding
+except ImportError:
+    from mercurial.commands import walkchangerevs
+    import locale
+    def cachefunc(func):
+        return func
+    # stay compatible with mercurial 0.9.1 (etch debian release)
+    # (borrowed from mercurial.util 1.1.2)
+    try:
+        _encoding = os.environ.get("HGENCODING")
+        if sys.platform == 'darwin' and not _encoding:
+            # On darwin, getpreferredencoding ignores the locale environment and
+            # always returns mac-roman. We override this if the environment is
+            # not C (has been customized by the user).
+            locale.setlocale(locale.LC_CTYPE, '')
+            _encoding = locale.getlocale()[1]
+        if not _encoding:
+            _encoding = locale.getpreferredencoding() or 'ascii'
+    except locale.Error:
+        _encoding = 'ascii'
 
 try:
     # demandimport causes problems when activated, ensure it isn't
@@ -63,7 +83,6 @@ def find_repository(path):
         if path == oldpath:
             return None
     return path
-
 
 def changeset_info(repo, rev=0, changenode=None):
     """returns matching (rev, date, user, sumarry)"""
