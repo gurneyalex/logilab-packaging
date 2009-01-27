@@ -258,7 +258,7 @@ class HGAgent:
         # please, continue to use this old-good-(and-slower) command
         cmd = 'hg clone %s %s' % (quiet, repository)
         if tag:
-            cmd += '; hg up -R %s %s' % (basename(repository), tag)
+            cmd += '; hg up -R %s %s' % (basename(repository.rstrip('/')), tag)
         return cmd
 
     def log_info(self, path, from_date, to_date, repository=None, tag=None):
