@@ -128,7 +128,11 @@ def run_post_treatments(packages, distdir, distrib, verbose=False):
             for package in packages:
                 if package.endswith('.changes'):
                     print separator % package
-                    cond_exec('debsign %s' % osp.join(distdir, package))
+                    if cond_exec('debsign %s' % osp.join(distdir, package)):
+                        logging.error("the changes file has not been signed. "
+                                      "Please run debsign manually")
+    else:
+        logging.warning("don't forget to debsign your Debian changes file")
 
     # Add tag when build is successful
     # FIXME tag format is not standardized yet
