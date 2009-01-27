@@ -167,7 +167,8 @@ class MyInstallLib(install_lib.install_lib):
 def install(**kwargs):
     """setup entry point"""
     try:
-        sys.argv.remove('--force-manifest')
+        if USE_SETUPTOOLS:
+            sys.argv.remove('--force-manifest')
     except:
         pass
     if subpackage_of:
