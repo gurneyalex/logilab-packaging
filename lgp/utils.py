@@ -157,7 +157,7 @@ def get_distributions(distrib=None):
     elif distrib == 'known':
         distrib = KNOWN_DISTRIBUTIONS
         return tuple(set(distrib))
-    elif distrib == 'all':
+    elif distrib == ['all']:
         directories = glob.glob(join(os.getcwd(), "debian.*"))
         distrib = [basename(d).split('.')[1] for d in directories]
         # 'unstable' distribution should be always present
