@@ -165,7 +165,7 @@ class Builder(SetupInfo):
                  'default' : 'unstable',
                  'short': 'd',
                  'metavar': "<distribution>",
-                 'help': "the distribution targetted (e.g. stable, unstable). Use 'all' for all known distributions"
+                 'help': "list of distributions (e.g. 'stable, unstable'). Use 'all' for automatic detection"
                 }),
                ('arch',
                 {'type': 'string',
