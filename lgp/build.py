@@ -50,9 +50,9 @@ def run(args):
     try :
         builder = Builder(args)
         distributions = get_distributions(builder.config.distrib)
-        if builder.config.distrib == "all":
-            logging.info("retrieved distribution(s) with 'all': %s" %
-                         str(distributions))
+        if isinstance(builder.config.distrib, list):
+            logging.debug("running for multiple distributions: %s"
+                         % str(distributions))
         architectures = get_architectures(builder.config.archi)
 
         #if builder.config.revision :
@@ -160,8 +160,7 @@ class Builder(SetupInfo):
                  'help': "where to put compilation results"
                 }),
                ('distrib',
-                {'type': 'choice',
-                 'choices': get_distributions() + ('all',),
+                {'type': 'csv',
                  'dest': 'distrib',
                  'default' : 'unstable',
                  'short': 'd',
@@ -199,7 +198,6 @@ class Builder(SetupInfo):
                 {'action': 'store_true',
                  'default': False,
                  'dest' : "deb_src",
-                 # TODO #4667: generate debian source package
                  'help': "obtain a debian source package (not implemented)"
                 }),
               ),
@@ -219,14 +217,6 @@ class Builder(SetupInfo):
         if not self.config.verbose:
             sys.stdout = open(os.devnull,"w")
             #sys.stderr = open(os.devnull,"w")
-
-        # check if distribution directory exists, create it if necessary
-        try:
-            os.makedirs(self.get_distrib_dir())
-        except OSError:
-            # it's not a problem here to pass silently # when the directory
-            # already exists
-            pass
 
     def compile(self, distrib, arch):
         # rewrite distrib to manage the 'all' case in run()
@@ -292,7 +282,15 @@ class Builder(SetupInfo):
 
     def get_distrib_dir(self):
         """ get the dynamic target release directory """
-        return osp.join(self.config.dist_dir, self.config.distrib)
+        distrib_dir = osp.join(self.config.dist_dir, self.config.distrib)
+        # check if distribution directory exists, create it if necessary
+        try:
+            os.makedirs(distrib_dir)
+        except OSError:
+            # it's not a problem here to pass silently # when the directory
+            # already exists
+            pass
+        return distrib_dir
 
     def make_debian_source_package(self, origpath):
         """create a debian source package
