@@ -65,7 +65,8 @@ CHECKS = { 'default'    : ['debian_dir', 'debian_rules', 'debian_copying',
                            'repository', 'copying', 'documentation', 'debsign',
                            'homepage', 'builder', 'keyrings', 'announce',
                            'release_number', 'manifest_in', 'include_dirs',
-                           'scripts', 'pydistutils', 'debian_maintainer'],
+                           'scripts', 'pydistutils', 'debian_maintainer',
+                           'debian_uploader'],
            'setuptools' : [],
            'pkginfo'    : [],
            'makefile'   : ['makefile'],
@@ -349,13 +350,25 @@ def check_debian_changelog(checker):
     return status
 
 def check_debian_maintainer(checker):
-    """the default debian maintainer should be 'Logilab S.A. <contact@logilab.fr>'"""
+    """check Maintainer field in debian/control file"""
+    status = OK
+    cmd = "grep '^Maintainer' debian/control | cut -d' ' -f2- | tr -d '\n'"
+    cmdstatus, output = commands.getstatusoutput(cmd)
+    if output.strip() != 'Logilab S.A. <contact@logilab.fr>':
+        checker.logger.info("Maintainer value can be 'Logilab S.A. <contact@logilab.fr>'")
+        status = NOK
+    return status
+
+def check_debian_uploader(checker):
+    """check Uploaders field in debian/control file"""
     status = OK
     cmd = "dpkg-parsechangelog | grep '^Maintainer' | cut -d' ' -f2- | tr -d '\n'"
     _, output = commands.getstatusoutput(cmd)
-    if output.strip() != 'Logilab S.A. <contact@logilab.fr>':
-        checker.logger.warn(check_debian_maintainer.__doc__)
-        #status = NOK
+    cmd = 'grep "%s" debian/control' % output
+    cmdstatus, _ = commands.getstatusoutput(cmd)
+    if cmdstatus:
+        checker.logger.error("'%s' is not listed as a valid Uploader" % output)
+        status = NOK
     return status
 
 def check_readme(checker):
