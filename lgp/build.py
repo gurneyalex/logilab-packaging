@@ -50,9 +50,7 @@ def run(args):
     try :
         builder = Builder(args)
         distributions = get_distributions(builder.config.distrib)
-        if isinstance(builder.config.distrib, list):
-            logging.debug("running for multiple distributions: %s"
-                         % str(distributions))
+        logging.debug("running for distributions: %s" % str(distributions))
         architectures = get_architectures(builder.config.archi)
 
         #if builder.config.revision :
@@ -113,8 +111,9 @@ def run_post_treatments(packages, distdir, distrib, verbose=False):
                            '--warn-on-others', '--keep-sources-list',
                            '-b', '/opt/buildd/%s' % basetgz,
                            # just violent but too many false positives otherwise
-                           '-I', '/usr/share/pycentral-data.*',
-                           '-I', '/var/lib/dpkg/triggers/pysupport.*',
+                           '-I', '"/etc/shadow*"',
+                           '-I', '"/usr/share/pycentral-data.*"',
+                           '-I', '"/var/lib/dpkg/triggers/pysupport.*"',
                            osp.join(distdir, package)]
                 logging.debug("piuparts command: %s", ' '.join(cmdline))
                 if cond_exec(' '.join(cmdline)):
