@@ -65,7 +65,7 @@ CHECKS = { 'default'    : ['debian_dir', 'debian_rules', 'debian_copying',
                            'repository', 'copying', 'documentation', 'debsign',
                            'homepage', 'builder', 'keyrings', 'announce',
                            'release_number', 'manifest_in', 'include_dirs',
-                           'scripts', 'pydistutils'],
+                           'scripts', 'pydistutils', 'debian_maintainer'],
            'setuptools' : [],
            'pkginfo'    : [],
            'makefile'   : ['makefile'],
@@ -346,6 +346,16 @@ def check_debian_changelog(checker):
         _, output = commands.getstatusoutput(cmd)
         if output:
             status = NOK
+    return status
+
+def check_debian_maintainer(checker):
+    """the default debian maintainer should be 'Logilab S.A. <contact@logilab.fr>'"""
+    status = OK
+    cmd = "dpkg-parsechangelog | grep '^Maintainer' | cut -d' ' -f2- | tr -d '\n'"
+    _, output = commands.getstatusoutput(cmd)
+    if output.strip() != 'Logilab S.A. <contact@logilab.fr>':
+        checker.logger.warn(check_debian_maintainer.__doc__)
+        #status = NOK
     return status
 
 def check_readme(checker):
