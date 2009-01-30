@@ -316,8 +316,8 @@ def check_debian_rules(checker):
     """check the debian*/rules file (filemode) """
     debian_dir = checker.get_debian_dir()
     status = OK
-    status = status and os.path.isfile(debian_dir + '/rules')
-    status = status and is_executable(debian_dir + '/rules')
+    status = status and os.path.isfile(os.path.join(debian_dir, 'rules'))
+    status = status and is_executable(os.path.join(debian_dir, 'rules'))
     return status
 
 def check_debian_copying(checker):
@@ -354,7 +354,6 @@ def check_debian_maintainer(checker):
     cmdstatus, output = commands.getstatusoutput(cmd)
     if output.strip() != 'Logilab S.A. <contact@logilab.fr>':
         checker.logger.info("Maintainer value can be 'Logilab S.A. <contact@logilab.fr>'")
-        status = NOK
     return status
 
 def check_debian_uploader(checker):
@@ -365,7 +364,7 @@ def check_debian_uploader(checker):
     cmd = 'grep "%s" debian/control' % output
     cmdstatus, _ = commands.getstatusoutput(cmd)
     if cmdstatus:
-        checker.logger.error("'%s' is not listed as a valid Uploader" % output)
+        checker.logger.error("'%s' is not found in Uploaders field" % output)
         status = NOK
     return status
 
@@ -502,7 +501,8 @@ def check_release_number(checker):
             checker.logger.error(msg % (cl_version, version))
             status = NOK
     except ChangeLogNotFound:
-        checker.logger.warn('upstream %s was not found' % CHANGEFILE)
+        check_changelog(checker)
+        status = NOK
 
     deb_version = pi.debian_version()
     deb_version = normalize_version(deb_version.split('-', 1)[0])
