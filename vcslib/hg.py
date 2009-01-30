@@ -35,6 +35,7 @@ from logilab.devtools.vcslib import VCS_UPTODATE, VCS_MODIFIED, \
      VCS_MISSING, VCS_NEW, VCS_CONFLICT, VCS_NOVERSION, VCS_IGNORED, \
      VCS_REMOVED, VCS_NEEDSPATCH, IVCSAgent, CheckInInfo, localtime_to_gmtime
 
+from mercurial.version import get_version
 from mercurial.hg import repository as Repository
 from mercurial.ui import ui as Ui
 from mercurial.node import short
@@ -271,43 +272,47 @@ class HGAgent:
         """
         if tag and tag != 'HEAD':
             raise NotImplementedError("dunno how to get logs for a given tag")
-        repopath = find_repository(path)
-        assert repopath is not None, 'no repository found in %s' % path
-        ui = Ui()
-        repo = Repository(ui, path=repopath)
-        opts = dict(rev=['tip:0'], branches=None, include=(), exclude=())
-        get = cachefunc(lambda r: repo.changectx(r).changeset())
-        changeiter, matchfn = walkchangerevs(ui, repo, (), get, opts)
-        # changeset_info return GMT time, convert from_date and to_date
-        # as well so we can compare
-        from_date = datetime.datetime(*localtime_to_gmtime(from_date)[:6])
-        to_date = datetime.datetime(*localtime_to_gmtime(to_date)[:6])
-        infos = []
-        for st, rev, fns in changeiter:
-            if st == 'add':
-                changenode = repo.changelog.node(rev)
-                rev, date, user, message, files = changeset_info(repo, rev, changenode)
-                if from_date <= date <= to_date:
-                    # FIXME: added/removed lines information
-                    cii = CheckInInfo(date, user, unicode(message, _encoding),
-                                      rev, files=files, branch=tag)
-                    infos.append((date, cii))
-        for _, info in reversed(sorted(infos)):
-            yield info
+        # FIXME we check version 1.X cos it's doesn't work for previous versions
+        if get_version().split('.')[0] == "1":
+            repopath = find_repository(path)
+            assert repopath is not None, 'no repository found in %s' % path
+            ui = Ui()
+            repo = Repository(ui, path=repopath)
+            opts = dict(rev=['tip:0'], branches=None, include=(), exclude=())
+            get = cachefunc(lambda r: repo.changectx(r).changeset())
+            changeiter, matchfn = walkchangerevs(ui, repo, (), get, opts)
+            # changeset_info return GMT time, convert from_date and to_date
+            # as well so we can compare
+            from_date = datetime.datetime(*localtime_to_gmtime(from_date)[:6])
+            to_date = datetime.datetime(*localtime_to_gmtime(to_date)[:6])
+            infos = []
+            for st, rev, fns in changeiter:
+                if st == 'add':
+                    changenode = repo.changelog.node(rev)
+                    rev, date, user, message, files = changeset_info(repo, rev, changenode)
+                    if from_date <= date <= to_date:
+                        # FIXME: added/removed lines information
+                        cii = CheckInInfo(date, user, unicode(message, _encoding),
+                                          rev, files=files, branch=tag)
+                        infos.append((date, cii))
+            for _, info in reversed(sorted(infos)):
+                yield info
             
     def current_short_changeset(self, path):
         """return the short id of the current changeset"""
-        repopath = find_repository(path)
-        if repopath is None:
-            raise RuntimeError('no repository found in %s' % path)
-        repo = Repository(Ui(), path=repopath)
-        try:
-            ctx = repo.workingctx()
-        except AttributeError:
-            ctx = repo[None]
-        parents = ctx.parents()
-        #assert len(parents) == 0 ?
-        return short(parents[0].node())
+        # FIXME we check version 1.X cos it's doesn't work for previous versions
+        if get_version().split('.')[0] == "1":
+            repopath = find_repository(path)
+            if repopath is None:
+                raise RuntimeError('no repository found in %s' % path)
+            repo = Repository(Ui(), path=repopath)
+            try:
+                ctx = repo.workingctx()
+            except AttributeError:
+                ctx = repo[None]
+            parents = ctx.parents()
+            #assert len(parents) == 0 ?
+            return short(parents[0].node())
 
                   
 # HGAgent is a stateless object, transparent singleton thanks to its __call__
