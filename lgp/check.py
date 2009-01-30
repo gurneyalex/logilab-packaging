@@ -328,24 +328,23 @@ def check_debian_copying(checker):
 def check_debian_changelog(checker):
     """your debian changelog contains error(s)"""
     debian_dir = checker.get_debian_dir()
-    CHANGELOG = os.path.join(debian_dir, '/changelog')
+    CHANGELOG = os.path.join(debian_dir, 'changelog')
     status= OK
     if os.path.isfile(CHANGELOG):
         cmd = "sed -ne '/UNRELEASED/p' debian/changelog"
         _, output = commands.getstatusoutput(cmd)
         if output:
             status = NOK
-            checker.logger.error('UNRELEASED keyword in debian changelog:')
-            print output
+            checker.logger.error('UNRELEASED keyword in debian changelog')
         cmd = "sed -ne '/DISTRIBUTION/p' debian/changelog"
         _, output = commands.getstatusoutput(cmd)
         if output:
-            checker.logger.info('You can now use the default "unstable" string in your debian changelog:')
-            print output
-        cmd = "dpkg-parsechangelog"
+            checker.logger.info('You can now use the default "unstable" string in your debian changelog')
+        cmd = "dpkg-parsechangelog >/dev/null"
         _, output = commands.getstatusoutput(cmd)
         if output:
             status = NOK
+            checker.logger.error(output)
     return status
 
 def check_debian_maintainer(checker):
