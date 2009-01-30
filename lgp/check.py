@@ -326,7 +326,7 @@ def check_debian_copying(checker):
     return os.path.isfile(os.path.join(debian_dir,'copyright'))
 
 def check_debian_changelog(checker):
-    """your debian changelog is not parsable"""
+    """your debian changelog contains error(s)"""
     debian_dir = checker.get_debian_dir()
     CHANGELOG = os.path.join(debian_dir, '/changelog')
     status= OK
@@ -335,13 +335,12 @@ def check_debian_changelog(checker):
         _, output = commands.getstatusoutput(cmd)
         if output:
             status = NOK
-            checker.logger.error('UNRELEASED distribution(s) in debian changelog:')
+            checker.logger.error('UNRELEASED keyword in debian changelog:')
             print output
         cmd = "sed -ne '/DISTRIBUTION/p' debian/changelog"
         _, output = commands.getstatusoutput(cmd)
         if output:
-            status = NOK
-            checker.logger.warn('You can now use the default "unstable" string in your debian changelog:')
+            checker.logger.info('You can now use the default "unstable" string in your debian changelog:')
             print output
         cmd = "dpkg-parsechangelog"
         _, output = commands.getstatusoutput(cmd)
@@ -372,13 +371,13 @@ def check_debian_uploader(checker):
     return status
 
 def check_readme(checker):
-    """check the upstream README file """
+    """the upstream README file is missing"""
     if not isfile('README'):
         checker.logger.warn(check_readme.__doc__)
     return OK
 
 def check_changelog(checker):
-    """check the upstream ChangeLog """
+    """the upstream ChangeLog file is missing"""
     status = OK
     if not isfile(CHANGEFILE):
         checker.logger.warn(check_changelog.__doc__)
@@ -477,10 +476,11 @@ def check_repository(checker):
     """check repository status (not up-to-date) """
     try:
         vcs_agent = get_vcs_agent(checker.config.pkg_dir)
-        result = vcs_agent.not_up_to_date(checker.config.pkg_dir)
-        if result:
-            checker.logger.warn("vcs_agent returns: %s" % result)
-            return NOK
+        if vcs_agent:
+            result = vcs_agent.not_up_to_date(checker.config.pkg_dir)
+            if result:
+                checker.logger.warn("vcs_agent returns: %s" % result)
+                return NOK
     except NotImplementedError:
         checker.logger.warn("the current vcs agent isn't yet supported")
     return OK
