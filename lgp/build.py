@@ -34,7 +34,10 @@ try:
 except ImportError:
     from logilab.common.compat import check_call, CalledProcessError
 
-from debian_bundle import deb822
+try:
+    from debian_bundle import deb822
+except ImportError:
+    import deb822
 
 from logilab.common.fileutils import export
 from logilab.common.shellutils import cp
