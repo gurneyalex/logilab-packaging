@@ -53,7 +53,7 @@ def run(args):
     try :
         builder = Builder(args)
         distributions = get_distributions(builder.config.distrib)
-        logging.debug("running for distributions: %s" % str(distributions))
+        logging.info("running for distributions: %s" % ', '.join(distributions))
         architectures = get_architectures(builder.config.archi)
 
         #if builder.config.revision :
