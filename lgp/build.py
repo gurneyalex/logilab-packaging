@@ -112,6 +112,8 @@ def run_post_treatments(packages, distdir, distrib, verbose=False):
             if package.endswith('.deb'):
                 cmdline = ['sudo', 'piuparts', '--no-symlinks',
                            '--warn-on-others', '--keep-sources-list',
+                           # the development repository can be somewhat buggy...
+                           '--no-upgrade-test',
                            '-b', '/opt/buildd/%s' % basetgz,
                            # just violent but too many false positives otherwise
                            '-I', '"/etc/shadow*"',
