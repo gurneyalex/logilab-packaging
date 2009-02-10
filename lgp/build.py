@@ -227,6 +227,7 @@ class Builder(SetupInfo):
 
         self._tmpdir = tmpdir = tempfile.mkdtemp()
 
+        self.compare_versions()
         self.clean_repository()
         tarball = self.create_orig_tarball(tmpdir)
 

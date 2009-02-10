@@ -234,6 +234,15 @@ class SetupInfo(Configuration):
         packages.append('%s_%s_*.changes' % (self.get_debian_name(), self.get_debian_version()))
         return packages
 
+    def compare_versions(self):
+        upstream_version = self.get_upstream_version()
+        debian_version = self.get_debian_version().split('-', 1)[0]
+        logging.debug("don't forget to track vcs tags if in use")
+        logging.info("version provided by upstream is '%s'" % upstream_version)
+        logging.info("upstream version provided by Debian changelog is '%s'" % debian_version)
+        if upstream_version != debian_version:
+            raise LGPException('please check coherence of the previous version numbers')
+
     def clean_repository(self):
         if self._package_format in COMMANDS["clean"]:
             cmd = COMMANDS["clean"][self._package_format]
@@ -251,7 +260,6 @@ class SetupInfo(Configuration):
                     (self.get_upstream_name(), self.get_upstream_version()))
         if self.config.orig_tarball is None:
             logging.debug("creating a new source archive (tarball)...")
-            logging.info("upstream version is '%s' (check tag position)" % self.get_upstream_version())
             debian_version = self.get_debian_version()
             if debian_version[-2:] != '-1':
                 raise LGPException('unable to build %s %s: --orig-tarball option is required when '\

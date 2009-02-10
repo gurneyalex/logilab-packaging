@@ -47,14 +47,12 @@ from logilab.devtools.lib.manifest import (get_manifest_files, read_manifest_in,
                                            match_extensions, JUNK_EXTENSIONS)
 
 from logilab.devtools import templates
-from logilab.devtools.lgp.changelog import ChangeLog, ChangeLogNotFound, \
-     find_ChangeLog, CHANGEFILE
 from logilab.devtools.lgp.setupinfo import SetupInfo
 from logilab.devtools.lgp.utils import get_distributions, get_architectures
 from logilab.devtools.lgp.utils import cond_exec, confirm
 from logilab.devtools.lgp.exceptions import LGPException
 
-
+CHANGEFILE='ChangeLog'
 MANDATORY_SETUP_FIELDS = ('name', 'version', 'author', 'author_email', 'license',
                           'copyright', 'short_desc', 'long_desc')
 
@@ -331,12 +329,12 @@ def check_debian_changelog(checker):
     CHANGELOG = os.path.join(debian_dir, 'changelog')
     status= OK
     if os.path.isfile(CHANGELOG):
-        cmd = "sed -ne '/UNRELEASED/p' debian/changelog"
+        cmd = "sed -ne '/UNRELEASED/p' %s" % CHANGELOG
         _, output = commands.getstatusoutput(cmd)
         if output:
             status = NOK
             checker.logger.error('UNRELEASED keyword in debian changelog')
-        cmd = "sed -ne '/DISTRIBUTION/p' debian/changelog"
+        cmd = "sed -ne '/DISTRIBUTION/p' %s" % CHANGELOG
         _, output = commands.getstatusoutput(cmd)
         if output:
             checker.logger.info('You can now use the default "unstable" string in your debian changelog')
@@ -484,34 +482,13 @@ def check_repository(checker):
     return OK
 
 def check_release_number(checker):
-    """check inconsistency with release number """
+    """check the versions coherence between upstream and debian/changelog"""
     status = OK
-    if hasattr(checker, "_package") and checker._package_format == "pkginfo":
-        pi = checker._package
-    else:
-        return status
-    dirname = checker.config.pkg_dir
-    version = normalize_version(pi.version)
-    try:
-        cl_version = ChangeLog(find_ChangeLog(dirname)).get_latest_revision()
-        cl_version = normalize_version(str(cl_version))
-        if cl_version != version:
-            msg = 'version inconsistency : found %s in ChangeLog \
-(reference is %s)'
-            checker.logger.error(msg % (cl_version, version))
-            status = NOK
-    except ChangeLogNotFound:
-        check_changelog(checker)
+    try: 
+        checker.compare_versions()
         status = NOK
-
-    deb_version = pi.debian_version()
-    deb_version = normalize_version(deb_version.split('-', 1)[0])
-    if deb_version != version:
-        msg = 'version inconsistency : found %s in debian/changelog \
-(reference is %s)'
-        checker.logger.error('debian/changelog', None,
-                       msg % (deb_version, version))
-        status = NOK
+    except LGPException, err:
+        checker.logger.critical(err)
     return status
 
 def check_manifest_in(checker):
