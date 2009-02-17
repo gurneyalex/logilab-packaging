@@ -47,6 +47,8 @@ from logilab.devtools.lgp.utils import get_distributions, get_architectures
 from logilab.devtools.lgp.utils import confirm, cond_exec
 from logilab.devtools.lgp.exceptions import LGPException, LGPCommandException
 
+from logilab.devtools.lgp.check import check_debsign, check_release_number
+
 
 def run(args):
     """main function of lgp build command"""
@@ -55,6 +57,9 @@ def run(args):
         distributions = get_distributions(builder.config.distrib)
         logging.info("running for distributions: %s" % ', '.join(distributions))
         architectures = get_architectures(builder.config.archi)
+
+        if not builder.config.no_treatment:
+            run_pre_treatments(builder)
 
         #if builder.config.revision :
         #    logging.critical(Popen(["hg", "update", builder.config.revision], stderr=PIPE).communicate())
@@ -66,9 +71,8 @@ def run(args):
                              % builder.get_distrib_dir())
                 logging.info("Debian changes file is: %s"
                              % builder.get_changes_file())
-                if builder.config.post_treatments:
-                    run_post_treatments(packages, builder.get_distrib_dir(), distrib,
-                                        builder.config.verbose)
+                if not builder.config.no_treatment:
+                    run_post_treatments(builder, packages, distrib)
     except LGPException, exc:
         logging.critical(exc)
         #if hasattr(builder, "config") and builder.config.verbose:
@@ -76,9 +80,18 @@ def run(args):
         #    raise
         return 1
 
-def run_post_treatments(packages, distdir, distrib, verbose=False):
+def run_pre_treatments(builder):
+    builder.logger = logging.getLogger('pre-treatment')
+    check_release_number(builder)
+    # if we want to stop directly
+    #builder.compare_versions()
+
+def run_post_treatments(builder, packages, distrib):
     """ Run actions after package compiling """
+    builder.logger = logging.getLogger('post-treatment')
     separator = '+' * 15 + ' %s'
+    distdir = builder.get_distrib_dir()
+    verbose = builder.config.verbose
 
     # Detect native package
     for package in packages:
@@ -127,7 +140,7 @@ def run_post_treatments(packages, distdir, distrib, verbose=False):
                     logging.info("piuparts exits normally")
 
     # Try Debian signing immediately if possible
-    if 'DEBSIGN_KEYID' in os.environ:
+    if check_debsign(builder):
         for package in packages:
             if package.endswith('.changes'):
                 print separator % package
@@ -195,7 +208,13 @@ class Builder(SetupInfo):
                 {'action': 'store_false',
                  'default': True,
                  'dest' : "post_treatments",
-                 'help': "compile packages with post treatments"
+                 'help': "compile packages with post-treatments (deprecated)"
+                }),
+               ('no-treatment',
+                {'action': 'store_true',
+                 'default': False,
+                 'dest' : "no_treatment",
+                 'help': "compile packages with no auxiliary treatment"
                 }),
                ('deb-src',
                 {'action': 'store_true',
@@ -209,6 +228,7 @@ class Builder(SetupInfo):
         # Retrieve upstream information
         super(Builder, self).__init__(arguments=args, options=self.options, usage=__doc__)
         #print self.generate_config(); sys.exit()
+        self.logger = logging.getLogger(__name__)
 
         if self.config.orig_tarball is not None:
             self.config.orig_tarball = osp.abspath(osp.expanduser(self.config.orig_tarball))
@@ -221,13 +241,16 @@ class Builder(SetupInfo):
             sys.stdout = open(os.devnull,"w")
             #sys.stderr = open(os.devnull,"w")
 
+        # TODO make a more readable logic in OptParser values
+        if self.config.no_treatment:
+            self.config.post_treatments = not self.config.no_treatment
+
     def compile(self, distrib, arch):
         # rewrite distrib to manage the 'all' case in run()
         self.config.distrib = distrib
 
         self._tmpdir = tmpdir = tempfile.mkdtemp()
 
-        self.compare_versions()
         self.clean_repository()
         tarball = self.create_orig_tarball(tmpdir)
 
