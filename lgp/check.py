@@ -60,7 +60,7 @@ OK, NOK = 1, 0
 CHECKS = { 'default'    : ['debian_dir', 'debian_rules', 'debian_copying',
                            'debian_changelog', 'package_info', 'readme',
                            'changelog', 'bin', 'tests_directory', 'setup_file',
-                           'repository', 'copying', 'documentation', 'debsign',
+                           'repository', 'copying', 'documentation',
                            'homepage', 'builder', 'keyrings', 'announce',
                            'release_number', 'manifest_in', 'include_dirs',
                            'scripts', 'pydistutils', 'debian_maintainer',
@@ -264,7 +264,7 @@ class Checker(SetupInfo):
         if len(checks)==0:
             print "No available check."
         else:
-            print "You can use the --exclude or --include options\n"
+            print "You can use the --set, --exclude or --include options\n"
             msg = "Current active checks"
             print msg; print len(msg) * '='
             for check in checks:
@@ -299,7 +299,7 @@ def check_pydistutils(checker):
     return OK
 
 def check_builder(checker):
-    """check if the builder is correct """
+    """check if the builder is different from vbuild (default)"""
     debuilder = os.environ.get('DEBUILDER') or False
     if debuilder:
         checker.logger.warn('you have set a different builder in DEBUILDER. Unset it if in doubt')
@@ -408,7 +408,7 @@ def check_setup_file(checker):
     return isfile('setup.py') or isfile('setup.mk')
 
 def check_makefile(checker):
-    """check makefile file and dependencies """
+    """check makefile file and dependencies (not implemented)"""
     status = OK
     status = status and os.path.isfile("setup.mk")
     # FIXME
@@ -517,7 +517,7 @@ def check_manifest_in(checker):
     return status
 
 def check_include_dirs(checker):
-    """check include_dirs"""
+    """check include_dirs declared in setup file"""
     if hasattr(checker, "_package") and hasattr(checker._package, 'include_dirs'):
         for directory in checker._package.include_dirs:
             if not exists(directory):
@@ -527,13 +527,13 @@ def check_include_dirs(checker):
     return OK
 
 def check_debsign(checker):
-    """add the DEBSIGN_KEYID environment variable to sign directly """
+    """Hint: you can add DEBSIGN_KEYID to your environment and use a gpg-agent to sign directly"""
     if 'DEBSIGN_KEYID' not in os.environ:
         checker.logger.info(check_debsign.__doc__)
     return OK
 
 def check_scripts(checker):
-    """check declared scripts"""
+    """check scripts declared in setup file"""
     if hasattr(checker, "_package") and hasattr(checker._package, 'scripts'):
         detected_scripts = get_default_scripts(checker._package)
         scripts = getattr(checker._package, 'scripts', [])
@@ -544,7 +544,7 @@ def check_scripts(checker):
     return OK
 
 def check_package_info(checker):
-    """check package information """
+    """check package information"""
     status = OK
     if hasattr(checker, "_package") and checker._package_format == "pkginfo":
         pi = checker._package
@@ -591,11 +591,12 @@ def check_package_info(checker):
 # ===============================
 
 def check_shebang(checker):
-    """check #! signature for shell and python script """
+    """check #! signature for shell and python script (not implemented)"""
+    # TODO make a test with file utility and check #!/bin/... or #!/usr/bin/env python
     raise NotImplementedError("use best practises")
 
 def check_deprecated(checker):
-    """check attributes in deprecation"""
+    """check attributes in deprecation (not implemented)"""
     raise NotImplementedError("use right pylint options")
 
 def check_pylint(checker):
