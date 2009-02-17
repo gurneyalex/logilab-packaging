@@ -33,11 +33,11 @@ PUBLIC_RGX = re.compile('PUBLIC\s+"-//(?P<group>.*)//DTD (?P<pubid>.*)//(?P<lang
 
 # The known distribution are depending on the pbuilder setup in /opt/buildd
 # Find a way to retrieve dynamically
-KNOWN_DISTRIBUTIONS = {'etch': 'stable',
+KNOWN_DISTRIBUTIONS = {'lenny': 'stable',
                        'stable': 'stable',
                        'unstable': 'unstable',
                        'sid': 'unstable',
-                       'lenny': 'testing',
+                       'squeeze': 'testing',
                        'testing': 'testing',
                        'feisty':'feisty',
                        'gutsy':'gutsy',
