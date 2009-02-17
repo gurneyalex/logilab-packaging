@@ -13,8 +13,8 @@
 
 # Codenames for Debian suites according to their alias. Update these when needed
 UNSTABLE_CODENAME="sid"
-TESTING_CODENAME="lenny"
-STABLE_CODENAME="etch"
+TESTING_CODENAME="squeeze"
+STABLE_CODENAME="lenny"
 
 # List of Debian suites
 DEBIAN_SUITES=($UNSTABLE_CODENAME $TESTING_CODENAME $STABLE_CODENAME
