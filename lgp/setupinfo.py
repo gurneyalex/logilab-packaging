@@ -124,14 +124,14 @@ class SetupInfo(Configuration):
         #self.load_file_configuration('setup.cfg')
         #self.load_file_configuration('etc/lgp/rc')
 
-        if os.path.isfile('setup.mk'):
-            self._package_format = 'makefile'
-        elif os.path.isfile('__pkginfo__.py'):
+        if os.path.isfile('__pkginfo__.py'):
             self._package_format = 'pkginfo'
             self._package = PackageInfo(directory=self.config.pkg_dir)
         elif os.path.isfile('setup.py'):
             self._package_format = 'setuptools'
             self._package = run_setup('./setup.py', None, stop_after="init")
+        elif os.path.isfile('setup.mk'):
+            self._package_format = 'makefile'
         elif sys.argv[1] == "setup":
             pass
         else:
@@ -236,11 +236,11 @@ class SetupInfo(Configuration):
 
     def compare_versions(self):
         upstream_version = self.get_upstream_version()
-        debian_version = self.get_debian_version().split('-', 1)[0]
+        debian_upstream_version = self.get_debian_version().rsplit('-', 1)[0]
         logging.debug("don't forget to track vcs tags if in use")
         logging.info("version provided by upstream is '%s'" % upstream_version)
-        logging.info("upstream version provided by Debian changelog is '%s'" % debian_version)
-        if upstream_version != debian_version:
+        logging.info("upstream version provided by Debian changelog is '%s'" % debian_upstream_version)
+        if upstream_version != debian_upstream_version:
             raise LGPException('please check coherence of the previous version numbers')
 
     def clean_repository(self):
