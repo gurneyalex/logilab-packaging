@@ -158,7 +158,7 @@ def run(args):
         checker.start_checks()
 
         # Return the number of invalid tests
-        return len(checker.get_checklist())-checker.counter
+        return checker.errors()
 
     except NotImplementedError, exc:
         logging.error(exc)
@@ -221,7 +221,9 @@ class Checker(SetupInfo):
         super(Checker, self).__init__(arguments=args, options=self.options, usage=__doc__)
         # We force debian check only for 'unstable' distribution
         self.config.distrib = 'unstable'
-        self.logger = logging.getLogger(__name__)
+
+    def errors(self):
+        return len(self.get_checklist())-self.counter
 
     def get_checklist(self, all=False):
         if all:
@@ -247,7 +249,10 @@ class Checker(SetupInfo):
 
     def start_checks(self):
         for func in self.get_checklist():
-            self.logger = logging.getLogger(func.__name__)
+            loggername = func.__name__
+            loggername = loggername.replace('_',':', 1)
+            self.logger = logging.getLogger(loggername)
+
             result = func(self)
             # result possible values:
             #   negative -> error occured !
@@ -486,9 +491,9 @@ def check_release_number(checker):
     status = OK
     try: 
         checker.compare_versions()
-        status = NOK
     except LGPException, err:
         checker.logger.critical(err)
+        status = NOK
     return status
 
 def check_manifest_in(checker):

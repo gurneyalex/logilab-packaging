@@ -47,7 +47,7 @@ from logilab.devtools.lgp.utils import get_distributions, get_architectures
 from logilab.devtools.lgp.utils import confirm, cond_exec
 from logilab.devtools.lgp.exceptions import LGPException, LGPCommandException
 
-from logilab.devtools.lgp.check import check_debsign, check_release_number
+from logilab.devtools.lgp.check import Checker
 
 
 def run(args):
@@ -81,14 +81,14 @@ def run(args):
         return 1
 
 def run_pre_treatments(builder):
-    builder.logger = logging.getLogger('pre-treatment')
-    check_release_number(builder)
-    # if we want to stop directly
-    #builder.compare_versions()
+    checker = Checker([])
+    #checker.logger = builder.logger
+    checker.start_checks()
+    if checker.errors():
+        checker.logger.error('%d errors detected' % checker.errors())
 
 def run_post_treatments(builder, packages, distrib):
     """ Run actions after package compiling """
-    builder.logger = logging.getLogger('post-treatment')
     separator = '+' * 15 + ' %s'
     distdir = builder.get_distrib_dir()
     verbose = builder.config.verbose
@@ -228,7 +228,6 @@ class Builder(SetupInfo):
         # Retrieve upstream information
         super(Builder, self).__init__(arguments=args, options=self.options, usage=__doc__)
         #print self.generate_config(); sys.exit()
-        self.logger = logging.getLogger(__name__)
 
         if self.config.orig_tarball is not None:
             self.config.orig_tarball = osp.abspath(osp.expanduser(self.config.orig_tarball))
