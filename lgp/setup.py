@@ -128,8 +128,7 @@ class Setup(SetupInfo):
     name = "lgp-setup"
 
     options = (('distrib',
-                {'type': 'choice',
-                 'choices': get_distributions(),
+                {'type': 'csv',
                  'dest': 'distrib',
                  'short': 'd',
                  'default': 'unstable',
