@@ -230,7 +230,7 @@ class SetupInfo(Configuration):
         packages = ['%s_%s_*.deb' % (line.strip(), self.get_debian_version()) for line in pipe.readlines()]
         pipe.close()
         #packages.append('%s_%s.orig.tar.gz' % (debian_name, upstream_version))
-        #packages.append('%s_%s.diff.gz' % (self.get_debian_name(), self.get_debian_version()))
+        packages.append('%s_%s.diff.gz' % (self.get_debian_name(), self.get_debian_version()))
         #packages.append('%s_%s.dsc' % (self.get_debian_name(), self.get_debian_version()))
         packages.append('%s_%s_*.changes' % (self.get_debian_name(), self.get_debian_version()))
         return packages
