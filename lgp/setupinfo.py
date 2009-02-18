@@ -104,15 +104,16 @@ class SetupInfo(Configuration):
             sys.exit()
 
         # Instanciate the default logger configuration
-        logging.basicConfig(level=logging.INFO, filename="/dev/null")
-        console = logging.StreamHandler()
-        if self.config.no_color or not isatty:
-            console.setFormatter(logging.Formatter(LOG_FORMAT))
-        else:
-            console.setFormatter(ColorFormatter(LOG_FORMAT))
-        logging.getLogger().addHandler(console)
-        if self.config.verbose:
-            logging.getLogger().setLevel(logging.DEBUG)
+        if not logging.getLogger().handlers:
+            logging.getLogger().name = sys.argv[1]
+            console = logging.StreamHandler()
+            if self.config.no_color or not isatty:
+                console.setFormatter(logging.Formatter(LOG_FORMAT))
+            else:
+                console.setFormatter(ColorFormatter(LOG_FORMAT))
+            logging.getLogger().addHandler(console)
+            if self.config.verbose:
+                logging.getLogger().setLevel(logging.DEBUG)
 
         # Go to package directory
         if self.config.pkg_dir is None:

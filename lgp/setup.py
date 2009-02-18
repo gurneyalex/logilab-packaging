@@ -150,7 +150,6 @@ class Setup(SetupInfo):
     def __init__(self, args):
         # Retrieve upstream information
         super(Setup, self).__init__(arguments=args, options=self.options, usage=__doc__)
-        self.logger = logging.getLogger(__name__)
 
     def choice_distribution(self, str):
         if self.config.distrib:
