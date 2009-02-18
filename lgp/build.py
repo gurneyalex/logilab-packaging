@@ -47,7 +47,7 @@ from logilab.devtools.lgp.utils import get_distributions, get_architectures
 from logilab.devtools.lgp.utils import confirm, cond_exec
 from logilab.devtools.lgp.exceptions import LGPException, LGPCommandException
 
-from logilab.devtools.lgp.check import Checker
+from logilab.devtools.lgp.check import Checker, check_debsign
 
 
 def run(args):
@@ -67,12 +67,12 @@ def run(args):
         for arch in architectures:
             for distrib in distributions:
                 packages = builder.compile(distrib=distrib, arch=arch)
+                if not builder.config.no_treatment:
+                    run_post_treatments(builder, packages, distrib)
                 logging.info("new files are waiting in %s. Enjoy."
                              % builder.get_distrib_dir())
                 logging.info("Debian changes file is: %s"
                              % builder.get_changes_file())
-                if not builder.config.no_treatment:
-                    run_post_treatments(builder, packages, distrib)
     except LGPException, exc:
         logging.critical(exc)
         #if hasattr(builder, "config") and builder.config.verbose:
@@ -109,20 +109,27 @@ def run_post_treatments(builder, packages, distrib):
                                "Really a native package (suspect) ?" % package):
                     return
 
+    # Run some utility in verbose mode
+    if verbose:
+        for package in packages:
+            if package.endswith('.diff.gz'):
+                logging.info('Debian specific diff statistics (%s)' % package)
+                cond_exec('diffstat %s' % os.path.join(distdir, package))
+
     # Run usual checkers
-    checkers = {'debc': '', 'lintian': '-vi',}
+    checkers = {'debc': '', 'lintian': '-vi'}
     for checker, opts in checkers.iteritems():
         if not verbose or confirm("run %s on generated Debian changes files ?" % checker):
             for package in packages:
                 if package.endswith('.changes'):
-                    print separator % package
-                    cond_exec('%s %s %s/%s' % (checker, opts, distdir, package))
+                    logging.info('%s checker information about %s' % (checker, package))
+                    cond_exec('%s %s %s' % (checker, opts, os.path.join(distdir, package)))
 
     if verbose and confirm("run piuparts on generated Debian packages ?"):
         basetgz = "%s-%s.tgz" % (distrib, get_architectures()[0])
         for package in packages:
-            print separator % package
             if package.endswith('.deb'):
+                logging.info('piuparts checker information about %s' % package)
                 cmdline = ['sudo', 'piuparts', '--no-symlinks',
                            '--warn-on-others', '--keep-sources-list',
                            # the development repository can be somewhat buggy...
@@ -143,7 +150,7 @@ def run_post_treatments(builder, packages, distrib):
     if check_debsign(builder):
         for package in packages:
             if package.endswith('.changes'):
-                print separator % package
+                logging.info('try signing %s...' % package)
                 if cond_exec('debsign %s' % osp.join(distdir, package)):
                     logging.error("the changes file has not been signed. "
                                   "Please run debsign manually")
