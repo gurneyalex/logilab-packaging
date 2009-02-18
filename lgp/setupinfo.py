@@ -294,9 +294,10 @@ class SetupInfo(Configuration):
                 (self.get_upstream_name(), self.get_upstream_version()))
         else:
             upstream_tarball = self.config.orig_tarball
-            if upstream_tarball != tarball:
+            expected = '%s-%s.tar.gz' % (self.get_upstream_name(), self.get_upstream_version())
+            if os.path.basename(upstream_tarball) != expected:
                 logging.error("the provided tarball (%s) has not the expected filename (%s)"
-                              % (os.path.basename(upstream_tarball), os.path.basename(tarball)))
+                              % (os.path.basename(upstream_tarball), expected))
                 raise LGPException('rename manually your file for sanity')
 
         # TODO check the upstream version with the new tarball 
