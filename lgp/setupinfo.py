@@ -260,13 +260,17 @@ class SetupInfo(Configuration):
                     (self.get_upstream_name(), self.get_upstream_version()))
         if self.config.orig_tarball is None:
             logging.debug("creating a new source archive (tarball)...")
+            # FIXME This is no correct since '-0' is a valid revision as well
+            # http://www.debian.org/doc/debian-policy/ch-controlfields.html#s-f-Version
             debian_version = self.get_debian_version()
-            if debian_version[-2:] != '-1':
-                raise LGPException('unable to build %s %s: --orig-tarball option is required when '\
-                                   'not building the first version of the debian package.\n' \
+            debian_revision = debian_version[-2:]
+            if debian_revision != '-1':
+                logging.critical('unable to build %s package for the Debian revision "%s"'
+                                 % (self.get_debian_name(), debian_revision))
+                raise LGPException('--orig-tarball option is required when '\
+                                   'not building the first revision of a debian package.\n' \
                                    'If you haven\'t the original tarball version, ' \
-                                   'please do an apt-get source of the source package.'
-                                    % (self.get_debian_name(), debian_version))
+                                   'please do an apt-get source of the Debian source package.')
             if self._package_format in COMMANDS["sdist"]:
                 cmd = COMMANDS["sdist"][self._package_format] % self.config.dist_dir
                 if self.config.revision:
@@ -289,6 +293,10 @@ class SetupInfo(Configuration):
                 (self.get_upstream_name(), self.get_upstream_version()))
         else:
             upstream_tarball = self.config.orig_tarball
+            if upstream_tarball != tarball:
+                logging.error("the provided tarball (%s) has not the expected filename (%s)"
+                              % (os.path.basename(upstream_tarball), os.path.basename(tarball)))
+                raise LGPException('rename manually your file for sanity')
 
         # TODO check the upstream version with the new tarball 
 
