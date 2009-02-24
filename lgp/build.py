@@ -55,7 +55,7 @@ def run(args):
     try :
         builder = Builder(args)
         distributions = get_distributions(builder.config.distrib)
-        logging.info("running for distributions: %s" % ', '.join(distributions))
+        logging.info("running for distribution(s): %s" % ', '.join(distributions))
         architectures = get_architectures(builder.config.archi)
 
         if not builder.config.no_treatment:
@@ -169,26 +169,18 @@ def run_post_treatments(builder, packages, distrib):
 
 
 class Builder(SetupInfo):
-    """ Debian builder class
+    """Lgp builder class
 
     Specific options are added. See lgp build --help
     """
     name = "lgp-build"
     options = (('result',
                 {'type': 'string',
-                 'default' : osp.expanduser('~/dists'),
+                 'default' : '~/dists',
                  'dest' : "dist_dir",
                  'short': 'r',
                  'metavar': "<directory>",
                  'help': "where to put compilation results"
-                }),
-               ('distrib',
-                {'type': 'csv',
-                 'dest': 'distrib',
-                 'default' : 'unstable',
-                 'short': 'd',
-                 'metavar': "<distribution>",
-                 'help': "list of distributions (e.g. 'stable, unstable'). Use 'all' for automatic detection"
                 }),
                ('arch',
                 {'type': 'string',
@@ -234,12 +226,10 @@ class Builder(SetupInfo):
     def __init__(self, args):
         # Retrieve upstream information
         super(Builder, self).__init__(arguments=args, options=self.options, usage=__doc__)
-        #print self.generate_config(); sys.exit()
 
-        if self.config.orig_tarball is not None:
-            self.config.orig_tarball = osp.abspath(osp.expanduser(self.config.orig_tarball))
-        if self.config.dist_dir is not None:
-            self.config.dist_dir = osp.abspath(self.config.dist_dir)
+        # TODO make a more readable logic in OptParser values
+        if self.config.no_treatment:
+            self.config.post_treatments = not self.config.no_treatment
 
         # Redirect subprocesses stdout output only in case of verbose mode
         # We always allow subprocesses to print on the stderr (more convenient)
@@ -247,9 +237,6 @@ class Builder(SetupInfo):
             sys.stdout = open(os.devnull,"w")
             #sys.stderr = open(os.devnull,"w")
 
-        # TODO make a more readable logic in OptParser values
-        if self.config.no_treatment:
-            self.config.post_treatments = not self.config.no_treatment
 
     def compile(self, distrib, arch):
         # rewrite distrib to manage the 'all' case in run()
@@ -315,7 +302,7 @@ class Builder(SetupInfo):
 
     def get_distrib_dir(self):
         """ get the dynamic target release directory """
-        distrib_dir = osp.join(self.config.dist_dir, self.config.distrib)
+        distrib_dir = osp.join(osp.expanduser(self.config.dist_dir), self.config.distrib)
         # check if distribution directory exists, create it if necessary
         try:
             os.makedirs(distrib_dir)
@@ -336,12 +323,8 @@ class Builder(SetupInfo):
             origpath: path to orig.tar.gz tarball
         """
         dscfile = '%s_%s.dsc' % (self.get_debian_name(), self.get_debian_version())
-        filelist = ((dscfile,
-                     "add '%s' as debian source package control file (.dsc)"
-                    ),
-                    ('%s_%s.diff.gz' % (self.get_debian_name(), self.get_debian_version()),
-                     "add '%s' as debian specific diff (.diff.gz)")
-                   )
+        filelist = ('%s_%s.diff.gz' % (self.get_debian_name(), self.get_debian_version()),
+                    dscfile)
 
         logging.debug("start creation of the debian source package '%s'"
                       % osp.join(osp.dirname(origpath), dscfile))
@@ -353,10 +336,11 @@ class Builder(SetupInfo):
             raise LGPCommandException(msg, err)
 
         if self.config.deb_src:
-            for filename,msg in filelist:
-                logging.debug("copy '%s' to '%s'" % (filename, self.config.dist_dir))
-                cp(filename, self.config.dist_dir)
-                logging.info(msg % osp.join(self.config.dist_dir, filename))
+            for filename in filelist:
+                logging.debug("copy '%s' to '%s'" % (filename, self.get_distrib_dir()))
+                cp(filename, self.get_distrib_dir())
+            logging.info("Debian source control file is: %s"
+                         % osp.join(self.get_distrib_dir(), dscfile))
             self.clean_tmpdir()
             sys.exit(returncode)
         return dscfile
@@ -375,6 +359,7 @@ class Builder(SetupInfo):
             export(osp.join(self.config.pkg_dir, debiandir), osp.join(origpath, 'debian/'),
                    verbose=self.config.verbose)
 
+        # FIXME use debchange instead !!!
         cmd = ['sed', '-i',
                's/\(unstable\|DISTRIBUTION\); urgency/%s; urgency/' %
                self.config.distrib,

@@ -30,6 +30,7 @@ __docformat__ = "restructuredtext en"
 
 
 import os
+import sys
 import stat
 import re
 import commands
@@ -169,7 +170,7 @@ def run(args):
 
 
 class Checker(SetupInfo):
-    """ Package checker class
+    """Lgp checker class
 
     Specific options are added. See lgp check --help
     """
@@ -179,7 +180,6 @@ class Checker(SetupInfo):
     options = (('include',
                 {'type': 'csv',
                  'dest': 'include_checks',
-                 #'default' : [],
                  'short': 'i',
                  'metavar' : "<comma separated names of check functions>",
                  'help': "force the inclusion of other check functions"
@@ -187,7 +187,6 @@ class Checker(SetupInfo):
                ('exclude',
                 {'type': 'csv',
                  'dest': 'exclude_checks',
-                 #'default' : [],
                  'short': 'e',
                  'metavar' : "<comma separated names of check functions>",
                  'help': "force the exclusion of other check functions"
@@ -195,32 +194,28 @@ class Checker(SetupInfo):
                ('set',
                 {'type': 'csv',
                  'dest': 'set_checks',
-                 #'default' : [],
+                 'default' : CHECKS['default'],
                  'short': 's',
                  'metavar' : "<comma separated names of check functions>",
                  'help': "set a specific check functions list"
                 }),
                ('list',
                 {'action': 'store_true',
-                 'default': False,
                  'dest' : "list_checks",
                  'short': 'l',
                  'help': "return a list of all available check functions"
                 }),
                ('only',
                 {'action': 'store_true',
-                 'default': False,
                  'dest' : "only_one_check",
                  'short': 'o',
-                 'help': "run only one single test"
+                 'help': "run only one single test (debugging purpose)"
                 }),
               ),
 
     def __init__(self, args):
         # Retrieve upstream information
         super(Checker, self).__init__(arguments=args, options=self.options, usage=__doc__)
-        # We force debian check only for 'unstable' distribution
-        self.config.distrib = 'unstable'
 
     def errors(self):
         return len(self.get_checklist())-self.counter
@@ -229,12 +224,13 @@ class Checker(SetupInfo):
         if all:
             return [funct for (name, funct) in globals().items() if name.startswith('check_')]
 
-        if self.config.set_checks is not None:
+        assert self.config.set_checks, 'set_checks should never be empty here'
+
+        if self.config.set_checks:
             checks = []
             for check in self.config.set_checks:
                 checks.append(check)
-        else:
-            checks = CHECKS['default'] + CHECKS[self._package_format]
+
         if self.config.include_checks is not None:
             for check in self.config.include_checks:
                 checks.append(check)
@@ -263,6 +259,7 @@ class Checker(SetupInfo):
             elif result>0:
                 self.counter += 1
 
+    # TODO dump with --help and drop the command-line option
     def list_checks(self):
         all_checks = self.get_checklist(all=True)
         checks     = self.get_checklist()
@@ -284,6 +281,8 @@ class Checker(SetupInfo):
 # ========================================================
 #
 # Check functions collection starts here
+# TODO make a package to add easily external checkers
+# TODO instead of OK/NOK
 #
 # IMPORTANT ! all checkers have to return a valid status !
 # Example: OK or NOK
@@ -396,8 +395,10 @@ def check_copying(checker):
     return OK
 
 def check_tests_directory(checker):
-    """check the tests? directory """
-    return isdir('test') or isdir('tests')
+    """check your tests? directory """
+    if isdir('test') or isdir('tests'):
+        checker.logger.warn(check_copying.__doc__)
+    return OK
 
 def check_run_tests(checker):
     """run the unit tests """
@@ -513,12 +514,14 @@ def check_manifest_in(checker):
             i = matched.index(path)
             matched.pop(i)
         except ValueError:
-            checker.logger.warn('%s is not matched' % path)
+            checker.logger.warn('%s unmatched' % path)
             status = NOK
     # check garbage
     for filename in matched:
         if match_extensions(filename, JUNK_EXTENSIONS):
             checker.logger.warn('a junk extension is matched: %s' % filename)
+    if status == NOK:
+        checker.logger.warn('to correct unmatched files, please include or exclude them in the MANIFEST.in')
     return status
 
 def check_include_dirs(checker):

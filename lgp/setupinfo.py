@@ -66,21 +66,20 @@ class SetupInfo(Configuration):
                  'short': 'v',
                  'help': "run silently without confirmation"
                 }),
+               ('distrib',
+                {'type': 'csv',
+                  'dest': 'distrib',
+                  'default' : 'unstable',
+                  'short': 'd',
+                  'metavar': "<distribution>",
+                  'help': "list of distributions (e.g. 'stable, unstable'). Use 'all' for automatic detection"
+                }),
                ('pkg_dir',
                 {'type': 'string',
-                 #'default' : os.getcwd(),
                  'dest': "pkg_dir",
                  'short': 'p',
                  'metavar' : "<project directory>",
                  'help': "set a specific project directory"
-                }),
-               ('revision',
-                {'type': 'string',
-                 'default' : None,
-                 'dest': "revision",
-                 'short': 'R',
-                 'metavar' : "<scm revision>",
-                 'help': "set a specific revision or tag to build the debian package"
                 }),
                ('no-color',
                 {'action': 'store_true',
@@ -88,14 +87,16 @@ class SetupInfo(Configuration):
                  'dest': "no_color",
                  'help': "print log messages without color"
                 }),
+               ('dump-config',
+                {'action': 'store_true',
+                 'dest': "dump_config",
+                 'help': "dump lgp configuration (debugging purpose)"
+                }),
                )
         if options:
             for opt in options:
                 self.options += opt
         super(SetupInfo, self).__init__(options=self.options, **args)
-
-        # Manage arguments (project path essentialy)
-        self.arguments = self.load_command_line_configuration(arguments)
 
         # Version information
         if self.config.version:
@@ -103,9 +104,17 @@ class SetupInfo(Configuration):
             print "lgp (%s) %s\n%s" % (distname, version, copyright)
             sys.exit()
 
+        # Load the optional config files
+        self.load_file_configuration('/etc/lgp/lgprc')
+        self.load_file_configuration(os.path.expanduser('~/.lgprc'))
+
+        # Manage arguments (project path essentialy)
+        self.arguments = self.load_command_line_configuration(arguments)
+
         # Instanciate the default logger configuration
         if not logging.getLogger().handlers:
             logging.getLogger().name = sys.argv[1]
+            logging.getLogger().setLevel(logging.INFO)
             console = logging.StreamHandler()
             if self.config.no_color or not isatty:
                 console.setFormatter(logging.Formatter(LOG_FORMAT))
@@ -120,11 +129,6 @@ class SetupInfo(Configuration):
             self.config.pkg_dir = os.path.abspath(self.arguments and self.arguments[0] or os.getcwd())
         os.chdir(self.config.pkg_dir)
 
-        # Load the optional config file 
-        # FIXME caution ! wrong place in constructor
-        #self.load_file_configuration('setup.cfg')
-        #self.load_file_configuration('etc/lgp/rc')
-
         if os.path.isfile('__pkginfo__.py'):
             self._package_format = 'pkginfo'
             self._package = PackageInfo(directory=self.config.pkg_dir)
@@ -137,7 +141,7 @@ class SetupInfo(Configuration):
             pass
         else:
             raise LGPException('no valid setup file (setup.py or setup.mk)')
-        logging.debug("package format: %s" % self._package_format)
+        logging.debug("guess the package format: %s" % self._package_format)
 
     def get_debian_name(self):
         """ obtain the debian package name
@@ -187,6 +191,7 @@ class SetupInfo(Configuration):
             os.chdir(cwd)
 
     def get_upstream_name(self):
+        # FIXME
         if self._package_format == 'makefile':
             p1 = Popen(["make", "-f", "setup.mk", "-p"], stdout=PIPE)
             p2 = Popen(["grep", "^\(PROJECT\|NAME\)"], stdin=p1.stdout, stdout=PIPE)
@@ -203,9 +208,7 @@ class SetupInfo(Configuration):
             return distname
 
     def get_upstream_version(self):
-        if self.config.revision:
-            return self.config.revision
-        elif self._package_format == 'pkginfo':
+        if self._package_format == 'pkginfo':
             from __pkginfo__ import version
             return version
         elif self._package_format == 'makefile':
@@ -273,12 +276,7 @@ class SetupInfo(Configuration):
                                    'If you haven\'t the original tarball version, ' \
                                    'please do an apt-get source of the Debian source package.')
             if self._package_format in COMMANDS["sdist"]:
-                cmd = COMMANDS["sdist"][self._package_format] % self.config.dist_dir
-                if self.config.revision:
-                    if self._package_format == 'makefile':
-                        cmd += " -e VERSION=%s" % self.config.revision
-                    else:
-                        raise LGPException("revision option not available for this package format (use setup.mk instead)")
+                cmd = COMMANDS["sdist"][self._package_format] % self.get_distrib_dir()
             else:
                 raise LGPException("no way to create the source archive (tarball)")
 
@@ -290,8 +288,9 @@ class SetupInfo(Configuration):
                                   " your repository" % self.get_upstream_version())
                 raise LGPCommandException("source distribution wasn't properly built", err)
 
-            upstream_tarball = os.path.join(self.config.dist_dir, '%s-%s.tar.gz' %
-                (self.get_upstream_name(), self.get_upstream_version()))
+            upstream_tarball = os.path.join(os.path.dirname(self.get_distrib_dir()),
+                                            '%s-%s.tar.gz'
+                                            % (self.get_upstream_name(), self.get_upstream_version()))
         else:
             upstream_tarball = self.config.orig_tarball
             expected = '%s-%s.tar.gz' % (self.get_upstream_name(), self.get_upstream_version())
