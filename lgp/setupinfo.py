@@ -273,11 +273,19 @@ class SetupInfo(Configuration):
         if self.config.orig_tarball is None:
             logging.debug("creating a new source archive (tarball)...")
             dist_dir = os.path.dirname(self.get_distrib_dir())
-            # FIXME This is no correct since '-0' is a valid revision as well
+
             # http://www.debian.org/doc/debian-policy/ch-controlfields.html#s-f-Version
-            debian_version = self.get_debian_version()
-            debian_revision = debian_version[-2:]
-            if debian_revision != '-1':
+            try:
+                debian_revision = self.get_debian_version().rsplit('-', 1)[1]
+            except IndexError:
+                logging.warn("The absence of a debian_revision is equivalent to a debian_revision of 0.")
+                debian_revision = "0"
+
+            if debian_revision == '0':
+                logging.info("It is conventional to restart the debian_revision"
+                             " at 1 each time the upstream_version is increased.")
+
+            if debian_revision not in ['0', '1']:
                 logging.critical('unable to build %s package for the Debian revision "%s"'
                                  % (self.get_debian_name(), debian_revision))
                 raise LGPException('--orig-tarball option is required when '\
