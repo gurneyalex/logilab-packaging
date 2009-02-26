@@ -98,23 +98,6 @@ class SetupInfo(Configuration):
                 self.options += opt
         super(SetupInfo, self).__init__(options=self.options, **args)
 
-        # Version information
-        if self.config.version:
-            from logilab.devtools.__pkginfo__ import version, distname, copyright
-            print "lgp (%s) %s\n%s" % (distname, version, copyright)
-            sys.exit()
-
-        # Load the optional config files
-        self.load_file_configuration('/etc/lgp/lgprc')
-        self.load_file_configuration(os.path.expanduser('~/.lgprc'))
-
-        # Manage arguments (project path essentialy)
-        self.arguments = self.load_command_line_configuration(arguments)
-
-        if self.config.dump_config:
-            self.generate_config()
-            sys.exit()
-
         # Instanciate the default logger configuration
         if not logging.getLogger().handlers:
             logging.getLogger().name = sys.argv[1]
@@ -127,6 +110,26 @@ class SetupInfo(Configuration):
             logging.getLogger().addHandler(console)
             if self.config.verbose:
                 logging.getLogger().setLevel(logging.DEBUG)
+
+        # Version information
+        if self.config.version:
+            from logilab.devtools.__pkginfo__ import version, distname, copyright
+            print "lgp (%s) %s\n%s" % (distname, version, copyright)
+            sys.exit()
+
+        # Load the optional config files
+        for config in ['/etc/lgp/lgprc', '~/.lgprc']:
+            config = os.path.expanduser(config)
+            if os.path.isfile(config):
+                logging.info('loading lgp configuration found in %s...' % config)
+                self.load_file_configuration(config)
+
+        # Manage arguments (project path essentialy)
+        self.arguments = self.load_command_line_configuration(arguments)
+
+        if self.config.dump_config:
+            self.generate_config()
+            sys.exit()
 
         # Go to package directory
         if self.config.pkg_dir is None:
@@ -252,7 +255,9 @@ class SetupInfo(Configuration):
             raise LGPException('please check coherence of the previous version numbers')
 
     def clean_repository(self):
+        """Clean the project repository"""
         if self._package_format in COMMANDS["clean"]:
+            # FIXME rewrite the os.system() call
             cmd = COMMANDS["clean"][self._package_format]
             if not self.config.verbose:
                 cmd += ' 1>/dev/null 2>/dev/null'
@@ -262,12 +267,12 @@ class SetupInfo(Configuration):
             logging.error("no way to clean the repository...")
 
     def create_orig_tarball(self, tmpdir):
-        """ Create an origin tarball 
-        """
+        """Create an origin tarball"""
         tarball = os.path.join(tmpdir, '%s_%s.orig.tar.gz' %
                     (self.get_upstream_name(), self.get_upstream_version()))
         if self.config.orig_tarball is None:
             logging.debug("creating a new source archive (tarball)...")
+            dist_dir = os.path.dirname(self.get_distrib_dir())
             # FIXME This is no correct since '-0' is a valid revision as well
             # http://www.debian.org/doc/debian-policy/ch-controlfields.html#s-f-Version
             debian_version = self.get_debian_version()
@@ -280,7 +285,7 @@ class SetupInfo(Configuration):
                                    'If you haven\'t the original tarball version, ' \
                                    'please do an apt-get source of the Debian source package.')
             if self._package_format in COMMANDS["sdist"]:
-                cmd = COMMANDS["sdist"][self._package_format] % self.get_distrib_dir()
+                cmd = COMMANDS["sdist"][self._package_format] % dist_dir
             else:
                 raise LGPException("no way to create the source archive (tarball)")
 
@@ -292,8 +297,7 @@ class SetupInfo(Configuration):
                                   " your repository" % self.get_upstream_version())
                 raise LGPCommandException("source distribution wasn't properly built", err)
 
-            upstream_tarball = os.path.join(os.path.dirname(self.get_distrib_dir()),
-                                            '%s-%s.tar.gz'
+            upstream_tarball = os.path.join(dist_dir, '%s-%s.tar.gz'
                                             % (self.get_upstream_name(), self.get_upstream_version()))
         else:
             upstream_tarball = self.config.orig_tarball
@@ -303,9 +307,11 @@ class SetupInfo(Configuration):
                               % (os.path.basename(upstream_tarball), expected))
                 raise LGPException('rename manually your file for sanity')
 
-        # TODO check the upstream version with the new tarball 
+        if os.path.isfile(upstream_tarball):
+            logging.info("use '%s' as original source archive (tarball)" % upstream_tarball)
+        else:
+            raise LGPException('the original source archive (tarball) in not found in %s' % dist_dir)
 
-        logging.info("add '%s' as original source archive (tarball)" % upstream_tarball)
         logging.debug("copy '%s' to '%s'" % (upstream_tarball, tarball))
         cp(upstream_tarball, tarball)
 
