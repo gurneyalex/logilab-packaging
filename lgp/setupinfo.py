@@ -111,6 +111,10 @@ class SetupInfo(Configuration):
         # Manage arguments (project path essentialy)
         self.arguments = self.load_command_line_configuration(arguments)
 
+        if self.config.dump_config:
+            self.generate_config()
+            sys.exit()
+
         # Instanciate the default logger configuration
         if not logging.getLogger().handlers:
             logging.getLogger().name = sys.argv[1]

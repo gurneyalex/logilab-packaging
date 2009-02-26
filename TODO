@@ -5,3 +5,8 @@
 - génération de la documentation (problème dépendance à l'install, -> trouver une autre solution)
 - si une commande externe est utilisé, il faut l'afficher en sortie pour faciliter le débogage (cas des post-treatments)
 - lgp check seulement sur debian/ pas sur les autres distributions disponibles
+- utiliser l'option 'hide' pour la génération du fichier .ini
+./optik_ext.py:186:    ATTRS = BaseOption.ATTRS + ['hide']
+./optik_ext.py:204:        if hasattr(self, "hide") and self.hide:
+./ChangeLog:52:      - new attribute hide in option (i.e --ex : if --ex has 'hide':True then the option will not be displayed in man or --help)
+
