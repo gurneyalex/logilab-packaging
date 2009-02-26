@@ -1,3 +1,10 @@
+logilab-devtools (0.13.3-1) unstable; urgency=low
+
+  * move sudo package from Recommends to Depends
+  * New upstream release
+
+ -- Julien Jehannet <julien.jehannet@logilab.fr>  Thu, 26 Feb 2009 16:31:29 +0100
+
 logilab-devtools (0.13.2-1) unstable; urgency=low
 
   * New upstream release
