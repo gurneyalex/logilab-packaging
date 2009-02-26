@@ -61,9 +61,6 @@ def run(args):
         if not builder.config.no_treatment:
             run_pre_treatments(builder)
 
-        #if builder.config.revision :
-        #    logging.critical(Popen(["hg", "update", builder.config.revision], stderr=PIPE).communicate())
-
         for arch in architectures:
             for distrib in distributions:
                 packages = builder.compile(distrib=distrib, arch=arch)
@@ -82,10 +79,9 @@ def run(args):
 
 def run_pre_treatments(builder):
     checker = Checker([])
-    #checker.logger = builder.logger
     checker.start_checks()
     if checker.errors():
-        checker.logger.error('%d errors detected' % checker.errors())
+        logging.error('%d errors detected by pre-treatments' % checker.errors())
 
 def run_post_treatments(builder, packages, distrib):
     """ Run actions after package compiling """
