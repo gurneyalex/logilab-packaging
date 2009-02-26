@@ -27,6 +27,7 @@ import glob
 import tempfile
 import shutil
 import logging
+import warnings
 import os.path as osp
 #from subprocess import Popen, PIPE
 try:
@@ -224,8 +225,9 @@ class Builder(SetupInfo):
         super(Builder, self).__init__(arguments=args, options=self.options, usage=__doc__)
 
         # TODO make a more readable logic in OptParser values
-        if self.config.no_treatment:
-            self.config.post_treatments = not self.config.no_treatment
+        if not self.config.post_treatments:
+            warnings.warn("Option post-treatment is deprecated. Use no-treatment instead.", DeprecationWarning)
+            self.config.no_treatment = True
 
         # Redirect subprocesses stdout output only in case of verbose mode
         # We always allow subprocesses to print on the stderr (more convenient)
