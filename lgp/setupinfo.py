@@ -121,7 +121,7 @@ class SetupInfo(Configuration):
         for config in ['/etc/lgp/lgprc', '~/.lgprc']:
             config = os.path.expanduser(config)
             if os.path.isfile(config):
-                logging.info('loading lgp configuration found in %s...' % config)
+                #logging.debug('loading lgp configuration found in %s...' % config)
                 self.load_file_configuration(config)
 
         # Manage arguments (project path essentialy)
