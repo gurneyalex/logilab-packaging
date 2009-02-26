@@ -30,7 +30,7 @@ clean:
 install: build $(basename $(wildcard debian/*.in))
 	dh_testdir
 	dh_testroot
-	dh_clean -k
+	dh_clean
 	dh_installdirs
 
 	# prefix = debian/tmp/logilab-packaging/ ?
