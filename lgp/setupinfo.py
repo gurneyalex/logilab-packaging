@@ -21,6 +21,7 @@ import os.path
 import os
 import glob
 import logging
+import rfc822
 import commands
 from distutils.core import run_setup
 from subprocess import Popen, PIPE
@@ -232,17 +233,9 @@ class SetupInfo(Configuration):
         return changes[0]
 
     def get_packages(self):
-        # FIXME
-        # Move the Detect native package code here in order to list packages
-        # cleanly
-        os.chdir(self.config.pkg_dir)
-        pipe = os.popen('dh_listpackages')
-        packages = ['%s_%s_*.deb' % (line.strip(), self.get_debian_version()) for line in pipe.readlines()]
-        pipe.close()
-        #packages.append('%s_%s.orig.tar.gz' % (debian_name, upstream_version))
-        packages.append('%s_%s.diff.gz' % (self.get_debian_name(), self.get_debian_version()))
-        #packages.append('%s_%s.dsc' % (self.get_debian_name(), self.get_debian_version()))
-        packages.append('%s_%s_*.changes' % (self.get_debian_name(), self.get_debian_version()))
+        packages = rfc822.Message(file(self.get_changes_file()))
+        packages = [a.split()[-1] for a in packages['Files'].split('\n')]
+        packages.append(self.get_changes_file())
         return packages
 
     def compare_versions(self):
