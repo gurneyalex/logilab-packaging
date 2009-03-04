@@ -127,16 +127,7 @@ class Setup(SetupInfo):
     """
     name = "lgp-setup"
 
-    options = (('distrib',
-                {'type': 'csv',
-                 'dest': 'distrib',
-                 'short': 'd',
-                 'default': 'unstable',
-                 'metavar': "<distribution>",
-                 'help': "particular distribution to set up (by default create %s)"
-                         % ",".join(get_distributions())
-                }),
-               ('command',
+    options = (('command',
                 {'type': 'choice',
                  'choices': ('create', 'update', 'dumpconfig', 'login'), # 'clean', 'dumpconfig'),
                  'dest': 'command',
