@@ -77,6 +77,7 @@ class SetupInfo(Configuration):
                 }),
                ('pkg_dir',
                 {'type': 'string',
+                 'hide': True,
                  'dest': "pkg_dir",
                  'short': 'p',
                  'metavar' : "<project directory>",
