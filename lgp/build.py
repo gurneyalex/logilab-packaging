@@ -290,6 +290,7 @@ class Builder(SetupInfo):
                 raise LGPException('vbuild ran, but %s not found' % fullpath)
 
         # clean tmpdir
+        os.chdir(self.config.pkg_dir)
         self.clean_tmpdir()
 
         return self.get_packages()
