@@ -360,8 +360,11 @@ def check_debian_uploader(checker):
     cmd = 'grep "%s" debian/control' % output
     cmdstatus, _ = commands.getstatusoutput(cmd)
     if cmdstatus:
-        checker.logger.error("'%s' is not found in Uploaders field" % output)
-        status = NOK
+        # FIXME
+        #checker.logger.error("'%s' is not found in Uploaders field" % output)
+        #status = NOK
+        checker.logger.warn("'%s' is not found in Uploaders field" % output)
+        checker.logger.warn(check_debian_uploader.__doc__)
     return status
 
 def check_readme(checker):
