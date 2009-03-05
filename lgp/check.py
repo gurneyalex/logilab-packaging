@@ -231,8 +231,10 @@ class Checker(SetupInfo):
         if self.config.exclude_checks is not None:
             for check in self.config.exclude_checks:
                 checks.remove(check)
-
-        self.checklist = [globals()["check_%s" % name] for name in checks]
+        try:
+            self.checklist = [globals()["check_%s" % name] for name in checks]
+        except KeyError, err:
+            raise LGPException("The check %s was not found. Use lgp check --list" % str(err))
         return self.checklist
 
     def start_checks(self):
