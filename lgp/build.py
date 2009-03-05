@@ -23,7 +23,6 @@ __docformat__ = "restructuredtext en"
 
 import os
 import sys
-import glob
 import tempfile
 import shutil
 import logging
@@ -90,10 +89,14 @@ def run_post_treatments(builder, packages, distrib):
     distdir = builder.get_distrib_dir()
     verbose = builder.config.verbose
 
-    # Detect native package
+    # Check occurence in filesystem
     for package in packages:
+        package = osp.join(distdir, package)
+        if not osp.isfile(package):
+            raise LGPException('File %s is missing due to a failed build'
+                               % package)
+        # Detect native package (often an error)
         if package.endswith('.dsc'):
-            package = glob.glob(osp.join(distdir, package))[0]
             dsc = deb822.Dsc(file(package))
             orig = None
             for dscfile in dsc['Files']:
@@ -101,7 +104,7 @@ def run_post_treatments(builder, packages, distrib):
                     orig = dscfile
                     break
             # There is no orig.tar.gz file in the dsc file. This is probably a native package.
-            if orig is None:
+            if verbose and orig is None:
                 if not confirm("No orig.tar.gz file found in %s.\n"
                                "Really a native package (suspect) ?" % package):
                     return
@@ -283,12 +286,6 @@ class Builder(SetupInfo):
         except CalledProcessError, err:
             raise LGPCommandException("failed autobuilding of package", err)
 
-        # double check vbuild results
-        for pack in self.get_packages():
-            fullpath = os.path.join(self.get_distrib_dir(), pack)
-            if not glob.glob(fullpath):
-                raise LGPException('vbuild ran, but %s not found' % fullpath)
-
         # clean tmpdir
         os.chdir(self.config.pkg_dir)
         self.clean_tmpdir()
@@ -358,6 +355,7 @@ class Builder(SetupInfo):
             export(osp.join(self.config.pkg_dir, debiandir), osp.join(origpath, 'debian/'),
                    verbose=self.config.verbose)
 
+        # FIXME experimental should be linked to unstable but not rewritten
         # FIXME use debchange instead !!!
         cmd = ['sed', '-i',
                's/\(unstable\|DISTRIBUTION\); urgency/%s; urgency/' %
