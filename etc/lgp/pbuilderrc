@@ -1,5 +1,5 @@
 # Logilab lgp configuration file for pbuilder.
-# Copyright (c) 2003-2008 LOGILAB S.A. (Paris, FRANCE).
+# Copyright (c) 2003-2009 LOGILAB S.A. (Paris, FRANCE).
 # http://www.logilab.fr/ -- mailto:contact@logilab.fr
 
 # the file in /usr/share/pbuilder/pbuilderrc is the default template.
@@ -9,16 +9,12 @@
 
 # This file is largely inspired by:
 # https://wiki.ubuntu.com/PbuilderHowto
-# Thanks a lot guys !
+# Thanks a lot, guys !
 
-# Codenames for Debian suites according to their alias. Update these when needed
-UNSTABLE_CODENAME="sid"
-TESTING_CODENAME="squeeze"
-STABLE_CODENAME="lenny"
+# The use of the codenames for Debian suites is managed by lgp directly.
 
 # List of Debian suites
-DEBIAN_SUITES=($UNSTABLE_CODENAME $TESTING_CODENAME $STABLE_CODENAME
-    "unstable" "testing" "stable")
+DEBIAN_SUITES=("unstable" "testing" "stable")
 
 # List of Ubuntu suites. Update these when needed
 UBUNTU_SUITES=("jaunty" "intrepid" "hardy" "gutsy" "feisty" "dapper")
@@ -52,22 +48,10 @@ UBUNTU_OTHERMIRROR=
 # your own default (i.e. ${DIST:="unstable"}).
 : ${DIST:="$(lsb_release --short --codename)"}
 
-# Optionally change Debian codenames in $DIST to their aliases.
-case "$DIST" in
-    $UNSTABLE_CODENAME)
-        DIST="unstable"
-        ;;
-    $TESTING_CODENAME)
-        DIST="testing"
-        ;;
-    $STABLE_CODENAME)
-        DIST="stable"
-        ;;
-esac
-
 # Optionally set the architecture to the host architecture if none set. Note
 # that you can set your own default (i.e. ${ARCH:="i386"}).
 : ${ARCH:="$(dpkg --print-architecture)"}
+#export DEBIAN_BUILDARCH=athlon
 
 NAME="$DIST"
 if [ -n "${ARCH}" ]; then
@@ -78,7 +62,6 @@ if [ -n "${ARCH}" ]; then
 fi
 DISTRIBUTION="$DIST"
 BUILDRESULT="/var/cache/pbuilder/$NAME/result/"
-APTCACHE="/var/cache/pbuilder/$NAME/aptcache/"
 BUILDPLACE="/var/cache/pbuilder/build/"
 
 # BASETGZ directory
@@ -106,15 +89,16 @@ fi
 
 
 #EXTRAPACKAGES=gcc3.0-athlon-builder
-#export DEBIAN_BUILDARCH=athlon
 
 #export http_proxy=http://your-proxy:8080/
 USEPROC=yes
 USEDEVPTS=yes
 USEDEVFS=no
 
-#specify the cache for APT 
+# Specify the cache for APT
+APTCACHE="/var/cache/pbuilder/$NAME/aptcache/"
 APTCACHEHARDLINK="yes"
+#REMOVEPACKAGES="lilo bash"
 REMOVEPACKAGES="lilo"
 
 # make debconf not interact with user
@@ -147,19 +131,18 @@ DEBBUILDOPTS=""
 #APTCONFDIR="/etc/lgp/apt.d"
 
 # the username and ID used by pbuilder, inside chroot. Needs fakeroot, really
-#BUILDUSERID=1234
-#BUILDUSERNAME=pbuilder
-BUILDUSERID=0
+BUILDUSERID=1234
+BUILDUSERNAME=pbuilder
 
 # BINDMOUNTS is a space separated list of things to mount
 # inside the chroot.
-BINDMOUNTS=""
+BINDMOUNTS="/sys"
 
 # Set the PATH I am going to use inside pbuilder
 #export PATH="/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/X11R6/bin"
 
 # SHELL variable is used inside pbuilder by commands like 'su'; and they need sane values
-export SHELL=/bin/bash
+export SHELL=/bin/sh
 
 # The name of debootstrap command.
 DEBOOTSTRAP="cdebootstrap"
@@ -169,3 +152,6 @@ PKGNAME_LOGFILE_EXTENTION="_$(dpkg --print-architecture).build"
 
 # default PKGNAME_LOGFILE
 PKGNAME_LOGFILE=""
+
+# When this value is set to yes, pdebuild will invoke debsign command after building.
+#AUTO_DEBSIGN=yes
