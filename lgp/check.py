@@ -205,12 +205,6 @@ class Checker(SetupInfo):
                  'short': 'l',
                  'help': "return a list of all available check functions"
                 }),
-               ('only',
-                {'action': 'store_true',
-                 'dest' : "only_one_check",
-                 'short': 'o',
-                 'help': "run only one single test (debugging purpose)"
-                }),
               ),
 
     def __init__(self, args):
@@ -237,8 +231,6 @@ class Checker(SetupInfo):
         if self.config.exclude_checks is not None:
             for check in self.config.exclude_checks:
                 checks.remove(check)
-        if self.config.only_one_check:
-            checks = (checks[-1],)
 
         self.checklist = [globals()["check_%s" % name] for name in checks]
         return self.checklist
@@ -537,7 +529,7 @@ def check_include_dirs(checker):
 def check_debsign(checker):
     """Hint: you can add DEBSIGN_KEYID to your environment and use a gpg-agent to sign directly"""
     if 'DEBSIGN_KEYID' not in os.environ:
-        checker.logger.info(check_debsign.__doc__)
+        logging.info(check_debsign.__doc__)
     return OK
 
 def check_scripts(checker):
