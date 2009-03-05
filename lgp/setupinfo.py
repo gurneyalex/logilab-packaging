@@ -94,6 +94,13 @@ class SetupInfo(Configuration):
                  'dest': "dump_config",
                  'help': "dump lgp configuration (debugging purpose)"
                 }),
+               ('basetgz',
+                {'type': 'string',
+                 'default': '/opt/buildd',
+                 'dest': "basetgz",
+                 'metavar' : "<pbuilder basetgz location>",
+                 'help': "specifies the location of base.tgz used by pbuilder"
+                }),
                )
         if options:
             for opt in options:

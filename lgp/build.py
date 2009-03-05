@@ -131,7 +131,7 @@ def run_post_treatments(builder, packages, distrib):
                            '--warn-on-others', '--keep-sources-list',
                            # the development repository can be somewhat buggy...
                            '--no-upgrade-test',
-                           '-b', '/opt/buildd/%s' % basetgz,
+                           '-b', os.path.join(builder.config.basetgz, basetgz),
                            # just violent but too many false positives otherwise
                            '-I', '"/etc/shadow*"',
                            '-I', '"/usr/share/pycentral-data.*"',
