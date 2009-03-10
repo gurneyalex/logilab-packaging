@@ -1,0 +1,9 @@
+#!/bin/sh -x
+
+. /etc/lgp/scripts/default
+
+export DEBIAN_FRONTEND=readline
+export DEBCONF_DEBUG=developer
+export DEBIAN_PRIORITY=low
+
+/bin/sh
