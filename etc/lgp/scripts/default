@@ -25,4 +25,3 @@ DPkg::Pre-Install-Pkgs {
   "dpkg-preconfigure --apt --priority=low";
 };
 EOF
-mount -t sysfs none /sys
