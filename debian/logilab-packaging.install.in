@@ -10,3 +10,4 @@ debian/tmp/usr/bin/changelog
 etc/lgp/pbuilderrc
 etc/lgp/sources.list.debian
 etc/lgp/sources.list.ubuntu
+etc/lgp/scripts
