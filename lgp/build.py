@@ -348,7 +348,11 @@ class Builder(SetupInfo):
         in all cases, we copy the debian directory of the unstable version
         If a file should not be included, touch an empty file in the overlay
         directory"""
-        export(osp.join(self.config.pkg_dir, 'debian'), osp.join(origpath, 'debian'))
+        try:
+            export(osp.join(self.config.pkg_dir, 'debian'), osp.join(origpath, 'debian'))
+        except IOError, err:
+            raise LGPException(str(err))
+
         debiandir = self.get_debian_dir()
         if debiandir != 'debian/':
             logging.debug("overriding files...")
