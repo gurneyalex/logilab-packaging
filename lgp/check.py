@@ -36,7 +36,7 @@ import re
 import commands
 import logging
 from os.path import basename, join, exists, isdir, isfile
-from pprint import pprint
+from pprint import pformat
 
 from logilab.common.compat import set
 from logilab.common.fileutils import ensure_fs_mode
@@ -278,8 +278,8 @@ class Checker(SetupInfo):
 # TODO make a package to add easily external checkers
 # TODO instead of OK/NOK
 #
-# IMPORTANT ! all checkers have to return a valid status !
-# Example: OK or NOK
+# IMPORTANT ! all checkers should return a valid status !
+# Example: OK, NOK or None
 #
 # ========================================================
 def check_keyrings(checker):
@@ -306,27 +306,27 @@ def check_builder(checker):
 def check_debian_dir(checker):
     """check the debian* directory """
     debian_dir = checker.get_debian_dir()
-    return os.path.isdir(debian_dir)
+    return isdir(debian_dir)
 
 def check_debian_rules(checker):
     """check the debian*/rules file (filemode) """
     debian_dir = checker.get_debian_dir()
     status = OK
-    status = status and os.path.isfile(os.path.join(debian_dir, 'rules'))
+    status = status and isfile(os.path.join(debian_dir, 'rules'))
     status = status and is_executable(os.path.join(debian_dir, 'rules'))
     return status
 
 def check_debian_copying(checker):
     """check debian*/copyright file """
     debian_dir = checker.get_debian_dir()
-    return os.path.isfile(os.path.join(debian_dir,'copyright'))
+    return isfile(os.path.join(debian_dir,'copyright'))
 
 def check_debian_changelog(checker):
     """your debian changelog contains error(s)"""
     debian_dir = checker.get_debian_dir()
     CHANGELOG = os.path.join(debian_dir, 'changelog')
     status= OK
-    if os.path.isfile(CHANGELOG):
+    if isfile(CHANGELOG):
         cmd = "sed -ne '/UNRELEASED/p' %s" % CHANGELOG
         _, output = commands.getstatusoutput(cmd)
         if output:
@@ -387,21 +387,21 @@ def check_changelog(checker):
 
 def check_copying(checker):
     """check upstream COPYING file """
-    if not os.path.isfile('COPYING'):
+    if not isfile('COPYING'):
         checker.logger.warn(check_copying.__doc__)
     return OK
 
 def check_tests_directory(checker):
     """check your tests? directory """
     if isdir('test') or isdir('tests'):
-        checker.logger.warn(check_copying.__doc__)
-    return OK
+        return OK
+    checker.logger.warn(check_copying.__doc__)
 
 def check_run_tests(checker):
     """run the unit tests """
     testdirs = ('test', 'tests')
     for testdir in testdirs:
-        if os.path.isdir(testdir):
+        if isdir(testdir):
             cond_exec('pytest', confirm=True, retry=True)
             break
     return OK
@@ -413,7 +413,7 @@ def check_setup_file(checker):
 def check_makefile(checker):
     """check makefile file and dependencies (not implemented)"""
     status = OK
-    status = status and os.path.isfile("setup.mk")
+    status = status and isfile("setup.mk")
     # FIXME
     #status = status and _check_make_dependencies()
     return status
@@ -459,10 +459,10 @@ def check_bin(checker):
 def check_documentation(checker):
     """check project's documentation"""
     status = OK
-    if os.path.isdir('doc'):
+    if isdir('doc'):
         # FIXME
         # should be a clean target in setup.mk for example
-        # and os.path.isfile('doc/Makefile') or os.path.isfile('doc/makefile'):
+        # and isfile('doc/Makefile') or isfile('doc/makefile'):
         #if confirm('build documentation ?'):
         #os.chdir('doc')
         #status = cond_exec('make', retry=True)
@@ -478,7 +478,7 @@ def check_repository(checker):
         if vcs_agent:
             result = vcs_agent.not_up_to_date(checker.config.pkg_dir)
             if result:
-                checker.logger.warn("vcs_agent returns: %s" % result)
+                checker.logger.warn("vcs_agent returns:\n%s" % pformat(result))
                 return NOK
     except NotImplementedError:
         checker.logger.warn("the current vcs agent isn't yet supported")
@@ -500,7 +500,7 @@ def check_manifest_in(checker):
     dirname = checker.config.pkg_dir
     absfile = join(dirname, 'MANIFEST.in')
     # return immediatly if no file available
-    if not os.path.isfile(absfile):
+    if not isfile(absfile):
         return status
 
     # check matched files
@@ -535,6 +535,7 @@ def check_debsign(checker):
     """Hint: you can add DEBSIGN_KEYID to your environment and use a gpg-agent to sign directly"""
     if 'DEBSIGN_KEYID' not in os.environ:
         logging.info(check_debsign.__doc__)
+        return
     return OK
 
 def check_scripts(checker):
