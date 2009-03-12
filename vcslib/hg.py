@@ -35,6 +35,7 @@ from logilab.devtools.vcslib import VCS_UPTODATE, VCS_MODIFIED, \
      VCS_MISSING, VCS_NEW, VCS_CONFLICT, VCS_NOVERSION, VCS_IGNORED, \
      VCS_REMOVED, VCS_NEEDSPATCH, IVCSAgent, CheckInInfo, localtime_to_gmtime
 
+from mercurial.repo import RepoError
 from mercurial.version import get_version
 from mercurial.hg import repository as Repository
 from mercurial.ui import ui as Ui
@@ -121,45 +122,49 @@ class HGAgent:
             parentui = Ui()
             repo = Repository(parentui, path=find_repository(filepath))
             localui = repo.ui
-            remote = Repository(parentui, localui.expandpath('default'))
             changes = []
+            try:
+                remote = Repository(parentui, localui.expandpath('default'))
+                if hasattr(remote, 'changelog'):
+                    for nid in repo.findincoming(remote):
+                        manifest, user, timeinfo, files, desc, extra = remote.changelog.read(nid)
+                        for filename in files:
+                            # .ljust(15)
+                            changes.append(('incoming', filename))
+                    for nid in repo.findoutgoing(remote):
+                        manifest, user, timeinfo, files, desc, extra = repo.changelog.read(nid)
+                        for filename in files:
+                            # .ljust(15)
+                            changes.append(('outgoing', filename))
+            except RepoError:
+                # FIXME #8391: not_up_to_date on non-cloned repository
+                pass
             # XXX: httprepository doesn't have changelog attribute
-            if hasattr(remote, 'changelog'):
-                for nid in repo.findincoming(remote):
-                    manifest, user, timeinfo, files, desc, extra = remote.changelog.read(nid)
-                    for filename in files:
-                        # .ljust(15)
-                        changes.append(('incoming', filename))
-                for nid in repo.findoutgoing(remote):
-                    manifest, user, timeinfo, files, desc, extra = repo.changelog.read(nid)
-                    for filename in files:
-                        # .ljust(15)
-                        changes.append(('outgoing', filename))
             statuslist = ('modified', 'added', 'removed', 'deleted', 'unknown')
             return changes + [(status, filename)
                               for status, files in zip(statuslist, repo.status())
                               for filename in files]
         finally:
             sys.stdout = sys.__stdout__
-            
+
     def edited(self, filepath):
         """get a list describing files which are currentlyedited under
         the given path
-        
+
         :type filepath: str
         :param filepath: starting path
-        
+
         :rtype: list(tuple(str, str))
         :return:
           a list of tuple (file, locked by) describing files which are in edition
         """
         raise NotImplementedError()
-        
+
     def update(self, filepath):
         """
         :type filepath: str
         :param filepath: the file or directory to update
-        
+
         :rtype: str
         :return:
           a shell command string to update the given file from the vc
