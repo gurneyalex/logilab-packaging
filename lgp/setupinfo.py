@@ -109,19 +109,6 @@ class SetupInfo(Configuration):
                 self.options += opt
         super(SetupInfo, self).__init__(options=self.options, **args)
 
-        # Instanciate the default logger configuration
-        if not logging.getLogger().handlers:
-            logging.getLogger().name = sys.argv[1]
-            logging.getLogger().setLevel(logging.INFO)
-            console = logging.StreamHandler()
-            if self.config.no_color or not isatty:
-                console.setFormatter(logging.Formatter(LOG_FORMAT))
-            else:
-                console.setFormatter(ColorFormatter(LOG_FORMAT))
-            logging.getLogger().addHandler(console)
-            if self.config.verbose:
-                logging.getLogger().setLevel(logging.DEBUG)
-
         # Version information
         if self.config.version:
             from logilab.devtools.__pkginfo__ import version, distname, copyright
@@ -132,11 +119,24 @@ class SetupInfo(Configuration):
         for config in ['/etc/lgp/lgprc', '~/.lgprc']:
             config = os.path.expanduser(config)
             if os.path.isfile(config):
-                #logging.debug('loading lgp configuration found in %s...' % config)
                 self.load_file_configuration(config)
 
         # Manage arguments (project path essentialy)
         self.arguments = self.load_command_line_configuration(arguments)
+
+        # Instanciate the default logger configuration
+        if not logging.getLogger().handlers:
+            logging.getLogger().name = sys.argv[1]
+            console = logging.StreamHandler()
+            if self.config.no_color or not isatty:
+                console.setFormatter(logging.Formatter(LOG_FORMAT))
+            else:
+                console.setFormatter(ColorFormatter(LOG_FORMAT))
+            logging.getLogger().addHandler(console)
+            logging.getLogger().setLevel(logging.INFO)
+
+            if self.config.verbose:
+                logging.getLogger().setLevel(logging.DEBUG)
 
         if self.config.dump_config:
             self.generate_config()
@@ -147,6 +147,7 @@ class SetupInfo(Configuration):
             self.config.pkg_dir = os.path.abspath(self.arguments and self.arguments[0] or os.getcwd())
         os.chdir(self.config.pkg_dir)
 
+        # Guess the package format
         if os.path.isfile('__pkginfo__.py'):
             self._package_format = 'pkginfo'
             self._package = PackageInfo(directory=self.config.pkg_dir)
