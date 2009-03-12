@@ -91,11 +91,13 @@ class SetupInfo(Configuration):
                 }),
                ('dump-config',
                 {'action': 'store_true',
+                 'hide': True,
                  'dest': "dump_config",
                  'help': "dump lgp configuration (debugging purpose)"
                 }),
                ('basetgz',
                 {'type': 'string',
+                 'hide': True,
                  'default': '/opt/buildd',
                  'dest': "basetgz",
                  'metavar' : "<pbuilder basetgz location>",
