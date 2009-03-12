@@ -49,6 +49,10 @@ from logilab.devtools.lgp.exceptions import LGPException, LGPCommandException
 
 from logilab.devtools.lgp.check import Checker, check_debsign
 
+# Set a list of checks to disable when we are in
+# intermediate stage (i.e. when developing package)
+INTERMEDIATE_STAGE = ['repository', ]
+
 
 def run(args):
     """main function of lgp build command"""
@@ -79,6 +83,13 @@ def run(args):
 
 def run_pre_treatments(builder):
     checker = Checker([])
+
+    # Use the intermediate stage (i.e. developing package)
+    if builder.config.intermediate:
+        intermediate_exclude = builder.config.intermediate_exclude
+        logging.info("ask for the intermediate stage (i.e. package development)")
+        checker.config.exclude_checks = intermediate_exclude
+
     checker.start_checks()
     if checker.errors():
         logging.error('%d errors detected by pre-treatments' % checker.errors())
@@ -199,27 +210,41 @@ class Builder(SetupInfo):
                 }),
                ('keep-tmpdir',
                 {'action': 'store_true',
-                 'default': False,
+                 #'default': False,
                  'dest' : "keep_tmpdir",
                  'help': "keep the temporary build directory"
                 }),
                ('post-treatments',
                 {'action': 'store_false',
-                 'default': True,
+                 #'default': True,
                  'dest' : "post_treatments",
                  'help': "compile packages with post-treatments (deprecated)"
                 }),
                ('no-treatment',
                 {'action': 'store_true',
-                 'default': False,
+                 #'default': False,
                  'dest' : "no_treatment",
                  'help': "compile packages with no auxiliary treatment"
                 }),
                ('deb-src',
                 {'action': 'store_true',
-                 'default': False,
+                 #'default': False,
                  'dest' : "deb_src",
-                 'help': "obtain a debian source package (not implemented)"
+                 'help': "obtain a debian source package"
+                }),
+               ('intermediate',
+                {'action': 'store_true',
+                 #'default': False,
+                 'dest' : "intermediate",
+                 'short': 'i',
+                 'help': "use an intermediate mode when developing a package",
+                }),
+               ('intermediate-exclude',
+                {'type': 'csv',
+                 #'hide': True,
+                 'dest' : "intermediate_exclude",
+                 'default' : INTERMEDIATE_STAGE,
+                 'metavar' : "<comma separated names of checks to skip>",
                 }),
               ),
 
