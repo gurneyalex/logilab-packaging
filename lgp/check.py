@@ -220,19 +220,25 @@ class Checker(SetupInfo):
 
         assert self.config.set_checks, 'set_checks should never be empty here'
 
-        if self.config.set_checks:
-            checks = []
-            for check in self.config.set_checks:
-                checks.append(check)
-
-        if self.config.include_checks is not None:
-            for check in self.config.include_checks:
-                checks.append(check)
-        if self.config.exclude_checks is not None:
-            for check in self.config.exclude_checks:
-                checks.remove(check)
         try:
-            self.checklist = [globals()["check_%s" % name] for name in checks]
+            try:
+                if self.config.set_checks:
+                    checks = []
+                    for check in self.config.set_checks:
+                        checks.append(check)
+                    #self.logger.debug("active checks: %s" % ','.join(checks))
+
+                if self.config.include_checks is not None:
+                    for check in self.config.include_checks:
+                        #self.logger.debug("include check: %s" % check)
+                        checks.append(check)
+                if self.config.exclude_checks is not None:
+                    for check in self.config.exclude_checks:
+                        #self.logger.debug("exclude check: %s" % check)
+                        checks.remove(check)
+                self.checklist = [globals()["check_%s" % name] for name in checks]
+            except ValueError, err:
+                raise KeyError(check)
         except KeyError, err:
             raise LGPException("The check %s was not found. Use lgp check --list" % str(err))
         return self.checklist
