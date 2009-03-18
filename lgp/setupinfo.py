@@ -211,6 +211,26 @@ class SetupInfo(Configuration):
         finally:
             os.chdir(cwd)
 
+    def check_debian_revision(self):
+        # http://www.debian.org/doc/debian-policy/ch-controlfields.html#s-f-Version
+        try:
+            debian_revision = self.get_debian_version().rsplit('-', 1)[1]
+        except IndexError:
+            logging.warn("The absence of a debian_revision is equivalent to a debian_revision of 0.")
+            debian_revision = "0"
+
+        if debian_revision == '0':
+            logging.info("It is conventional to restart the debian_revision"
+                         " at 1 each time the upstream_version is increased.")
+
+        if debian_revision not in ['0', '1']:
+            logging.critical('unable to build %s package for the Debian revision "%s"'
+                             % (self.get_debian_name(), debian_revision))
+            raise LGPException('--orig-tarball option is required when you don\'t'\
+                               'build the first revision of a debian package.\n' \
+                               'If you haven\'t the original tarball version, ' \
+                               'please do an apt-get source of the Debian source package.')
+
     def get_upstream_name(self):
         # FIXME
         if self._package_format == 'makefile':
@@ -251,9 +271,15 @@ class SetupInfo(Configuration):
         packages.append(self.get_changes_file())
         return packages
 
+    def get_versions(self):
+        versions = self.get_debian_version().rsplit('-', 1)
+        return versions
+
     def compare_versions(self):
         upstream_version = self.get_upstream_version()
+        #debian_upstream_version = self.get_versions()[0]
         debian_upstream_version = self.get_debian_version().rsplit('-', 1)[0]
+        assert debian_upstream_version == self.get_versions()[0], "get_versions() failed"
         logging.debug("don't forget to track vcs tags if in use")
         logging.info("version provided by upstream is '%s'" % upstream_version)
         logging.info("upstream version provided by Debian changelog is '%s'" % debian_upstream_version)
