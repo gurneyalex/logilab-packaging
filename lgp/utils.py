@@ -47,7 +47,9 @@ KNOWN_DISTRIBUTIONS = {'etch': 'oldstable',
                        'intrepid':'intrepid',
                        'jaunty':'jaunty',
                        'dapper':'dapper',
+                       'experimental': 'unstable',
                       }
+
 
 class SGMLCatalog:
     """ handle SGML catalog information
@@ -147,27 +149,22 @@ def cond_exec(cmd, confirm=False, retry=False):
         else:
             return False
 
-def get_distributions(distrib=None):
+def get_distributions(distrib=None, basetgz=None):
     """ensure that the target distributions exist or return all the valid distributions
     """
-    if distrib is None:
+    if distrib is None or distrib == 'known':
         distrib = KNOWN_DISTRIBUTIONS.keys()
         return tuple(set(distrib))
     elif distrib == 'target':
         distrib = KNOWN_DISTRIBUTIONS.values()
         return tuple(set(distrib))
-    elif distrib == 'known':
-        distrib = KNOWN_DISTRIBUTIONS
-        return tuple(set(distrib))
     elif 'all' in distrib:
-        directories = glob.glob(join(os.getcwd(), "debian.*"))
-        distrib = [basename(d).split('.')[1] for d in directories]
-        # 'unstable' distribution should be always present
-        distrib.append('unstable')
+        distrib = [os.path.basename(f).split('-', 1)[0]
+                   for f in glob.glob(os.path.join(basetgz,'*.tgz'))]
+        return set(KNOWN_DISTRIBUTIONS) & set(distrib)
 
     mapped = ()
-    if type(distrib) is str:
-        distrib = distrib.split(',')
+    # check and filter if known
     for t in distrib:
         if t not in KNOWN_DISTRIBUTIONS:
             raise DistributionException(t)
