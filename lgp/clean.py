@@ -20,11 +20,20 @@
 """
 __docformat__ = "restructuredtext en"
 
+import logging
+
 from logilab.devtools.lgp.build import Builder
+from logilab.devtools.lgp.exceptions import LGPException
 
 
 def run(args):
     """ Main function of lgp clean command """
-
-    cleaner = Builder(args)
-    cleaner.clean_repository()
+    try :
+        cleaner = Builder(args)
+        cleaner.clean_repository()
+    except LGPException, exc:
+        logging.critical(exc)
+        #if hasattr(cleaner, "config") and cleaner.config.verbose:
+        #    logging.debug("printing traceback...")
+        #    raise
+        return 1
