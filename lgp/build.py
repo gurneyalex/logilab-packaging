@@ -28,7 +28,6 @@ import shutil
 import logging
 import warnings
 import os.path as osp
-#from subprocess import Popen, PIPE
 try:
     from subprocess import check_call, CalledProcessError # only python2.5
 except ImportError:
@@ -267,7 +266,7 @@ class Builder(SetupInfo):
 
     def compile(self, distrib, arch):
         # rewrite distrib to manage the 'all' case in run()
-        self.config.distrib = distrib
+        self.current_distrib = distrib
 
         self._tmpdir = tmpdir = tempfile.mkdtemp()
 
@@ -324,7 +323,8 @@ class Builder(SetupInfo):
 
     def get_distrib_dir(self):
         """ get the dynamic target release directory """
-        distrib_dir = osp.join(osp.expanduser(self.config.dist_dir), self.config.distrib)
+        distrib_dir = osp.join(osp.expanduser(self.config.dist_dir),
+                               self.current_distrib)
         # check if distribution directory exists, create it if necessary
         try:
             os.makedirs(distrib_dir)
@@ -352,7 +352,7 @@ class Builder(SetupInfo):
                       % osp.join(osp.dirname(origpath), dscfile))
         try:
             cmd = 'dpkg-source -b %s' % origpath
-            returncode = check_call(cmd.split(), stdout=sys.stdout, stderr=sys.stderr)
+            check_call(cmd.split(), stdout=sys.stdout, stderr=sys.stderr)
         except CalledProcessError, err:
             msg = "cannot build valid dsc file '%s' with command %s" % (dscfile, cmd)
             raise LGPCommandException(msg, err)
@@ -364,7 +364,7 @@ class Builder(SetupInfo):
             logging.info("Debian source control file is: %s"
                          % osp.join(self.get_distrib_dir(), dscfile))
             self.clean_tmpdir()
-            sys.exit(returncode)
+            sys.exit()
         return dscfile
 
     def manage_multi_distribution(self, origpath):
@@ -375,22 +375,25 @@ class Builder(SetupInfo):
         If a file should not be included, touch an empty file in the overlay
         directory"""
         try:
-            export(osp.join(self.config.pkg_dir, 'debian'), osp.join(origpath, 'debian'))
+            # don't forget the final slash!
+            export(osp.join(self.config.pkg_dir, 'debian'), osp.join(origpath, 'debian/'))
         except IOError, err:
             raise LGPException(str(err))
 
-        debiandir = self.get_debian_dir()
-        if debiandir != 'debian/':
+        if self.get_debian_dir() != "debian":
             logging.debug("overriding files...")
-            export(osp.join(self.config.pkg_dir, debiandir), osp.join(origpath, 'debian/'),
+            # don't forget the final slash!
+            export(osp.join(self.config.pkg_dir, self.get_debian_dir()), osp.join(origpath, 'debian/'),
                    verbose=self.config.verbose)
 
-        # FIXME experimental should be linked to unstable but not rewritten
-        # FIXME use debchange instead !!!
+        distrib = self.current_distrib
+        # experimental should be linked to unstable and not rewritten
+        if self.current_distrib == 'experimental':
+            distrib = 'unstable'
+
         cmd = ['sed', '-i',
                's/\(unstable\|DISTRIBUTION\); urgency/%s; urgency/' %
-               self.config.distrib,
-               '%s' % os.path.join(origpath, 'debian/changelog')]
+               distrib, '%s' % os.path.join(origpath, 'debian/changelog')]
         try:
             check_call(cmd, stdout=sys.stdout) #, stderr=sys.stderr)
         except CalledProcessError, err:
