@@ -1,7 +1,5 @@
 #!/bin/sh -x
 
-export TERM=linux
-
 ## TODO appeler d'autres scripts
 ## définir une variable $PACKAGE et l'installer
 

@@ -1,5 +1,8 @@
 #!/bin/sh -x
 
+export IGNOREEOF=5
+export TERM=linux
+
 apt-get update
 
 /bin/sh
