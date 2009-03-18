@@ -41,7 +41,8 @@ def run(args):
     """ Main function of lgp setup command """
     try :
         setup = Setup(args)
-        distributions = get_distributions(setup.config.distrib)
+        distributions = get_distributions(setup.config.distrib,
+                                          setup.config.basetgz)
         logging.info("running for distribution(s): %s" % ', '.join(distributions))
 
         if setup.config.command == "create":

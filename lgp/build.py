@@ -58,7 +58,8 @@ def run(args):
     """main function of lgp build command"""
     try :
         builder = Builder(args)
-        distributions = get_distributions(builder.config.distrib)
+        distributions = get_distributions(builder.config.distrib,
+                                          builder.config.basetgz)
         logging.info("running for distribution(s): %s" % ', '.join(distributions))
         architectures = get_architectures(builder.config.archi)
 
