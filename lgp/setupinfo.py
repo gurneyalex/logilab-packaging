@@ -104,6 +104,25 @@ class SetupInfo(Configuration):
                  'metavar' : "<pbuilder basetgz location>",
                  'help': "specifies the location of base.tgz used by pbuilder"
                 }),
+               ('setup-file',
+                #{'type': 'csv',
+                {'type': 'string',
+                 'dest': 'setup_file',
+                 'hide': True,
+                 #'default' : ['setup.py', 'setup.mk'],
+                 'default' : 'setup.mk',
+                 'metavar': "<setup file names>",
+                 'help': "list of setup files to use"
+                }),
+               ('known-distributions',
+                {'type': 'csv',
+                 'dest': 'known_distributions',
+                 'hide': True,
+                 'default' : ['oldstable', 'stable', 'unstable', 'testing',
+                              'feisty', 'gutsy', 'hardy', 'intrepid', 'jaunty',
+                             'dapper'],
+                 'help': "List of hard-coded distributions"
+                }),
                )
         if options:
             for opt in options:
