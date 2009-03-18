@@ -37,7 +37,7 @@ long_desc = """Set of tools which aims to help the developpement process, includ
 * python coverage tool
 * cvs/svn utilities
 """
-web = "http://www.logilab.org/projects/devtools"
+web = "http://www.logilab.org/project/devtools"
 ftp = "ftp://ftp.logilab.org/pub/devtools"
 mailinglist = "mailto://python-projects@lists.logilab.org"
 
