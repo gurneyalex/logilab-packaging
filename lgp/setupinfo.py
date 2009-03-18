@@ -17,14 +17,17 @@
 """
 
 import sys
-import os.path
 import os
+import stat
+import os.path
 import glob
 import logging
 import rfc822
 import commands
+from string import Template
 from distutils.core import run_setup
 from subprocess import Popen, PIPE
+
 try:
     from subprocess import check_call, CalledProcessError # only python2.5
 except ImportError:
@@ -35,25 +38,35 @@ from logilab.common.logging_ext import ColorFormatter
 from logilab.common.shellutils import cp
 
 from logilab.devtools.lib.pkginfo import PackageInfo
+from logilab.devtools.lib import TextReporter
 from logilab.devtools.lgp.exceptions import LGPException, LGPCommandException
 
 LOG_FORMAT='%(levelname)1.1s:%(name)s: %(message)s'
 COMMANDS = {
         "sdist" : {
-            "pkginfo": 'python setup.py -q sdist --force-manifest -d %s',
-            "setuptools": 'python setup.py sdist -d %s',
-            "makefile": 'make -f setup.mk dist-gzip -e DIST_DIR=%s',
+            "file": './$setup dist-gzip -e DIST_DIR=$distdir',
+            "Distribution": 'python setup.py -q sdist -d $distdir',
+            "PackageInfo": 'python setup.py -q sdist --force-manifest -d $distdir',
         },
         "clean" : {
-            "pkginfo": 'fakeroot debian/rules clean',
-            "setuptools": 'fakeroot debian/rules clean',
-            "makefile": 'make -f setup.mk clean',
+            "file": './$setup clean',
+            "Distribution": 'python setup.py clean',
+            "PackageInfo": 'python setup.py clean',
+        },
+        "version" : {
+            "file": './$setup version',
+            "Distribution": 'python setup.py --version',
+            "PackageInfo": 'python setup.py --version',
+        },
+        "project" : {
+            "file": './$setup project',
+            "Distribution": 'python setup.py --name',
+            "PackageInfo": 'python setup.py --name',
         },
 }
 
 class SetupInfo(Configuration):
     """ a setup class to handle several package setup information """
-    _package_format = None
 
     def __init__(self, arguments, options=None, **args):
         isatty = hasattr(sys.stdout, 'isatty') and sys.stdout.isatty()
@@ -168,23 +181,73 @@ class SetupInfo(Configuration):
             self.config.pkg_dir = os.path.abspath(self.arguments and self.arguments[0] or os.getcwd())
         os.chdir(self.config.pkg_dir)
 
+        # Setup command can be run anywhere, so skip setup file retrieval
+        if sys.argv[1] == "setup":
+            return
+
+        # FIXME
+        if not hasattr(self, 'current_distrib'):
+            self.current_distrib = 'unstable'
+
         # Guess the package format
-        if os.path.isfile('__pkginfo__.py'):
-            self._package_format = 'pkginfo'
-            self._package = PackageInfo(directory=self.config.pkg_dir)
-        elif os.path.isfile('setup.py'):
-            self._package_format = 'setuptools'
+        if self.config.setup_file == 'setup.py':
+            # generic case for python project (distutils, setuptools)
             self._package = run_setup('./setup.py', None, stop_after="init")
-        elif os.path.isfile('setup.mk'):
-            self._package_format = 'makefile'
-        elif sys.argv[1] == "setup":
-            pass
+        elif os.path.isfile('__pkginfo__.py'):
+            # Logilab's specific format
+            self._package = PackageInfo(reporter=TextReporter(sys.stderr, sys.stderr.isatty()),
+                                        directory=self.config.pkg_dir)
+        # Other script can be used if compatible with the expected targets in COMMANDS
+        elif os.path.isfile(self.config.setup_file):
+            self._package = file(self.config.setup_file)
+            if not os.stat(self.config.setup_file).st_mode & stat.S_IEXEC:
+                raise LGPException('setup file %s has no execute permission'
+                                   % self.config.setup_file)
         else:
-            raise LGPException('no valid setup file (setup.py or setup.mk)')
-        logging.debug("guess the package format: %s" % self._package_format)
+            raise LGPException('no valid setup file (expected: %s)'
+                               % self.config.setup_file)
+
+        logging.debug("guess the setup package class: %s" % self.package_format)
+        self._run_command('project')
+        self._run_command('version')
+
+    @property
+    def package_format(self):
+        return self._package.__class__.__name__
+
+    def _run_command(self, cmd, output=False):
+        """run an internal declared command"""
+        cmdline = Template(COMMANDS[cmd][self.package_format])
+        try:
+            distdir=self.get_distrib_dir()
+        except AttributeError:
+            distdir=''
+        cmdline = cmdline.substitute(setup=self.config.setup_file, distdir=distdir)
+        process = Popen(cmdline.split(), stdout=PIPE)
+        pipe = process.communicate()[0].strip()
+        if process.returncode > 0:
+            process.cmd = cmdline.split()
+            raise LGPCommandException("lgp aborted by the '%s' command child process"
+                                      % cmd, process)
+        return pipe
+
+    def get_debian_dir(self):
+        """get the dynamic debian directory for the configuration override
+
+        The convention is :
+        - 'debian' is for unstable distribution
+        - 'debian.$OTHER' id for $OTHER distribution and if it exists
+        """
+        debiandir = 'debian' # standard
+        # developper can create an overlay for the debian directory
+        if self.current_distrib != 'unstable':
+            new_debiandir = '%s.%s' % (debiandir, self.current_distrib)
+            if os.path.isdir(os.path.join(self.config.pkg_dir, new_debiandir)):
+                debiandir = new_debiandir
+        return debiandir
 
     def get_debian_name(self):
-        """ obtain the debian package name
+        """obtain the debian package name
 
         The information is found in debian*/control withe the 'Source:' field
         """
@@ -197,36 +260,38 @@ class SetupInfo(Configuration):
         except IOError, err:
             raise LGPException('a Debian control file is required in "%s"' % path)
 
-    def get_debian_dir(self):
-        """ get the dynamic debian directory for the configuration override
-
-        The convention is :
-        - 'debian/' is for unstable distribution
-        - 'debian.$OTHER/' id for $OTHER distribution and if it exists
-        """
-        if self.config.distrib != 'unstable':
-            debiandir = 'debian.%s/' % self.config.distrib
-            if os.path.isdir(os.path.join(self.config.pkg_dir, debiandir)):
-                return debiandir
-        return 'debian/'
-
     def get_debian_version(self):
-        """ get the debian version depending of the last changelog entry
+        """get upstream and debian versions depending of the last changelog entry found in Debian changelog
 
-            Format of Debian package: <sourcepackage>_<upstreamversion>-<debian_version>
+           We parse the dpkg-parsechangelog output instead of changelog file
+           Format of Debian package: <sourcepackage>_<upstreamversion>-<debian_version>
         """
         cwd = os.getcwd()
         os.chdir(self.config.pkg_dir)
         try:
-            status, output = commands.getstatusoutput('dpkg-parsechangelog')
-            if status != 0:
-                msg = 'dpkg-parsechangelog exited with status %s' % status
-                raise LGPException(msg)
-            for line in output.split('\n'):
-                line = line.strip()
-                if line and line.startswith('Version:'):
-                    return line.split(' ', 1)[1].strip()
-            raise LGPException('Debian version not found')
+            changelog = os.path.join(self.get_debian_dir(), 'changelog')
+            try:
+                cmd = 'dpkg-parsechangelog'
+                if os.path.isfile(changelog):
+                    cmd += ' -l%s' % changelog
+                    logging.debug('retrieve debian version from %s' % changelog)
+
+                process = Popen(cmd.split(), stdout=PIPE)
+                pipe = process.communicate()[0]
+                if process.returncode > 0:
+                    msg = 'dpkg-parsechangelog exited with status %s' % process.returncode
+                    process.cmd = cmd.split()
+                    raise LGPCommandException(msg, process)
+
+                for line in pipe.split('\n'):
+                    line = line.strip()
+                    if line and line.startswith('Version:'):
+                        debian_version = line.split(' ', 1)[1].strip()
+                        return debian_version
+                raise LGPException('Debian Version field not found in %s'
+                                   % changelog)
+            except CalledProcessError, err:
+                raise LGPCommandException(msg, err)
         finally:
             os.chdir(cwd)
 
@@ -251,33 +316,10 @@ class SetupInfo(Configuration):
                                'please do an apt-get source of the Debian source package.')
 
     def get_upstream_name(self):
-        # FIXME
-        if self._package_format == 'makefile':
-            p1 = Popen(["make", "-f", "setup.mk", "-p"], stdout=PIPE)
-            p2 = Popen(["grep", "^\(PROJECT\|NAME\)"], stdin=p1.stdout, stdout=PIPE)
-            output = p2.communicate()[0]
-            return output.rsplit()[2]
-        elif hasattr(self._package, 'get_name'):
-            return self._package.get_name()
-        elif self._package_format == 'pkginfo':
-            try:
-                from __pkginfo__ import distname
-            except ImportError:
-                from __pkginfo__ import modname
-                distname = modname
-            return distname
+        return self._run_command('project')
 
     def get_upstream_version(self):
-        if self._package_format == 'pkginfo':
-            from __pkginfo__ import version
-            return version
-        elif self._package_format == 'makefile':
-            p1 = Popen(["make", "-f", "setup.mk", "-p"], stdout=PIPE)
-            p2 = Popen(["grep", "^VERSION"], stdin=p1.stdout, stdout=PIPE)
-            output = p2.communicate()[0]
-            return output.rsplit()[2]
-        else:
-            return self._package.get_version()
+        return self._run_command('version')
 
     def get_changes_file(self):
         changes = '%s_%s_*.changes' % (self.get_debian_name(), self.get_debian_version())
@@ -300,76 +342,50 @@ class SetupInfo(Configuration):
         debian_upstream_version = self.get_debian_version().rsplit('-', 1)[0]
         assert debian_upstream_version == self.get_versions()[0], "get_versions() failed"
         logging.debug("don't forget to track vcs tags if in use")
-        logging.info("version provided by upstream is '%s'" % upstream_version)
-        logging.info("upstream version provided by Debian changelog is '%s'" % debian_upstream_version)
         if upstream_version != debian_upstream_version:
-            raise LGPException('please check coherence of the previous version numbers')
+            logging.info("version provided by upstream is '%s'" % upstream_version)
+            logging.info("upstream version read from Debian changelog is '%s'" % debian_upstream_version)
+            logging.warn('please check coherence of the previous version numbers')
 
     def clean_repository(self):
         """Clean the project repository"""
-        if self._package_format in COMMANDS["clean"]:
-            # FIXME rewrite the os.system() call
-            cmd = COMMANDS["clean"][self._package_format]
-            if not self.config.verbose:
-                cmd += ' 1>/dev/null 2>/dev/null'
-            logging.debug("cleaning repository...")
-            os.system(cmd)
-        else:
-            logging.error("no way to clean the repository...")
+        self._run_command('clean')
+        logging.info("clean repository")
 
     def create_orig_tarball(self, tmpdir):
         """Create an origin tarball"""
-        tarball = os.path.join(tmpdir, '%s_%s.orig.tar.gz' %
-                    (self.get_upstream_name(), self.get_upstream_version()))
+        dist_dir = os.path.dirname(self.get_distrib_dir())
+        fileparts = (self.get_upstream_name(), self.get_upstream_version())
+        tarball = '%s_%s.orig.tar.gz' % fileparts
+        upstream_tarball = '%s-%s.tar.gz' % fileparts
+
         if self.config.orig_tarball is None:
             logging.debug("creating a new source archive (tarball)...")
-            dist_dir = os.path.dirname(self.get_distrib_dir())
-
-            # http://www.debian.org/doc/debian-policy/ch-controlfields.html#s-f-Version
-            try:
-                debian_revision = self.get_debian_version().rsplit('-', 1)[1]
-            except IndexError:
-                logging.warn("The absence of a debian_revision is equivalent to a debian_revision of 0.")
-                debian_revision = "0"
-
-            if debian_revision == '0':
-                logging.info("It is conventional to restart the debian_revision"
-                             " at 1 each time the upstream_version is increased.")
-
-            if debian_revision not in ['0', '1']:
-                logging.critical('unable to build %s package for the Debian revision "%s"'
-                                 % (self.get_debian_name(), debian_revision))
-                raise LGPException('--orig-tarball option is required when '\
-                                   'not building the first revision of a debian package.\n' \
-                                   'If you haven\'t the original tarball version, ' \
-                                   'please do an apt-get source of the Debian source package.')
-            if self._package_format in COMMANDS["sdist"]:
-                cmd = COMMANDS["sdist"][self._package_format] % dist_dir
-            else:
-                raise LGPException("no way to create the source archive (tarball)")
 
             try:
-                check_call(cmd.split(), stdout=sys.stdout, stderr=sys.stderr)
+                self.check_debian_revision()
+                self._run_command("sdist")
             except CalledProcessError, err:
                 logging.error("creation of the source archive failed")
                 logging.error("check if the version '%s' is really tagged in"\
                                   " your repository" % self.get_upstream_version())
                 raise LGPCommandException("source distribution wasn't properly built", err)
 
-            upstream_tarball = os.path.join(dist_dir, '%s-%s.tar.gz'
-                                            % (self.get_upstream_name(), self.get_upstream_version()))
         else:
-            upstream_tarball = self.config.orig_tarball
-            expected = '%s-%s.tar.gz' % (self.get_upstream_name(), self.get_upstream_version())
-            if os.path.basename(upstream_tarball) != expected:
-                logging.error("the provided tarball (%s) has not the expected filename (%s)"
-                              % (os.path.basename(upstream_tarball), expected))
-                raise LGPException('rename manually your file for sanity')
+            expected = [upstream_tarball, tarball]
+            upstream_tarball = os.path.expanduser(self.config.orig_tarball)
+            if upstream_tarball not in expected:
+                logging.error("the provided tarball hasn't one of the expected formats (%s)"
+                              % ','.join(expected))
+
+        # set valid paths
+        tarball = os.path.join(tmpdir, tarball)
+        upstream_tarball = os.path.join(dist_dir, upstream_tarball)
 
         if os.path.isfile(upstream_tarball):
             logging.info("use '%s' as original source archive (tarball)" % upstream_tarball)
         else:
-            raise LGPException('the original source archive (tarball) in not found in %s' % dist_dir)
+            raise LGPException('the original source archive (tarball) not found in %s' % dist_dir)
 
         logging.debug("copy '%s' to '%s'" % (upstream_tarball, tarball))
         cp(upstream_tarball, tarball)

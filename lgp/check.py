@@ -42,7 +42,6 @@ from logilab.common.compat import set
 from logilab.common.fileutils import ensure_fs_mode
 
 from logilab.devtools.vcslib import get_vcs_agent, BASE_EXCLUDE
-from logilab.devtools.lib.pkginfo import PackageInfo
 from logilab.devtools.lib.pkginfo import check_url as _check_url, spell_check, get_default_scripts, sequence_equal
 from logilab.devtools.lib.manifest import (get_manifest_files, read_manifest_in,
                                            match_extensions, JUNK_EXTENSIONS)
@@ -311,6 +310,7 @@ def check_builder(checker):
 
 def check_debian_dir(checker):
     """check the debian* directory """
+    checker.current_distrib = "unstable"
     debian_dir = checker.get_debian_dir()
     return isdir(debian_dir)
 
@@ -558,7 +558,7 @@ def check_scripts(checker):
 def check_package_info(checker):
     """check package information"""
     status = OK
-    if hasattr(checker, "_package") and checker._package_format == "pkginfo":
+    if hasattr(checker, "_package") and checker.package_format == "PackageInfo":
         pi = checker._package
     else:
         return status
