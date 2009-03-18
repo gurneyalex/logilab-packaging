@@ -59,7 +59,8 @@ class SetupInfo(Configuration):
         isatty = hasattr(sys.stdout, 'isatty') and sys.stdout.isatty()
         self.options = (
                ('version',
-                {'help': "output version information and exit"
+                {'help': "output version information and exit",
+                 #'dest' : "version",
                 }),
                ('verbose',
                 {'action': 'store_true',
@@ -109,12 +110,6 @@ class SetupInfo(Configuration):
                 self.options += opt
         super(SetupInfo, self).__init__(options=self.options, **args)
 
-        # Version information
-        if self.config.version:
-            from logilab.devtools.__pkginfo__ import version, distname, copyright
-            print "lgp (%s) %s\n%s" % (distname, version, copyright)
-            sys.exit()
-
         # Load the optional config files
         for config in ['/etc/lgp/lgprc', '~/.lgprc']:
             config = os.path.expanduser(config)
@@ -123,6 +118,13 @@ class SetupInfo(Configuration):
 
         # Manage arguments (project path essentialy)
         self.arguments = self.load_command_line_configuration(arguments)
+
+        # Version information
+        if self.config.version:
+            from logilab.devtools.__pkginfo__ import version, distname, copyright, web
+            print "lgp (%s) %s\n%s" % (distname, version, copyright)
+            print "Please visit: %s " % web
+            sys.exit()
 
         # Instanciate the default logger configuration
         if not logging.getLogger().handlers:
