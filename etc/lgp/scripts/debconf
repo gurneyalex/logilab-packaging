@@ -1,6 +1,6 @@
 #!/bin/sh -x
 
-. /etc/lgp/scripts/default
+. /etc/lgp/scripts/apt
 
 export DEBIAN_FRONTEND=readline
 export DEBCONF_DEBUG=developer
