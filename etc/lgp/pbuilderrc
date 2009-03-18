@@ -145,7 +145,10 @@ BINDMOUNTS="/sys"
 export SHELL=/bin/sh
 
 # The name of debootstrap command.
-DEBOOTSTRAP="cdebootstrap"
+# legacy debootstrap by default
+DEBOOTSTRAP="debootstrap"
+# ...or when cdebootstrap package is installed
+#DEBOOTSTRAP="cdebootstrap"
 
 # default file extension for pkgname-logfile
 PKGNAME_LOGFILE_EXTENTION="_$(dpkg --print-architecture).build"
