@@ -33,84 +33,47 @@ from logilab.devtools.lgp.setupinfo import SetupInfo
 from logilab.devtools.lgp.utils import get_distributions, get_architectures
 from logilab.devtools.lgp.utils import cond_exec, confirm
 from logilab.devtools.lgp.exceptions import LGPException, LGPCommandException
-from logilab.devtools.lgp.utils import confirm, cond_exec
+from logilab.devtools.lgp.check import check_keyrings
 from logilab.devtools.lgp import CONFIG_FILE
 
 
 def run(args):
     """ Main function of lgp setup command """
-
     try :
         setup = Setup(args)
+        distributions = get_distributions(setup.config.distrib)
+        logging.info("running for distribution(s): %s" % ', '.join(distributions))
 
         if setup.config.command == "create":
-            if not os.path.isfile(CONFIG_FILE):
-                print("* You need to install the %s file to begin" % CONFIG_FILE)
-                sys.exit(1)
-            if not confirm('* Have you already set your pbuilder variables in %s ?' %
-                           CONFIG_FILE):
-                print '  Please configure to continue.'
-                sys.exit(0)
+            if not check_keyrings(setup):
+                logging.warn("you haven't installed archive keyring for ubuntu distributions")
+                logging.warn("you can download it from http://fr.archive.ubuntu.com/ubuntu/pool/main/u/ubuntu-keyring")
+                logging.warn("then copy keyring file into /usr/share/keyrings/ directory")
+                logging.debug("wget -O /usr/share/keyrings/ubuntu-archive-keyring.gpg ftp://ftp.archive.ubuntu.com/ubuntu/project/ubuntu-archive-keyring.gpg")
 
-            while not os.path.isfile('/usr/share/keyrings/debian-archive-keyring.gpg'):
-                if not confirm("* Have you installed the debian-archive-keyring package ?"):
-                    print '  Please install it to continue.'
-                    sys.exit(0)
+        for distrib in distributions:
+            if setup.config.command == "create":
+                logging.info("creating '%s' image now... It will take a while." % distrib)
+                cmd = "sudo DIST=%s pbuilder create --override-config --configfile %s"
+            elif setup.config.command == "update":
+                logging.info("updating '%s' image now... It will take a while." % distrib)
+                cmd = "sudo DIST=%s pbuilder update --override-config --configfile %s"
+            elif setup.config.command == "login":
+                logging.info("login into '%s' image" % distrib)
+                cmd = "sudo DIST=%s pbuilder login --configfile %s"
+            elif setup.config.command == "dumpconfig":
+                logging.info("dump '%s' image configuration" % distrib)
+                cmd = "sudo DIST=%s pbuilder dumpconfig --configfile %s"
 
-            while not os.path.isfile('/usr/share/keyrings/ubuntu-archive-keyring.gpg'):
-                print("* You need to install this keyring file if you want to build for ubuntu distributions.\n\n"
-                      "  You can download it from http://fr.archive.ubuntu.com/ubuntu/pool/main/u/ubuntu-keyring\n"
-                      "  or: wget -O /usr/share/keyrings/ubuntu-archive-keyring.gpg \\\n"
-                      "      ftp://ftp.archive.ubuntu.com/ubuntu/project/ubuntu-archive-keyring.gpg")
-                if confirm("  Skip the ubuntu keyring installation ?"):
-                    break
-
-            distributions = setup.choice_distribution("* You have to select pbuilder images to create:")
-            print("* Creating images now... It will take a while.")
-            for distrib in distributions:
-                cmd = "sudo DIST=%s pbuilder create --override-config --configfile %s"\
-                      % (distrib, CONFIG_FILE)
-                try:
-                    check_call(cmd.split(), env={'DIST': distrib})
-                except CalledProcessError, err:
-                    raise LGPCommandException('impossible to create the pbuilder image', err)
-
-        if setup.config.command == "update":
-            distributions = setup.choice_distribution("* You have to select pbuilder images to update:")
-            print("* Updating images now... It will take a while.")
-            for distrib in distributions:
-                cmd = "sudo DIST=%s pbuilder update --override-config --configfile %s"\
-                      % (distrib, CONFIG_FILE)
-                try:
-                    check_call(cmd.split(), env={'DIST': distrib})
-                except CalledProcessError, err:
-                    raise LGPCommandException('impossible to update the pbuilder image', err)
-
-        if setup.config.command == "login":
-            if not setup.config.distrib or setup.config.distrib=='all':
-                raise LGPException('you need to specify a valid distribution to log in')
-            else:
-                distribution = get_distributions(setup.config.distrib)[0]
-            cmd = "sudo DIST=%s pbuilder login --configfile %s" \
-                  % (distribution, CONFIG_FILE)
+            # run setup command
             try:
-                check_call(cmd.split(), env={'DIST': distribution})
-            except CalledProcessError, err:
-                raise LGPCommandException('impossible to enter into pbuilder image', err)
-
-        if setup.config.command == "dumpconfig":
-            if not setup.config.distrib or setup.config.distrib=='all':
-                raise LGPException('you need to specify a valid distribution to dump configuration values')
-            else:
-                distribution = get_distributions(setup.config.distrib)[0]
-            cmd = "sudo DIST=%s pbuilder dumpconfig --configfile %s" \
-                  % (distribution, CONFIG_FILE)
-            try:
-                check_call(cmd.split())
+                cmd = cmd % (distrib, CONFIG_FILE)
+                check_call(cmd.split(), env={'DIST': distrib})
             except CalledProcessError, err:
                 # FIXME command always returns exit code 1
-                #raise LGPCommandException('impossible to dump configuration values', err)
-                pass
+                if setup.config.command == "dumpconfig":
+                    continue
+                raise LGPCommandException('an error occured in setup process', err)
 
     except NotImplementedError, exc:
         logging.error(exc)
@@ -129,7 +92,7 @@ class Setup(SetupInfo):
 
     options = (('command',
                 {'type': 'choice',
-                 'choices': ('create', 'update', 'dumpconfig', 'login'), # 'clean', 'dumpconfig'),
+                 'choices': ('create', 'update', 'dumpconfig', 'login'), # 'clean', 
                  'dest': 'command',
                  'default' : 'dumpconfig',
                  'short': 'c',
@@ -141,17 +104,3 @@ class Setup(SetupInfo):
     def __init__(self, args):
         # Retrieve upstream information
         super(Setup, self).__init__(arguments=args, options=self.options, usage=__doc__)
-
-    def choice_distribution(self, str):
-        if self.config.distrib:
-            distributions = get_distributions(self.config.distrib)
-        else:
-            print("%s\n " % str),
-            print(', '.join(get_distributions('target')))
-            distributions = raw_input("\n  distributions (separated by space) ? ")
-            distributions = [d for d in distributions.split() if d in get_distributions('known')]
-            while not confirm("  \n  %s\n  Is this correct ?" % distributions):
-                distributions = raw_input("\n  distributions (separated by space) ? ")
-                distributions = [d for d in distributions.split() if d in get_distributions('known')]
-        return distributions
-
