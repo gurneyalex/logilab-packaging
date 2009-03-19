@@ -116,7 +116,7 @@ def run_post_treatments(builder, packages, distrib):
             # There is no orig.tar.gz file in the dsc file. This is probably a native package.
             if verbose and orig is None:
                 if not confirm("No orig.tar.gz file found in %s.\n"
-                               "Really a native package (suspect) ?" % package):
+                               "This is a native package (really) ?" % package):
                     return
 
     # Run some utility in verbose mode
@@ -271,14 +271,17 @@ class Builder(SetupInfo):
 
         self._tmpdir = tmpdir = tempfile.mkdtemp()
 
+        # create the upstream tarball and copy to the temporary directory
         tarball = self.create_orig_tarball()
 
         # create tmp build directory by extracting the .orig.tar.gz
         os.chdir(tmpdir)
         logging.info("extract '%s' to '%s'" % (tarball, tmpdir))
         try:
-            check_call(('tar xzf %s' % tarball).split(), stdout=sys.stdout,
-                                                         stderr=sys.stderr)
+            cmd = 'tar xzf %s' % tarball
+            #cmd = 'tar xzf %s -C %s' % (tarball, tmpdir)
+            check_call(cmd.split(), stdout=sys.stdout,
+                                    stderr=sys.stderr)
         except CalledProcessError, err:
             raise LGPCommandException('an error occured while extracting the '
                                       'upstream tarball', err)
@@ -291,25 +294,12 @@ class Builder(SetupInfo):
         # support of the multi-distribution
         self.manage_multi_distribution(origpath)
 
-        # build the package using vbuild or default to fakeroot
-        debuilder = os.environ.get('DEBUILDER', 'vbuild')
-        logging.debug("use builder: '%s'" % debuilder)
-        if debuilder.endswith('vbuild'):
-            dscfile = self.make_debian_source_package(origpath)
-            logging.info("building debian package for distribution '%s' and arch '%s'"
-                             % (distrib, arch))
-            cmd = '%s -d %s -a %s --result %s %s'
-            cmd %= (debuilder, distrib, arch, self.get_distrib_dir(),
-                    osp.join(tmpdir, dscfile))
-            # TODO
-            #cmd += ' --debbuildopts %s' % pdebuild_options
-        else:
-            cmd = debuilder
+        # create a debian source package
+        dscfile = self.make_debian_source_package(origpath)
 
-        try:
-            check_call(cmd.split(), stdout=sys.stdout) #, stderr=sys.stderr)
-        except CalledProcessError, err:
-            raise LGPCommandException("failed autobuilding of package", err)
+        # build the package using vbuild or default to fakeroot
+        if not self.config.deb_src_only:
+           self._compile(distrib, arch, dscfile)
 
         # clean tmpdir
         os.chdir(self.config.pkg_dir)
@@ -338,11 +328,14 @@ class Builder(SetupInfo):
         logging.debug("start creation of the debian source package '%s'"
                       % osp.join(osp.dirname(origpath), dscfile))
         try:
+            #os.chdir(self._tmpdir)
             cmd = 'dpkg-source -b %s' % origpath
             check_call(cmd.split(), stdout=sys.stdout, stderr=sys.stderr)
         except CalledProcessError, err:
             msg = "cannot build valid dsc file '%s' with command %s" % (dscfile, cmd)
             raise LGPCommandException(msg, err)
+        #finally:
+        #    os.chdir(self.config.pkg_dir)
 
         if self.config.deb_src_only:
             for filename in filelist:
@@ -350,8 +343,6 @@ class Builder(SetupInfo):
                 cp(filename, self.get_distrib_dir())
             logging.info("Debian source control file is: %s"
                          % osp.join(self.get_distrib_dir(), dscfile))
-            self.clean_tmpdir()
-            sys.exit()
         return dscfile
 
     def manage_multi_distribution(self, origpath):
@@ -385,3 +376,23 @@ class Builder(SetupInfo):
             check_call(cmd, stdout=sys.stdout) #, stderr=sys.stderr)
         except CalledProcessError, err:
             raise LGPCommandException("bad substitution for distribution field", err)
+
+    def _compile(self, distrib, arch, dscfile):
+        debuilder = os.environ.get('DEBUILDER', 'vbuild')
+        logging.debug("use builder: '%s'" % debuilder)
+        if debuilder.endswith('vbuild'):
+            logging.info("building debian package for distribution '%s' and arch '%s'"
+                         % (distrib, arch))
+            cmd = '%s -d %s -a %s --result %s %s'
+            cmd %= (debuilder, distrib, arch, self.get_distrib_dir(),
+                    osp.join(self._tmpdir, dscfile))
+            # TODO
+            #cmd += ' --debbuildopts %s' % pdebuild_options
+        else:
+            cmd = debuilder
+
+        try:
+            check_call(cmd.split(), stdout=sys.stdout) #, stderr=sys.stderr)
+        except CalledProcessError, err:
+            raise LGPCommandException("failed autobuilding of package", err)
+
