@@ -271,16 +271,9 @@ class Builder(SetupInfo):
 
         self._tmpdir = tempfile.mkdtemp()
 
-        # create the upstream tarball and copy to the temporary directory
-        upstream_tarball, tarball = self.create_orig_tarball()
-
-        # origpath is depending of the upstream convention
-        upstream_tarball = os.path.basename(upstream_tarball)
-        upstream_tarball = upstream_tarball.rsplit('.tar.gz')[0]
-        tarball = os.path.basename(tarball)
-        tarball = tarball.rsplit('.orig.tar.gz')[0].replace('_', '-')
-        origpath = os.path.join(self._tmpdir, tarball)
-        assert upstream_tarball == tarball, "tarballs have not similar names"
+        # create the upstream tarball if necessary and copy to the temporary
+        # directory following the Debian practices
+        upstream_tarball, tarball, origpath = self.make_orig_tarball()
 
         # support of the multi-distribution
         self.manage_multi_distribution(origpath)
@@ -319,21 +312,25 @@ class Builder(SetupInfo):
         logging.debug("start creation of the debian source package '%s'"
                       % osp.join(osp.dirname(origpath), dscfile))
         try:
-            os.chdir(self._tmpdir)
-            cmd = 'dpkg-source -b %s' % origpath
-            check_call(cmd.split(), stdout=sys.stdout, stderr=sys.stderr)
-        except CalledProcessError, err:
-            msg = "cannot build valid dsc file '%s' with command %s" % (dscfile, cmd)
-            raise LGPCommandException(msg, err)
+            try:
+                os.chdir(self._tmpdir)
+                cmd = 'dpkg-source -b %s' % origpath
+                # FIXME use one copy of the upstream tarball
+                #if self.config.orig_tarball:
+                #    cmd += ' %s' % self.config.orig_tarball
+                check_call(cmd.split(), stdout=sys.stdout, stderr=sys.stderr)
+            except CalledProcessError, err:
+                msg = "cannot build valid dsc file '%s' with command %s" % (dscfile, cmd)
+                raise LGPCommandException(msg, err)
+
+            if self.config.deb_src_only:
+                for filename in filelist:
+                    logging.debug("copy '%s' to '%s'" % (filename, self.get_distrib_dir()))
+                    cp(filename, self.get_distrib_dir())
+                logging.info("Debian source control file is: %s"
+                             % osp.join(self.get_distrib_dir(), dscfile))
         finally:
             os.chdir(self.config.pkg_dir)
-
-        if self.config.deb_src_only:
-            for filename in filelist:
-                logging.debug("copy '%s' to '%s'" % (filename, self.get_distrib_dir()))
-                cp(filename, self.get_distrib_dir())
-            logging.info("Debian source control file is: %s"
-                         % osp.join(self.get_distrib_dir(), dscfile))
         return dscfile
 
     def manage_multi_distribution(self, origpath):
