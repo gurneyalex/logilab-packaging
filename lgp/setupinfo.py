@@ -351,10 +351,14 @@ class SetupInfo(Configuration):
         self._run_command('clean')
         logging.info("clean repository")
 
-    def create_orig_tarball(self):
-        """Create an origin tarball"""
+    def make_orig_tarball(self):
+        """make upstream and debianized tarballs in a dedicated directory"""
         dist_dir = os.path.dirname(self.get_distrib_dir())
         fileparts = (self.get_upstream_name(), self.get_upstream_version())
+        # directory containing the debianized source tree
+        # (i.e. with a debian sub-directory and maybe changes to the original files)
+        # origpath is depending of the upstream convention
+        origpath = "%s-%s" % fileparts
         tarball = '%s_%s.orig.tar.gz' % fileparts
         upstream_tarball = '%s-%s.tar.gz' % fileparts
 
@@ -372,19 +376,21 @@ class SetupInfo(Configuration):
 
         else:
             expected = [upstream_tarball, tarball]
-            upstream_tarball = os.path.expanduser(self.config.orig_tarball)
-            if upstream_tarball not in expected:
+            if os.path.basename(self.config.orig_tarball) not in expected:
                 logging.error("the provided tarball hasn't one of the expected formats (%s)"
                               % ','.join(expected))
+            upstream_tarball = os.path.expanduser(self.config.orig_tarball)
 
-        # set valid paths
+        # rewrite to full paths
         tarball = os.path.join(self._tmpdir, tarball)
         upstream_tarball = os.path.join(dist_dir, upstream_tarball)
+        origpath = os.path.join(self._tmpdir, origpath)
 
         logging.info("use '%s' as original source archive (tarball)" % upstream_tarball)
         if not os.path.isfile(upstream_tarball):
             raise LGPException('the original source archive (tarball) not found in %s' % dist_dir)
 
+        # FIXME use one copy of the upstream tarball
         # note the renaming of the new tarball filename
         # dpkg-source expects the  original source as a tarfile
         # by default: package_upstream-version.orig.tar.extension
@@ -393,7 +399,9 @@ class SetupInfo(Configuration):
 
         # test and extracting the .orig.tar.gz
         try:
-            cmd = 'tar xzf %s -C %s' % (tarball, self._tmpdir)
+            # FIXME use one copy of the upstream tarball
+            #cmd = 'tar xzf %s -C %s' % (tarball, self._tmpdir)
+            cmd = 'tar xzf %s -C %s' % (upstream_tarball, self._tmpdir)
             logging.debug("extract command: %s" % cmd)
             check_call(cmd.split(), stdout=sys.stdout,
                                     stderr=sys.stderr)
@@ -401,7 +409,7 @@ class SetupInfo(Configuration):
             raise LGPCommandException('an error occured while extracting the '
                                       'upstream tarball', err)
 
-        return(upstream_tarball, tarball)
+        return(upstream_tarball, tarball, origpath)
 
     def get_distrib_dir(self):
         """get the dynamic target release directory"""
