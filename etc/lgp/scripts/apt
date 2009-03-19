@@ -23,3 +23,5 @@ DPkg::Pre-Install-Pkgs {
   "dpkg-preconfigure --apt --priority=low";
 };
 EOF
+
+apt-get update
