@@ -312,25 +312,21 @@ class Builder(SetupInfo):
         logging.debug("start creation of the debian source package '%s'"
                       % osp.join(osp.dirname(origpath), dscfile))
         try:
-            try:
-                os.chdir(self._tmpdir)
-                cmd = 'dpkg-source -b %s' % origpath
-                # FIXME use one copy of the upstream tarball
-                #if self.config.orig_tarball:
-                #    cmd += ' %s' % self.config.orig_tarball
-                check_call(cmd.split(), stdout=sys.stdout, stderr=sys.stderr)
-            except CalledProcessError, err:
-                msg = "cannot build valid dsc file '%s' with command %s" % (dscfile, cmd)
-                raise LGPCommandException(msg, err)
+            cmd = 'dpkg-source -b %s' % origpath
+            # FIXME use one copy of the upstream tarball
+            #if self.config.orig_tarball:
+            #    cmd += ' %s' % self.config.orig_tarball
+            check_call(cmd.split(), stdout=sys.stdout, stderr=sys.stderr)
+        except CalledProcessError, err:
+            msg = "cannot build valid dsc file '%s' with command %s" % (dscfile, cmd)
+            raise LGPCommandException(msg, err)
 
-            if self.config.deb_src_only:
-                for filename in filelist:
-                    logging.debug("copy '%s' to '%s'" % (filename, self.get_distrib_dir()))
-                    cp(filename, self.get_distrib_dir())
-                logging.info("Debian source control file is: %s"
-                             % osp.join(self.get_distrib_dir(), dscfile))
-        finally:
-            os.chdir(self.config.pkg_dir)
+        if self.config.deb_src_only:
+            for filename in filelist:
+                logging.debug("copy '%s' to '%s'" % (filename, self.get_distrib_dir()))
+                cp(filename, self.get_distrib_dir())
+            logging.info("Debian source control file is: %s"
+                         % osp.join(self.get_distrib_dir(), dscfile))
         return dscfile
 
     def manage_multi_distribution(self, origpath):
