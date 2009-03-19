@@ -269,27 +269,18 @@ class Builder(SetupInfo):
         # rewrite distrib to manage the 'all' case in run()
         self.current_distrib = distrib
 
-        self._tmpdir = tmpdir = tempfile.mkdtemp()
+        self._tmpdir = tempfile.mkdtemp()
 
         # create the upstream tarball and copy to the temporary directory
-        tarball = self.create_orig_tarball()
-
-        # create tmp build directory by extracting the .orig.tar.gz
-        os.chdir(tmpdir)
-        logging.info("extract '%s' to '%s'" % (tarball, tmpdir))
-        try:
-            cmd = 'tar xzf %s' % tarball
-            #cmd = 'tar xzf %s -C %s' % (tarball, tmpdir)
-            check_call(cmd.split(), stdout=sys.stdout,
-                                    stderr=sys.stderr)
-        except CalledProcessError, err:
-            raise LGPCommandException('an error occured while extracting the '
-                                      'upstream tarball', err)
+        upstream_tarball, tarball = self.create_orig_tarball()
 
         # origpath is depending of the upstream convention
+        upstream_tarball = os.path.basename(upstream_tarball)
+        upstream_tarball = upstream_tarball.rsplit('.tar.gz')[0]
         tarball = os.path.basename(tarball)
         tarball = tarball.rsplit('.orig.tar.gz')[0].replace('_', '-')
-        origpath = os.path.join(tmpdir, tarball)
+        origpath = os.path.join(self._tmpdir, tarball)
+        assert upstream_tarball == tarball, "tarballs have not similar names"
 
         # support of the multi-distribution
         self.manage_multi_distribution(origpath)
@@ -328,14 +319,14 @@ class Builder(SetupInfo):
         logging.debug("start creation of the debian source package '%s'"
                       % osp.join(osp.dirname(origpath), dscfile))
         try:
-            #os.chdir(self._tmpdir)
+            os.chdir(self._tmpdir)
             cmd = 'dpkg-source -b %s' % origpath
             check_call(cmd.split(), stdout=sys.stdout, stderr=sys.stderr)
         except CalledProcessError, err:
             msg = "cannot build valid dsc file '%s' with command %s" % (dscfile, cmd)
             raise LGPCommandException(msg, err)
-        #finally:
-        #    os.chdir(self.config.pkg_dir)
+        finally:
+            os.chdir(self.config.pkg_dir)
 
         if self.config.deb_src_only:
             for filename in filelist:

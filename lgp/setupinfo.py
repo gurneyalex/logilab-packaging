@@ -216,7 +216,7 @@ class SetupInfo(Configuration):
         return self._package.__class__.__name__
 
     def _run_command(self, cmd, output=False, **args):
-        """run an internal declared command"""
+        """run an internal declared command as new subprocess"""
         cmdline = Template(COMMANDS[cmd][self.package_format])
         cmdline = cmdline.substitute(setup=self.config.setup_file, **args)
         logging.debug('run subprocess command: %s' % cmdline)
@@ -385,10 +385,23 @@ class SetupInfo(Configuration):
         if not os.path.isfile(upstream_tarball):
             raise LGPException('the original source archive (tarball) not found in %s' % dist_dir)
 
-        logging.debug("copy '%s' to '%s'" % (upstream_tarball, tarball))
+        # note the renaming of the new tarball filename
+        # dpkg-source expects the  original source as a tarfile
+        # by default: package_upstream-version.orig.tar.extension
+        logging.debug("rename '%s' to '%s'" % (upstream_tarball, tarball))
         cp(upstream_tarball, tarball)
 
-        return tarball
+        # test and extracting the .orig.tar.gz
+        try:
+            cmd = 'tar xzf %s -C %s' % (tarball, self._tmpdir)
+            logging.debug("extract command: %s" % cmd)
+            check_call(cmd.split(), stdout=sys.stdout,
+                                    stderr=sys.stderr)
+        except CalledProcessError, err:
+            raise LGPCommandException('an error occured while extracting the '
+                                      'upstream tarball', err)
+
+        return(upstream_tarball, tarball)
 
     def get_distrib_dir(self):
         """get the dynamic target release directory"""
