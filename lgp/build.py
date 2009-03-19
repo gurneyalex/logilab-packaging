@@ -278,12 +278,15 @@ class Builder(SetupInfo):
         # support of the multi-distribution
         self.manage_multi_distribution(origpath)
 
+        # change directory for next commands
+        os.chdir(self._tmpdir)
+
         # create a debian source package
         dscfile = self.make_debian_source_package(origpath)
 
         # build the package using vbuild or default to fakeroot
         if not self.config.deb_src_only:
-           self._compile(distrib, arch, dscfile)
+            self._compile(distrib, arch, dscfile)
 
         # clean tmpdir
         os.chdir(self.config.pkg_dir)

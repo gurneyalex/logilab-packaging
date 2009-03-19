@@ -398,7 +398,6 @@ class SetupInfo(Configuration):
         cp(upstream_tarball, tarball)
 
         # test and extracting the .orig.tar.gz
-        os.chdir(self._tmpdir)
         try:
             # FIXME use one copy of the upstream tarball
             #cmd = 'tar xzf %s -C %s' % (tarball, self._tmpdir)
