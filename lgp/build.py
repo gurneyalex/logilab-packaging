@@ -96,7 +96,6 @@ def run_pre_treatments(builder):
 
 def run_post_treatments(builder, packages, distrib):
     """ Run actions after package compiling """
-    separator = '+' * 15 + ' %s'
     distdir = builder.get_distrib_dir()
     verbose = builder.config.verbose
 
@@ -229,8 +228,8 @@ class Builder(SetupInfo):
                ('deb-src',
                 {'action': 'store_true',
                  #'default': False,
-                 'dest' : "deb_src",
-                 'help': "obtain a debian source package"
+                 'dest' : "deb_src_only",
+                 'help': "obtain a debian source package without build"
                 }),
                ('intermediate',
                 {'action': 'store_true',
@@ -265,17 +264,18 @@ class Builder(SetupInfo):
 
 
     def compile(self, distrib, arch):
+        self.clean_repository()
+
         # rewrite distrib to manage the 'all' case in run()
         self.current_distrib = distrib
 
         self._tmpdir = tmpdir = tempfile.mkdtemp()
 
-        self.clean_repository()
-        tarball = self.create_orig_tarball(tmpdir)
+        tarball = self.create_orig_tarball()
 
         # create tmp build directory by extracting the .orig.tar.gz
         os.chdir(tmpdir)
-        logging.debug("extracting %s..." % tarball)
+        logging.info("extract '%s' to '%s'" % (tarball, tmpdir))
         try:
             check_call(('tar xzf %s' % tarball).split(), stdout=sys.stdout,
                                                          stderr=sys.stderr)
@@ -321,19 +321,6 @@ class Builder(SetupInfo):
         if not self.config.keep_tmpdir:
             shutil.rmtree(self._tmpdir)
 
-    def get_distrib_dir(self):
-        """ get the dynamic target release directory """
-        distrib_dir = osp.join(osp.expanduser(self.config.dist_dir),
-                               self.current_distrib)
-        # check if distribution directory exists, create it if necessary
-        try:
-            os.makedirs(distrib_dir)
-        except OSError:
-            # it's not a problem here to pass silently # when the directory
-            # already exists
-            pass
-        return distrib_dir
-
     def make_debian_source_package(self, origpath):
         """create a debian source package
 
@@ -357,7 +344,7 @@ class Builder(SetupInfo):
             msg = "cannot build valid dsc file '%s' with command %s" % (dscfile, cmd)
             raise LGPCommandException(msg, err)
 
-        if self.config.deb_src:
+        if self.config.deb_src_only:
             for filename in filelist:
                 logging.debug("copy '%s' to '%s'" % (filename, self.get_distrib_dir()))
                 cp(filename, self.get_distrib_dir())
