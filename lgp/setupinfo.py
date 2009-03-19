@@ -352,7 +352,7 @@ class SetupInfo(Configuration):
         self._run_command('clean')
         logging.info("clean repository")
 
-    def create_orig_tarball(self, tmpdir):
+    def create_orig_tarball(self):
         """Create an origin tarball"""
         dist_dir = os.path.dirname(self.get_distrib_dir())
         fileparts = (self.get_upstream_name(), self.get_upstream_version())
@@ -379,7 +379,7 @@ class SetupInfo(Configuration):
                               % ','.join(expected))
 
         # set valid paths
-        tarball = os.path.join(tmpdir, tarball)
+        tarball = os.path.join(self._tmpdir, tarball)
         upstream_tarball = os.path.join(dist_dir, upstream_tarball)
 
         if os.path.isfile(upstream_tarball):
@@ -391,3 +391,16 @@ class SetupInfo(Configuration):
         cp(upstream_tarball, tarball)
 
         return tarball
+
+    def get_distrib_dir(self):
+        """get the dynamic target release directory"""
+        distrib_dir = os.path.join(os.path.expanduser(self.config.dist_dir),
+                                   self.current_distrib)
+        # check if distribution directory exists, create it if necessary
+        try:
+            os.makedirs(distrib_dir)
+        except OSError:
+            # it's not a problem here to pass silently # when the directory
+            # already exists
+            pass
+        return distrib_dir
