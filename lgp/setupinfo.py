@@ -44,9 +44,9 @@ from logilab.devtools.lgp.exceptions import LGPException, LGPCommandException
 LOG_FORMAT='%(levelname)1.1s:%(name)s: %(message)s'
 COMMANDS = {
         "sdist" : {
-            "file": './$setup dist-gzip -e DIST_DIR=$distdir',
-            "Distribution": 'python setup.py -q sdist -d $distdir',
-            "PackageInfo": 'python setup.py -q sdist --force-manifest -d $distdir',
+            "file": './$setup dist-gzip -e DIST_DIR=$dist_dir',
+            "Distribution": 'python setup.py -q sdist -d $dist_dir',
+            "PackageInfo": 'python setup.py -q sdist --force-manifest -d $dist_dir',
         },
         "clean" : {
             "file": './$setup clean',
@@ -215,14 +215,13 @@ class SetupInfo(Configuration):
     def package_format(self):
         return self._package.__class__.__name__
 
-    def _run_command(self, cmd, output=False):
+    def _run_command(self, cmd, output=False, **args):
         """run an internal declared command"""
         cmdline = Template(COMMANDS[cmd][self.package_format])
-        try:
-            distdir=self.get_distrib_dir()
-        except AttributeError:
-            distdir=''
-        cmdline = cmdline.substitute(setup=self.config.setup_file, distdir=distdir)
+        cmdline = cmdline.substitute(setup=self.config.setup_file, **args)
+        logging.debug('run subprocess command: %s' % cmdline)
+        if args:
+            logging.debug('command substitutions: %s' % args)
         process = Popen(cmdline.split(), stdout=PIPE)
         pipe = process.communicate()[0].strip()
         if process.returncode > 0:
@@ -364,7 +363,7 @@ class SetupInfo(Configuration):
 
             try:
                 self.check_debian_revision()
-                self._run_command("sdist")
+                self._run_command("sdist", dist_dir=dist_dir)
             except CalledProcessError, err:
                 logging.error("creation of the source archive failed")
                 logging.error("check if the version '%s' is really tagged in"\
@@ -382,9 +381,8 @@ class SetupInfo(Configuration):
         tarball = os.path.join(self._tmpdir, tarball)
         upstream_tarball = os.path.join(dist_dir, upstream_tarball)
 
-        if os.path.isfile(upstream_tarball):
-            logging.info("use '%s' as original source archive (tarball)" % upstream_tarball)
-        else:
+        logging.info("use '%s' as original source archive (tarball)" % upstream_tarball)
+        if not os.path.isfile(upstream_tarball):
             raise LGPException('the original source archive (tarball) not found in %s' % dist_dir)
 
         logging.debug("copy '%s' to '%s'" % (upstream_tarball, tarball))
