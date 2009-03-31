@@ -399,9 +399,9 @@ def check_copying(checker):
 
 def check_tests_directory(checker):
     """check your tests? directory """
-    if isdir('test') or isdir('tests'):
-        return OK
-    checker.logger.warn(check_copying.__doc__)
+    if not (isdir('test') or isdir('tests')):
+        checker.logger.warn(check_copying.__doc__)
+    return OK
 
 def check_run_tests(checker):
     """run the unit tests """
