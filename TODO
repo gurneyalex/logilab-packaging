@@ -9,6 +9,10 @@
 ./optik_ext.py:186:    ATTRS = BaseOption.ATTRS + ['hide']
 ./optik_ext.py:204:        if hasattr(self, "hide") and self.hide:
 ./ChangeLog:52:      - new attribute hide in option (i.e --ex : if --ex has 'hide':True then the option will not be displayed in man or --help)
+- except OSError, e:
+  if e.errno == errno.EINTR:
+      continue
+
 
 
 Limitations pbuilder:
