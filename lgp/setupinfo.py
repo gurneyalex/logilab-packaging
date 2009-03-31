@@ -273,7 +273,6 @@ class SetupInfo(Configuration):
                 cmd = 'dpkg-parsechangelog'
                 if os.path.isfile(changelog):
                     cmd += ' -l%s' % changelog
-                    logging.debug('retrieve debian version from %s' % changelog)
 
                 process = Popen(cmd.split(), stdout=PIPE)
                 pipe = process.communicate()[0]
@@ -286,6 +285,8 @@ class SetupInfo(Configuration):
                     line = line.strip()
                     if line and line.startswith('Version:'):
                         debian_version = line.split(' ', 1)[1].strip()
+                        logging.debug('retrieve debian version from %s: %s' %
+                                      (changelog, debian_version))
                         return debian_version
                 raise LGPException('Debian Version field not found in %s'
                                    % changelog)
