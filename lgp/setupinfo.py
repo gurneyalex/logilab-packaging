@@ -26,6 +26,7 @@ import rfc822
 import commands
 from string import Template
 from distutils.core import run_setup
+#from pkg_resources import FileMetadata
 from subprocess import Popen, PIPE
 
 try:
