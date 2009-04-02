@@ -343,7 +343,7 @@ class Builder(SetupInfo):
             # don't forget the final slash!
             export(osp.join(self.config.pkg_dir, 'debian'), osp.join(origpath, 'debian/'))
         except IOError, err:
-            raise LGPException(str(err))
+            raise LGPException(err)
 
         if self.get_debian_dir() != "debian":
             logging.debug("overriding files...")

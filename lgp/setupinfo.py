@@ -180,7 +180,10 @@ class SetupInfo(Configuration):
         # Go to package directory
         if self.config.pkg_dir is None:
             self.config.pkg_dir = os.path.abspath(self.arguments and self.arguments[0] or os.getcwd())
-        os.chdir(self.config.pkg_dir)
+        try:
+            os.chdir(self.config.pkg_dir)
+        except OSError, err:
+            raise LGPException(err)
 
         # Setup command can be run anywhere, so skip setup file retrieval
         if sys.argv[1] == "setup":
