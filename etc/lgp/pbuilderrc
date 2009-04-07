@@ -125,7 +125,7 @@ PBUILDERSATISFYDEPENDSCMD="/usr/lib/pbuilder/pbuilder-satisfydepends"
 DEBBUILDOPTS=""
 
 # Hooks directory for pbuilder
-#HOOKDIR="/etc/lgp/hooks.d"
+HOOKDIR="/etc/lgp/hooks"
 
 # APT configuration files directory
 #APTCONFDIR="/etc/lgp/apt.d"

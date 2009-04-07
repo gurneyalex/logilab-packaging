@@ -1,7 +1,4 @@
-#!/bin/sh -x
-
-echo "deb http://$SUDO_USER:$SUDO_USER@intranet.logilab.fr/~$SUDO_USER/dists $DIST/" >> /etc/apt/sources.list
-wget -q http://ftp.logilab.org/dists/logilab-dists-key.asc  -O - | apt-key add -
+#!/bin/sh
 
 cat > /etc/apt/apt.conf.d/99lgp <<EOF
 APT {
