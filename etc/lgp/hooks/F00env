@@ -1,6 +1,4 @@
-#!/bin/sh -x
+#!/bin/sh
 
 export IGNOREEOF=5
 export TERM=linux
-
-/bin/sh
