@@ -144,11 +144,8 @@ BINDMOUNTS="/sys"
 # SHELL variable is used inside pbuilder by commands like 'su'; and they need sane values
 export SHELL=/bin/sh
 
-# The name of debootstrap command.
-# legacy debootstrap by default
-DEBOOTSTRAP="debootstrap"
-# ...or when cdebootstrap package is installed
-#DEBOOTSTRAP="cdebootstrap"
+# The name of debootstrap command. Only cdebootstrap is supported
+DEBOOTSTRAP="cdebootstrap"
 
 # default file extension for pkgname-logfile
 PKGNAME_LOGFILE_EXTENTION="_$(dpkg --print-architecture).build"

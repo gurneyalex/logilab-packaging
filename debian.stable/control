@@ -24,9 +24,9 @@ Description: set of development tools used at Logilab for source management
 Package: logilab-packaging
 Architecture: all
 Suggests: logilab-doctools, pymacs, emacsen-common, cvs, debian-archive-keyring
-Recommends: piuparts, mercurial (>= 0.9.3), subversion, debinstall, diffstat, cdebootstrap
+Recommends: piuparts, mercurial (>= 0.9.3), subversion, debinstall, diffstat
 Depends: ${python:Depends}, python-deb822, lintian, pbuilder, devscripts, debhelper,
-         python-vcslib, python-logilab-common, sudo, debootstrap
+         python-vcslib, python-logilab-common, sudo, cdebootstrap
 Conflicts: devtools, simh
 Replaces: devtools
 XB-Python-Version: ${python:Versions}
