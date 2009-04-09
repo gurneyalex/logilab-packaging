@@ -20,7 +20,7 @@ logilab.devtools packaging information
 
 modname = 'devtools'
 distname = 'logilab-devtools'
-numversion = (0, 13, 5)
+numversion = (0, 13, 6)
 version = '.'.join([str(num) for num in numversion])
 
 license = 'GPL'
@@ -59,7 +59,6 @@ scripts = [
     'bin/changelog',
     'bin/update_gettext',
     'bin/lgp',
-    'bin/setupchroot',
     'bin/vbuild',
     ] 
 
