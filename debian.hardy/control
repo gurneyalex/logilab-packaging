@@ -26,7 +26,6 @@ Architecture: all
 Suggests: logilab-doctools, pymacs, emacsen-common, cvs, ubuntu-archive-keyring
 Recommends: piuparts, mercurial (>= 0.9.3), subversion, debinstall, diffstat, cdebootstrap
 Depends: ${python:Depends}, python-debian, lintian, pbuilder, devscripts, debhelper,
-         python-vcslib, python-logilab-common
          python-vcslib, python-logilab-common, sudo
 Conflicts: devtools, simh
 Replaces: devtools
