@@ -1,3 +1,11 @@
+logilab-devtools (0.13.6-1) unstable; urgency=low
+
+  * New upstream release
+  * debian/{control, rules}
+     - move from python-central to python-support
+
+ -- Julien Jehannet <julien.jehannet@logilab.fr>  Thu, 09 Apr 2009 10:46:15 +0200
+
 logilab-devtools (0.13.5-1) unstable; urgency=low
 
   * New upstream release

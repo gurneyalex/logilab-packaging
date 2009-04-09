@@ -1,4 +1,3 @@
 etc/lgp
-etc/lgp/hooks.d
 etc/lgp/apt.d
 usr/bin

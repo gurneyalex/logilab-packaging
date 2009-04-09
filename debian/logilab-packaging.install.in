@@ -11,3 +11,4 @@ etc/lgp/pbuilderrc
 etc/lgp/sources.list.debian
 etc/lgp/sources.list.ubuntu
 etc/lgp/scripts
+etc/lgp/hooks

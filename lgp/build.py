@@ -366,8 +366,12 @@ class Builder(SetupInfo):
 
     def _compile(self, distrib, arch, dscfile):
         debuilder = os.environ.get('DEBUILDER', 'vbuild')
-        logging.debug("use builder: '%s'" % debuilder)
-        if debuilder.endswith('vbuild'):
+        logging.debug("select package builder: '%s'" % debuilder)
+        if debuilder == 'internal':
+            from logilab.devtools.lgp import CONFIG_FILE
+            cmd = "sudo DIST=%s pbuilder build --configfile %s --buildresult %s %s"
+            cmd %= (distrib, CONFIG_FILE, self.get_distrib_dir(), osp.join(self._tmpdir, dscfile))
+        elif debuilder.endswith('vbuild'):
             logging.info("building debian package for distribution '%s' and arch '%s'"
                          % (distrib, arch))
             cmd = '%s -d %s -a %s --result %s %s'
