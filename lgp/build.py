@@ -149,6 +149,7 @@ def run_post_treatments(builder, packages, distrib):
                            '-I', '"/etc/shadow*"',
                            '-I', '"/usr/share/pycentral-data.*"',
                            '-I', '"/var/lib/dpkg/triggers/pysupport.*"',
+                           '-I', '"/var/lib/dpkg/triggers/File"',
                            osp.join(distdir, package)]
                 logging.debug("piuparts command: %s", ' '.join(cmdline))
                 if cond_exec(' '.join(cmdline)):
