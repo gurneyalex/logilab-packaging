@@ -61,6 +61,8 @@ if [ -n "${ARCH}" ]; then
 
 fi
 DISTRIBUTION="$DIST"
+
+# Really useful ?
 BUILDRESULT="/var/cache/pbuilder/$NAME/result/"
 BUILDPLACE="/var/cache/pbuilder/build/"
 
@@ -95,9 +97,13 @@ USEPROC=yes
 USEDEVPTS=yes
 USEDEVFS=no
 
+# BINDMOUNTS is a space separated list of things to mount
+# inside the chroot.
+BINDMOUNTS="/sys"
+
 # Specify the cache for APT
 APTCACHE="/var/cache/pbuilder/$NAME/aptcache/"
-APTCACHEHARDLINK="yes"
+#APTCACHEHARDLINK="yes"
 #REMOVEPACKAGES="lilo bash"
 REMOVEPACKAGES="lilo"
 
@@ -134,10 +140,6 @@ DEBBUILDOPTS=""
 BUILDUSERID=1234
 BUILDUSERNAME=pbuilder
 
-# BINDMOUNTS is a space separated list of things to mount
-# inside the chroot.
-BINDMOUNTS="/sys"
-
 # Set the PATH I am going to use inside pbuilder
 #export PATH="/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/X11R6/bin"
 
@@ -147,11 +149,11 @@ export SHELL=/bin/sh
 # The name of debootstrap command. Only cdebootstrap is supported
 DEBOOTSTRAP="cdebootstrap"
 
-# default file extension for pkgname-logfile
+# enable pkgname-logfile
 PKGNAME_LOGFILE_EXTENTION="_$(dpkg --print-architecture).build"
-
-# default PKGNAME_LOGFILE
-PKGNAME_LOGFILE=""
+PKGNAME_LOGFILE=yes
 
 # When this value is set to yes, pdebuild will invoke debsign command after building.
 #AUTO_DEBSIGN=yes
+
+#TIMEOUT_TIME=20min
