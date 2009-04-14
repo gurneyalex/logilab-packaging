@@ -22,8 +22,8 @@ import stat
 import os.path
 import glob
 import logging
-import rfc822
 import commands
+from debian_bundle.deb822 import Changes
 from string import Template
 from distutils.core import run_setup
 #from pkg_resources import FileMetadata
@@ -331,8 +331,8 @@ class SetupInfo(Configuration):
         return changes[0]
 
     def get_packages(self):
-        packages = rfc822.Message(file(self.get_changes_file()))
-        packages = [a.split()[-1] for a in packages['Files'].split('\n')]
+        packages = Changes(file(self.get_changes_file()))
+        packages = [a['name'] for a in packages['Files']]
         packages.append(self.get_changes_file())
         return packages
 
