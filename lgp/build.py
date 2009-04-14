@@ -28,19 +28,14 @@ import shutil
 import logging
 import warnings
 import os.path as osp
-try:
-    from subprocess import check_call, CalledProcessError # only python2.5
-except ImportError:
-    from logilab.common.compat import check_call, CalledProcessError
+from subprocess import check_call, CalledProcessError
 
-try:
-    from debian_bundle import deb822
-except ImportError:
-    import deb822
+from debian_bundle import deb822
 
 from logilab.common.fileutils import export
 from logilab.common.shellutils import cp
 
+from logilab.devtools.lgp import CONFIG_FILE
 from logilab.devtools.lgp.setupinfo import SetupInfo
 from logilab.devtools.lgp.utils import get_distributions, get_architectures
 from logilab.devtools.lgp.utils import confirm, cond_exec
@@ -61,6 +56,7 @@ def run(args):
                                           builder.config.basetgz)
         logging.info("running for distribution(s): %s" % ', '.join(distributions))
         architectures = get_architectures(builder.config.archi)
+        logging.info("running for architecture(s): %s" % ', '.join(architectures))
 
         if not builder.config.no_treatment:
             run_pre_treatments(builder)
@@ -371,9 +367,8 @@ class Builder(SetupInfo):
         debuilder = os.environ.get('DEBUILDER', 'vbuild')
         logging.debug("select package builder: '%s'" % debuilder)
         if debuilder == 'internal':
-            from logilab.devtools.lgp import CONFIG_FILE
             assert osp.exists(osp.join(self._tmpdir, dscfile))
-            cmd = "sudo DIST=%s pbuilder build --configfile %s --buildresult %s %s"
+            cmd = "sudo DIST=%s pbuilder build --configfile %s --buildresult %s --binary-arch %s"
             cmd %= distrib, CONFIG_FILE, self.get_distrib_dir(), osp.join(self._tmpdir, dscfile)
         elif debuilder.endswith('vbuild'):
             logging.info("building debian package for distribution '%s' and arch '%s'"

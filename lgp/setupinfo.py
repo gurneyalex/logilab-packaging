@@ -326,7 +326,8 @@ class SetupInfo(Configuration):
         return self._run_command('version')
 
     def get_changes_file(self):
-        changes = '%s_%s_*.changes' % (self.get_debian_name(), self.get_debian_version())
+        changes = '%s_%s_*.changes' % (self.get_upstream_name(),
+                                       self.get_debian_version())
         changes = glob.glob(os.path.join(self.get_distrib_dir(), changes))
         return changes[0]
 
