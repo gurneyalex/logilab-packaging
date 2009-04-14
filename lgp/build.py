@@ -297,6 +297,8 @@ class Builder(SetupInfo):
     def clean_tmpdir(self):
         if not self.config.keep_tmpdir:
             shutil.rmtree(self._tmpdir)
+        else:
+            logging.info("keep temporary directory '%s'" % self._tmpdir)
 
     def make_debian_source_package(self, origpath):
         """create a debian source package
@@ -369,8 +371,9 @@ class Builder(SetupInfo):
         logging.debug("select package builder: '%s'" % debuilder)
         if debuilder == 'internal':
             from logilab.devtools.lgp import CONFIG_FILE
+            assert osp.exists(osp.join(self._tmpdir, dscfile))
             cmd = "sudo DIST=%s pbuilder build --configfile %s --buildresult %s %s"
-            cmd %= (distrib, CONFIG_FILE, self.get_distrib_dir(), osp.join(self._tmpdir, dscfile))
+            cmd %= distrib, CONFIG_FILE, self.get_distrib_dir(), osp.join(self._tmpdir, dscfile)
         elif debuilder.endswith('vbuild'):
             logging.info("building debian package for distribution '%s' and arch '%s'"
                          % (distrib, arch))
@@ -382,6 +385,7 @@ class Builder(SetupInfo):
         else:
             cmd = debuilder
 
+        logging.debug(cmd)
         try:
             check_call(cmd.split(), stdout=sys.stdout) #, stderr=sys.stderr)
         except CalledProcessError, err:
