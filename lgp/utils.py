@@ -174,7 +174,7 @@ def get_distributions(distrib=None, basetgz=None):
 
 
 
-def get_architectures(archi="current"):
+def get_architectures(archi=None):
     """ Ensure that the architectures exist
 
         :param:
@@ -184,14 +184,23 @@ def get_architectures(archi="current"):
             list of architecture
     """
     known_archi = Popen(["dpkg-architecture", "-L"], stdout=PIPE).communicate()[0].split()
-    if archi == "current":
+    if archi is None or archi == ["current"]:
         archi = Popen(["dpkg", "--print-architecture"], stdout=PIPE).communicate()[0].split()
     else:
-        if archi == "all":
+        if archi == ["all"]:
             return archi
-        if type(archi) is str:
-            archi = archi.split(',')
         for a in archi:
             if a not in known_archi:
                 raise ArchitectureException(a)
     return archi
+
+def cached(func):
+    "A decorator that runs a function only once."
+    def decorated(*args, **kwargs):
+        try:
+            return decorated._once_result
+        except AttributeError:
+            decorated._once_result = func(*args, **kwargs)
+            return decorated._once_result
+    return decorated
+

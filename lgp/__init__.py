@@ -34,15 +34,17 @@ def run(args):
                  'tag package repository'),
                 ('check', 'logilab.devtools.lgp.check',
                  'check that package is ready to be built'),
-                ('setup', 'logilab.devtools.lgp.setupbuild',
+                ('setup', 'logilab.devtools.lgp.setup',
                  'prepare a chrooted distribution'),
+                ('login', 'logilab.devtools.lgp.login',
+                 'Log into a chrooted distribution'),
                 ('clean', 'logilab.devtools.lgp.clean',
                  'clean repository'),
                ]
 
     if len(sys.argv) <= 1:
         return parser.usage
-    elif sys.argv[1] in ("build", "check", "clean", "template", "setup"):
+    elif sys.argv[1] in ("build", "check", "clean", "template", "setup", "login"):
         exec 'from logilab.devtools.lgp.%s import run' % sys.argv[1]
         return run(args[1:])
     else:

@@ -28,11 +28,7 @@ from string import Template
 from distutils.core import run_setup
 #from pkg_resources import FileMetadata
 from subprocess import Popen, PIPE
-
-try:
-    from subprocess import check_call, CalledProcessError # only python2.5
-except ImportError:
-    from logilab.common.compat import check_call, CalledProcessError
+from subprocess import check_call, CalledProcessError
 
 from logilab.common.configuration import Configuration
 from logilab.common.logging_ext import ColorFormatter
@@ -41,6 +37,7 @@ from logilab.common.shellutils import cp
 from logilab.devtools.lib.pkginfo import PackageInfo
 from logilab.devtools.lib import TextReporter
 from logilab.devtools.lgp.exceptions import LGPException, LGPCommandException
+from logilab.devtools.lgp.utils import get_distributions, get_architectures, cached
 
 LOG_FORMAT='%(levelname)1.1s:%(name)s: %(message)s'
 COMMANDS = {
@@ -89,6 +86,14 @@ class SetupInfo(Configuration):
                   'short': 'd',
                   'metavar': "<distribution>",
                   'help': "list of distributions (e.g. 'stable, unstable'). Use 'all' for automatic detection"
+                }),
+               ('arch',
+                {'type': 'csv',
+                 'dest': 'archi',
+                 'default' : 'current',
+                 'short': 'a',
+                 'metavar' : "<architecture>",
+                 'help': "build for the requested debian architectures only"
                 }),
                ('pkg_dir',
                 {'type': 'string',
@@ -185,8 +190,15 @@ class SetupInfo(Configuration):
         except OSError, err:
             raise LGPException(err)
 
+        # print chroot information
+        self.distributions = get_distributions(self.config.distrib,
+                                               self.config.basetgz)
+        logging.info("running for distribution(s): %s" % ', '.join(self.distributions))
+        self.architectures = get_architectures(self.config.archi)
+        logging.info("running for architecture(s): %s" % ', '.join(self.architectures))
+
         # Setup command can be run anywhere, so skip setup file retrieval
-        if sys.argv[1] == "setup":
+        if sys.argv[1] in ["setup", "login"]:
             return
 
         # FIXME
@@ -212,8 +224,8 @@ class SetupInfo(Configuration):
                                % self.config.setup_file)
 
         logging.debug("guess the setup package class: %s" % self.package_format)
-        self._run_command('project')
-        self._run_command('version')
+        self.get_upstream_name()
+        self.get_upstream_version()
 
     @property
     def package_format(self):
@@ -319,17 +331,20 @@ class SetupInfo(Configuration):
                                'If you haven\'t the original tarball version, ' \
                                'please do an apt-get source of the Debian source package.')
 
+    @cached
     def get_upstream_name(self):
         return self._run_command('project')
 
+    @cached
     def get_upstream_version(self):
         return self._run_command('version')
 
+    @cached
     def get_changes_file(self):
         changes = '%s_%s_*.changes' % (self.get_upstream_name(),
                                        self.get_debian_version())
         changes = glob.glob(os.path.join(self.get_distrib_dir(), changes))
-        return changes[0]
+        return changes.pop()
 
     def get_packages(self):
         packages = Changes(file(self.get_changes_file()))
