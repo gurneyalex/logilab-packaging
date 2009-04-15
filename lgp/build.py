@@ -52,24 +52,20 @@ def run(args):
     """main function of lgp build command"""
     try :
         builder = Builder(args)
-        distributions = get_distributions(builder.config.distrib,
-                                          builder.config.basetgz)
-        logging.info("running for distribution(s): %s" % ', '.join(distributions))
-        architectures = get_architectures(builder.config.archi)
-        logging.info("running for architecture(s): %s" % ', '.join(architectures))
 
         if not builder.config.no_treatment:
             run_pre_treatments(builder)
 
-        for arch in architectures:
-            for distrib in distributions:
-                packages = builder.compile(distrib=distrib, arch=arch)
-                if not builder.config.no_treatment:
-                    run_post_treatments(builder, packages, distrib)
+        for arch in builder.architectures:
+            for distrib in builder.distributions:
+                builder.compile(distrib=distrib, arch=arch)
+                if not builder.config.no_treatment and builder.packages:
+                    run_post_treatments(builder, distrib)
                 logging.info("new files are waiting in %s. Enjoy."
                              % builder.get_distrib_dir())
                 logging.info("Debian changes file is: %s"
                              % builder.get_changes_file())
+
     except LGPException, exc:
         logging.critical(exc)
         #if hasattr(builder, "config") and builder.config.verbose:
@@ -90,13 +86,13 @@ def run_pre_treatments(builder):
     if checker.errors():
         logging.error('%d errors detected by pre-treatments' % checker.errors())
 
-def run_post_treatments(builder, packages, distrib):
+def run_post_treatments(builder, distrib):
     """ Run actions after package compiling """
     distdir = builder.get_distrib_dir()
     verbose = builder.config.verbose
 
     # Check occurence in filesystem
-    for package in packages:
+    for package in builder.packages:
         package = osp.join(distdir, package)
         if not osp.isfile(package):
             raise LGPException('File %s is missing due to a failed build'
@@ -117,7 +113,7 @@ def run_post_treatments(builder, packages, distrib):
 
     # Run some utility in verbose mode
     if verbose:
-        for package in packages:
+        for package in builder.packages:
             if package.endswith('.diff.gz'):
                 logging.info('Debian specific diff statistics (%s)' % package)
                 cond_exec('diffstat %s' % os.path.join(distdir, package))
@@ -126,14 +122,14 @@ def run_post_treatments(builder, packages, distrib):
     checkers = {'debc': '', 'lintian': '-vi'}
     for checker, opts in checkers.iteritems():
         if not verbose or confirm("run %s on generated Debian changes files ?" % checker):
-            for package in packages:
+            for package in builder.packages:
                 if package.endswith('.changes'):
                     logging.info('%s checker information about %s' % (checker, package))
                     cond_exec('%s %s %s' % (checker, opts, os.path.join(distdir, package)))
 
     if verbose and confirm("run piuparts on generated Debian packages ?"):
         basetgz = "%s-%s.tgz" % (distrib, get_architectures()[0])
-        for package in packages:
+        for package in builder.packages:
             if package.endswith('.deb'):
                 logging.info('piuparts checker information about %s' % package)
                 cmdline = ['sudo', 'piuparts', '--no-symlinks',
@@ -155,7 +151,7 @@ def run_post_treatments(builder, packages, distrib):
 
     # Try Debian signing immediately if possible
     if check_debsign(builder):
-        for package in packages:
+        for package in builder.packages:
             if package.endswith('.changes'):
                 logging.info('try signing %s...' % package)
                 if cond_exec('debsign %s' % osp.join(distdir, package)):
@@ -188,14 +184,6 @@ class Builder(SetupInfo):
                  'short': 'r',
                  'metavar': "<directory>",
                  'help': "where to put compilation results"
-                }),
-               ('arch',
-                {'type': 'string',
-                 'dest': 'archi',
-                 'default' : 'current',
-                 'short': 'a',
-                 'metavar' : "<architecture>",
-                 'help': "build for the requested debian architectures only"
                 }),
                ('orig-tarball',
                 {'type': 'string',
@@ -248,6 +236,9 @@ class Builder(SetupInfo):
         # Retrieve upstream information
         super(Builder, self).__init__(arguments=args, options=self.options, usage=__doc__)
 
+        # Add packages metadata
+        self.packages = []
+
         # TODO make a more readable logic in OptParser values
         if not self.config.post_treatments:
             warnings.warn("Option post-treatment is deprecated. Use no-treatment instead.", DeprecationWarning)
@@ -283,13 +274,12 @@ class Builder(SetupInfo):
 
         # build the package using vbuild or default to fakeroot
         if not self.config.deb_src_only:
-            self._compile(distrib, arch, dscfile)
+            packages = self._compile(distrib, arch, dscfile)
+            self.packages = self.get_packages()
 
         # clean tmpdir
         os.chdir(self.config.pkg_dir)
         self.clean_tmpdir()
-
-        return self.get_packages()
 
     def clean_tmpdir(self):
         if not self.config.keep_tmpdir:
@@ -364,15 +354,17 @@ class Builder(SetupInfo):
             raise LGPCommandException("bad substitution for distribution field", err)
 
     def _compile(self, distrib, arch, dscfile):
+        """virtualize the package build process"""
         debuilder = os.environ.get('DEBUILDER', 'vbuild')
         logging.debug("select package builder: '%s'" % debuilder)
         if debuilder == 'internal':
             assert osp.exists(osp.join(self._tmpdir, dscfile))
-            cmd = "sudo DIST=%s pbuilder build --configfile %s --buildresult %s --binary-arch %s"
-            cmd %= distrib, CONFIG_FILE, self.get_distrib_dir(), osp.join(self._tmpdir, dscfile)
+            cmd = "sudo DIST=%s pbuilder build --configfile %s --buildresult %s "
+            #if arch:
+            #   cmd += "--binary-arch "
+            cmd %= distrib, CONFIG_FILE, self.get_distrib_dir()
+            cmd += osp.join(self._tmpdir, dscfile)
         elif debuilder.endswith('vbuild'):
-            logging.info("building debian package for distribution '%s' and arch '%s'"
-                         % (distrib, arch))
             cmd = '%s -d %s -a %s --result %s %s'
             cmd %= (debuilder, distrib, arch, self.get_distrib_dir(),
                     osp.join(self._tmpdir, dscfile))
@@ -381,6 +373,8 @@ class Builder(SetupInfo):
         else:
             cmd = debuilder
 
+        logging.info("building debian package for distribution '%s' and arch '%s'"
+                     % (distrib, arch))
         logging.debug(cmd)
         try:
             check_call(cmd.split(), stdout=sys.stdout) #, stderr=sys.stderr)
