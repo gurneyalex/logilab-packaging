@@ -41,7 +41,6 @@ from pprint import pformat
 from logilab.common.compat import set
 from logilab.common.fileutils import ensure_fs_mode
 
-from logilab.devtools.vcslib import get_vcs_agent, BASE_EXCLUDE
 from logilab.devtools.lib.pkginfo import check_url as _check_url, spell_check, get_default_scripts, sequence_equal
 from logilab.devtools.lib.manifest import (get_manifest_files, read_manifest_in,
                                            match_extensions, JUNK_EXTENSIONS)
@@ -443,6 +442,7 @@ def check_announce(checker):
 
 def check_bin(checker):
     """check executable script files in bin/ """
+    BASE_EXCLUDE = ('CVS', '.svn', '.hg', 'bzr')
     status = OK
     if not exists('bin/'):
         return status
@@ -480,12 +480,15 @@ def check_documentation(checker):
 def check_repository(checker):
     """check repository status (not up-to-date) """
     try:
+        from logilab.devtools.vcslib import get_vcs_agent
         vcs_agent = get_vcs_agent(checker.config.pkg_dir)
         if vcs_agent:
             result = vcs_agent.not_up_to_date(checker.config.pkg_dir)
             if result:
                 checker.logger.warn("vcs_agent returns:\n%s" % pformat(result))
                 return NOK
+    except ImportError:
+        checker.logger.warn("you need to install logilab vcslib package for this check")
     except NotImplementedError:
         checker.logger.warn("the current vcs agent isn't yet supported")
     return OK
