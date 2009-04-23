@@ -15,7 +15,7 @@
 # The use of the codenames for Debian suites is managed by lgp directly.
 
 # List of Debian suites
-DEBIAN_SUITES=("unstable" "testing" "stable")
+DEBIAN_SUITES=("unstable" "testing" "stable" "oldstable")
 
 # List of Ubuntu suites. Update these when needed
 UBUNTU_SUITES=("jaunty" "intrepid" "hardy" "gutsy" "feisty" "dapper")
@@ -77,7 +77,7 @@ BUILDPLACE="/var/cache/pbuilder/build/"
 # BASETGZ directory
 BASETGZ="/opt/buildd/$NAME.tgz"
 mkdir -p $(dirname $BASETGZ) 2>/dev/null
-if [ ! -r ${BASETGZ} ]; then
+if [ ! -r ${BASETGZ} -a "$PBCURRENTCOMMANDLINEOPERATION" != "create" ]; then
 	echo "Error: pbuilder image $BASETGZ has not been created" >/dev/stderr
 	echo "Please use: lgp setup -c create -d $DIST"
 	exit 1
