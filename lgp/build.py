@@ -259,6 +259,9 @@ class Builder(SetupInfo):
     def compile(self, distrib, arch):
         self.clean_repository()
 
+        logging.info("building debian package for distribution '%s' and arch '%s'"
+                     % (distrib, arch))
+
         # rewrite distrib to manage the 'all' case in run()
         self.current_distrib = distrib
 
@@ -390,8 +393,6 @@ class Builder(SetupInfo):
         else:
             cmd = debuilder
 
-        logging.info("building debian package for distribution '%s' and arch '%s'"
-                     % (distrib, arch))
         logging.debug(cmd)
         try:
             check_call(cmd.split(), stdout=sys.stdout) #, stderr=sys.stderr)
