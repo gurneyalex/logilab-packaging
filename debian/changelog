@@ -1,6 +1,7 @@
 logilab-devtools (0.14.0-1) unstable; urgency=low
 
-  * [vcslib] mercurial dependancy is now >1
+  * [debian] mercurial version (> 1) is required
+  * [hardy] keep old dependancy (>= 0.9.3)
   * New upstream release
 
  -- Julien Jehannet <julien.jehannet@logilab.fr>  Thu, 23 Apr 2009 11:51:28 +0200
