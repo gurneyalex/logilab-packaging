@@ -1,3 +1,0 @@
-#!/bin/sh
-
-echo "deb http://$SUDO_USER:$SUDO_USER@intranet.logilab.fr/~$SUDO_USER/dists $DIST/" >> /etc/apt/sources.list

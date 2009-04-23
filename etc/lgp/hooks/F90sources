@@ -1,0 +1,5 @@
+#!/bin/sh
+
+#echo "deb http://$SUDO_USER:$SUDO_USER@intranet.logilab.fr/~$SUDO_USER/dists $DIST/" >> /etc/apt/sources.list
+#echo "deb file://$HOME/dists $DIST/" >> /etc/apt/sources.list
+echo "deb file://$(dirname $BUILDRESULT) $(basename $BUILDRESULT)/" >> /etc/apt/sources.list
