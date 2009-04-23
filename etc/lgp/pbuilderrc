@@ -2,13 +2,14 @@
 # Copyright (c) 2003-2009 LOGILAB S.A. (Paris, FRANCE).
 # http://www.logilab.fr/ -- mailto:contact@logilab.fr
 
-# the file in /usr/share/pbuilder/pbuilderrc is the default template.
+# The file in /usr/share/pbuilder/pbuilderrc is the default template.
 # /etc/pbuilderrc is the one meant for editing.
 #
-# read pbuilderrc.5 document for notes on specific options.
+# Read pbuilderrc.5 document for notes on specific options.
 
 # This file is largely inspired by:
-# https://wiki.ubuntu.com/PbuilderHowto
+#     https://wiki.ubuntu.com/PbuilderHowto
+#
 # Thanks a lot, guys !
 
 # The use of the codenames for Debian suites is managed by lgp directly.
@@ -34,41 +35,53 @@ UBUNTU_SOURCESLIST="/etc/lgp/sources.list.ubuntu"
 DEBIAN_OTHERMIRROR=
 UBUNTU_OTHERMIRROR=
 
-# Optionally use the changelog of a package to determine the suite to use if
-# none set.
-#if [ -z "${DIST}" ] && [ -r "debian/changelog" ]; then
-#    DIST=$(dpkg-parsechangelog | awk '/^Distribution: / {print $2}')
-#    # Use the unstable suite for Debian experimental packages.
-#    if [ "${DIST}" == "experimental" ]; then
-#        DIST="unstable"
-#    fi
-#fi
-
 # Optionally set a default distribution if none is used. Note that you can set
 # your own default (i.e. ${DIST:="unstable"}).
-: ${DIST:="$(lsb_release --short --codename)"}
+#: ${DIST:="$(lsb_release --short --codename)"}
+#: ${DIST:="unstable"}
+
+# Optionally use the changelog of a package to determine the suite to use if
+# none set.
+if [ -z "${DIST}" ] && [ -r "debian/changelog" ]; then
+	DIST=$(dpkg-parsechangelog | awk '/^Distribution: / {print $2}')
+	# Use the unstable suite for Debian experimental packages.
+	if [ "${DIST}" == "experimental" -o \
+		 "${DIST}" == "UNRELEASED" -o \
+		 "${DIST}" == "DISTRIBUTION" ]; then
+		DIST="unstable"
+	fi
+	echo "Retrieve distribution from debian/changelog: $DIST"
+fi
 
 # Optionally set the architecture to the host architecture if none set. Note
 # that you can set your own default (i.e. ${ARCH:="i386"}).
 : ${ARCH:="$(dpkg --print-architecture)"}
 #export DEBIAN_BUILDARCH=athlon
 
-NAME="$DIST"
+DISTRIBUTION="${DIST}"
+NAME="${DIST}"
 if [ -n "${ARCH}" ]; then
     NAME="$NAME-$ARCH"
+
+    # The name of debootstrap command. Only cdebootstrap is supported
+    DEBOOTSTRAP="cdebootstrap"
+
     #DEBOOTSTRAPOPTS=("--include" "sysv-rc" "--debug" "-v" "--arch" "$ARCH" "${DEBOOTSTRAPOPTS[@]}")
     DEBOOTSTRAPOPTS=("--include" "sysv-rc" "--arch" "$ARCH" "${DEBOOTSTRAPOPTS[@]}")
-
 fi
-DISTRIBUTION="$DIST"
 
-# Really useful ?
-BUILDRESULT="/var/cache/pbuilder/$NAME/result/"
+#BUILDRESULT="/var/cache/pbuilder/$NAME/result/"
+BUILDRESULT="/${HOME}/dists/${DIST}"
 BUILDPLACE="/var/cache/pbuilder/build/"
 
 # BASETGZ directory
 BASETGZ="/opt/buildd/$NAME.tgz"
 mkdir -p $(dirname $BASETGZ) 2>/dev/null
+if [ ! -r ${BASETGZ} ]; then
+	echo "Error: pbuilder image $BASETGZ has not been created" >/dev/stderr
+	echo "Please use: lgp setup -c create -d $DIST"
+	exit 1
+fi
 
 if $(echo ${DEBIAN_SUITES[@]} | grep -q $DIST); then
     # Debian configuration
@@ -89,9 +102,6 @@ else
     exit 1
 fi
 
-
-#EXTRAPACKAGES=gcc3.0-athlon-builder
-
 #export http_proxy=http://your-proxy:8080/
 USEPROC=yes
 USEDEVPTS=yes
@@ -106,8 +116,10 @@ APTCACHE="/var/cache/pbuilder/$NAME/aptcache/"
 #APTCACHEHARDLINK="yes"
 #REMOVEPACKAGES="lilo bash"
 REMOVEPACKAGES="lilo"
+#EXTRAPACKAGES=gcc3.0-athlon-builder
+#EXTRAPACKAGES=apt-utils
 
-# make debconf not interact with user
+# Make debconf not interact with user
 export DEBIAN_FRONTEND="noninteractive"
 
 DEBEMAIL=""
@@ -146,14 +158,11 @@ BUILDUSERNAME=pbuilder
 # SHELL variable is used inside pbuilder by commands like 'su'; and they need sane values
 export SHELL=/bin/sh
 
-# The name of debootstrap command. Only cdebootstrap is supported
-DEBOOTSTRAP="cdebootstrap"
-
 # enable pkgname-logfile
 PKGNAME_LOGFILE_EXTENTION="_$(dpkg --print-architecture).build"
 PKGNAME_LOGFILE=yes
 
 # When this value is set to yes, pdebuild will invoke debsign command after building.
-#AUTO_DEBSIGN=yes
+AUTO_DEBSIGN=yes
 
 #TIMEOUT_TIME=20min
