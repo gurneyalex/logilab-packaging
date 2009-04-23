@@ -13,15 +13,12 @@ class ArchitectureTC(TestCase):
         self.assertEquals(get_architectures(), archi)
 
     def test_one_valid_architecture(self):
-        archi = 'i386'
-        self.assertEquals(get_architectures(archi), [archi])
-        self.assertEquals(get_architectures([archi]), [archi])
+        archi = ['i386']
+        self.assertEquals(get_architectures(archi), archi)
 
     def test_several_valid_architectures(self):
         archi = ['i386', 'amd64', 'openbsd-i386']
         self.assertEquals(get_architectures(archi), archi)
-        archi_str = "i386,amd64,openbsd-i386"
-        self.assertEquals(get_architectures(archi_str), archi)
 
     def test_one_unvalid_architecture(self):
         archi = ['window$']

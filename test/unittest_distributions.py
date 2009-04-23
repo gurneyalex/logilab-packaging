@@ -16,24 +16,20 @@ class DistributionTC(TestCase):
         self.assertEquals(get_distributions(), tuple(set(KNOWN_DISTRIBUTIONS)))
 
     def test_one_valid_distribution(self):
-        distrib = 'testing'
-        self.assertEquals(get_distributions(distrib),    (distrib,))
-        self.assertEquals(get_distributions((distrib,)), (distrib,))
+        distrib = ['testing']
+        self.assertEquals(get_distributions(distrib), tuple(distrib))
 
     def test_several_valid_distributions(self):
-        distrib = ('unstable', 'testing')
+        distrib = ["unstable","testing"]
         self.assertEquals(sorted(get_distributions(distrib)), sorted(distrib))
-        distrib_str = "unstable,testing"
-        self.assertEquals(sorted(get_distributions(distrib_str)), sorted(distrib))
 
     def test_one_unvalid_distribution(self):
         distrib = ['winnie the pooh']
         self.assertRaises(DistributionException, get_distributions, distrib)
 
     def test_codename_distribution(self):
-        distrib = 'sid'
-        self.assertNotEquals(get_distributions(distrib),    (distrib,))
-        self.assertNotEquals(get_distributions((distrib,)), (distrib,))
+        distrib = ['sid']
+        self.assertNotEquals(get_distributions(distrib),    distrib)
 
     def test_mixed_unvalid_distributions(self):
         distrib = get_distributions() + ('winnie the pooh',)
