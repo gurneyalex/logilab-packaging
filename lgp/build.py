@@ -58,13 +58,13 @@ def run(args):
 
         for arch in builder.architectures:
             for distrib in builder.distributions:
-                builder.compile(distrib=distrib, arch=arch)
-                if not builder.config.no_treatment and builder.packages:
-                    run_post_treatments(builder, distrib)
-                logging.info("new files are waiting in %s. Enjoy."
-                             % builder.get_distrib_dir())
-                logging.info("Debian changes file is: %s"
-                             % builder.get_changes_file())
+                if builder.compile(distrib=distrib, arch=arch):
+                    if not builder.config.no_treatment and builder.packages:
+                        run_post_treatments(builder, distrib)
+                    logging.info("new files are waiting in %s. Enjoy."
+                                 % builder.get_distrib_dir())
+                    logging.info("Debian changes file is: %s"
+                                 % builder.get_changes_file())
 
     except LGPException, exc:
         logging.critical(exc)
@@ -256,6 +256,16 @@ class Builder(SetupInfo):
 
         # rewrite distrib to manage the 'all' case in run()
         self.current_distrib = distrib
+
+        # Intermediate facility for debugging (really useful ?)
+        if self.config.intermediate:
+            try:
+                cmd = 'debuild --no-tgz-check --no-lintian'
+                check_call(cmd.split(), stdout=sys.stdout, stderr=sys.stderr)
+            except CalledProcessError, err:
+                msg = "error with your package"
+                raise LGPCommandException(msg, err)
+            return
 
         self._tmpdir = tempfile.mkdtemp()
 
