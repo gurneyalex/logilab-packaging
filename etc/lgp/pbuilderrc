@@ -117,7 +117,9 @@ APTCACHE="/var/cache/pbuilder/$NAME/aptcache/"
 #REMOVEPACKAGES="lilo bash"
 REMOVEPACKAGES="lilo"
 #EXTRAPACKAGES=gcc3.0-athlon-builder
-#EXTRAPACKAGES=apt-utils
+
+# "debconf: delaying package configuration, since apt-utils is not installed"
+EXTRAPACKAGES=apt-utils
 
 # Make debconf not interact with user
 export DEBIAN_FRONTEND="noninteractive"
