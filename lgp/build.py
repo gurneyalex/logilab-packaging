@@ -160,6 +160,11 @@ def run_post_treatments(builder, distrib):
     else:
         logging.warning("don't forget to debsign your Debian changes file")
 
+    logging.info('try updating local repository in %s...' % distdir)
+    if cond_exec('which dpkg-scanpackages && cd %s && dpkg-scanpackages . /dev/null > %s/Packages 2>/dev/null'
+                 % (distdir, distdir)):
+        logging.debug("Packages file was not updated automatically")
+
     # Add tag when build is successful
     # FIXME tag format is not standardized yet
     # Comments on card "Architecture standard d'un paquet"
