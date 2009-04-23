@@ -70,8 +70,8 @@ if [ -n "${ARCH}" ]; then
     DEBOOTSTRAPOPTS=("--include" "sysv-rc" "--arch" "$ARCH" "${DEBOOTSTRAPOPTS[@]}")
 fi
 
-#BUILDRESULT="/var/cache/pbuilder/$NAME/result/"
-BUILDRESULT="/${HOME}/dists/${DIST}"
+#BUILDRESULT="/var/cache/pbuilder/$NAME/result"
+export BUILDRESULT="/${HOME}/dists/${DIST}"
 BUILDPLACE="/var/cache/pbuilder/build/"
 
 # BASETGZ directory
@@ -110,6 +110,10 @@ USEDEVFS=no
 # BINDMOUNTS is a space separated list of things to mount
 # inside the chroot.
 BINDMOUNTS="/sys"
+BINDMOUNTS="$BUILDRESULT"
+if [ -d "$BUILDRESULT" ]; then
+	BINDMOUNTS=("${BINDMOUNTS[@]}" "$BUILDRESULT")
+fi
 
 # Specify the cache for APT
 APTCACHE="/var/cache/pbuilder/$NAME/aptcache/"
@@ -151,7 +155,9 @@ DEBBUILDOPTS=""
 #APTCONFDIR="/etc/lgp/apt.d"
 
 # the username and ID used by pbuilder, inside chroot. Needs fakeroot, really
+#BUILDUSERID=$SUDO_UID
 BUILDUSERID=1234
+#BUILDUSERNAME=$SUDO_USER
 BUILDUSERNAME=pbuilder
 
 # Set the PATH I am going to use inside pbuilder
@@ -168,3 +174,5 @@ PKGNAME_LOGFILE=yes
 AUTO_DEBSIGN=yes
 
 #TIMEOUT_TIME=20min
+export TERM=linux
+export IGNOREEOF=1
