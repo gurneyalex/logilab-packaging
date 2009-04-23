@@ -291,6 +291,8 @@ class Builder(SetupInfo):
         os.chdir(self.config.pkg_dir)
         self.clean_tmpdir()
 
+        return True
+
     def clean_tmpdir(self):
         if not self.config.keep_tmpdir:
             shutil.rmtree(self._tmpdir)
