@@ -92,6 +92,14 @@ def find_repository(path):
             return None
     return path
 
+def get_repository(path):
+    """Simple function that open a hg repository"""
+    repopath = find_repository(path)
+    if repopath is None:
+        raise RuntimeError('no repository found in %s' % path)
+    return Repository(Ui(), path=repopath)
+
+
 def changeset_info(repo, rev=0, changenode=None):
     """returns matching (rev, date, user, sumarry)"""
     log = repo.changelog
@@ -262,7 +270,7 @@ class HGAgent(object):
         #if path:
         #    print "warning: <%s> argument not needed and ignored" % path
 
-        # TODO stay compatible with mercurial 0.9 (still present in etch)
+        # TODO stay compatible with mercurial 0.9 (still present in etch and hardy)
         # Note that the following command is only available since 1.0.1
         #return 'hg clone -r "%s" %s %s' % (tag, quiet, repository)
         # please, continue to use this old-good-(and-slower) command
@@ -281,15 +289,11 @@ class HGAgent(object):
         """
         if tag and tag != 'HEAD':
             raise NotImplementedError("dunno how to get logs for a given tag")
-        # we check version 1.X cos it's doesn't work for previous versions
-        assert int(hg_version.split('.')[0]) >= 1, 'unsupported hg version %s' % hg_version
-        repopath = find_repository(path)
-        assert repopath is not None, 'no repository found in %s' % path
-        ui = Ui()
-        repo = Repository(ui, path=repopath)
+
+        repo = get_repository(path)
         opts = dict(rev=['tip:0'], branches=None, include=(), exclude=())
         get = cachefunc(lambda r: repo.changectx(r).changeset())
-        changeiter, matchfn = walkchangerevs(ui, repo, (), get, opts)
+        changeiter, matchfn = walkchangerevs(repo.ui, repo, (), get, opts)
         # changeset_info return GMT time, convert from_date and to_date
         # as well so we can compare
         from_date = datetime.datetime(*localtime_to_gmtime(from_date)[:6])
@@ -309,20 +313,18 @@ class HGAgent(object):
             
     def current_short_changeset(self, path):
         """return the short id of the current changeset"""
-        # we check version 1.X cos it's doesn't work for previous versions
-        assert int(hg_version.split('.')[0]) >= 1, 'unsupported hg version %s' % hg_version
-        repopath = find_repository(path)
-        if repopath is None:
-            raise RuntimeError('no repository found in %s' % path)
-        repo = Repository(Ui(), path=repopath)
-        try:
+        repo = get_repository(path)
+        try: # hg < 1.0 (?)
             ctx = repo.workingctx()
         except AttributeError:
+            # hg > 1.0
             ctx = repo[None]
         parents = ctx.parents()
         #assert len(parents) == 0 ?
         return short(parents[0].node())
 
+
+    
                   
 # HGAgent is a stateless object, transparent singleton thanks to its __call__
 # method
