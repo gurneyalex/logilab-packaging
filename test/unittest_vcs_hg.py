@@ -1,9 +1,11 @@
-"""unittests for mercurail management"""
+"""unittests for vcslib.hg"""
 
 import os, shutil,pwd
-from tempfile import mkdtemp, mktemp
-from logilab.common import testlib
 from time import localtime, time, sleep
+from tempfile import mkdtemp, mktemp
+
+from logilab.common import testlib
+
 from utest_utils import make_test_fs, delete_test_fs
 
 
@@ -13,9 +15,10 @@ class HGAgentTC(testlib.TestCase):
     def setUp(self):
         """make test HG directory"""
         try:
-            from logilab.devtools.vcslib import hg
+            import mercurial
         except ImportError:
             self.skip('mercurial is not installed')
+        from logilab.devtools.vcslib import hg
         self.agent = hg.HGAgent
         self.tmp1 = mkdtemp(dir='/tmp')
         self.tmp2 = mktemp(dir='/tmp')        
@@ -44,8 +47,9 @@ class HGAgentTC(testlib.TestCase):
     def test_status(self):
         """check that hg status correctly reports changes"""
         self.assertEquals(self.agent.not_up_to_date(self.tmp2), [])
-        f = os.path.join(self.tmp2, 'toto')
-        file(f,'w').close()
+        stream = file(os.path.join(self.tmp2, 'toto'),'w')
+        stream.write('hello')
+        stream.close()
         # os.system('ls %s' % self.tmp2)
         self.assertEquals(len(self.agent.not_up_to_date(self.tmp2)), 1)
 
@@ -54,15 +58,10 @@ class HGAgentTC(testlib.TestCase):
         from_date = localtime(time() - 60*60*24)
         # add 1 minute since it seems to be svn log resolution
         to_date = localtime(time())
-        hgrc = os.path.join(home,'.hgrc')
-        if os.path.exists(hgrc):
-            for line in file(hgrc):
-                line = line.strip()
-                if line.startswith('username'):
-                    login = line.split('=', 1)[-1].strip()
-        self.assertEquals([str(cii) for cii in self.agent.log_info(self.tmp2, from_date, to_date)],
-                          ['%s: update readme file (1)' % login,
-                           '%s: add readme file (0)' % login])
+        # .split(':', 1)[1] to remove user 'name'
+        self.assertEquals([str(cii).split(':', 1)[1] for cii in self.agent.log_info(self.tmp2, from_date, to_date)],
+                          [' update readme file (1)',
+                           ' add readme file (0)'])
 
     
     
