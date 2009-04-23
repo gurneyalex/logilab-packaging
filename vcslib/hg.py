@@ -3,7 +3,7 @@
 #      Copyright (C) 2002-2003 Stephen Kennedy <stevek@gnome.org>
 #      http://meld.sourceforge.net
 #
-# Copyright (c) 2004-2008 LOGILAB S.A. (Paris, FRANCE).
+# Copyright (c) 2004-2009 LOGILAB S.A. (Paris, FRANCE).
 # http://www.logilab.fr/ -- mailto:contact@logilab.fr
 #
 # This program is free software; you can redistribute it and/or modify it under
@@ -19,8 +19,8 @@
 # this program; if not, write to the Free Software Foundation, Inc.,
 # 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 """this module contains mercurial scm"""
-    
-__metaclass__ = type
+
+
 __all__ = ['HGAgent', 'find_repository']
 
 import sys
@@ -35,8 +35,14 @@ from logilab.devtools.vcslib import VCS_UPTODATE, VCS_MODIFIED, \
      VCS_MISSING, VCS_NEW, VCS_CONFLICT, VCS_NOVERSION, VCS_IGNORED, \
      VCS_REMOVED, VCS_NEEDSPATCH, IVCSAgent, CheckInInfo, localtime_to_gmtime
 
-from mercurial.repo import RepoError
-from mercurial.version import get_version
+try:
+    from mercurial.error import RepoError
+    from mercurial.__version__ import version as hg_version
+except ImportError:
+    from mercurial.repo import RepoError
+    from mercurial.version import get_version
+    hg_version = get_version()
+    
 from mercurial.hg import repository as Repository
 from mercurial.ui import ui as Ui
 from mercurial.node import short
@@ -98,13 +104,13 @@ def changeset_info(repo, rev=0, changenode=None):
     return rev, checkin_date, user, desc, files
 
 
-class HGAgent:
+class HGAgent(object):
     """A hg specific agent"""
     __implements__ = IVCSAgent,
 
     def __call__(self):
         return self
-    
+
     def not_up_to_date(self, filepath):
         """get a list describing files which are not up to date under the
         given path
@@ -120,29 +126,27 @@ class HGAgent:
         sys.stdout = StringIO()
         try:
             parentui = Ui()
-            repo = Repository(parentui, path=find_repository(filepath))
-            localui = repo.ui
+            wdrepo = Repository(parentui, path=find_repository(filepath))
             changes = []
-            try:
-                remote = Repository(parentui, localui.expandpath('default'))
-                if hasattr(remote, 'changelog'):
-                    for nid in repo.findincoming(remote):
-                        manifest, user, timeinfo, files, desc, extra = remote.changelog.read(nid)
-                        for filename in files:
-                            # .ljust(15)
-                            changes.append(('incoming', filename))
-                    for nid in repo.findoutgoing(remote):
-                        manifest, user, timeinfo, files, desc, extra = repo.changelog.read(nid)
-                        for filename in files:
-                            # .ljust(15)
-                            changes.append(('outgoing', filename))
-            except RepoError:
-                # FIXME #8391: not_up_to_date on non-cloned repository
-                pass
-            # XXX: httprepository doesn't have changelog attribute
+            masterrepo = Repository(parentui, wdrepo.ui.expandpath('default'))
+            for nid in wdrepo.findincoming(masterrepo):
+                # httprepository doesn't have changelog attribute
+                if hasattr(masterrepo, 'changelog'):
+                    manifest, user, timeinfo, files, desc, extra = masterrepo.changelog.read(nid)
+                else:
+                    files = [nid]
+                for filename in files:
+                    # .ljust(15)
+                    changes.append(('incoming', filename))
+            for nid in wdrepo.findoutgoing(masterrepo):
+                manifest, user, timeinfo, files, desc, extra = wdrepo.changelog.read(nid)
+                for filename in files:
+                    # .ljust(15)
+                    changes.append(('outgoing', filename))
+            # XXX check uncommited for local changes
             statuslist = ('modified', 'added', 'removed', 'deleted', 'unknown')
             return changes + [(status, filename)
-                              for status, files in zip(statuslist, repo.status())
+                              for status, files in zip(statuslist, wdrepo.status())
                               for filename in files]
         finally:
             sys.stdout = sys.__stdout__
@@ -277,47 +281,47 @@ class HGAgent:
         """
         if tag and tag != 'HEAD':
             raise NotImplementedError("dunno how to get logs for a given tag")
-        # FIXME we check version 1.X cos it's doesn't work for previous versions
-        if get_version().split('.')[0] == "1":
-            repopath = find_repository(path)
-            assert repopath is not None, 'no repository found in %s' % path
-            ui = Ui()
-            repo = Repository(ui, path=repopath)
-            opts = dict(rev=['tip:0'], branches=None, include=(), exclude=())
-            get = cachefunc(lambda r: repo.changectx(r).changeset())
-            changeiter, matchfn = walkchangerevs(ui, repo, (), get, opts)
-            # changeset_info return GMT time, convert from_date and to_date
-            # as well so we can compare
-            from_date = datetime.datetime(*localtime_to_gmtime(from_date)[:6])
-            to_date = datetime.datetime(*localtime_to_gmtime(to_date)[:6])
-            infos = []
-            for st, rev, fns in changeiter:
-                if st == 'add':
-                    changenode = repo.changelog.node(rev)
-                    rev, date, user, message, files = changeset_info(repo, rev, changenode)
-                    if from_date <= date <= to_date:
-                        # FIXME: added/removed lines information
-                        cii = CheckInInfo(date, user, unicode(message, _encoding),
-                                          rev, files=files, branch=tag)
-                        infos.append((date, cii))
-            for _, info in reversed(sorted(infos)):
-                yield info
+        # we check version 1.X cos it's doesn't work for previous versions
+        assert int(hg_version.split('.')[0]) >= 1, 'unsupported hg version %s' % hg_version
+        repopath = find_repository(path)
+        assert repopath is not None, 'no repository found in %s' % path
+        ui = Ui()
+        repo = Repository(ui, path=repopath)
+        opts = dict(rev=['tip:0'], branches=None, include=(), exclude=())
+        get = cachefunc(lambda r: repo.changectx(r).changeset())
+        changeiter, matchfn = walkchangerevs(ui, repo, (), get, opts)
+        # changeset_info return GMT time, convert from_date and to_date
+        # as well so we can compare
+        from_date = datetime.datetime(*localtime_to_gmtime(from_date)[:6])
+        to_date = datetime.datetime(*localtime_to_gmtime(to_date)[:6])
+        infos = []
+        for st, rev, fns in changeiter:
+            if st == 'add':
+                changenode = repo.changelog.node(rev)
+                rev, date, user, message, files = changeset_info(repo, rev, changenode)
+                if from_date <= date <= to_date:
+                    # FIXME: added/removed lines information
+                    cii = CheckInInfo(date, user, unicode(message, _encoding),
+                                      rev, files=files, branch=tag)
+                    infos.append((date, cii))
+        for _, info in reversed(sorted(infos)):
+            yield info
             
     def current_short_changeset(self, path):
         """return the short id of the current changeset"""
-        # FIXME we check version 1.X cos it's doesn't work for previous versions
-        if get_version().split('.')[0] == "1":
-            repopath = find_repository(path)
-            if repopath is None:
-                raise RuntimeError('no repository found in %s' % path)
-            repo = Repository(Ui(), path=repopath)
-            try:
-                ctx = repo.workingctx()
-            except AttributeError:
-                ctx = repo[None]
-            parents = ctx.parents()
-            #assert len(parents) == 0 ?
-            return short(parents[0].node())
+        # we check version 1.X cos it's doesn't work for previous versions
+        assert int(hg_version.split('.')[0]) >= 1, 'unsupported hg version %s' % hg_version
+        repopath = find_repository(path)
+        if repopath is None:
+            raise RuntimeError('no repository found in %s' % path)
+        repo = Repository(Ui(), path=repopath)
+        try:
+            ctx = repo.workingctx()
+        except AttributeError:
+            ctx = repo[None]
+        parents = ctx.parents()
+        #assert len(parents) == 0 ?
+        return short(parents[0].node())
 
                   
 # HGAgent is a stateless object, transparent singleton thanks to its __call__
