@@ -47,11 +47,23 @@ class HGAgentTC(testlib.TestCase):
     def test_status(self):
         """check that hg status correctly reports changes"""
         self.assertEquals(self.agent.not_up_to_date(self.tmp2), [])
-        stream = file(os.path.join(self.tmp2, 'toto'),'w')
+        filename = os.path.join(self.tmp2, 'toto')
+        stream = file(filename, 'w')
         stream.write('hello')
         stream.close()
-        # os.system('ls %s' % self.tmp2)
+        os.system('hg add -q -R %s %s' % (self.tmp2, filename))
+        self.assertEquals(self.agent.not_up_to_date(self.tmp2),
+            [('added', 'toto')])
         self.assertEquals(len(self.agent.not_up_to_date(self.tmp2)), 1)
+        os.system('hg commit -R %s -m "." %s' % (self.tmp2, filename))
+        self.assertEquals(self.agent.not_up_to_date(self.tmp2),
+            [('outgoing', 'toto')])
+        os.system('hg status -R %s' % self.tmp2)
+        self.assertEquals(self.agent.not_up_to_date(self.tmp2),
+            [('outgoing', 'toto')])
+        os.system('echo "modif" >> %s' % filename)
+        self.assertEquals(self.agent.not_up_to_date(self.tmp2),
+            [('outgoing', 'toto'), ('modified', 'toto')])
 
     def test_log_info(self):
         login, _,_,_,_,home,_ = pwd.getpwuid(os.getuid())

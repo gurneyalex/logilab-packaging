@@ -160,6 +160,11 @@ def run_post_treatments(builder, distrib):
     else:
         logging.warning("don't forget to debsign your Debian changes file")
 
+    logging.info('try updating local repository in %s...' % distdir)
+    if cond_exec('which dpkg-scanpackages && cd %s && dpkg-scanpackages . /dev/null > %s/Packages 2>/dev/null'
+                 % (distdir, distdir)):
+        logging.debug("Packages file was not updated automatically")
+
     # Add tag when build is successful
     # FIXME tag format is not standardized yet
     # Comments on card "Architecture standard d'un paquet"
@@ -254,6 +259,9 @@ class Builder(SetupInfo):
     def compile(self, distrib, arch):
         self.clean_repository()
 
+        logging.info("building debian package for distribution '%s' and arch '%s'"
+                     % (distrib, arch))
+
         # rewrite distrib to manage the 'all' case in run()
         self.current_distrib = distrib
 
@@ -290,6 +298,8 @@ class Builder(SetupInfo):
         # clean tmpdir
         os.chdir(self.config.pkg_dir)
         self.clean_tmpdir()
+
+        return True
 
     def clean_tmpdir(self):
         if not self.config.keep_tmpdir:
@@ -383,8 +393,6 @@ class Builder(SetupInfo):
         else:
             cmd = debuilder
 
-        logging.info("building debian package for distribution '%s' and arch '%s'"
-                     % (distrib, arch))
         logging.debug(cmd)
         try:
             check_call(cmd.split(), stdout=sys.stdout) #, stderr=sys.stderr)
