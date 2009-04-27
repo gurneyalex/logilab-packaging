@@ -1,7 +1,7 @@
 Source: logilab-devtools
 Section: python
 Priority: optional
-Maintainer: Sylvain Thénault <sylvain.thenault@logilab.fr> 
+Maintainer: Logilab S.A. <contact@logilab.fr>
 Uploaders: Alexandre Fayolle <afayolle@debian.org>,
            Adrien Di Mascio <adrien.dimascio@logilab.fr>,
            Julien Jehannet <julien.jehannet@logilab.fr>
@@ -13,7 +13,7 @@ XS-Python-Version: current
 Package: python-vcslib
 Architecture: all
 Recommends: cvs, mercurial (>= 0.9.3), subversion
-Depends: ${python:Depends}, , python-logilab-common (>= 0.32.0)
+Depends: ${python:Depends}, python-logilab-common (>= 0.32.0)
 XB-Python-Version: ${python:Versions}
 Conflicts: devtools
 Replaces: devtools
@@ -23,7 +23,7 @@ Description: set of development tools used at Logilab for source management
 
 Package: logilab-packaging
 Architecture: all
-Suggests: logilab-doctools, pymacs, emacsen-common, cvs, ubuntu-archive-keyring
+Suggests: logilab-doctools, pymacs, emacsen-common, cvs, debian-archive-keyring
 Recommends: piuparts, mercurial (>= 0.9.3), subversion, debinstall, diffstat
 Depends: ${python:Depends}, python-debian, lintian, pbuilder, devscripts, debhelper,
          python-vcslib, python-logilab-common, sudo, cdebootstrap

@@ -339,7 +339,6 @@ class SetupInfo(Configuration):
     def get_upstream_version(self):
         return self._run_command('version')
 
-    @cached
     def get_changes_file(self):
         changes = '%s_%s_*.changes' % (self.get_upstream_name(),
                                        self.get_debian_version())
@@ -349,7 +348,7 @@ class SetupInfo(Configuration):
     def get_packages(self):
         packages = Changes(file(self.get_changes_file()))
         packages = [a['name'] for a in packages['Files']]
-        packages.append(self.get_changes_file())
+        packages.append(os.path.basename(self.get_changes_file()))
         return packages
 
     def get_versions(self):

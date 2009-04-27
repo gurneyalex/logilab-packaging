@@ -1,0 +1,6 @@
+#!/bin/sh
+
+# See http://www.netfort.gr.jp/~dancer/software/pbuilder-doc/pbuilder-doc.html#usingspecialaptsources
+
+#cd $BUILDRESULT
+#/usr/bin/dpkg-scanpackages . /dev/null > $BUILDRESULT/Packages

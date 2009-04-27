@@ -1,6 +1,19 @@
 ChangeLog for logilab.devtools
 ==============================
 
+2009-04-23  --  0.14
+    * lgp: add login command to enter into chroot images
+
+    * lgp: python-vcslib is no more a strict dependancy
+
+    * lgp: update lgp pbuilderrc config file
+
+    * lgp: add an intermediate facility step for debugging
+
+    * vcslib: use new mercurial API (> 1.0)
+
+
+
 2009-01-16  --  0.13
     * lgp: closes #4667: generate debian source package
 

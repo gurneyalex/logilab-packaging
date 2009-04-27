@@ -15,7 +15,7 @@
 # The use of the codenames for Debian suites is managed by lgp directly.
 
 # List of Debian suites
-DEBIAN_SUITES=("unstable" "testing" "stable")
+DEBIAN_SUITES=("unstable" "testing" "stable" "oldstable")
 
 # List of Ubuntu suites. Update these when needed
 UBUNTU_SUITES=("jaunty" "intrepid" "hardy" "gutsy" "feisty" "dapper")
@@ -70,14 +70,14 @@ if [ -n "${ARCH}" ]; then
     DEBOOTSTRAPOPTS=("--include" "sysv-rc" "--arch" "$ARCH" "${DEBOOTSTRAPOPTS[@]}")
 fi
 
-#BUILDRESULT="/var/cache/pbuilder/$NAME/result/"
-BUILDRESULT="/${HOME}/dists/${DIST}"
+#BUILDRESULT="/var/cache/pbuilder/$NAME/result"
+export BUILDRESULT="/${HOME}/dists/${DIST}"
 BUILDPLACE="/var/cache/pbuilder/build/"
 
 # BASETGZ directory
 BASETGZ="/opt/buildd/$NAME.tgz"
 mkdir -p $(dirname $BASETGZ) 2>/dev/null
-if [ ! -r ${BASETGZ} ]; then
+if [ ! -r ${BASETGZ} -a "$PBCURRENTCOMMANDLINEOPERATION" != "create" ]; then
 	echo "Error: pbuilder image $BASETGZ has not been created" >/dev/stderr
 	echo "Please use: lgp setup -c create -d $DIST"
 	exit 1
@@ -110,6 +110,10 @@ USEDEVFS=no
 # BINDMOUNTS is a space separated list of things to mount
 # inside the chroot.
 BINDMOUNTS="/sys"
+BINDMOUNTS="$BUILDRESULT"
+if [ -d "$BUILDRESULT" ]; then
+	BINDMOUNTS=("${BINDMOUNTS[@]}" "$BUILDRESULT")
+fi
 
 # Specify the cache for APT
 APTCACHE="/var/cache/pbuilder/$NAME/aptcache/"
@@ -117,7 +121,9 @@ APTCACHE="/var/cache/pbuilder/$NAME/aptcache/"
 #REMOVEPACKAGES="lilo bash"
 REMOVEPACKAGES="lilo"
 #EXTRAPACKAGES=gcc3.0-athlon-builder
-#EXTRAPACKAGES=apt-utils
+
+# "debconf: delaying package configuration, since apt-utils is not installed"
+EXTRAPACKAGES=apt-utils
 
 # Make debconf not interact with user
 export DEBIAN_FRONTEND="noninteractive"
@@ -149,7 +155,9 @@ DEBBUILDOPTS=""
 #APTCONFDIR="/etc/lgp/apt.d"
 
 # the username and ID used by pbuilder, inside chroot. Needs fakeroot, really
+#BUILDUSERID=$SUDO_UID
 BUILDUSERID=1234
+#BUILDUSERNAME=$SUDO_USER
 BUILDUSERNAME=pbuilder
 
 # Set the PATH I am going to use inside pbuilder
@@ -166,3 +174,5 @@ PKGNAME_LOGFILE=yes
 AUTO_DEBSIGN=yes
 
 #TIMEOUT_TIME=20min
+export TERM=linux
+export IGNOREEOF=1
