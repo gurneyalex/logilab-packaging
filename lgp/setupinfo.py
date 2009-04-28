@@ -406,7 +406,7 @@ class SetupInfo(Configuration):
         upstream_tarball = os.path.join(dist_dir, upstream_tarball)
         origpath = os.path.join(self._tmpdir, origpath)
 
-        logging.info("use '%s' as original source archive (tarball)" % upstream_tarball)
+        logging.info("get '%s' as original source archive (tarball)" % upstream_tarball)
         if not os.path.isfile(upstream_tarball):
             raise LGPException('the original source archive (tarball) not found in %s' % dist_dir)
 
@@ -422,13 +422,13 @@ class SetupInfo(Configuration):
             # FIXME use one copy of the upstream tarball
             #cmd = 'tar xzf %s -C %s' % (tarball, self._tmpdir)
             cmd = 'tar xzf %s -C %s' % (upstream_tarball, self._tmpdir)
-            logging.debug("extract command: %s" % cmd)
             check_call(cmd.split(), stdout=sys.stdout,
                                     stderr=sys.stderr)
         except CalledProcessError, err:
             raise LGPCommandException('an error occured while extracting the '
                                       'upstream tarball', err)
 
+        logging.info("extract original source archive in %s" % self._tmpdir)
         return(upstream_tarball, tarball, origpath)
 
     def get_distrib_dir(self):
