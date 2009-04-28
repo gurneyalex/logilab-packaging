@@ -221,6 +221,12 @@ class Builder(SetupInfo):
                  'dest' : "deb_src_only",
                  'help': "obtain a debian source package without build"
                 }),
+               ('get-orig-source',
+                {'action': 'store_true',
+                 #'default': False,
+                 'dest' : "get_orig_source",
+                 'help': "create a reasonable upstream tarball"
+                }),
                ('intermediate',
                 {'action': 'store_true',
                  #'default': False,
@@ -280,6 +286,8 @@ class Builder(SetupInfo):
         # create the upstream tarball if necessary and copy to the temporary
         # directory following the Debian practices
         upstream_tarball, tarball, origpath = self.make_orig_tarball()
+        if self.config.get_orig_source:
+            return
 
         # support of the multi-distribution
         self.manage_multi_distribution(origpath)
@@ -289,11 +297,12 @@ class Builder(SetupInfo):
 
         # create a debian source package
         dscfile = self.make_debian_source_package(origpath)
+        if self.config.deb_src_only:
+            return
 
         # build the package using vbuild or default to fakeroot
-        if not self.config.deb_src_only:
-            packages = self._compile(distrib, arch, dscfile)
-            self.packages = self.get_packages()
+        packages = self._compile(distrib, arch, dscfile)
+        self.packages = self.get_packages()
 
         # clean tmpdir
         os.chdir(self.config.pkg_dir)
