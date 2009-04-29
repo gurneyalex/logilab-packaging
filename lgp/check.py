@@ -504,7 +504,7 @@ def check_release_number(checker):
     return status
 
 def check_manifest_in(checker):
-    """check MANIFEST.in content"""
+    """to correct unmatched files, please include or exclude them in MANIFEST.in"""
     status = OK
     dirname = checker.config.pkg_dir
     absfile = join(dirname, 'MANIFEST.in')
@@ -526,8 +526,6 @@ def check_manifest_in(checker):
     for filename in matched:
         if match_extensions(filename, JUNK_EXTENSIONS):
             checker.logger.warn('a junk extension is matched: %s' % filename)
-    if status == NOK:
-        checker.logger.warn('to correct unmatched files, please include or exclude them in the MANIFEST.in')
     return status
 
 def check_include_dirs(checker):
