@@ -119,7 +119,7 @@ def run_post_treatments(builder, distrib):
                 cond_exec('diffstat %s' % os.path.join(distdir, package))
 
     # Run usual checkers
-    checkers = {'debc': '', 'lintian': '-vi'}
+    checkers = {'debc': '', 'lintian': '-vi --show-overrides'}
     for checker, opts in checkers.iteritems():
         if not verbose or confirm("run %s on generated Debian changes files ?" % checker):
             for package in builder.packages:
