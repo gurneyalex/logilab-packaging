@@ -66,8 +66,9 @@ if [ -n "${ARCH}" ]; then
     # The name of debootstrap command. Only cdebootstrap is supported
     DEBOOTSTRAP="cdebootstrap"
 
-    #DEBOOTSTRAPOPTS=("--include" "sysv-rc" "--debug" "-v" "--arch" "$ARCH" "${DEBOOTSTRAPOPTS[@]}")
-    DEBOOTSTRAPOPTS=("--include" "sysv-rc" "--arch" "$ARCH" "${DEBOOTSTRAPOPTS[@]}")
+    DEBOOTSTRAPOPTS=()
+    DEBOOTSTRAPOPTS=("--include" "sysv-rc" "--debug" "-v" "--arch" "$ARCH" "${DEBOOTSTRAPOPTS[@]}")
+    DEBOOTSTRAPOPTS=("--allow-unauthenticated" "${DEBOOTSTRAPOPTS[@]}")
 fi
 
 #BUILDRESULT="/var/cache/pbuilder/$NAME/result"
@@ -110,7 +111,6 @@ USEDEVFS=no
 # BINDMOUNTS is a space separated list of things to mount
 # inside the chroot.
 BINDMOUNTS="/sys"
-BINDMOUNTS="$BUILDRESULT"
 if [ -d "$BUILDRESULT" ]; then
 	BINDMOUNTS=("${BINDMOUNTS[@]}" "$BUILDRESULT")
 fi
@@ -176,3 +176,4 @@ AUTO_DEBSIGN=yes
 #TIMEOUT_TIME=20min
 export TERM=linux
 export IGNOREEOF=1
+export TMPDIR=/tmp
