@@ -170,8 +170,9 @@ export SHELL=/bin/sh
 PKGNAME_LOGFILE_EXTENTION="_$(dpkg --print-architecture).build"
 PKGNAME_LOGFILE=yes
 
-# When this value is set to yes, pdebuild will invoke debsign command after building.
-AUTO_DEBSIGN=yes
+# pdebuild wants invoke debsign command after building
+# We use pdebuild only for package debugging. Say 'no' (or commented) here.
+#AUTO_DEBSIGN=no
 
 #TIMEOUT_TIME=20min
 export TERM=linux
