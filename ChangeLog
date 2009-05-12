@@ -1,6 +1,11 @@
 ChangeLog for logilab.devtools
 ==============================
 
+ -- 0.15
+
+  * devtools : added lsprofcalltree module and command line script
+
+
 2009-04-23  --  0.14
     * lgp: add login command to enter into chroot images
 
