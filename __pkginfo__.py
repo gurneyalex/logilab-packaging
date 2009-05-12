@@ -60,5 +60,6 @@ scripts = [
     'bin/update_gettext',
     'bin/lgp',
     'bin/vbuild',
+    'bin/lsprofcalltree',
     ] 
 
