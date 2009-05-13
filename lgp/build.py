@@ -272,16 +272,6 @@ class Builder(SetupInfo):
         # rewrite distrib to manage the 'all' case in run()
         self.current_distrib = distrib
 
-        # Intermediate facility for debugging (really useful ?)
-        if self.config.intermediate:
-            try:
-                cmd = 'debuild --no-tgz-check --no-lintian'
-                check_call(cmd.split(), stdout=sys.stdout, stderr=sys.stderr)
-            except CalledProcessError, err:
-                msg = "error with your package"
-                raise LGPCommandException(msg, err)
-            return
-
         self._tmpdir = tempfile.mkdtemp()
 
         # create the upstream tarball if necessary and copy to the temporary
@@ -292,6 +282,21 @@ class Builder(SetupInfo):
 
         # support of the multi-distribution
         self.manage_multi_distribution(origpath)
+
+        # Intermediate facility for debugging (really useful ?)
+        if self.config.intermediate:
+            os.chdir(origpath)
+            try:
+                cmd = 'debuild --no-tgz-check --no-lintian --clear-hooks -uc -us'
+                check_call(cmd.split(), stdout=sys.stdout, stderr=sys.stderr)
+            except CalledProcessError, err:
+                msg = "error with your package"
+                raise LGPCommandException(msg, err)
+            import glob
+            self.packages = glob.glob('../%s_%s_*.changes'
+                                      % (self.get_upstream_name(),
+                                         self.get_debian_version()))
+            return
 
         # change directory for next commands
         os.chdir(self._tmpdir)

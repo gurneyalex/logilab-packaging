@@ -28,3 +28,6 @@ crontab: tous les mois, faire un 'lgp setup -c update -d all'
 # Find a way to retrieve dynamically
 # f = email.message_from_file(file('/usr/share/cdebootstrap/suites'))
 # [i.split() for i in f.get_payload().split('\n\n') if i]
+
+
+utiliser dh_make pour nos templates debian de projet
