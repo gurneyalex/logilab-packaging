@@ -21,3 +21,10 @@ Limitations pbuilder:
 - problème de persmissions sur dev/null (corrigé ?)
 - root !!!!
 
+
+crontab: tous les mois, faire un 'lgp setup -c update -d all'
+
+# The known distribution are depending on the pbuilder setup in /opt/buildd
+# Find a way to retrieve dynamically
+# f = email.message_from_file(file('/usr/share/cdebootstrap/suites'))
+# [i.split() for i in f.get_payload().split('\n\n') if i]
