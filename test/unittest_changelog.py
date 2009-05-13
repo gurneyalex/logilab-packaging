@@ -4,7 +4,7 @@ from cStringIO import StringIO
 
 from logilab.common.testlib import TestCase
 
-from logilab.devtools.lgp.changelog import *
+from logilab.devtools.lib.changelog import *
 
 class ChangeLogTC(TestCase):
     cl_class = ChangeLog
