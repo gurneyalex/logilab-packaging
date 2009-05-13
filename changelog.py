@@ -20,7 +20,7 @@
 import sys
 import getopt
 
-from logilab.devtools.lgp import changelog
+from logilab.devtools.lib import changelog
 
 
 USAGE = """
