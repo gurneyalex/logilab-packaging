@@ -346,9 +346,10 @@ class SetupInfo(Configuration):
         return changes.pop()
 
     def get_packages(self):
+        distdir = self.get_distrib_dir()
         packages = Changes(file(self.get_changes_file()))
-        packages = [a['name'] for a in packages['Files']]
-        packages.append(os.path.basename(self.get_changes_file()))
+        packages = [os.path.join(distdir, a['name']) for a in packages['Files']]
+        packages.append(self.get_changes_file())
         return packages
 
     def get_versions(self):

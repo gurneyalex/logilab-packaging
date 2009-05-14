@@ -16,59 +16,77 @@
 # You should have received a copy of the GNU General Public License along with
 # this program; if not, write to the Free Software Foundation, Inc.,
 # 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-"""tag a package for a distribution
+""" lgp tag [options]
+
+    Tag the source repository
 """
+__docformat__ = "restructuredtext en"
 
 import os
-import sys
-from os.path import exists, abspath
+from string import Template
+import logging
 
-from logilab.common.modutils import get_module_files
-
-from logilab.devtools.lgp.utils import cond_exec, confirm
-
-from logilab.devtools.lib.manifest import read_manifest_in
-from logilab.devtools.lib import TextReporter
-from logilab.devtools.lib.pkginfo import PackageInfo
-from logilab.devtools.vcslib import get_vcs_agent
+from logilab.devtools.lgp.setupinfo import SetupInfo
+from logilab.devtools.lgp.exceptions import LGPException, LGPCommandException
 
 
-def tag_package(package_dir, vcs_agent=None):
-    cwd = os.getcwd()
-    package_dir = abspath(package_dir) + '/'
-    os.chdir(package_dir)
-    try:
+def run(args):
+    """ Main function of lgp tag command """
+    try :
+        tagger = Tagger(args)
+        for tag in tagger.config.format:
+            try:
+                tagger.apply(tag)
+            except (AttributeError, KeyError), err:
+                raise LGPException('cannot substitute format %s' % err)
+            except Exception, err:
+                raise
+                #raise LGPCommandException('an error occured in tag process', err)
+                raise LGPException('an error occured in tag process')
+    except LGPException, exc:
+        logging.critical(exc)
+        return 1
+
+class Tagger(SetupInfo):
+    """Tagger class
+
+    Specific options are added. See lgp tag --help
+    """
+    name = "lgp-tag"
+    options = (('format',
+                {'type': 'csv',
+                 'default' : ['$version'],
+                 'dest' : "format",
+                 'short': 'f',
+                 'metavar': "<comma separated of tag formats>",
+                 'help': "list of tag formats to apply"
+                }),
+              ),
+
+    def __init__(self, args):
+        # Retrieve upstream information
+        super(Tagger, self).__init__(arguments=args, options=self.options, usage=__doc__)
+
         try:
-            # this will try to import __pkginfo__
-            pi = PackageInfo(TextReporter(sys.stderr, sys.stderr.isatty()), '.')
+            from logilab.devtools.vcslib import get_vcs_agent
         except ImportError:
-            print >> sys.stderr, "%r does not appear to be a valid package \
-(no __pkginfo__ found)" % package_dir
-            return 1
-        vcs_agent = vcs_agent or get_vcs_agent('.')
-        # conditional tagging
-        release_tag = pi.release_tag()
-        if confirm("Add tag %s on %s ?" % (release_tag, package_dir)):
-            manifest_files = read_manifest_in(TextReporter(sys.stderr, sys.stderr.isatty()),
-                                              dirname='.',
-                                              exclude_patterns=(r'/(RCS|CVS|\.svn|\.hg)/.*',
-                                                                r'(.*\.pyc|.*\.pyo|.*\.html|.*\.pdf)'))
-            python_files = get_module_files(package_dir)
-            files = [f.replace(package_dir, '') for f in manifest_files + python_files]
-            os.system(vcs_agent.tag(files, release_tag))
-        package_dir = 'debian'
-        if exists(package_dir):
-            release_tag = pi.debian_release_tag()
-            if confirm("Add tag %s on %s ?" % (release_tag, package_dir)):
-                os.system(vcs_agent.tag(package_dir, release_tag))
-        return 0
-    finally:
-        os.chdir(cwd)
+            raise LGPException('you have to install python-vcslib package to use this command')
+        self.vcs_agent = get_vcs_agent(self.config.pkg_dir)
+        self.version = self.get_upstream_version()
+        self.debian_revision = self.get_debian_version().rsplit('-', 1)[1]
 
-def add_options(parser):
-    """needed by lgp.py"""
-    pass
+        # cleaning for unique entries
+        self.config.distrib = '+'.join(self.config.distrib)
+        self.config.archi   = '+'.join(self.config.archi)
 
-def run(pkgdir, options, args):
-    return tag_package(pkgdir)
+    def apply(self, tag):
+        tag = Template(tag)
+        tag = tag.substitute(version=self.version,
+                             debian_revision=self.debian_revision,
+                             distrib=self.config.distrib,
+                             arch=self.config.archi,
+                            )
 
+        logging.info("add tag to repository: %s" % tag)
+        logging.debug('run command: %s' % self.vcs_agent.tag(self.config.pkg_dir, tag))
+        os.system(self.vcs_agent.tag(self.config.pkg_dir, tag))
