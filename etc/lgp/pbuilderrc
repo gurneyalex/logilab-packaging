@@ -123,16 +123,7 @@ REMOVEPACKAGES="lilo"
 #EXTRAPACKAGES=gcc3.0-athlon-builder
 
 # "debconf: delaying package configuration, since apt-utils is not installed"
-EXTRAPACKAGES=apt-utils
-
-# Make debconf not interact with user
-export DEBIAN_FRONTEND="noninteractive"
-
-DEBEMAIL=""
-
-#for pbuilder debuild
-BUILDSOURCEROOTCMD="fakeroot"
-PBUILDERROOTCMD="sudo"
+EXTRAPACKAGES="apt-utils nvi"
 
 # command to satisfy build-dependencies; the default is an internal shell
 # implementation which is relatively slow; there are two alternate
@@ -170,10 +161,19 @@ export SHELL=/bin/sh
 PKGNAME_LOGFILE_EXTENTION="_$(dpkg --print-architecture).build"
 PKGNAME_LOGFILE=yes
 
-# When this value is set to yes, pdebuild will invoke debsign command after building.
-AUTO_DEBSIGN=yes
+# pdebuild wants invoke debsign command after building
+# We use pdebuild only for package debugging. Say 'no' (or commented) here.
+#AUTO_DEBSIGN=no
+
+# for pbuilder debuild
+BUILDSOURCEROOTCMD="fakeroot"
+PBUILDERROOTCMD="sudo"
 
 #TIMEOUT_TIME=20min
+#DEBEMAIL=""
 export TERM=linux
 export IGNOREEOF=1
 export TMPDIR=/tmp
+
+# Make debconf not interact with user
+export DEBIAN_FRONTEND="noninteractive"

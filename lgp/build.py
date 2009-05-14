@@ -93,7 +93,6 @@ def run_post_treatments(builder, distrib):
 
     # Check occurence in filesystem
     for package in builder.packages:
-        package = osp.join(distdir, package)
         if not osp.isfile(package):
             raise LGPException('File %s is missing due to a failed build'
                                % package)
@@ -116,7 +115,7 @@ def run_post_treatments(builder, distrib):
         for package in builder.packages:
             if package.endswith('.diff.gz'):
                 logging.info('Debian specific diff statistics (%s)' % package)
-                cond_exec('diffstat %s' % os.path.join(distdir, package))
+                cond_exec('diffstat %s' % package)
 
     # Run usual checkers
     checkers = {'debc': '', 'lintian': '-vi --show-overrides'}
@@ -125,7 +124,7 @@ def run_post_treatments(builder, distrib):
             for package in builder.packages:
                 if package.endswith('.changes'):
                     logging.info('%s checker information about %s' % (checker, package))
-                    cond_exec('%s %s %s' % (checker, opts, os.path.join(distdir, package)))
+                    cond_exec('%s %s %s' % (checker, opts, package))
 
     if verbose and confirm("run piuparts on generated Debian packages ?"):
         basetgz = "%s-%s.tgz" % (distrib, get_architectures()[0])
@@ -142,7 +141,8 @@ def run_post_treatments(builder, distrib):
                            '-I', '"/usr/share/pycentral-data.*"',
                            '-I', '"/var/lib/dpkg/triggers/pysupport.*"',
                            '-I', '"/var/lib/dpkg/triggers/File"',
-                           osp.join(distdir, package)]
+                           '-I', '"/usr/local/lib/python*"',
+                           package]
                 logging.debug("piuparts command: %s", ' '.join(cmdline))
                 if cond_exec(' '.join(cmdline)):
                     logging.error("piuparts exits with error")
@@ -154,13 +154,14 @@ def run_post_treatments(builder, distrib):
         for package in builder.packages:
             if package.endswith('.changes'):
                 logging.info('try signing %s...' % package)
-                if cond_exec('debsign %s' % osp.join(distdir, package)):
+                if cond_exec('debsign %s' % package):
                     logging.error("the changes file has not been signed. "
                                   "Please run debsign manually")
     else:
         logging.warning("don't forget to debsign your Debian changes file")
 
     logging.info('try updating local repository in %s...' % distdir)
+    logging.debug('run command: dpkg-scanpackages . /dev/null > %s/Packages 2>/dev/null' % distdir)
     if cond_exec('which dpkg-scanpackages && cd %s && dpkg-scanpackages . /dev/null > %s/Packages 2>/dev/null'
                  % (distdir, distdir)):
         logging.debug("Packages file was not updated automatically")
@@ -271,16 +272,6 @@ class Builder(SetupInfo):
         # rewrite distrib to manage the 'all' case in run()
         self.current_distrib = distrib
 
-        # Intermediate facility for debugging (really useful ?)
-        if self.config.intermediate:
-            try:
-                cmd = 'debuild --no-tgz-check --no-lintian'
-                check_call(cmd.split(), stdout=sys.stdout, stderr=sys.stderr)
-            except CalledProcessError, err:
-                msg = "error with your package"
-                raise LGPCommandException(msg, err)
-            return
-
         self._tmpdir = tempfile.mkdtemp()
 
         # create the upstream tarball if necessary and copy to the temporary
@@ -291,6 +282,21 @@ class Builder(SetupInfo):
 
         # support of the multi-distribution
         self.manage_multi_distribution(origpath)
+
+        # Intermediate facility for debugging (really useful ?)
+        if self.config.intermediate:
+            os.chdir(origpath)
+            try:
+                cmd = 'debuild --no-tgz-check --no-lintian --clear-hooks -uc -us'
+                check_call(cmd.split(), stdout=sys.stdout, stderr=sys.stderr)
+            except CalledProcessError, err:
+                msg = "error with your package"
+                raise LGPCommandException(msg, err)
+            import glob
+            self.packages = glob.glob('../%s_%s_*.changes'
+                                      % (self.get_upstream_name(),
+                                         self.get_debian_version()))
+            return
 
         # change directory for next commands
         os.chdir(self._tmpdir)
@@ -364,7 +370,7 @@ class Builder(SetupInfo):
             raise LGPException(err)
 
         if self.get_debian_dir() != "debian":
-            logging.debug("overriding files...")
+            logging.info("overriding files from '%s' directory..." % self.get_debian_dir())
             # don't forget the final slash!
             export(osp.join(self.config.pkg_dir, self.get_debian_dir()), osp.join(origpath, 'debian/'),
                    verbose=self.config.verbose)
