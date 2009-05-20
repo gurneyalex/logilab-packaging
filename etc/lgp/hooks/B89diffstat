@@ -1,0 +1,6 @@
+#!/bin/sh -ex
+
+# Debian specific diff statistics
+apt-get install -y --force-yes diffstat
+
+diffstat $HOME/*.diff.gz

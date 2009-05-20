@@ -1,0 +1,6 @@
+#!/bin/sh -ex
+
+# run debc on generated changes files
+apt-get install -y --force-yes devscripts
+
+debc $HOME/*.changes
