@@ -162,8 +162,8 @@ def run_post_treatments(builder, distrib):
 
     logging.info('try updating local repository in %s...' % distdir)
     logging.debug('run command: dpkg-scanpackages . /dev/null > %s/Packages 2>/dev/null' % distdir)
-    if cond_exec('which dpkg-scanpackages && cd %s && dpkg-scanpackages . /dev/null > %s/Packages 2>/dev/null'
-                 % (distdir, distdir)):
+    if cond_exec('which dpkg-scanpackages && cd %s && dpkg-scanpackages . /dev/null > Packages 2>/dev/null && gzip -f Packages'
+                 % distdir):
         logging.debug("Packages file was not updated automatically")
 
     # Add tag when build is successful
