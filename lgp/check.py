@@ -47,7 +47,6 @@ from logilab.devtools.lib.manifest import (get_manifest_files, read_manifest_in,
 
 from logilab.devtools import templates
 from logilab.devtools.lgp.setupinfo import SetupInfo
-from logilab.devtools.lgp.utils import get_distributions, get_architectures
 from logilab.devtools.lgp.utils import cond_exec, confirm
 from logilab.devtools.lgp.exceptions import LGPException
 
