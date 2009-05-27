@@ -162,7 +162,7 @@ def run_post_treatments(builder, distrib):
 
     logging.info('try updating local repository in %s...' % distdir)
     logging.debug('run command: dpkg-scanpackages . /dev/null > %s/Packages 2>/dev/null' % distdir)
-    if cond_exec('which dpkg-scanpackages && cd %s && dpkg-scanpackages . /dev/null > Packages 2>/dev/null && gzip -f Packages'
+    if cond_exec('which dpkg-scanpackages >/dev/null && cd %s && dpkg-scanpackages . /dev/null | gzip -9c > Packages.gz'
                  % distdir):
         logging.debug("Packages file was not updated automatically")
 
@@ -307,7 +307,7 @@ class Builder(SetupInfo):
             return
 
         # build the package using vbuild or default to fakeroot
-        packages = self._compile(distrib, arch, dscfile)
+        self._compile(distrib, arch, dscfile)
         self.packages = self.get_packages()
 
         # clean tmpdir
@@ -398,6 +398,11 @@ class Builder(SetupInfo):
             #if arch:
             #   cmd += "--binary-arch "
             cmd %= distrib, CONFIG_FILE, self.get_distrib_dir()
+            logfile = "%s.%s.%s.build" % (os.path.splitext(dscfile)[0], distrib, arch)
+            logfile = os.path.join(os.environ.get('TMPDIR', "/tmp"), logfile)
+            logfile = os.path.join(self.config.pkg_dir, logfile)
+            cmd += "--logfile %s " % logfile
+            logging.info("log whole build process in '%s'" % logfile)
             cmd += osp.join(self._tmpdir, dscfile)
         elif debuilder.endswith('vbuild'):
             cmd = '%s -d %s -a %s --result %s %s'
