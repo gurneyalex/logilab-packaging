@@ -30,7 +30,6 @@ except ImportError:
     from logilab.common.compat import check_call, CalledProcessError
 
 from logilab.devtools.lgp.setupinfo import SetupInfo
-from logilab.devtools.lgp.utils import get_distributions, get_architectures
 from logilab.devtools.lgp.utils import cond_exec, confirm
 from logilab.devtools.lgp.exceptions import LGPException, LGPCommandException
 from logilab.devtools.lgp.check import check_keyrings
@@ -41,9 +40,6 @@ def run(args):
     """ Main function of lgp setup command """
     try :
         setup = Setup(args)
-        distributions = get_distributions(setup.config.distrib,
-                                          setup.config.basetgz)
-        logging.info("running for distribution(s): %s" % ', '.join(distributions))
 
         if setup.config.command == "create":
             if not check_keyrings(setup):
@@ -52,7 +48,7 @@ def run(args):
                 logging.warn("then copy keyring file into /usr/share/keyrings/ directory")
                 logging.debug("wget -O /usr/share/keyrings/ubuntu-archive-keyring.gpg ftp://ftp.archive.ubuntu.com/ubuntu/project/ubuntu-archive-keyring.gpg")
 
-        for distrib in distributions:
+        for distrib in setup.distributions:
             if setup.config.command == "create":
                 logging.info("creating '%s' image now... It will take a while." % distrib)
                 cmd = "sudo DIST=%s pbuilder create --override-config --configfile %s"

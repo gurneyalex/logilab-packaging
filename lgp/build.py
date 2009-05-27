@@ -37,7 +37,7 @@ from logilab.common.shellutils import cp
 
 from logilab.devtools.lgp import CONFIG_FILE
 from logilab.devtools.lgp.setupinfo import SetupInfo
-from logilab.devtools.lgp.utils import get_distributions, get_architectures
+from logilab.devtools.lgp.utils import get_architectures
 from logilab.devtools.lgp.utils import confirm, cond_exec
 from logilab.devtools.lgp.exceptions import LGPException, LGPCommandException
 
