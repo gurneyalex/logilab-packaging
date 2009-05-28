@@ -204,7 +204,6 @@ class SetupInfo(Configuration):
         # FIXME
         if not hasattr(self, 'current_distrib'):
             self.current_distrib = 'unstable'
-
         # Guess the package format
         if self.config.setup_file == 'setup.py':
             # generic case for python project (distutils, setuptools)
@@ -340,7 +339,7 @@ class SetupInfo(Configuration):
         return self._run_command('version')
 
     def get_changes_file(self):
-        changes = '%s_%s_*.changes' % (self.get_upstream_name(),
+        changes = '%s_%s_*.changes' % (self.get_debian_name(),
                                        self.get_debian_version())
         changes = glob.glob(os.path.join(self.get_distrib_dir(), changes))
         return changes.pop()
