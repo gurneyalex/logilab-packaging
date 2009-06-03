@@ -66,13 +66,6 @@ if [ -n "${ARCH}" ]; then
     DEBOOTSTRAPOPTS=("--allow-unauthenticated" "${DEBOOTSTRAPOPTS[@]}")
 fi
 
-# Need to be exported for some hooks
-# FIXME source a /etc/default/lgp file ?
-export BUILDRESULT="${HOME}/dists/${DIST}"
-
-# Change default build place here
-#BUILDPLACE="/var/cache/pbuilder/build/"
-
 # BASETGZ directory
 # FIXME source a /etc/default/lgp file ?
 # FIXME the default path should /var/cache/lgp
@@ -82,8 +75,7 @@ if [ "$PBCURRENTCOMMANDLINEOPERATION" == "create" ]; then
 	mkdir -p $(dirname $BASETGZ) 2>/dev/null
 fi
 if [ ! -r ${BASETGZ} -a "$PBCURRENTCOMMANDLINEOPERATION" != "create" ]; then
-	# FIXME Should be dead code now (managed in lgp)
-	echo "Error: pbuilder image $BASETGZ has not been created" >/dev/stderr
+	echo "Error: pbuilder image '$BASETGZ' has not been created" >/dev/stderr
 	exit 2
 fi
 
@@ -114,16 +106,23 @@ USEPROC=yes
 USEDEVPTS=yes
 USEDEVFS=no
 
-# BINDMOUNTS is a space separated list of things to mount
-# inside the chroot.
+# Default value set to be used by hooks # Internally, lgp uses --buildresult option
+export BUILDRESULT="${HOME}/dists/${DIST}"
+
+# BINDMOUNTS is a space separated list of things to mount # inside the chroot.
 BINDMOUNTS="/sys"
 if [ -d "$BUILDRESULT" ]; then
 	BINDMOUNTS=("${BINDMOUNTS[@]}" "$BUILDRESULT")
 fi
 
-# Specify the cache for APT
+# Specify a cache for APT
 APTCACHE="/var/cache/pbuilder/$NAME/aptcache/"
-#APTCACHEHARDLINK="yes"
+
+# 26. Using tmpfs for buildplace ($BUILDPLACE)
+# To improve speed of operation, it is possible to use tmpfs for pbuilder build
+# location. Mount tmpfs for $BUILDPLACE, and set:
+#APTCACHEHARDLINK=no
+
 #REMOVEPACKAGES="lilo bash"
 REMOVEPACKAGES="lilo"
 #EXTRAPACKAGES=gcc3.0-athlon-builder
@@ -146,8 +145,7 @@ PBUILDERSATISFYDEPENDSCMD="/usr/lib/pbuilder/pbuilder-satisfydepends"
 DEBBUILDOPTS=""
 
 # Hooks directory for pbuilder
-HOOKDIR="/etc/lgp/hooks"
-#HOOKDIR="/usr/lib/lgp/hooks"
+: ${HOOKDIR:="/etc/lgp/hooks"}
 
 # APT configuration files directory
 #APTCONFDIR="/etc/lgp/apt.d"
@@ -157,6 +155,7 @@ HOOKDIR="/etc/lgp/hooks"
 BUILDUSERID=1234
 #BUILDUSERNAME=$SUDO_USER
 BUILDUSERNAME=pbuilder
+BUILDRESULTUID=$SUDO_UID
 
 # Set the PATH I am going to use inside pbuilder
 #export PATH="/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/X11R6/bin"
@@ -166,7 +165,7 @@ export SHELL=/bin/sh
 
 # enable pkgname-logfile
 #PBUILDER_BUILD_LOGFILE="${BUILDRESULT}/"$(basename "${PACKAGENAME}" .dsc)"${PKGNAME_LOGFILE_EXTENTION}"
-PKGNAME_LOGFILE_EXTENTION="_$(dpkg --print-architecture).lgp-build"
+PKGNAME_LOGFILE_EXTENTION="_${DIST}_${ARCH}.lgp-build"
 PKGNAME_LOGFILE=yes
 
 # pdebuild wants invoke debsign command after building
