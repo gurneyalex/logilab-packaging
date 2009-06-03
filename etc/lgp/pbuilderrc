@@ -9,14 +9,10 @@
 
 # This file is largely inspired by:
 #     https://wiki.ubuntu.com/PbuilderHowto
-#
 # Thanks a lot, guys !
 
-# The use of the codenames for Debian suites is managed by lgp directly.
-
 # List of Debian suites
-DEBIAN_SUITES=("unstable" "testing" "stable" "oldstable")
-
+DEBIAN_SUITES=("unstable" "testing" "stable" "oldstable" "sid" "etch" "lenny" "squeeze")
 # List of Ubuntu suites. Update these when needed
 UBUNTU_SUITES=("jaunty" "intrepid" "hardy" "gutsy" "feisty" "dapper")
 
@@ -35,8 +31,7 @@ UBUNTU_SOURCESLIST="/etc/lgp/sources.list.ubuntu"
 DEBIAN_OTHERMIRROR=
 UBUNTU_OTHERMIRROR=
 
-# Optionally set a default distribution if none is used. Note that you can set
-# your own default (i.e. ${DIST:="unstable"}).
+# Set a default distribution if none is used.
 #: ${DIST:="$(lsb_release --short --codename)"}
 #: ${DIST:="unstable"}
 
@@ -71,19 +66,28 @@ if [ -n "${ARCH}" ]; then
     DEBOOTSTRAPOPTS=("--allow-unauthenticated" "${DEBOOTSTRAPOPTS[@]}")
 fi
 
-#BUILDRESULT="/var/cache/pbuilder/$NAME/result"
-export BUILDRESULT="/${HOME}/dists/${DIST}"
-BUILDPLACE="/var/cache/pbuilder/build/"
+# Need to be exported for some hooks
+# FIXME source a /etc/default/lgp file ?
+export BUILDRESULT="${HOME}/dists/${DIST}"
+
+# Change default build place here
+#BUILDPLACE="/var/cache/pbuilder/build/"
 
 # BASETGZ directory
+# FIXME source a /etc/default/lgp file ?
+# FIXME the default path should /var/cache/lgp
+#BASETGZ="/var/cache/lgp/buildd/$NAME.tgz"
 BASETGZ="/opt/buildd/$NAME.tgz"
-mkdir -p $(dirname $BASETGZ) 2>/dev/null
+if [ "$PBCURRENTCOMMANDLINEOPERATION" == "create" ]; then
+	mkdir -p $(dirname $BASETGZ) 2>/dev/null
+fi
 if [ ! -r ${BASETGZ} -a "$PBCURRENTCOMMANDLINEOPERATION" != "create" ]; then
+	# FIXME Should be dead code now (managed in lgp)
 	echo "Error: pbuilder image $BASETGZ has not been created" >/dev/stderr
-	echo "Please use: lgp setup -c create -d $DIST"
-	exit 1
+	exit 2
 fi
 
+# FIXME Manage OTHER_MIRROR settings by hooks ?
 if $(echo ${DEBIAN_SUITES[@]} | grep -q $DIST); then
     # Debian configuration
     MIRRORSITE="http://$DEBIAN_MIRROR/debian/"
@@ -99,8 +103,10 @@ elif $(echo ${UBUNTU_SUITES[@]} | grep -q $DIST); then
     [[ -f $UBUNTU_SOURCESLIST.$DIST ]] && OTHERMIRROR=$(grep -v '#' $UBUNTU_SOURCESLIST.$DIST | tr '\n' '|')
     OTHERMIRROR=${OTHERMIRROR:-$UBUNTU_OTHERMIRROR}
 else
+    # FIXME Should be dead code now (managed in lgp)
+    # Debian could be the default case
     echo "Unknown distribution: $DIST"
-    exit 1
+    exit 3
 fi
 
 #export http_proxy=http://your-proxy:8080/
@@ -140,7 +146,8 @@ PBUILDERSATISFYDEPENDSCMD="/usr/lib/pbuilder/pbuilder-satisfydepends"
 DEBBUILDOPTS=""
 
 # Hooks directory for pbuilder
-#HOOKDIR="/etc/lgp/hooks"
+HOOKDIR="/etc/lgp/hooks"
+#HOOKDIR="/usr/lib/lgp/hooks"
 
 # APT configuration files directory
 #APTCONFDIR="/etc/lgp/apt.d"
@@ -158,7 +165,8 @@ BUILDUSERNAME=pbuilder
 export SHELL=/bin/sh
 
 # enable pkgname-logfile
-PKGNAME_LOGFILE_EXTENTION="_$(dpkg --print-architecture).build"
+#PBUILDER_BUILD_LOGFILE="${BUILDRESULT}/"$(basename "${PACKAGENAME}" .dsc)"${PKGNAME_LOGFILE_EXTENTION}"
+PKGNAME_LOGFILE_EXTENTION="_$(dpkg --print-architecture).lgp-build"
 PKGNAME_LOGFILE=yes
 
 # pdebuild wants invoke debsign command after building
