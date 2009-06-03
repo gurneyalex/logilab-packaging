@@ -1,3 +1,10 @@
+logilab-devtools (0.15.0-1) unstable; urgency=low
+
+  * Add weekly cron entry for image update
+  * New upstream release
+
+ -- Julien Jehannet <julien.jehannet@logilab.fr>  Wed, 27 May 2009 12:03:27 +0200
+
 logilab-devtools (0.14.0-1) unstable; urgency=low
 
   * [debian] mercurial version (> 1) is required
