@@ -126,6 +126,20 @@ def run_post_treatments(builder, distrib):
                     logging.info('%s checker information about %s' % (checker, package))
                     cond_exec('%s %s %s' % (checker, opts, package))
 
+    logging.info('try updating local repository in %s...' % distdir)
+    logging.debug('run command: dpkg-scanpackages . /dev/null > %s/Packages 2>/dev/null' % distdir)
+    if cond_exec('which dpkg-scanpackages >/dev/null && cd %s && dpkg-scanpackages %s /dev/null | gzip -9c > %s/Packages.gz'
+                 % (osp.dirname(distdir), distrib, distrib)):
+        logging.debug("Packages file was not updated automatically")
+    else:
+        # clean other possible Packages files
+        try:
+            os.unlink(osp.join(distdir, 'Packages'))
+            os.unlink(osp.join(distdir, 'Packages.bz2'))
+        except:
+            # not a problem to pass silently here
+            pass
+
     if verbose and confirm("run piuparts on generated Debian packages ?"):
         basetgz = "%s-%s.tgz" % (distrib, get_architectures()[0])
         for package in builder.packages:
@@ -159,22 +173,6 @@ def run_post_treatments(builder, distrib):
                                   "Please run debsign manually")
     else:
         logging.warning("don't forget to debsign your Debian changes file")
-
-    logging.info('try updating local repository in %s...' % distdir)
-    logging.debug('run command: dpkg-scanpackages . /dev/null > %s/Packages 2>/dev/null' % distdir)
-    if cond_exec('which dpkg-scanpackages >/dev/null && cd %s && dpkg-scanpackages . /dev/null | gzip -9c > Packages.gz'
-                 % distdir):
-        logging.debug("Packages file was not updated automatically")
-
-    # Add tag when build is successful
-    # FIXME tag format is not standardized yet
-    # Comments on card "Architecture standard d'un paquet"
-    #if verbose and confirm("Add upstream tag %s on %s ?" \
-    #                       % (builder.get_upstream_version(),
-    #                          builder.get_upstream_name())):
-    #    from logilab.devtools.vcslib import get_vcs_agent
-    #    vcs_agent = vcs_agent or get_vcs_agent('.')
-    #    os.system(vcs_agent.tag(package_dir, release_tag))
 
 
 class Builder(SetupInfo):
@@ -332,9 +330,9 @@ class Builder(SetupInfo):
         :param:
             origpath: path to orig.tar.gz tarball
         """
-        dscfile = '%s_%s.dsc' % (self.get_debian_name(), self.get_debian_version())
-        filelist = ('%s_%s.diff.gz' % (self.get_debian_name(), self.get_debian_version()),
-                    dscfile)
+        fileparts = (self.get_debian_name(), self.get_debian_version())
+        dscfile = '%s_%s.dsc' % fileparts
+        filelist = ('%s_%s.diff.gz' % fileparts, dscfile)
 
         logging.debug("start creation of the debian source package '%s'"
                       % osp.join(osp.dirname(origpath), dscfile))
