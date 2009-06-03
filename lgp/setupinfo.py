@@ -20,6 +20,7 @@ import sys
 import os
 import stat
 import os.path
+import shutil
 import glob
 import logging
 import commands
@@ -339,18 +340,15 @@ class SetupInfo(Configuration):
     def get_upstream_version(self):
         return self._run_command('version')
 
-    def get_changes_file(self):
-        changes = '%s_%s_*.changes' % (self.get_upstream_name(),
-                                       self.get_debian_version())
-        changes = glob.glob(os.path.join(self.get_distrib_dir(), changes))
-        return changes.pop()
-
     def get_packages(self):
-        distdir = self.get_distrib_dir()
-        packages = Changes(file(self.get_changes_file()))
-        packages = [os.path.join(distdir, a['name']) for a in packages['Files']]
-        packages.append(self.get_changes_file())
-        return packages
+        """copy packages from the temporary build area to the result directory
+        """
+        packages = []
+        for filename in os.listdir(self._tmpdir):
+            if os.path.isfile(filename):
+                shutil.copy(filename, self.get_distrib_dir())
+                packages.append(os.path.join(self.get_distrib_dir(), filename))
+        self.packages = packages
 
     def get_versions(self):
         versions = self.get_debian_version().rsplit('-', 1)
