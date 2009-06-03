@@ -48,29 +48,29 @@ def run(args):
                 logging.warn("then copy keyring file into /usr/share/keyrings/ directory")
                 logging.debug("wget -O /usr/share/keyrings/ubuntu-archive-keyring.gpg ftp://ftp.archive.ubuntu.com/ubuntu/project/ubuntu-archive-keyring.gpg")
 
-        for distrib in setup.distributions:
-            if setup.config.command == "create":
-                logging.info("creating '%s' image now... It will take a while." % distrib)
-                cmd = "sudo DIST=%s pbuilder create --override-config --configfile %s"
-            elif setup.config.command == "update":
-                logging.info("updating '%s' image now... It will take a while." % distrib)
-                cmd = "sudo DIST=%s pbuilder update --override-config --configfile %s"
-            elif setup.config.command == "login":
-                logging.info("login into '%s' image" % distrib)
-                cmd = "sudo DIST=%s pbuilder login --configfile %s"
-            elif setup.config.command == "dumpconfig":
-                logging.info("dump '%s' image configuration" % distrib)
-                cmd = "sudo DIST=%s pbuilder dumpconfig --configfile %s"
+        for arch in setup.architectures:
+            for distrib in setup.distributions:
+                if setup.config.command == "create":
+                    logging.info("creating '%s' image now... It will take a while." % distrib)
+                    cmd = "sudo DIST=%s ARCH=%s pbuilder create --override-config --configfile %s"
+                elif setup.config.command == "update":
+                    logging.info("updating '%s' image now... It will take a while." % distrib)
+                    cmd = "sudo DIST=%s ARCH=%s pbuilder update --override-config --configfile %s"
+                elif setup.config.command == "dumpconfig":
+                    logging.info("dump '%s' image configuration" % distrib)
+                    cmd = "sudo DIST=%s ARCH=%s pbuilder dumpconfig --configfile %s"
 
-            # run setup command
-            try:
-                cmd = cmd % (distrib, CONFIG_FILE)
-                check_call(cmd.split(), env={'DIST': distrib})
-            except CalledProcessError, err:
-                # FIXME command always returns exit code 1
-                if setup.config.command == "dumpconfig":
-                    continue
-                raise LGPCommandException('an error occured in setup process', err)
+                # run setup command
+                try:
+                    if arch == 'i386' and os.path.exists('/usr/bin/linux32'):
+                        cmd = 'linux32 ' + cmd
+                    cmd = cmd % (distrib, arch, CONFIG_FILE)
+                    check_call(cmd.split(), env={'DIST': distrib, 'ARCH': arch})
+                except CalledProcessError, err:
+                    # FIXME command always returns exit code 1
+                    if setup.config.command == "dumpconfig":
+                        continue
+                    raise LGPCommandException('an error occured in setup process', err)
 
     except NotImplementedError, exc:
         logging.error(exc)
