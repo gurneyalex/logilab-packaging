@@ -1,9 +1,16 @@
 ChangeLog for logilab.devtools
 ==============================
 
- -- 0.15
+2009-06-03 -- 0.15
+    * lgp: can now support i386 mode if linux32 is installed
 
-  * devtools : added lsprofcalltree module and command line script
+    * lgp: generate the build logfile in same directory as packages
+
+    * lgp: simulate a local debian repository in creating a Packages.gz file in build result directory
+
+    * lgp: add tag command to add list of tags with substitution
+
+    * devtools : added lsprofcalltree module and command line script
 
 
 2009-04-23  --  0.14
