@@ -35,6 +35,7 @@ import stat
 import re
 import commands
 import logging
+import subprocess
 from os.path import basename, join, exists, isdir, isfile
 from pprint import pformat
 
@@ -427,11 +428,15 @@ def check_setup_file(checker):
     return isfile('setup.py') or isfile('setup.mk')
 
 def check_makefile(checker):
-    """check makefile file and dependencies (not implemented)"""
+    """check makefile file and expected targets (project, version)"""
     status = OK
-    status = status and isfile("setup.mk")
-    # FIXME
-    #status = status and _check_make_dependencies()
+    setup_file = checker.config.setup_file
+    status = status and isfile(setup_file)
+    for cmd in ['%s project', '%s version']:
+        cmd %= setup_file
+        if not subprocess.call(cmd.split()):
+            checker.logger.error("%s not a valid command" % cmd)
+        status = NOK
     return status
 
 def check_homepage(checker):
