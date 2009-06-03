@@ -26,6 +26,7 @@ import sys
 import tempfile
 import shutil
 import logging
+import pprint
 import warnings
 import os.path as osp
 from subprocess import check_call, CalledProcessError
@@ -61,11 +62,9 @@ def run(args):
                 if builder.compile(distrib=distrib, arch=arch):
                     if not builder.config.no_treatment and builder.packages:
                         run_post_treatments(builder, distrib)
-                    logging.info("new files are waiting in %s. Enjoy."
-                                 % builder.get_distrib_dir())
-                    logging.info("Debian changes file is: %s"
-                                 % builder.get_changes_file())
-
+                    logging.info("new files are waiting in %s. Enjoy.\n%s"
+                                 % (builder.get_distrib_dir(),
+                                   pprint.pformat(builder.packages)))
     except LGPException, exc:
         logging.critical(exc)
         #if hasattr(builder, "config") and builder.config.verbose:
@@ -127,9 +126,10 @@ def run_post_treatments(builder, distrib):
                     cond_exec('%s %s %s' % (checker, opts, package))
 
     logging.info('try updating local repository in %s...' % distdir)
-    logging.debug('run command: dpkg-scanpackages . /dev/null > %s/Packages 2>/dev/null' % distdir)
-    if cond_exec('which dpkg-scanpackages >/dev/null && cd %s && dpkg-scanpackages %s /dev/null | gzip -9c > %s/Packages.gz'
-                 % (osp.dirname(distdir), distrib, distrib)):
+    command = "dpkg-scanpackages %s /dev/null | gzip -9c > %s/Packages.gz" % (distrib, distrib)
+    logging.debug('run command: %s' % command)
+    if cond_exec('which dpkg-scanpackages >/dev/null && cd %s && %s'
+                 % (osp.dirname(distdir), command)):
         logging.debug("Packages file was not updated automatically")
     else:
         # clean other possible Packages files
@@ -306,7 +306,7 @@ class Builder(SetupInfo):
 
         # build the package using vbuild or default to fakeroot
         self._compile(distrib, arch, dscfile)
-        self.packages = self.get_packages()
+        self.get_packages()
 
         # clean tmpdir
         os.chdir(self.config.pkg_dir)
@@ -388,32 +388,25 @@ class Builder(SetupInfo):
 
     def _compile(self, distrib, arch, dscfile):
         """virtualize the package build process"""
-        debuilder = os.environ.get('DEBUILDER', 'vbuild')
+        debuilder = os.environ.get('DEBUILDER', 'internal')
         logging.debug("select package builder: '%s'" % debuilder)
         if debuilder == 'internal':
             assert osp.exists(osp.join(self._tmpdir, dscfile))
-            cmd = "sudo DIST=%s pbuilder build --configfile %s --buildresult %s "
-            #if arch:
-            #   cmd += "--binary-arch "
-            cmd %= distrib, CONFIG_FILE, self.get_distrib_dir()
-            logfile = "%s.%s.%s.build" % (os.path.splitext(dscfile)[0], distrib, arch)
-            logfile = os.path.join(os.environ.get('TMPDIR', "/tmp"), logfile)
-            logfile = os.path.join(self.config.pkg_dir, logfile)
+            cmd = "sudo DIST=%s ARCH=%s pbuilder build --configfile %s --buildresult %s "
+            cmd %= distrib, arch, CONFIG_FILE, self._tmpdir
+            logfile = "%s_%s_%s.lgp-build" % (os.path.splitext(dscfile)[0], arch, distrib)
             cmd += "--logfile %s " % logfile
-            logging.info("log whole build process in '%s'" % logfile)
+            logging.info("find the build log file in '%s'" % logfile)
             cmd += osp.join(self._tmpdir, dscfile)
         elif debuilder.endswith('vbuild'):
             cmd = '%s -d %s -a %s --result %s %s'
             cmd %= (debuilder, distrib, arch, self.get_distrib_dir(),
                     osp.join(self._tmpdir, dscfile))
-            # TODO
-            #cmd += ' --debbuildopts %s' % pdebuild_options
         else:
             cmd = debuilder
 
-        logging.debug(cmd)
+        logging.info("run build command: %s" % cmd)
         try:
             check_call(cmd.split(), stdout=sys.stdout) #, stderr=sys.stderr)
         except CalledProcessError, err:
             raise LGPCommandException("failed autobuilding of package", err)
-
