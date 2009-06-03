@@ -264,16 +264,16 @@ class SetupInfo(Configuration):
     def get_debian_name(self):
         """obtain the debian package name
 
-        The information is found in debian*/control withe the 'Source:' field
+        The information is found in debian/control withe the 'Source:' field
         """
         try:
-            path = os.path.join(self.config.pkg_dir, self.get_debian_dir())
-            for line in open('%s/control' % path):
+            control = os.path.join(self.config.pkg_dir, 'debian', 'control')
+            for line in open(control):
                 line = line.split(' ', 1)
                 if line[0] == "Source:":
                     return line[1].rstrip()
         except IOError, err:
-            raise LGPException('a Debian control file is required in "%s"' % path)
+            raise LGPException('a Debian control file should exist in "%s"' % control)
 
     def get_debian_version(self):
         """get upstream and debian versions depending of the last changelog entry found in Debian changelog
