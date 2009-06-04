@@ -278,22 +278,15 @@ class Builder(SetupInfo):
                                          self.get_debian_version()))
             return
 
-        # change directory for next commands
-        os.chdir(self._tmpdir)
-
         # create a debian source package
         dscfile = self.make_debian_source_package(origpath)
-        if self.config.deb_src_only:
-            return
 
         # build the package using vbuild or default to fakeroot
         self._compile(distrib, arch, dscfile)
         self.get_packages()
 
         # clean tmpdir
-        os.chdir(self.config.pkg_dir)
         self.clean_tmpdir()
-
         return True
 
     def clean_tmpdir(self):
@@ -312,6 +305,9 @@ class Builder(SetupInfo):
         :param:
             origpath: path to orig.tar.gz tarball
         """
+        # change directory context
+        os.chdir(self._tmpdir)
+
         fileparts = (self.get_debian_name(), self.get_debian_version())
         dscfile = '%s_%s.dsc' % fileparts
         filelist = ('%s_%s.diff.gz' % fileparts, dscfile)
@@ -334,6 +330,16 @@ class Builder(SetupInfo):
                 cp(filename, self.get_distrib_dir())
             logging.info("Debian source control file is: %s"
                          % osp.join(self.get_distrib_dir(), dscfile))
+
+        # exit if asked by command-line
+        if self.config.deb_src_only:
+            # clean tmpdir
+            self.clean_tmpdir()
+            sys.exit()
+
+        # restore directory context
+        os.chdir(self.config.pkg_dir)
+
         return dscfile
 
     def manage_multi_distribution(self, origpath):

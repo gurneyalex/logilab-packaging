@@ -345,8 +345,9 @@ class SetupInfo(Configuration):
         """
         packages = []
         for filename in os.listdir(self._tmpdir):
-            if os.path.isfile(filename):
-                shutil.copy(filename, self.get_distrib_dir())
+            fullpath = os.path.join(self._tmpdir, filename)
+            if os.path.isfile(fullpath):
+                shutil.copy(fullpath, self.get_distrib_dir())
                 packages.append(os.path.join(self.get_distrib_dir(), filename))
         self.packages = packages
 
@@ -411,6 +412,8 @@ class SetupInfo(Configuration):
                 cp(upstream_tarball, tarball)
                 logging.info('a new original source archive (tarball) in current directory (%s)'
                              % tarball)
+                # clean tmpdir
+                self.clean_tmpdir()
                 sys.exit()
             except shutil.Error, err:
                 raise LGPException(err)
