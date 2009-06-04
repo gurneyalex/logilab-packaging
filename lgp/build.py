@@ -92,9 +92,6 @@ def run_post_treatments(builder, distrib):
 
     # Check occurence in filesystem
     for package in builder.packages:
-        if not osp.isfile(package):
-            raise LGPException('File %s is missing due to a failed build'
-                               % package)
         # Detect native package (often an error)
         if package.endswith('.dsc'):
             dsc = deb822.Dsc(file(package))
@@ -109,22 +106,7 @@ def run_post_treatments(builder, distrib):
                                "This is a native package (really) ?" % package):
                     return
 
-    # Run some utility in verbose mode
-    if verbose:
-        for package in builder.packages:
-            if package.endswith('.diff.gz'):
-                logging.info('Debian specific diff statistics (%s)' % package)
-                cond_exec('diffstat %s' % package)
-
-    # Run usual checkers
-    checkers = {'debc': '', 'lintian': '-vi --show-overrides'}
-    for checker, opts in checkers.iteritems():
-        if not verbose or confirm("run %s on generated Debian changes files ?" % checker):
-            for package in builder.packages:
-                if package.endswith('.changes'):
-                    logging.info('%s checker information about %s' % (checker, package))
-                    cond_exec('%s %s %s' % (checker, opts, package))
-
+    # FIXME provide a useful utility outside of lgp and use post-build-hook
     logging.info('try updating local repository in %s...' % distdir)
     command = "dpkg-scanpackages %s /dev/null | gzip -9c > %s/Packages.gz" % (distrib, distrib)
     logging.debug('run command: %s' % command)
@@ -140,6 +122,7 @@ def run_post_treatments(builder, distrib):
             # not a problem to pass silently here
             pass
 
+    # FIXME move code to apycot and detection of options from .changes
     if verbose and confirm("run piuparts on generated Debian packages ?"):
         basetgz = "%s-%s.tgz" % (distrib, get_architectures()[0])
         for package in builder.packages:
@@ -163,6 +146,7 @@ def run_post_treatments(builder, distrib):
                 else:
                     logging.info("piuparts exits normally")
 
+    # FIXME move code to debinstall
     # Try Debian signing immediately if possible
     if check_debsign(builder):
         for package in builder.packages:
@@ -275,8 +259,6 @@ class Builder(SetupInfo):
         # create the upstream tarball if necessary and copy to the temporary
         # directory following the Debian practices
         upstream_tarball, tarball, origpath = self.make_orig_tarball()
-        if self.config.get_orig_source:
-            return
 
         # support of the multi-distribution
         self.manage_multi_distribution(origpath)
@@ -390,23 +372,20 @@ class Builder(SetupInfo):
         """virtualize the package build process"""
         debuilder = os.environ.get('DEBUILDER', 'internal')
         logging.debug("select package builder: '%s'" % debuilder)
+        dscfile = osp.join(self._tmpdir, dscfile)
+        assert osp.exists(dscfile)
+
         if debuilder == 'internal':
-            assert osp.exists(osp.join(self._tmpdir, dscfile))
-            cmd = "sudo DIST=%s ARCH=%s pbuilder build --configfile %s --buildresult %s "
-            cmd %= distrib, arch, CONFIG_FILE, self._tmpdir
-            logfile = "%s_%s_%s.lgp-build" % (os.path.splitext(dscfile)[0], arch, distrib)
-            cmd += "--logfile %s " % logfile
-            logging.info("find the build log file in '%s'" % logfile)
-            cmd += osp.join(self._tmpdir, dscfile)
+            cmd = "sudo DIST=%s ARCH=%s pbuilder build --configfile %s --buildresult %s %s"
+            cmd %= distrib, arch, CONFIG_FILE, self._tmpdir, dscfile
         elif debuilder.endswith('vbuild'):
             cmd = '%s -d %s -a %s --result %s %s'
-            cmd %= (debuilder, distrib, arch, self.get_distrib_dir(),
-                    osp.join(self._tmpdir, dscfile))
+            cmd %= (debuilder, distrib, arch, self.get_distrib_dir(), dscfile)
         else:
             cmd = debuilder
 
         logging.info("run build command: %s" % cmd)
         try:
-            check_call(cmd.split(), stdout=sys.stdout) #, stderr=sys.stderr)
+            check_call(cmd.split(), env={'DIST': distrib, 'ARCH': arch}, stdout=sys.stdout) #, stderr=sys.stderr)
         except CalledProcessError, err:
             raise LGPCommandException("failed autobuilding of package", err)
