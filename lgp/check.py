@@ -352,7 +352,7 @@ def check_debian_changelog(checker):
         cmd = "sed -ne '/DISTRIBUTION/p' %s" % CHANGELOG
         _, output = commands.getstatusoutput(cmd)
         if output:
-            checker.logger.info('You can now use the default "unstable" string in your debian changelog')
+            checker.logger.info('Default distribution value should be "unstable" in your debian changelog')
         cmd = "dpkg-parsechangelog >/dev/null"
         _, output = commands.getstatusoutput(cmd)
         if output:

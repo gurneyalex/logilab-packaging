@@ -348,7 +348,10 @@ class Builder(SetupInfo):
         We copy debian_dir directory into tmp build depending of the target distribution
         in all cases, we copy the debian directory of the unstable version
         If a file should not be included, touch an empty file in the overlay
-        directory"""
+        directory.
+
+        The distribution value will always be rewritten in final changelog.
+        """
         try:
             # don't forget the final slash!
             export(osp.join(self.config.pkg_dir, 'debian'), osp.join(origpath, 'debian/'))
@@ -362,13 +365,15 @@ class Builder(SetupInfo):
                    verbose=self.config.verbose)
 
         distrib = self.current_distrib
-        # experimental should be linked to unstable and not rewritten
-        if self.current_distrib == 'experimental':
-            distrib = 'unstable'
 
-        cmd = ['sed', '-i',
-               's/\(unstable\|DISTRIBUTION\); urgency/%s; urgency/' %
-               distrib, '%s' % os.path.join(origpath, 'debian/changelog')]
+        #logging.debug("rewrite distribution name to '%s'" % distrib)
+        # dch will update the changelog timestamp as well
+        #cmd = ['dch', '--force-distribution', '--distribution', '%s' % distrib, '']
+
+        # substitute distribution string in file only if line not starting by
+        # spaces (simple heuristic to prevent other changes in content)
+        cmd = ['sed', '-i', '/^[[:alpha:]]/s/\([[:alpha:]]\+\);/%s;/' % distrib,
+               osp.join(origpath, 'debian', 'changelog')]
         try:
             check_call(cmd, stdout=sys.stdout) #, stderr=sys.stderr)
         except CalledProcessError, err:
