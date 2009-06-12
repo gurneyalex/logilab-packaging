@@ -55,17 +55,17 @@ class ILineHandler(Interface):
 
 class StatusLineHandler:
     __implements__ = ILineHandler
-    
+
     def __init__(self, noup=1, mod_level=0):
         self.noup = noup
         self.mod_level = mod_level
-        
+
     def init(self):
         self._current_file = ''
-        
+
     def end(self):
         pass
-    
+
     def parse_line(self, line):
         line = line.strip()
         if line[:6] == 'File: ':
@@ -120,7 +120,7 @@ class File(Node):
         self.keyword_substitution = None
         self.description = None
         self.symbolic_names = []
-        
+
     def __str__(self):
         s = [ self.repo_file ]
         write = s.append
@@ -129,7 +129,7 @@ class File(Node):
                 write('working file: %s (branch %s)' % (self.working_file, self.branch))
             else:
                 write('working file: %s' % (self.working_file))
-        
+
         if self.keyword_substitution:
             write('keywords: %s' % (self.keyword_substitution))
         write('head: %s'%self.head)
@@ -139,7 +139,7 @@ class File(Node):
         if self.description:
             write('description: %s' % (self.description))
         return '\n'.join(s)
-              
+
 class Revision(Node):
     """handle a revision information for a file"""
     def __init__(self):
@@ -151,7 +151,7 @@ class Revision(Node):
         self.initial = None
         self.branch = None
         self.message = []
-        
+
     def __str__(self):
         if self.initial:
             s = [ '%s (%s, %s)' % (self.revision, self.author, self.date) ]
@@ -164,7 +164,7 @@ class Revision(Node):
         if self.message:
             s += self.message
         return '\n'.join(s)
-        
+
 PATTERN_INDEX = 0
 STATE_INDEX = 1
 
@@ -201,7 +201,7 @@ def revision_date(revision, line):
     else:
         revision.lines = (int(m.group('new')), int(m.group('removed')))
 
-    
+
 ATTRS_MAP = {
     'RCS file' : 'repo_file',
     'Working file' : 'working_file',
@@ -211,10 +211,10 @@ ATTRS_MAP = {
     'total revisions' : total_revisions,
     'date' : revision_date,
     }
-    
+
 class LogLineHandler:
     __implements__ = ILineHandler
-    
+
     def init(self):
         self.root = []
         last = File()
@@ -242,12 +242,12 @@ class LogLineHandler:
                 self._last = last
                 return 1
         return 0
-    
+
     def parse_line(self, line):
         if self.set_next_state(line):
             # don't do anything on transition lines
             return
-        
+
         for i in range(self._index, len(KEYWORDS[self._state])):
             keyword = KEYWORDS[self._state][i]
             if line.startswith(keyword):
@@ -273,7 +273,7 @@ class LogLineHandler:
     def end(self):
         self.root.pop()
 
-    
+
 # Output formatter ############################################################
 
 class AbstractLogResultFormatter:
@@ -286,20 +286,20 @@ class AbstractLogResultFormatter:
         for author in authors:
             data = results['authors'][author]
             self.print_author_stats(author, data)
-        self.print_end(results['winner'])    
+        self.print_end(results['winner'])
 
     def print_title(self):
         """print report title"""
         raise NotImplementedError()
-    
+
     def print_author_stats(self, author, data):
         """print some statistics for a given author"""
         raise NotImplementedError()
-    
+
     def print_end(self, winner):
         """close the report"""
         raise NotImplementedError()
-    
+
 class LogResultTextPrinter(AbstractLogResultFormatter):
     """a class rendering log result as plain text"""
 
@@ -315,7 +315,7 @@ class LogResultTextPrinter(AbstractLogResultFormatter):
         print '\n'
         print '\t+---------------------------------------------------+'
         print '\t| Author | Commits |     Lines    | New |  Avg  | % |'
-        
+
     def print_author_stats(self, author, data):
         """print some statistics for a given author"""
         data['s+'] = '+%i' % data['+']
@@ -323,13 +323,13 @@ class LogResultTextPrinter(AbstractLogResultFormatter):
         print '\t|%(author)-8s|%(commit)-9i|%(s+)-7s%(-)-7i|\
 %(new)-5i|%(changedcommit)7i|%(%)3i|' % data
 #print '\t%s%7s lines per commit' % (' '*28, '+%s'%(data['changedcommit']))
-        
+
     def print_end(self, winner):
         """close the report"""
         print '\t+---------------------------------------------------+'
-        print 
+        print
         print 'Most frequent committer : %s' % winner
-        print 
+        print
         print '*'*80
 
 class LogResultHTMLPrinter(AbstractLogResultFormatter):
@@ -345,7 +345,7 @@ class LogResultHTMLPrinter(AbstractLogResultFormatter):
         print '<table colspacing="4" border="1" align="center"><tr>'
         print '<th>Author</th><th>Commits</th><th>Lines</th><th>New</th><th>Avg</th><th>%</th>'
         print '</tr>'
-        
+
     def print_author_stats(self, author, data):
         """print some statistics for a given author"""
         data['s+'] = '+%i' % data['+']
@@ -354,7 +354,7 @@ class LogResultHTMLPrinter(AbstractLogResultFormatter):
 %(new)i</td><td>%(changedcommit)i</td><td>%(%)i</td>' % data
 #print '\t%s%7s lines per commit' % (' '*28, '+%s'%(data['changedcommit']))
         print '</tr>'
-        
+
     def print_end(self, winner):
         """close the report"""
         print '</tr></table>'
