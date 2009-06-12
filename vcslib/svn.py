@@ -213,10 +213,6 @@ class SVNAgent:
         tag_url = url.split('/')
         for special in ('trunk', 'tags', 'branches'):
             if special in tag_url:
-                #rel_path = tag_url[tag_url.index(special)+1:]
-                #tag_url = tag_url[:tag_url.index(special)]
-                #
-                #tag_url.append('tags/%s' % tagname)
                 special_index = tag_url.index(special)
                 tag_url = tag_url[:special_index]
                 tag_url.append('tags/%s' % tagname)
@@ -267,12 +263,13 @@ class SVNAgent:
         from_date = strftime('%Y-%m-%d %H:%M', localtime_to_gmtime(from_date))
         # since we want an inclusive range
         to_date = strftime('%Y-%m-%d %H:%M', localtime_to_gmtime(to_date))
-        if tag:
-            repository = '%s/%s' % (repository, tag)
-        elif path:
-            repository = '%s/%s' % (repository, path)
-        command = 'LC_ALL=C TZ=UTC svn log --non-interactive -r "{%s}:{%s}" %s' % (
-            from_date, to_date, repository)
+#         if tag:
+#             repository = '%s/%s' % (repository, tag)
+#         elif path:
+#             repository = '%s/%s' % (repository, path)
+        command = 'LC_ALL=C TZ=UTC svn log --non-interactive -r "{%s}:{%s}" %s %s' % (
+            from_date, to_date, repository, tag or path or '')
+        print command
         separator = '-' * 72
         status, msg, rev, author, date = None, '', None, None, None
         infos = []
