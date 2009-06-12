@@ -26,14 +26,12 @@ __all__ = ['HGAgent', 'find_repository']
 import sys
 import os
 import datetime
-from os.path import abspath, isdir, join, dirname, basename
+from os.path import abspath, isdir, join, dirname
 from cStringIO import StringIO
 
 from logilab.common.compat import sorted, reversed
 
-from logilab.devtools.vcslib import VCS_UPTODATE, VCS_MODIFIED, \
-     VCS_MISSING, VCS_NEW, VCS_CONFLICT, VCS_NOVERSION, VCS_IGNORED, \
-     VCS_REMOVED, VCS_NEEDSPATCH, IVCSAgent, CheckInInfo, localtime_to_gmtime
+from logilab.devtools.vcslib import IVCSAgent, CheckInInfo, localtime_to_gmtime
 
 try:
     from mercurial.error import RepoError
