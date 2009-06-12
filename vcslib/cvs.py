@@ -279,21 +279,20 @@ class CVSAgent:
             filepath = ' '.join(filepath)
         #dirpath, filename = osp.split(filepath)
         return "cvs tag -F %s %s" % (tagname, filepath)
-    
-    def checkout(self, repository, path, tag=None,quiet=True):
+
+    def checkout(self, repository, path=None, tag=None, quiet=True):
         """
         :type repository: str
-        :param repository: the CVS repository address
-        
+        :param repository: the cvs repository address (url or path)
+
         :type filepath: str
         :param filepath:
-          the path of the file or directory to check out *in the
-          repository*
-        
+          relative path of the file or directory to check out in the repository
+
         :rtype: str
         :return:
-          a shell command string to check out the given file or
-          directory from the vc repository
+          a shell command string to check out the given file or directory from
+          the repository
         """
         tag = tag or 'HEAD'
         if quiet:
@@ -302,11 +301,11 @@ class CVSAgent:
             quiet = ''
         return 'cvs -d %s %s checkout -r %s %s' % (repository, quiet, tag, path)
 
-    def log_info(self, path, from_date, to_date, repository=None, tag=None):
+    def log_info(self, repository, from_date, to_date, path=None, tag=None):
         """get log messages between <from_date> and <to_date> (inclusive)
-        
+
         Both date should be local time (ie 9-sequence)
-        
+
         a log information is a tuple
         (file, revision_info_as_string, added_lines, removed_lines)
         """
@@ -316,6 +315,8 @@ class CVSAgent:
         cmdoptions = ['-d "%s<=%s"' % (from_date, to_date)]
         if tag and tag != 'HEAD':
             cmdoptions.append('-r%s' % tag)
+        if path:
+            cmdoptions.append(path)
         if repository:
             cvsoptions = ['-d', repository]
         else:
