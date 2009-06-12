@@ -14,7 +14,7 @@ class SVNAgentTC(testlib.TestCase):
     def setUp(self):
         """make test SVN directory"""
         self.tmp1 = tempfile.mkdtemp(dir='/tmp')
-        self.tmp2 = tempfile.mkdtemp(dir='/tmp')        
+        self.tmp2 = tempfile.mkdtemp(dir='/tmp')
         os.system('svnadmin create %s' % self.tmp1)
         os.system('svn co file://%s %s > /dev/null' % (self.tmp1, self.tmp2))
         f = os.path.join(self.tmp2, 'README')
@@ -27,7 +27,7 @@ class SVNAgentTC(testlib.TestCase):
         stream.close()
         os.system('(cd %s && svn ci -m "update readme file") >/dev/null' % self.tmp2)
         os.system('(cd %s && svn up) >/dev/null' % self.tmp2)
-        
+
     def tearDown(self):
         """deletes temp files"""
         shutil.rmtree(self.tmp1)
@@ -50,14 +50,14 @@ class SVNAgentTC(testlib.TestCase):
             login = pwd.getpwuid(os.getuid())[0]
         from_date = localtime(time() - 60*60*24)
         # add 1 minute since it seems to be svn log resolution
-        to_date = localtime(time() + 60) 
-        self.assertEquals([str(cii) for cii in svn.SVNAgent.log_info('README', from_date, to_date,
-                                                                     repository='file://'+self.tmp1)],
+        to_date = localtime(time() + 60)
+        self.assertEquals([str(cii) for cii in svn.SVNAgent.log_info('file://'+self.tmp1, from_date, to_date,
+                                                                     'README')],
                           ['%s: update readme file (r2)' % login,
                            '%s: add readme file (r1)' % login])
 
-    
-    
+
+
 
 if __name__ == '__main__':
     testlib.unittest_main()
