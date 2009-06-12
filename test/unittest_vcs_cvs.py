@@ -40,7 +40,7 @@ class GetInfoTC(testlib.TestCase):
         entries = file('generated/CVS/Entries', 'w')
         entries.write(ENTRIES)
         entries.close()
-        
+
     def test_get_info(self):
         d = cvs.get_info('generated')
         self.assertEquals(d,
@@ -60,12 +60,12 @@ class GetInfoTC(testlib.TestCase):
  'test': (4, '', '', ''),
  'uiutils.py': (4, '1.21', '', '')}
 )
-        
+
     def tearDown(self):
         """deletes temp files"""
         delete_test_fs(ARCH)
 
-    
+
 
 class CVSAgentTC(testlib.TestCase):
     """test case for CVSAgent"""
@@ -75,7 +75,7 @@ class CVSAgentTC(testlib.TestCase):
         self.tmp1 = tempfile.mkdtemp(dir='/tmp')
         os.system('cvs -d %s init' % self.tmp1)
         os.mkdir(osp.join(self.tmp1, 'module'))
-        self.tmp2 = tempfile.mkdtemp(dir='/tmp')        
+        self.tmp2 = tempfile.mkdtemp(dir='/tmp')
         os.system(('cvs -d %s co -d %s module'
                   +' >/dev/null 2>/dev/null') % (self.tmp1, self.tmp2))
         f = os.path.join(self.tmp2, 'README')
@@ -93,7 +93,7 @@ class CVSAgentTC(testlib.TestCase):
         os.system(('(cd %s && cvs ci -m "update readme file")'
                   +' >/dev/null 2>/dev/null') % self.tmp2)
         #os.system('cd %s && cvs log' % self.tmp2)
-        
+
     def tearDown(self):
         """deletes temp files"""
         shutil.rmtree(self.tmp1)
@@ -117,13 +117,13 @@ class CVSAgentTC(testlib.TestCase):
         from_date = localtime(time() - 60*60*24)
         # add some minutes since it seems to be cvs log resolution
         to_date = localtime(time() + 1200)
-        log_info = cvs.CVSAgent.log_info('module/README', from_date, to_date,repository=self.tmp1)
+        log_info = cvs.CVSAgent.log_info(self.tmp1, from_date, to_date, 'module/README')
         log_info = [str(cii) for cii in log_info]
 
         expected_result = ['%s: update readme file (1.2)' % login,
                               '%s: add readme file (1.1)' % login]
         self.assertEquals(log_info, expected_result)
-    
+
 
 if __name__ == '__main__':
     testlib.unittest_main()

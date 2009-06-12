@@ -21,7 +21,7 @@ class HGAgentTC(testlib.TestCase):
         from logilab.devtools.vcslib import hg
         self.agent = hg.HGAgent
         self.tmp1 = mkdtemp(dir='/tmp')
-        self.tmp2 = mktemp(dir='/tmp')        
+        self.tmp2 = mktemp(dir='/tmp')
         os.system('hg init %s' % self.tmp1)
         os.system('hg clone %s %s >/dev/null' % (self.tmp1, self.tmp2))
         f = os.path.join(self.tmp2, 'README')
@@ -38,7 +38,7 @@ class HGAgentTC(testlib.TestCase):
         os.system(('(cd %s && hg ci -m "update readme file" && hg push)'
                   +' >/dev/null 2>/dev/null') % self.tmp2)
         #os.system(('(cd %s && hg pull && hg log)') % self.tmp2)
-        
+
     def tearDown(self):
         """deletes temp files"""
         shutil.rmtree(self.tmp1)
@@ -75,8 +75,8 @@ class HGAgentTC(testlib.TestCase):
                           [' update readme file (1)',
                            ' add readme file (0)'])
 
-    
-    
+
+
 
 if __name__ == '__main__':
     testlib.unittest_main()
