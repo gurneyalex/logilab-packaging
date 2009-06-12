@@ -85,7 +85,7 @@ def get_info(path):
 
 def _get_cvsfile_state(filepath, rev, date):
     """returns the 'filepath's status
-    
+
     This code is adapted from meld source code (meld/cvsview.py)
     http://meld.sourceforge.net/
     """
@@ -115,7 +115,7 @@ def _get_cvsfile_state(filepath, rev, date):
                     if _ensure_file_uptodate(filepath, rev):
                         state = VCS_UPTODATE
                     else:
-                        state = VCS_NEEDSPATCH                        
+                        state = VCS_NEEDSPATCH
                 else:
                     state = VCS_MODIFIED
     return state
@@ -164,14 +164,14 @@ class CVSAgent:
 
     def __call__(self):
         return self
-    
+
     def not_up_to_date(self, filepath):
         """get a list describing files which are not up to date under the
         given path
 
         :type filepath: str
         :param filepath: starting path
-        
+
         :rtype: list(tuple(str, str))
         :return:
           a list of tuple (file, status) describing files which are not up to date
@@ -192,10 +192,10 @@ class CVSAgent:
     def edited(self, filepath):
         """get a list describing files which are currentlyedited under
         the given path
-        
+
         :type filepath: str
         :param filepath: starting path
-        
+
         :rtype: list(tuple(str, str))
         :return:
           a list of tuple (file, locked by) describing files which are in edition
@@ -205,12 +205,12 @@ class CVSAgent:
         for edited in executed.out.splitlines():
             result.append('%s: %s' % tuple([w.strip() for w in edited.split()[:2]]))
         return result
-    
+
     def update(self, filepath):
         """
         :type filepath: str
         :param filepath: the file or directory to update
-        
+
         :rtype: str
         :return:
           a shell command string to update the given file from the vc
@@ -226,7 +226,7 @@ class CVSAgent:
 
         :type msg: str
         :param msg: the message used to commit
-        
+
         :rtype: str
         :return:
           a shell command string to commit the given file to the vc
@@ -240,7 +240,7 @@ class CVSAgent:
         """
         :type filepath: str
         :param filepath: the file or directory to add
-        
+
         :rtype: str
         :return:
           a shell command string to add the given file to the vc
@@ -253,7 +253,7 @@ class CVSAgent:
         """
         :type filepath: str
         :param filepath: the file or directory to remove
-        
+
         :rtype: str
         :return:
           a shell command string to remove the given file from the vc
@@ -269,7 +269,7 @@ class CVSAgent:
 
         :type tagname: str
         :param tagname: the name of the tag to add to the file
-        
+
         :rtype: str
         :return:
           a shell command string to tag the given file in the vc
@@ -327,7 +327,7 @@ class CVSAgent:
                 if fileobj.repo_file.find('/Attic/') > -1:
                     continue
                 date = datetime.fromtimestamp(mktime(strptime(rev.date, DATE_FORMAT)))
-                
+
                 kargs = { 'encoding': getattr(sys.stdout,"encoding",None)}
                 if kargs['encoding'] is None:
                      kargs['encoding'] = 'ascii'
@@ -342,7 +342,7 @@ class CVSAgent:
         if directory:
             cmd = "cd %s && %s" % (directory, cmd)
         return cmd
-        
+
 
 # CVSAgent is a stateless object, transparent singleton thanks to its __call__
 # method
