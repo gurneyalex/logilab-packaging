@@ -26,7 +26,7 @@ __all__ = ['HGAgent', 'find_repository']
 import sys
 import os
 import datetime
-from os.path import abspath, isdir, join, dirname
+from os import path as osp
 from cStringIO import StringIO
 
 from logilab.common.compat import sorted, reversed
@@ -83,10 +83,10 @@ def find_repository(path):
 
     None if <path> is not under hg control
     """
-    path = abspath(path)
-    while not isdir(join(path, ".hg")):
+    path = osp.abspath(path)
+    while not osp.isdir(osp.join(path, ".hg")):
         oldpath = path
-        path = dirname(path)
+        path = osp.dirname(path)
         if path == oldpath:
             return None
     return path
@@ -247,8 +247,8 @@ class HGAgent(object):
             filepath = filepath[0] #' '.join(filepath)
         #print os.getcwd()
         #print '**'
-        #print abspath(filepath)
-        assert abspath(filepath).startswith(os.getcwd()), \
+        #print osp.abspath(filepath)
+        assert osp.abspath(filepath).startswith(os.getcwd()), \
                "I don't know how to deal with filepath and <hg tag>"
         return "hg tag -f %s" % tagname
 
@@ -278,7 +278,7 @@ class HGAgent(object):
         if tag:
             cmd += '; hg up -R %s %s' % (split_url_or_path(repository)[1], tag)
         if path:
-            cmd += '; mv %s .' % join(split_url_or_path(repository)[1], path)
+            cmd += '; mv %s .' % osp.join(split_url_or_path(repository)[1], path)
         return cmd
 
     def log_info(self, repository, from_date, to_date, path=None, tag=None):
