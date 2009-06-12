@@ -229,31 +229,32 @@ class SVNAgent:
         print cmd
         return cmd
 
-    def checkout(self, repository, path, tag=None, quiet=True):
+    def checkout(self, repository, path=None, tag=None, quiet=True):
         """
         :type repository: str
-        :param repository: the CVS repository address
-        
+        :param repository: the svn repository url
+
         :type filepath: str
         :param filepath:
-          the path of the file or directory to check out *in the
-          repository*
-        
+          relative path of the file or directory to check out in the repository
+
         :rtype: str
         :return:
-          a shell command string to check out the given file or
-          directory from the vc repository
+          a shell command string to check out the given file or directory from
+          the repository
         """
-        tag = tag or 'HEAD'
-        svn_dir = tag == 'HEAD' and 'trunk' or tag
         if quiet:
             quiet ='-q'
         else:
             quiet = ''
-        return 'svn checkout --non-interactive %s -r %s %s/%s/%s' % (
-           quiet, tag, repository, svn_dir, path)
+        if tag:
+            repository = '%s/%s' % (repository, tag)
+        elif path:
+            repository = '%s/%s' % (repository, path)
+        return 'svn checkout --non-interactive %s %s' % (
+           quiet, repository)
 
-    def log_info(self, path, from_date, to_date, repository=None, tag=None):
+    def log_info(self, repository, from_date, to_date, path=None, tag=None):
         """get log messages between <from_date> and <to_date> (inclusive)
         
         Both date should be local time (ie 9-sequence)
@@ -266,8 +267,12 @@ class SVNAgent:
         from_date = strftime('%Y-%m-%d %H:%M', localtime_to_gmtime(from_date))
         # since we want an inclusive range
         to_date = strftime('%Y-%m-%d %H:%M', localtime_to_gmtime(to_date))
-        command = 'LC_ALL=C TZ=UTC svn log --non-interactive -r "{%s}:{%s}" %s %s' % (from_date, to_date,
-                                                           repository or '', path)
+        if tag:
+            repository = '%s/%s' % (repository, tag)
+        elif path:
+            repository = '%s/%s' % (repository, path)
+        command = 'LC_ALL=C TZ=UTC svn log --non-interactive -r "{%s}:{%s}" %s' % (
+            from_date, to_date, repository)
         separator = '-' * 72
         status, msg, rev, author, date = None, '', None, None, None
         infos = []

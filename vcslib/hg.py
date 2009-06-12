@@ -112,6 +112,12 @@ def changeset_info(repo, rev=0, changenode=None):
     return rev, checkin_date, user, desc, files
 
 
+def split_url_or_path(url_or_path):
+    if '://' in url_or_path:
+        return url_or_path.rstrip('/').rsplit('/', 1)
+    return osp.split(url_or_path.rstrip(osp.sep))
+
+
 class HGAgent(object):
     """A hg specific agent"""
     __implements__ = IVCSAgent,
@@ -246,40 +252,36 @@ class HGAgent(object):
                "I don't know how to deal with filepath and <hg tag>"
         return "hg tag -f %s" % tagname
 
-    def checkout(self, repository, path, tag=None, quiet=True):
+    def checkout(self, repository, path=None, tag=None, quiet=True):
         """
         :type repository: str
-        :param repository: the CVS repository address
+        :param repository: the hg repository address (url or path)
 
         :type filepath: str
         :param filepath:
-          the path of the file or directory to check out *in the
-          repository*
+          relative path of the file or directory to check out in the repository
 
         :rtype: str
         :return:
-          a shell command string to check out the given file or
-          directory from the vc repository
+          a shell command string to check out the given file or directory from
+          the repository
         """
         if quiet:
             quiet = '-q '
         else:
             quiet = ''
-        if tag is None:
-            tag = 'tip'
-        #if path:
-        #    print "warning: <%s> argument not needed and ignored" % path
-
-        # TODO stay compatible with mercurial 0.9 (still present in etch and hardy)
+        cmd = 'hg clone %s %s' % (quiet, repository)
         # Note that the following command is only available since 1.0.1
         #return 'hg clone -r "%s" %s %s' % (tag, quiet, repository)
-        # please, continue to use this old-good-(and-slower) command
-        cmd = 'hg clone %s %s' % (quiet, repository)
+        # please, continue to use this old-good-(and-slower) command to stay
+        # compatible with mercurial 0.9 (still present in etch and hardy)
         if tag:
-            cmd += '; hg up -R %s %s' % (basename(repository.rstrip('/')), tag)
+            cmd += '; hg up -R %s %s' % (split_url_or_path(repository)[1], tag)
+        if path:
+            cmd += '; mv %s .' % join(split_url_or_path(repository)[1], path)
         return cmd
 
-    def log_info(self, path, from_date, to_date, repository=None, tag=None):
+    def log_info(self, repository, from_date, to_date, path=None, tag=None):
         """get log messages between <from_date> and <to_date> (inclusive)
         
         Both date should be local time (ie 9-sequence)
@@ -287,11 +289,10 @@ class HGAgent(object):
         return an iterator on `CheckInInfo` instances, sorted by date
         (descending)
         """
-        if tag and tag != 'HEAD':
-            raise NotImplementedError("dunno how to get logs for a given tag")
-
-        repo = get_repository(path)
+        repo = get_repository(repository)
         opts = dict(rev=['tip:0'], branches=None, include=(), exclude=())
+        if tag:
+            opts['branches'] = [tag]
         get = cachefunc(lambda r: repo.changectx(r).changeset())
         changeiter, matchfn = walkchangerevs(repo.ui, repo, (), get, opts)
         # changeset_info return GMT time, convert from_date and to_date
@@ -303,6 +304,14 @@ class HGAgent(object):
             if st == 'add':
                 changenode = repo.changelog.node(rev)
                 rev, date, user, message, files = changeset_info(repo, rev, changenode)
+                if path is not None:
+                    for relativepath in files:
+                        if relativepath.startswith(path):
+                            break
+                    else:
+                        # no changes in the subdirectory we're interested in,
+                        # skip this revision
+                        continue
                 if from_date <= date <= to_date:
                     # FIXME: added/removed lines information
                     cii = CheckInInfo(date, user, unicode(message, _encoding),
