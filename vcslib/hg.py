@@ -42,7 +42,7 @@ except ImportError:
     from mercurial.repo import RepoError
     from mercurial.version import get_version
     hg_version = get_version()
-    
+
 from mercurial.hg import repository as Repository
 from mercurial.ui import ui as Ui
 from mercurial.node import short
@@ -79,6 +79,7 @@ except:
 
 Ui.warn = lambda *args, **kwargs: 0 # make it quiet
 
+
 def find_repository(path):
     """returns <path>'s mercurial repository
 
@@ -92,6 +93,7 @@ def find_repository(path):
             return None
     return path
 
+
 def get_repository(path):
     """Simple function that open a hg repository"""
     repopath = find_repository(path)
@@ -101,7 +103,7 @@ def get_repository(path):
 
 
 def changeset_info(repo, rev=0, changenode=None):
-    """returns matching (rev, date, user, sumarry)"""
+    """returns matching (rev, date, user, summary)"""
     log = repo.changelog
     if changenode is None:
         changenode = log.node(rev)
@@ -131,7 +133,7 @@ class HGAgent(object):
 
         :type filepath: str
         :param filepath: starting path
-        
+
         :rtype: list(tuple(str, str))
         :return:
           a list of tuple (file, status) describing files which are not up to date
@@ -197,7 +199,7 @@ class HGAgent(object):
 
         :type message: str
         :param message: the message used to commit
-        
+
         :rtype: str
         :return:
           a shell command string to commit the given file to the vc
@@ -210,7 +212,7 @@ class HGAgent(object):
         """
         :type filepath: str
         :param filepath: the file or directory to add
-        
+
         :rtype: str
         :return:
           a shell command string to add the given file to the vc
@@ -222,7 +224,7 @@ class HGAgent(object):
         """
         :type filepath: str
         :param filepath: the file or directory to remove
-        
+
         :rtype: str
         :return:
           a shell command string to remove the given file from the vc
@@ -237,7 +239,7 @@ class HGAgent(object):
 
         :type tagname: str
         :param tagname: the name of the tag to add to the file
-        
+
         :rtype: str
         :return:
           a shell command string to tag the given file in the vc
@@ -283,9 +285,9 @@ class HGAgent(object):
 
     def log_info(self, repository, from_date, to_date, path=None, tag=None):
         """get log messages between <from_date> and <to_date> (inclusive)
-        
+
         Both date should be local time (ie 9-sequence)
-        
+
         return an iterator on `CheckInInfo` instances, sorted by date
         (descending)
         """
@@ -319,7 +321,7 @@ class HGAgent(object):
                     infos.append((date, cii))
         for _, info in reversed(sorted(infos)):
             yield info
-            
+
     def current_short_changeset(self, path):
         """return the short id of the current changeset"""
         repo = get_repository(path)
@@ -333,8 +335,8 @@ class HGAgent(object):
         return short(parents[0].node())
 
 
-    
-                  
+
+
 # HGAgent is a stateless object, transparent singleton thanks to its __call__
 # method
 HGAgent = HGAgent()

@@ -54,19 +54,19 @@ SVN_CODES =  {
     }
 
 REM_LOCAL_DATE_RGX = re.compile(r' \+0000 \(\w\w\w, \d\d \w\w\w \d\d\d\d\)')
-        
+
 
 def get_info(path):
     """read the result of "svn status" command and returns a dictionnary
     with filenames as keys and a corresponding tuple as values :
     ('isdir', 'path', 'state', 'rev', 'tag', 'options').
-    
+
     If 'path' points to a directory, the dict will contain infos on each
     entry recorded by the VC System. If it points to a file, its
     parent directory will be used
 
     This code is adapted from meld source code (meld/svnview.py)
-    http://meld.sourceforge.net/    
+    http://meld.sourceforge.net/
     """
     if not isdir(path):
         directory = dirname(path)
@@ -83,7 +83,7 @@ def get_info(path):
         name = match[2]
         if(match[0] == "!" or match[0] == "A"):
             # for new or missing files, the findall expression
-            # does not supply the correct name 
+            # does not supply the correct name
             name = re.sub(r'^[?]\s*(.*)$', r'\1', name)
         is_dir = isdir(name)
         path = join(path, name)
@@ -112,14 +112,14 @@ class SVNAgent:
 
     def __call__(self):
         return self
-    
+
     def not_up_to_date(self, filepath):
         """get a list describing files which are not up to date under the
         given path
 
         :type filepath: str
         :param filepath: starting path
-        
+
         :rtype: list(tuple(str, str))
         :return:
           a list of tuple (file, status) describing files which are not up to date
@@ -130,25 +130,25 @@ class SVNAgent:
             status, filename = nouptodate.split()
             result.append( (status.strip(), filename.strip()) )
         return result
-        
+
     def edited(self, filepath):
         """get a list describing files which are currentlyedited under
         the given path
-        
+
         :type filepath: str
         :param filepath: starting path
-        
+
         :rtype: list(tuple(str, str))
         :return:
           a list of tuple (file, locked by) describing files which are in edition
         """
         raise NotImplementedError()
-        
+
     def update(self, filepath):
         """
         :type filepath: str
         :param filepath: the file or directory to update
-        
+
         :rtype: str
         :return:
           a shell command string to update the given file from the vc
@@ -163,7 +163,7 @@ class SVNAgent:
 
         :type message: str
         :param message: the message used to commit
-        
+
         :rtype: str
         :return:
           a shell command string to commit the given file to the vc
@@ -175,7 +175,7 @@ class SVNAgent:
         """
         :type filepath: str
         :param filepath: the file or directory to add
-        
+
         :rtype: str
         :return:
           a shell command string to add the given file to the vc
@@ -187,7 +187,7 @@ class SVNAgent:
         """
         :type filepath: str
         :param filepath: the file or directory to remove
-        
+
         :rtype: str
         :return:
           a shell command string to remove the given file from the vc
@@ -203,7 +203,7 @@ class SVNAgent:
 
         :type tagname: str
         :param tagname: the name of the tag to add to the file
-        
+
         :rtype: str
         :return:
           a shell command string to tag the given file in the vc
@@ -256,9 +256,9 @@ class SVNAgent:
 
     def log_info(self, repository, from_date, to_date, path=None, tag=None):
         """get log messages between <from_date> and <to_date> (inclusive)
-        
+
         Both date should be local time (ie 9-sequence)
-        
+
         a log information is a tuple
         (file, revision_info_as_string, added_lines, removed_lines)
         """

@@ -26,13 +26,13 @@ def print_info(loginfo):
         for revision in file.children:
             print '-'*40
             print revision
-            
+
 def print_stats(loginfo, html=0, mincommit=None):
     if mincommit:
         mincommit = int(mincommit)
 
     results = {'authors': {}}
-    
+
     for file in loginfo:
         for revision in file.children:
             author = revision.author
@@ -74,8 +74,8 @@ def print_stats(loginfo, html=0, mincommit=None):
     else:
         from logilab.devtools.vcslib.cvsparse import LogResultTextPrinter
         LogResultTextPrinter().format(results)
-        
-        
+
+
 COMMANDS = {
     'info' : ( print_info,
                []
@@ -105,7 +105,7 @@ def get_logs(cvsoptions, cvscommandoptions, rlog=''):
     p_err.close()
     p_output.close()
     return phandler.root
-    
+
 def run(args):
     # split args
     i = 0
