@@ -38,7 +38,6 @@ from logilab.common.shellutils import cp
 
 from logilab.devtools.lgp import CONFIG_FILE
 from logilab.devtools.lgp.setupinfo import SetupInfo
-from logilab.devtools.lgp.utils import get_architectures
 from logilab.devtools.lgp.utils import confirm, cond_exec
 from logilab.devtools.lgp.exceptions import LGPException, LGPCommandException
 
@@ -123,6 +122,8 @@ def run_post_treatments(builder, distrib):
             pass
 
     # FIXME move code to apycot and detection of options from .changes
+    """
+    from logilab.devtools.lgp.utils import get_architectures
     if verbose and confirm("run piuparts on generated Debian packages ?"):
         basetgz = "%s-%s.tgz" % (distrib, get_architectures()[0])
         for package in builder.packages:
@@ -145,6 +146,7 @@ def run_post_treatments(builder, distrib):
                     logging.error("piuparts exits with error")
                 else:
                     logging.info("piuparts exits normally")
+    """
 
     # FIXME move code to debinstall
     # Try Debian signing immediately if possible
@@ -223,6 +225,12 @@ class Builder(SetupInfo):
                  'dest' : "intermediate_exclude",
                  'default' : INTERMEDIATE_STAGE,
                  'metavar' : "<comma separated names of checks to skip>",
+                }),
+               ('hooks',
+                {'action': 'store_true',
+                 'default': False,
+                 'dest' : "hooks",
+                 'help': "run hooks"
                 }),
               ),
 
@@ -387,8 +395,12 @@ class Builder(SetupInfo):
         assert osp.exists(dscfile)
 
         if debuilder == 'internal':
-            cmd = "sudo DIST=%s ARCH=%s pbuilder build --configfile %s --buildresult %s %s"
-            cmd %= distrib, arch, CONFIG_FILE, self._tmpdir, dscfile
+            cmd = "sudo DIST=%s ARCH=%s pbuilder build --configfile %s --buildresult %s"
+            cmd %= distrib, arch, CONFIG_FILE, self._tmpdir
+            if self.config.hooks:
+                from logilab.devtools.lgp import HOOKS_DIR
+                cmd += " --hookdir %s" % HOOKS_DIR
+            cmd += " %s" % dscfile
         elif debuilder.endswith('vbuild'):
             cmd = '%s -d %s -a %s --result %s %s'
             cmd %= (debuilder, distrib, arch, self.get_distrib_dir(), dscfile)

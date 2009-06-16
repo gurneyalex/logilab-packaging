@@ -3,4 +3,4 @@
 # run lintian on generated changes files
 apt-get install -y --force-yes lintian >/dev/null 2>&1
 
-su -c "lintian -vi --show-overrides $HOME/*.changes" nobody
+su -c "lintian -vi --show-overrides $HOME/*.changes" nobody || true
