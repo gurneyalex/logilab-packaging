@@ -222,7 +222,6 @@ class SVNAgent:
             raise Exception('Unable to compute file path in the repository')
         cmd = 'svn rm -m "moving tag" %s ; svn copy -m "tagging" %s %s' % (
             tag_url, filepath, tag_url)
-        print cmd
         return cmd
 
     def checkout(self, repository, path=None, tag=None, quiet=True):
@@ -269,7 +268,6 @@ class SVNAgent:
 #             repository = '%s/%s' % (repository, path)
         command = 'LC_ALL=C TZ=UTC svn log --non-interactive -r "{%s}:{%s}" %s %s' % (
             from_date, to_date, repository, tag or path or '')
-        print command
         separator = '-' * 72
         status, msg, rev, author, date = None, '', None, None, None
         infos = []
