@@ -1,5 +1,4 @@
 import unittest
-from subprocess import Popen, PIPE
 
 from logilab.common.testlib import TestCase
 from logilab.devtools.lgp.utils import get_distributions, KNOWN_DISTRIBUTIONS
@@ -29,7 +28,7 @@ class DistributionTC(TestCase):
 
     def test_codename_distribution(self):
         distrib = ['sid']
-        self.assertNotEquals(get_distributions(distrib),    distrib)
+        self.assertNotEquals(get_distributions(distrib), distrib)
 
     def test_mixed_unvalid_distributions(self):
         distrib = get_distributions() + ('winnie the pooh',)
