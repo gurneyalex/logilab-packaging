@@ -17,10 +17,10 @@
 
 import sys
 import os, os.path as osp
-import logging
 from logilab.common.optparser import OptionParser
 
 CONFIG_FILE = '/etc/lgp/pbuilderrc'
+HOOKS_DIR = '/etc/lgp/hooks'
 
 
 def run(args):
