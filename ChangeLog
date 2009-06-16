@@ -2,7 +2,9 @@ ChangeLog for logilab.devtools
 ==============================
 
 2009-06-03 -- 0.15
-    * lgp: can now support i386 mode if linux32 is installed
+    * #9031: lgp: include hooks to replace post-treatment
+
+    * #5713: lgp: multi arch build (support i386 mode if linux32 is installed)
 
     * lgp: generate the build logfile in same directory as packages
 
@@ -10,7 +12,7 @@ ChangeLog for logilab.devtools
 
     * lgp: add tag command to add list of tags with substitution
 
-    * devtools : added lsprofcalltree module and command line script
+    * #9147: devtools : added lsprofcalltree module and command line script
 
 
 2009-04-23  --  0.14
