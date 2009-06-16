@@ -315,8 +315,6 @@ class CVSAgent:
         cmdoptions = ['-d "%s<=%s"' % (from_date, to_date)]
         if tag and tag != 'HEAD':
             cmdoptions.append('-r%s' % tag)
-        if path:
-            cmdoptions.append(path)
         if repository:
             cvsoptions = ['-d', repository]
         else:
