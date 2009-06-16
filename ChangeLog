@@ -1,9 +1,18 @@
 ChangeLog for logilab.devtools
 ==============================
 
- -- 0.15
+2009-06-03 -- 0.15
+    * #9031: lgp: include hooks to replace post-treatment
 
-  * devtools : added lsprofcalltree module and command line script
+    * #5713: lgp: multi arch build (support i386 mode if linux32 is installed)
+
+    * lgp: generate the build logfile in same directory as packages
+
+    * lgp: simulate a local debian repository in creating a Packages.gz file in build result directory
+
+    * lgp: add tag command to add list of tags with substitution
+
+    * #9147: devtools : added lsprofcalltree module and command line script
 
 
 2009-04-23  --  0.14

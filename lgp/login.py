@@ -37,12 +37,12 @@ def run(args):
         for arch in login.architectures:
             for distrib in login.distributions:
                 logging.info("login into '%s' image" % distrib)
-                cmd = "sudo DIST=%s pbuilder login --configfile %s"
+                cmd = "sudo DIST=%s ARCH=%s pbuilder login --configfile %s"
 
                 # run login command
                 try:
-                    cmd = cmd % (distrib, CONFIG_FILE)
-                    check_call(cmd.split(), env={'DIST': distrib})
+                    cmd = cmd % (distrib, arch, CONFIG_FILE)
+                    check_call(cmd.split(), env={'DIST': distrib, 'ARCH': arch})
                 except CalledProcessError, err:
                     raise LGPCommandException('an error occured in login process', err)
 

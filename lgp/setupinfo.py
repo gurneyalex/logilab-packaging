@@ -20,6 +20,7 @@ import sys
 import os
 import stat
 import os.path
+import shutil
 import glob
 import logging
 import commands
@@ -32,7 +33,7 @@ from subprocess import check_call, CalledProcessError
 
 from logilab.common.configuration import Configuration
 from logilab.common.logging_ext import ColorFormatter
-from logilab.common.shellutils import cp
+from logilab.common.shellutils import cp, mv
 
 from logilab.devtools.lib.pkginfo import PackageInfo
 from logilab.devtools.lib import TextReporter
@@ -204,6 +205,7 @@ class SetupInfo(Configuration):
         # FIXME
         if not hasattr(self, 'current_distrib'):
             self.current_distrib = 'unstable'
+
         # Guess the package format
         if self.config.setup_file == 'setup.py':
             # generic case for python project (distutils, setuptools)
@@ -263,16 +265,16 @@ class SetupInfo(Configuration):
     def get_debian_name(self):
         """obtain the debian package name
 
-        The information is found in debian*/control withe the 'Source:' field
+        The information is found in debian/control withe the 'Source:' field
         """
         try:
-            path = os.path.join(self.config.pkg_dir, self.get_debian_dir())
-            for line in open('%s/control' % path):
+            control = os.path.join(self.config.pkg_dir, 'debian', 'control')
+            for line in open(control):
                 line = line.split(' ', 1)
                 if line[0] == "Source:":
                     return line[1].rstrip()
         except IOError, err:
-            raise LGPException('a Debian control file is required in "%s"' % path)
+            raise LGPException('a Debian control file should exist in "%s"' % control)
 
     def get_debian_version(self):
         """get upstream and debian versions depending of the last changelog entry found in Debian changelog
@@ -338,17 +340,16 @@ class SetupInfo(Configuration):
     def get_upstream_version(self):
         return self._run_command('version')
 
-    def get_changes_file(self):
-        changes = '%s_%s_*.changes' % (self.get_debian_name(),
-                                       self.get_debian_version())
-        changes = glob.glob(os.path.join(self.get_distrib_dir(), changes))
-        return changes.pop()
-
     def get_packages(self):
-        packages = Changes(file(self.get_changes_file()))
-        packages = [a['name'] for a in packages['Files']]
-        packages.append(os.path.basename(self.get_changes_file()))
-        return packages
+        """copy packages from the temporary build area to the result directory
+        """
+        packages = []
+        for filename in os.listdir(self._tmpdir):
+            fullpath = os.path.join(self._tmpdir, filename)
+            if os.path.isfile(fullpath):
+                shutil.copy(fullpath, self.get_distrib_dir())
+                packages.append(os.path.join(self.get_distrib_dir(), filename))
+        self.packages = packages
 
     def get_versions(self):
         versions = self.get_debian_version().rsplit('-', 1)
@@ -377,50 +378,55 @@ class SetupInfo(Configuration):
         # directory containing the debianized source tree
         # (i.e. with a debian sub-directory and maybe changes to the original files)
         # origpath is depending of the upstream convention
-        origpath = "%s-%s" % fileparts
+        origpath = os.path.join(self._tmpdir, "%s-%s" % fileparts)
         tarball = '%s_%s.orig.tar.gz' % fileparts
         upstream_tarball = '%s-%s.tar.gz' % fileparts
 
         if self.config.orig_tarball is None:
-            logging.debug("creating a new source archive (tarball)...")
-
+            copy_command = mv
+            logging.info("create a new source archive (tarball) from upstream release")
             try:
                 self.check_debian_revision()
-                self._run_command("sdist", dist_dir=dist_dir)
+                self._run_command("sdist", dist_dir=self._tmpdir)
             except CalledProcessError, err:
                 logging.error("creation of the source archive failed")
                 logging.error("check if the version '%s' is really tagged in"\
                                   " your repository" % self.get_upstream_version())
                 raise LGPCommandException("source distribution wasn't properly built", err)
-
+            upstream_tarball = os.path.join(self._tmpdir, upstream_tarball)
         else:
+            copy_command = cp
             expected = [upstream_tarball, tarball]
             if os.path.basename(self.config.orig_tarball) not in expected:
-                logging.error("the provided tarball hasn't one of the expected formats (%s)"
+                logging.error("the provided archive hasn't one of the expected formats (%s)"
                               % ','.join(expected))
-            upstream_tarball = os.path.expanduser(self.config.orig_tarball)
+            upstream_tarball = os.path.abspath(os.path.expanduser(self.config.orig_tarball))
+            logging.info("use provided archive '%s' as original source archive (tarball)"
+                         % upstream_tarball)
 
-        # rewrite to full paths
-        tarball = os.path.join(self._tmpdir, tarball)
-        upstream_tarball = os.path.join(dist_dir, upstream_tarball)
-        origpath = os.path.join(self._tmpdir, origpath)
+        assert os.path.isfile(upstream_tarball), 'original source archive (tarball) not found'
 
-        logging.info("get '%s' as original source archive (tarball)" % upstream_tarball)
-        if not os.path.isfile(upstream_tarball):
-            raise LGPException('the original source archive (tarball) not found in %s' % dist_dir)
+        # exit if asked by command-line
+        if self.config.get_orig_source:
+            try:
+                cp(upstream_tarball, tarball)
+                logging.info('a new original source archive (tarball) in current directory (%s)'
+                             % tarball)
+                # clean tmpdir
+                self.clean_tmpdir()
+                sys.exit()
+            except shutil.Error, err:
+                raise LGPException(err)
 
-        # FIXME use one copy of the upstream tarball
-        # note the renaming of the new tarball filename
         # dpkg-source expects the  original source as a tarfile
         # by default: package_upstream-version.orig.tar.extension
         logging.debug("rename '%s' to '%s'" % (upstream_tarball, tarball))
-        cp(upstream_tarball, tarball)
+        tarball = os.path.join(self._tmpdir, tarball) # rewrite with absolute path
+        copy_command(upstream_tarball, tarball)
 
         # test and extracting the .orig.tar.gz
         try:
-            # FIXME use one copy of the upstream tarball
-            #cmd = 'tar xzf %s -C %s' % (tarball, self._tmpdir)
-            cmd = 'tar xzf %s -C %s' % (upstream_tarball, self._tmpdir)
+            cmd = 'tar xzf %s -C %s' % (tarball, self._tmpdir)
             check_call(cmd.split(), stdout=sys.stdout,
                                     stderr=sys.stderr)
         except CalledProcessError, err:

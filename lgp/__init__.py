@@ -44,7 +44,8 @@ def run(args):
 
     if len(sys.argv) <= 1:
         return parser.usage
-    elif sys.argv[1] in ("build", "check", "clean", "template", "setup", "login"):
+    elif sys.argv[1] in ("build", "check", "clean", "template", "setup",
+                         "login", "tag"):
         exec 'from logilab.devtools.lgp.%s import run' % sys.argv[1]
         return run(args[1:])
     else:

@@ -35,6 +35,7 @@ import stat
 import re
 import commands
 import logging
+import subprocess
 from os.path import basename, join, exists, isdir, isfile
 from pprint import pformat
 
@@ -47,7 +48,6 @@ from logilab.devtools.lib.manifest import (get_manifest_files, read_manifest_in,
 
 from logilab.devtools import templates
 from logilab.devtools.lgp.setupinfo import SetupInfo
-from logilab.devtools.lgp.utils import get_distributions, get_architectures
 from logilab.devtools.lgp.utils import cond_exec, confirm
 from logilab.devtools.lgp.exceptions import LGPException
 
@@ -57,6 +57,7 @@ MANDATORY_SETUP_FIELDS = ('name', 'version', 'author', 'author_email', 'license'
 
 OK, NOK = 1, 0
 CHECKS = { 'default'    : ['debian_dir', 'debian_rules', 'debian_copying',
+                           'debian_source_value',
                            'debian_changelog', 'package_info', 'readme',
                            'changelog', 'bin', 'tests_directory', 'setup_file',
                            'repository', 'copying', 'documentation',
@@ -301,7 +302,7 @@ def check_pydistutils(checker):
     return OK
 
 def check_builder(checker):
-    """check if the builder is different from vbuild (default)"""
+    """check if the builder has been changed"""
     debuilder = os.environ.get('DEBUILDER') or False
     if debuilder:
         checker.logger.warn('you have set a different builder in DEBUILDER. Unset it if in doubt')
@@ -322,15 +323,26 @@ def check_debian_rules(checker):
     return status
 
 def check_debian_copying(checker):
-    """check debian*/copyright file """
+    """check debian*/copyright file"""
     debian_dir = checker.get_debian_dir()
     return isfile(os.path.join(debian_dir,'copyright'))
+
+def check_debian_source_value(checker):
+    """check debian source field value"""
+    upstream_name = checker.get_upstream_name()
+    debian_name   = checker.get_debian_name()
+    if upstream_name != debian_name:
+        checker.logger.warn("upstream project name (%s) is different from the "
+                            "Source filed value in your debian/control (%s)"
+                            % (upstream_name, debian_name))
+    return OK
+
 
 def check_debian_changelog(checker):
     """your debian changelog contains error(s)"""
     debian_dir = checker.get_debian_dir()
     CHANGELOG = os.path.join(debian_dir, 'changelog')
-    status= OK
+    status = OK
     if isfile(CHANGELOG):
         cmd = "sed -ne '/UNRELEASED/p' %s" % CHANGELOG
         _, output = commands.getstatusoutput(cmd)
@@ -340,7 +352,7 @@ def check_debian_changelog(checker):
         cmd = "sed -ne '/DISTRIBUTION/p' %s" % CHANGELOG
         _, output = commands.getstatusoutput(cmd)
         if output:
-            checker.logger.info('You can now use the default "unstable" string in your debian changelog')
+            checker.logger.info('Default distribution value should be "unstable" in your debian changelog')
         cmd = "dpkg-parsechangelog >/dev/null"
         _, output = commands.getstatusoutput(cmd)
         if output:
@@ -416,11 +428,15 @@ def check_setup_file(checker):
     return isfile('setup.py') or isfile('setup.mk')
 
 def check_makefile(checker):
-    """check makefile file and dependencies (not implemented)"""
+    """check makefile file and expected targets (project, version)"""
     status = OK
-    status = status and isfile("setup.mk")
-    # FIXME
-    #status = status and _check_make_dependencies()
+    setup_file = checker.config.setup_file
+    status = status and isfile(setup_file)
+    for cmd in ['%s project', '%s version']:
+        cmd %= setup_file
+        if not subprocess.call(cmd.split()):
+            checker.logger.error("%s not a valid command" % cmd)
+        status = NOK
     return status
 
 def check_homepage(checker):
@@ -521,7 +537,10 @@ def check_manifest_in(checker):
             matched.pop(i)
         except ValueError:
             checker.logger.warn('%s unmatched' % path)
-            status = NOK
+            # FIXME keep valid status till ``#2888: lgp check ignore manifest # "prune"``
+            # path command not resolved
+            # See http://www.logilab.org/ticket/2888
+            #status = NOK
     # check garbage
     for filename in matched:
         if match_extensions(filename, JUNK_EXTENSIONS):
