@@ -3,7 +3,7 @@
 - check: __pkginfo__ dans le .deb
 - doc/*.html dans doc/html/
 - génération de la documentation (problème dépendance à l'install, -> trouver une autre solution)
-- si une commande externe est utilisé, il faut l'afficher en sortie pour faciliter le débogage (cas des post-treatments)
+- si une commande externe est utilisée, il faut l'afficher en sortie pour faciliter le débogage (cas des post-treatments)
 - lgp check seulement sur debian/ pas sur les autres distributions disponibles
 - utiliser l'option 'hide' pour la génération du fichier .ini
 ./optik_ext.py:186:    ATTRS = BaseOption.ATTRS + ['hide']
@@ -13,11 +13,24 @@
   if e.errno == errno.EINTR:
       continue
 
-
-
 Limitations pbuilder:
 - debconf non-interactive par défaut
-- poblème des démons
-- problème de persmissions sur dev/null (corrigé ?)
+- problème des démons
+- problème de permissions sur dev/null (corrigé ?)
 - root !!!!
 
+crontab: tous les mois, faire un 'lgp setup -c update -d all'
+
+# The known distribution are depending on the pbuilder setup in /opt/buildd
+# Find a way to retrieve dynamically
+# f = email.message_from_file(file('/usr/share/cdebootstrap/suites'))
+# [i.split() for i in f.get_payload().split('\n\n') if i]
+
+Mettre les opérations de création/update dans la partie dpkg-reconfigure
+Virer la dépendance à KNOWN_DISTRIBUTION. Faire confiance à l'admin qui a installé le paquet
+
+utiliser dh_make pour nos templates debian de projet
+
+utiliser pysupport pour rendre le lgp check installable sans debian
+
+pas satisfait de la création de la conf. Demandez à Sylvain pour la gestion des groupes d'options

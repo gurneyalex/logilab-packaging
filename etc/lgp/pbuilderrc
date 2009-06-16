@@ -9,14 +9,10 @@
 
 # This file is largely inspired by:
 #     https://wiki.ubuntu.com/PbuilderHowto
-#
 # Thanks a lot, guys !
 
-# The use of the codenames for Debian suites is managed by lgp directly.
-
 # List of Debian suites
-DEBIAN_SUITES=("unstable" "testing" "stable" "oldstable")
-
+DEBIAN_SUITES=("unstable" "testing" "stable" "oldstable" "sid" "etch" "lenny" "squeeze")
 # List of Ubuntu suites. Update these when needed
 UBUNTU_SUITES=("jaunty" "intrepid" "hardy" "gutsy" "feisty" "dapper")
 
@@ -35,8 +31,7 @@ UBUNTU_SOURCESLIST="/etc/lgp/sources.list.ubuntu"
 DEBIAN_OTHERMIRROR=
 UBUNTU_OTHERMIRROR=
 
-# Optionally set a default distribution if none is used. Note that you can set
-# your own default (i.e. ${DIST:="unstable"}).
+# Set a default distribution if none is used.
 #: ${DIST:="$(lsb_release --short --codename)"}
 #: ${DIST:="unstable"}
 
@@ -71,19 +66,20 @@ if [ -n "${ARCH}" ]; then
     DEBOOTSTRAPOPTS=("--allow-unauthenticated" "${DEBOOTSTRAPOPTS[@]}")
 fi
 
-#BUILDRESULT="/var/cache/pbuilder/$NAME/result"
-export BUILDRESULT="/${HOME}/dists/${DIST}"
-BUILDPLACE="/var/cache/pbuilder/build/"
-
 # BASETGZ directory
+# FIXME source a /etc/default/lgp file ?
+# FIXME the default path should /var/cache/lgp
+#BASETGZ="/var/cache/lgp/buildd/$NAME.tgz"
 BASETGZ="/opt/buildd/$NAME.tgz"
-mkdir -p $(dirname $BASETGZ) 2>/dev/null
+if [ "$PBCURRENTCOMMANDLINEOPERATION" == "create" ]; then
+	mkdir -p $(dirname $BASETGZ) 2>/dev/null
+fi
 if [ ! -r ${BASETGZ} -a "$PBCURRENTCOMMANDLINEOPERATION" != "create" ]; then
-	echo "Error: pbuilder image $BASETGZ has not been created" >/dev/stderr
-	echo "Please use: lgp setup -c create -d $DIST"
-	exit 1
+	echo "Error: pbuilder image '$BASETGZ' has not been created" >/dev/stderr
+	exit 2
 fi
 
+# FIXME Manage OTHER_MIRROR settings by hooks ?
 if $(echo ${DEBIAN_SUITES[@]} | grep -q $DIST); then
     # Debian configuration
     MIRRORSITE="http://$DEBIAN_MIRROR/debian/"
@@ -99,8 +95,10 @@ elif $(echo ${UBUNTU_SUITES[@]} | grep -q $DIST); then
     [[ -f $UBUNTU_SOURCESLIST.$DIST ]] && OTHERMIRROR=$(grep -v '#' $UBUNTU_SOURCESLIST.$DIST | tr '\n' '|')
     OTHERMIRROR=${OTHERMIRROR:-$UBUNTU_OTHERMIRROR}
 else
+    # FIXME Should be dead code now (managed in lgp)
+    # Debian could be the default case
     echo "Unknown distribution: $DIST"
-    exit 1
+    exit 3
 fi
 
 #export http_proxy=http://your-proxy:8080/
@@ -108,31 +106,29 @@ USEPROC=yes
 USEDEVPTS=yes
 USEDEVFS=no
 
-# BINDMOUNTS is a space separated list of things to mount
-# inside the chroot.
+# Default value set to be used by hooks # Internally, lgp uses --buildresult option
+export BUILDRESULT="${HOME}/dists/${DIST}"
+
+# BINDMOUNTS is a space separated list of things to mount # inside the chroot.
 BINDMOUNTS="/sys"
 if [ -d "$BUILDRESULT" ]; then
 	BINDMOUNTS=("${BINDMOUNTS[@]}" "$BUILDRESULT")
 fi
 
-# Specify the cache for APT
+# Specify a cache for APT
 APTCACHE="/var/cache/pbuilder/$NAME/aptcache/"
-#APTCACHEHARDLINK="yes"
+
+# 26. Using tmpfs for buildplace ($BUILDPLACE)
+# To improve speed of operation, it is possible to use tmpfs for pbuilder build
+# location. Mount tmpfs for $BUILDPLACE, and set:
+#APTCACHEHARDLINK=no
+
 #REMOVEPACKAGES="lilo bash"
 REMOVEPACKAGES="lilo"
 #EXTRAPACKAGES=gcc3.0-athlon-builder
 
 # "debconf: delaying package configuration, since apt-utils is not installed"
-EXTRAPACKAGES=apt-utils
-
-# Make debconf not interact with user
-export DEBIAN_FRONTEND="noninteractive"
-
-DEBEMAIL=""
-
-#for pbuilder debuild
-BUILDSOURCEROOTCMD="fakeroot"
-PBUILDERROOTCMD="sudo"
+EXTRAPACKAGES="apt-utils nvi"
 
 # command to satisfy build-dependencies; the default is an internal shell
 # implementation which is relatively slow; there are two alternate
@@ -149,7 +145,7 @@ PBUILDERSATISFYDEPENDSCMD="/usr/lib/pbuilder/pbuilder-satisfydepends"
 DEBBUILDOPTS=""
 
 # Hooks directory for pbuilder
-#HOOKDIR="/etc/lgp/hooks"
+: ${HOOKDIR:="/etc/lgp/hooks"}
 
 # APT configuration files directory
 #APTCONFDIR="/etc/lgp/apt.d"
@@ -159,6 +155,7 @@ DEBBUILDOPTS=""
 BUILDUSERID=1234
 #BUILDUSERNAME=$SUDO_USER
 BUILDUSERNAME=pbuilder
+BUILDRESULTUID=$SUDO_UID
 
 # Set the PATH I am going to use inside pbuilder
 #export PATH="/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/X11R6/bin"
@@ -167,13 +164,23 @@ BUILDUSERNAME=pbuilder
 export SHELL=/bin/sh
 
 # enable pkgname-logfile
-PKGNAME_LOGFILE_EXTENTION="_$(dpkg --print-architecture).build"
+#PBUILDER_BUILD_LOGFILE="${BUILDRESULT}/"$(basename "${PACKAGENAME}" .dsc)"${PKGNAME_LOGFILE_EXTENTION}"
+PKGNAME_LOGFILE_EXTENTION="_${ARCH}_${DIST}.lgp-build"
 PKGNAME_LOGFILE=yes
 
-# When this value is set to yes, pdebuild will invoke debsign command after building.
-AUTO_DEBSIGN=yes
+# pdebuild wants invoke debsign command after building
+# We use pdebuild only for package debugging. Say 'no' (or commented) here.
+#AUTO_DEBSIGN=no
+
+# for pbuilder debuild
+BUILDSOURCEROOTCMD="fakeroot"
+PBUILDERROOTCMD="sudo"
 
 #TIMEOUT_TIME=20min
+#DEBEMAIL=""
 export TERM=linux
 export IGNOREEOF=1
 export TMPDIR=/tmp
+
+# Make debconf not interact with user
+export DEBIAN_FRONTEND="noninteractive"

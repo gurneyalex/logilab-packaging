@@ -26,6 +26,7 @@ import sys
 import tempfile
 import shutil
 import logging
+import pprint
 import warnings
 import os.path as osp
 from subprocess import check_call, CalledProcessError
@@ -37,7 +38,7 @@ from logilab.common.shellutils import cp
 
 from logilab.devtools.lgp import CONFIG_FILE
 from logilab.devtools.lgp.setupinfo import SetupInfo
-from logilab.devtools.lgp.utils import get_distributions, get_architectures
+from logilab.devtools.lgp.utils import get_architectures
 from logilab.devtools.lgp.utils import confirm, cond_exec
 from logilab.devtools.lgp.exceptions import LGPException, LGPCommandException
 
@@ -61,11 +62,9 @@ def run(args):
                 if builder.compile(distrib=distrib, arch=arch):
                     if not builder.config.no_treatment and builder.packages:
                         run_post_treatments(builder, distrib)
-                    logging.info("new files are waiting in %s. Enjoy."
-                                 % builder.get_distrib_dir())
-                    logging.info("Debian changes file is: %s"
-                                 % builder.get_changes_file())
-
+                    logging.info("new files are waiting in %s. Enjoy.\n%s"
+                                 % (builder.get_distrib_dir(),
+                                   pprint.pformat(builder.packages)))
     except LGPException, exc:
         logging.critical(exc)
         #if hasattr(builder, "config") and builder.config.verbose:
@@ -93,10 +92,6 @@ def run_post_treatments(builder, distrib):
 
     # Check occurence in filesystem
     for package in builder.packages:
-        package = osp.join(distdir, package)
-        if not osp.isfile(package):
-            raise LGPException('File %s is missing due to a failed build'
-                               % package)
         # Detect native package (often an error)
         if package.endswith('.dsc'):
             dsc = deb822.Dsc(file(package))
@@ -111,22 +106,23 @@ def run_post_treatments(builder, distrib):
                                "This is a native package (really) ?" % package):
                     return
 
-    # Run some utility in verbose mode
-    if verbose:
-        for package in builder.packages:
-            if package.endswith('.diff.gz'):
-                logging.info('Debian specific diff statistics (%s)' % package)
-                cond_exec('diffstat %s' % os.path.join(distdir, package))
+    # FIXME provide a useful utility outside of lgp and use post-build-hook
+    logging.info('try updating local repository in %s...' % distdir)
+    command = "dpkg-scanpackages %s /dev/null | gzip -9c > %s/Packages.gz" % (distrib, distrib)
+    logging.debug('run command: %s' % command)
+    if cond_exec('which dpkg-scanpackages >/dev/null && cd %s && %s'
+                 % (osp.dirname(distdir), command)):
+        logging.debug("Packages file was not updated automatically")
+    else:
+        # clean other possible Packages files
+        try:
+            os.unlink(osp.join(distdir, 'Packages'))
+            os.unlink(osp.join(distdir, 'Packages.bz2'))
+        except:
+            # not a problem to pass silently here
+            pass
 
-    # Run usual checkers
-    checkers = {'debc': '', 'lintian': '-vi --show-overrides'}
-    for checker, opts in checkers.iteritems():
-        if not verbose or confirm("run %s on generated Debian changes files ?" % checker):
-            for package in builder.packages:
-                if package.endswith('.changes'):
-                    logging.info('%s checker information about %s' % (checker, package))
-                    cond_exec('%s %s %s' % (checker, opts, os.path.join(distdir, package)))
-
+    # FIXME move code to apycot and detection of options from .changes
     if verbose and confirm("run piuparts on generated Debian packages ?"):
         basetgz = "%s-%s.tgz" % (distrib, get_architectures()[0])
         for package in builder.packages:
@@ -142,38 +138,25 @@ def run_post_treatments(builder, distrib):
                            '-I', '"/usr/share/pycentral-data.*"',
                            '-I', '"/var/lib/dpkg/triggers/pysupport.*"',
                            '-I', '"/var/lib/dpkg/triggers/File"',
-                           osp.join(distdir, package)]
+                           '-I', '"/usr/local/lib/python*"',
+                           package]
                 logging.debug("piuparts command: %s", ' '.join(cmdline))
                 if cond_exec(' '.join(cmdline)):
                     logging.error("piuparts exits with error")
                 else:
                     logging.info("piuparts exits normally")
 
+    # FIXME move code to debinstall
     # Try Debian signing immediately if possible
     if check_debsign(builder):
         for package in builder.packages:
             if package.endswith('.changes'):
                 logging.info('try signing %s...' % package)
-                if cond_exec('debsign %s' % osp.join(distdir, package)):
+                if cond_exec('debsign %s' % package):
                     logging.error("the changes file has not been signed. "
                                   "Please run debsign manually")
     else:
         logging.warning("don't forget to debsign your Debian changes file")
-
-    logging.info('try updating local repository in %s...' % distdir)
-    if cond_exec('which dpkg-scanpackages && cd %s && dpkg-scanpackages . /dev/null > %s/Packages 2>/dev/null'
-                 % (distdir, distdir)):
-        logging.debug("Packages file was not updated automatically")
-
-    # Add tag when build is successful
-    # FIXME tag format is not standardized yet
-    # Comments on card "Architecture standard d'un paquet"
-    #if verbose and confirm("Add upstream tag %s on %s ?" \
-    #                       % (builder.get_upstream_version(),
-    #                          builder.get_upstream_name())):
-    #    from logilab.devtools.vcslib import get_vcs_agent
-    #    vcs_agent = vcs_agent or get_vcs_agent('.')
-    #    os.system(vcs_agent.tag(package_dir, release_tag))
 
 
 class Builder(SetupInfo):
@@ -271,43 +254,39 @@ class Builder(SetupInfo):
         # rewrite distrib to manage the 'all' case in run()
         self.current_distrib = distrib
 
-        # Intermediate facility for debugging (really useful ?)
-        if self.config.intermediate:
-            try:
-                cmd = 'debuild --no-tgz-check --no-lintian'
-                check_call(cmd.split(), stdout=sys.stdout, stderr=sys.stderr)
-            except CalledProcessError, err:
-                msg = "error with your package"
-                raise LGPCommandException(msg, err)
-            return
-
         self._tmpdir = tempfile.mkdtemp()
 
         # create the upstream tarball if necessary and copy to the temporary
         # directory following the Debian practices
         upstream_tarball, tarball, origpath = self.make_orig_tarball()
-        if self.config.get_orig_source:
-            return
 
         # support of the multi-distribution
         self.manage_multi_distribution(origpath)
 
-        # change directory for next commands
-        os.chdir(self._tmpdir)
+        # Intermediate facility for debugging (really useful ?)
+        if self.config.intermediate:
+            os.chdir(origpath)
+            try:
+                cmd = 'debuild --no-tgz-check --no-lintian --clear-hooks -uc -us'
+                check_call(cmd.split(), stdout=sys.stdout, stderr=sys.stderr)
+            except CalledProcessError, err:
+                msg = "error with your package"
+                raise LGPCommandException(msg, err)
+            import glob
+            self.packages = glob.glob('../%s_%s_*.changes'
+                                      % (self.get_upstream_name(),
+                                         self.get_debian_version()))
+            return
 
         # create a debian source package
         dscfile = self.make_debian_source_package(origpath)
-        if self.config.deb_src_only:
-            return
 
         # build the package using vbuild or default to fakeroot
-        packages = self._compile(distrib, arch, dscfile)
-        self.packages = self.get_packages()
+        self._compile(distrib, arch, dscfile)
+        self.get_packages()
 
         # clean tmpdir
-        os.chdir(self.config.pkg_dir)
         self.clean_tmpdir()
-
         return True
 
     def clean_tmpdir(self):
@@ -326,9 +305,12 @@ class Builder(SetupInfo):
         :param:
             origpath: path to orig.tar.gz tarball
         """
-        dscfile = '%s_%s.dsc' % (self.get_debian_name(), self.get_debian_version())
-        filelist = ('%s_%s.diff.gz' % (self.get_debian_name(), self.get_debian_version()),
-                    dscfile)
+        # change directory context
+        os.chdir(self._tmpdir)
+
+        fileparts = (self.get_debian_name(), self.get_debian_version())
+        dscfile = '%s_%s.dsc' % fileparts
+        filelist = ('%s_%s.diff.gz' % fileparts, dscfile)
 
         logging.debug("start creation of the debian source package '%s'"
                       % osp.join(osp.dirname(origpath), dscfile))
@@ -348,6 +330,16 @@ class Builder(SetupInfo):
                 cp(filename, self.get_distrib_dir())
             logging.info("Debian source control file is: %s"
                          % osp.join(self.get_distrib_dir(), dscfile))
+
+        # exit if asked by command-line
+        if self.config.deb_src_only:
+            # clean tmpdir
+            self.clean_tmpdir()
+            sys.exit()
+
+        # restore directory context
+        os.chdir(self.config.pkg_dir)
+
         return dscfile
 
     def manage_multi_distribution(self, origpath):
@@ -356,7 +348,10 @@ class Builder(SetupInfo):
         We copy debian_dir directory into tmp build depending of the target distribution
         in all cases, we copy the debian directory of the unstable version
         If a file should not be included, touch an empty file in the overlay
-        directory"""
+        directory.
+
+        The distribution value will always be rewritten in final changelog.
+        """
         try:
             # don't forget the final slash!
             export(osp.join(self.config.pkg_dir, 'debian'), osp.join(origpath, 'debian/'))
@@ -364,19 +359,21 @@ class Builder(SetupInfo):
             raise LGPException(err)
 
         if self.get_debian_dir() != "debian":
-            logging.debug("overriding files...")
+            logging.info("overriding files from '%s' directory..." % self.get_debian_dir())
             # don't forget the final slash!
             export(osp.join(self.config.pkg_dir, self.get_debian_dir()), osp.join(origpath, 'debian/'),
                    verbose=self.config.verbose)
 
         distrib = self.current_distrib
-        # experimental should be linked to unstable and not rewritten
-        if self.current_distrib == 'experimental':
-            distrib = 'unstable'
 
-        cmd = ['sed', '-i',
-               's/\(unstable\|DISTRIBUTION\); urgency/%s; urgency/' %
-               distrib, '%s' % os.path.join(origpath, 'debian/changelog')]
+        #logging.debug("rewrite distribution name to '%s'" % distrib)
+        # dch will update the changelog timestamp as well
+        #cmd = ['dch', '--force-distribution', '--distribution', '%s' % distrib, '']
+
+        # substitute distribution string in file only if line not starting by
+        # spaces (simple heuristic to prevent other changes in content)
+        cmd = ['sed', '-i', '/^[[:alpha:]]/s/\([[:alpha:]]\+\);/%s;/' % distrib,
+               osp.join(origpath, 'debian', 'changelog')]
         try:
             check_call(cmd, stdout=sys.stdout) #, stderr=sys.stderr)
         except CalledProcessError, err:
@@ -384,27 +381,22 @@ class Builder(SetupInfo):
 
     def _compile(self, distrib, arch, dscfile):
         """virtualize the package build process"""
-        debuilder = os.environ.get('DEBUILDER', 'vbuild')
+        debuilder = os.environ.get('DEBUILDER', 'internal')
         logging.debug("select package builder: '%s'" % debuilder)
+        dscfile = osp.join(self._tmpdir, dscfile)
+        assert osp.exists(dscfile)
+
         if debuilder == 'internal':
-            assert osp.exists(osp.join(self._tmpdir, dscfile))
-            cmd = "sudo DIST=%s pbuilder build --configfile %s --buildresult %s "
-            #if arch:
-            #   cmd += "--binary-arch "
-            cmd %= distrib, CONFIG_FILE, self.get_distrib_dir()
-            cmd += osp.join(self._tmpdir, dscfile)
+            cmd = "sudo DIST=%s ARCH=%s pbuilder build --configfile %s --buildresult %s %s"
+            cmd %= distrib, arch, CONFIG_FILE, self._tmpdir, dscfile
         elif debuilder.endswith('vbuild'):
             cmd = '%s -d %s -a %s --result %s %s'
-            cmd %= (debuilder, distrib, arch, self.get_distrib_dir(),
-                    osp.join(self._tmpdir, dscfile))
-            # TODO
-            #cmd += ' --debbuildopts %s' % pdebuild_options
+            cmd %= (debuilder, distrib, arch, self.get_distrib_dir(), dscfile)
         else:
             cmd = debuilder
 
-        logging.debug(cmd)
+        logging.info("run build command: %s" % cmd)
         try:
-            check_call(cmd.split(), stdout=sys.stdout) #, stderr=sys.stderr)
+            check_call(cmd.split(), env={'DIST': distrib, 'ARCH': arch}, stdout=sys.stdout) #, stderr=sys.stderr)
         except CalledProcessError, err:
             raise LGPCommandException("failed autobuilding of package", err)
-
