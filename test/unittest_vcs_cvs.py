@@ -121,7 +121,7 @@ class CVSAgentTC(testlib.TestCase):
         log_info = [str(cii) for cii in log_info]
 
         expected_result = ['%s: update readme file (1.2)' % login,
-                              '%s: add readme file (1.1)' % login]
+                           '%s: add readme file (1.1)' % login]
         self.assertEquals(log_info, expected_result)
 
 
