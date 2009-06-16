@@ -258,18 +258,13 @@ class SVNAgent:
         a log information is a tuple
         (file, revision_info_as_string, added_lines, removed_lines)
         """
-        assert from_date < to_date, "%r < %r" % (from_date, to_date)
         # XXX how-to to include time
         from_date = strftime('%Y-%m-%d %H:%M', localtime_to_gmtime(from_date))
         # since we want an inclusive range
         to_date = strftime('%Y-%m-%d %H:%M', localtime_to_gmtime(to_date))
-#         if tag:
-#             repository = '%s/%s' % (repository, tag)
-#         elif path:
-#             repository = '%s/%s' % (repository, path)
+        assert from_date < to_date, "%r < %r" % (from_date, to_date)
         command = 'LC_ALL=C TZ=UTC svn log --non-interactive -r "{%s}:{%s}" %s %s' % (
             from_date, to_date, repository, tag or path or '')
-        print command
         separator = '-' * 72
         status, msg, rev, author, date = None, '', None, None, None
         infos = []

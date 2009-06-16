@@ -69,7 +69,7 @@ def get_mimetype(filename):
     """
     :type filename: str
     :param filename: base name of a file
-    
+
     :rtype: str or None
     :return: mimetype found for `filename`
     """
@@ -89,9 +89,9 @@ class FileWrapper(BaseNode):
     """file wrapper implementing IVCSFile interface (extending the INode
     interface)
     """
-    
+
     __implements__ = IVCSFile
-    
+
     def __init__(self, abspath, parent=None):
         BaseNode.__init__(self, abspath, parent)
         self.abspath = abspath
@@ -108,7 +108,7 @@ class FileWrapper(BaseNode):
         self._children = None
         # post initialization for version control
         self._vc_init()
-        
+
     def __str__(self):
         """use absolute path as string representation"""
         return self.abspath
@@ -155,7 +155,7 @@ class FileWrapper(BaseNode):
         """
         file_abspath = join(self.abspath, filename)
         return FileWrapper(file_abspath, self)
-        
+
     def filter_filename(self, filename):
         """
         :rtype: bool
@@ -195,14 +195,14 @@ class FileWrapper(BaseNode):
         :return: the node's absolute path
         """
         return self.abspath
-    
+
     def get_name(self):
         """
         :rtype: str
         :return: the node's base name
         """
         return self.basename
-    
+
     def get_child_number(self):
         """
         This method is overridden from `BaseNode` since it can be a bit
@@ -218,7 +218,7 @@ class FileWrapper(BaseNode):
             return len(self._children)
         return len([fname for fname in os.listdir(self.abspath)
                     if self.filter_filename(fname)])
-    
+
     def get_children(self):
         """
         :rtype: list(`FileWrapper`)
@@ -255,7 +255,7 @@ class FileWrapper(BaseNode):
     def not_up_to_date(self):
         """return a list of tuple (file, status) which are not up to date"""
         return self._vcs_agent.not_up_to_date(self)
-    
+
     def get_status(self):
         """
         :rtype: int
@@ -282,11 +282,11 @@ class FileWrapper(BaseNode):
         version control
         """
         return self._tag
-    
+
     def update(self):
         """return a shell command string to update this file from the vc
         repository
-        
+
         :raise: `NoVersionControl` exception if this file is not under
         version control
         """
@@ -306,7 +306,7 @@ class FileWrapper(BaseNode):
     def add(self):
         """return a shell command string to add this file to the vc
         repository
-        
+
         :raise: `AlreadyUnderVCS` exception if this file is already under
         version control
         """
@@ -321,7 +321,7 @@ parent is not under version control' % self.abspath)
     def remove(self):
         """return a shell command string to remove this file from the vc
         repository
-        
+
         :raise: `NoVersionControl` exception if this file is not under
         version control
         """
@@ -334,14 +334,14 @@ parent is not under version control' % self.abspath)
 
         :type tagname: str
         :param tagname: the name of the tag to apply
-        
+
         :raise: `NoVersionControl` exception if this file is not under
         version control
         """
         self._ensure_version_controlled()
         return self._vcs_agent.tag(self.abspath, tagname)
 
-    
+
     # file system synchronization methods #####################################
 
     def force_update(self):
@@ -361,7 +361,7 @@ parent is not under version control' % self.abspath)
         if self._children is not None:
             for child in self._children:
                 child.disable_cache()
-                
+
     def update_parent(self):
         """force re-computation of parent's list (re-read filesystem info)"""
         parent = self.get_parent()
@@ -384,7 +384,7 @@ parent is not under version control' % self.abspath)
             self._children_cvs_info = cvs.get_info(self.abspath)
         else:
             self._children_cvs_info = {}
-        return self._children_cvs_info    
+        return self._children_cvs_info
 
     children_cvs_info = property(_get_children_cvs_info,
                                  doc = "children's CVS informationss")
@@ -403,11 +403,11 @@ parent is not under version control' % self.abspath)
             self._children_svn_info = svn.get_info(self.abspath)
         else:
             self._children_svn_info = {}
-        return self._children_svn_info    
+        return self._children_svn_info
 
     children_svn_info = property(_get_children_svn_info,
                                  doc = "children's SVN informationss")
-    
+
     def _ensure_version_controlled(self):
         """
         :raise: `NoVersionControl` if self is not under version control
@@ -415,13 +415,13 @@ parent is not under version control' % self.abspath)
         if self.status == VCS_NOVERSION:
             raise NoVersionControl('%s is not under version control' %
                                    self.abspath)
-        
+
     def _set_use_cache(self, use_it=True):
         """Defines whether or not we should re-use the children list that
         was computed on the last get_children() call
         """
         self._use_cache = use_it
-            
+
     def _vc_init(self):
         """set the correct vc attributes values for this file"""
         if self._parent is None:
@@ -445,7 +445,7 @@ parent is not under version control' % self.abspath)
             self._vcs_agent = svn.SVNAgent()
             return
         except KeyError:
-            pass            
+            pass
 
 def agent(name):
     if name == 'cvs':
@@ -487,14 +487,14 @@ class CheckInInfo:
         """information relative to a vcs checkin
 
         required arguments:
-        
+
         * `date`: GMT date (`datetime.datetime` instance) on which the check-in
           has been done
         * `author`: string representing the author of the check-in
         * `message`: unicode string giving the check-in message
 
         optional arguments:
-        
+
         * `revision`: revision on vcs where it make sense. Type will depend on
           the scm.
         * `added`: integer number of lines added by this check-in
@@ -529,11 +529,14 @@ class CheckInInfo:
                                 self.revision)
     def __repr__(self):
         return "<CheckInInfo (%s)>"%self
-    
+
     def __cmp__(self, other):
         return cmp(str(self),other)
 
 
 from time import gmtime, mktime
-def localtime_to_gmtime(timetuple):
-    return gmtime(mktime(timetuple))
+
+def localtime_to_gmtime(localtime):
+    if not isinstance(localtime, float):
+        localtime = mktime(localtime)
+    return gmtime(localtime)
