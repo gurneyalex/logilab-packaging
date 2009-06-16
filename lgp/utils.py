@@ -163,6 +163,9 @@ def get_distributions(distrib=None, basetgz=None):
         distrib = KNOWN_DISTRIBUTIONS.values()
         return tuple(set(distrib))
     elif 'all' in distrib:
+        # this case fixes unittest_distributions.py when basetgz is None
+        if basetgz is None:
+            return set(KNOWN_DISTRIBUTIONS)
         distrib = [os.path.basename(f).split('-', 1)[0]
                    for f in glob.glob(os.path.join(basetgz,'*.tgz'))]
         return set(KNOWN_DISTRIBUTIONS) & set(distrib)
@@ -170,7 +173,7 @@ def get_distributions(distrib=None, basetgz=None):
     mapped = ()
     # check and filter if known
     for t in distrib:
-        if sys.argv[1] != "setup":
+        if (len(sys.argv)>1 and sys.argv[1] not in ["setup"]):
             distributions = get_distributions('all', basetgz)
         if t not in distributions:
             logging.critical("'%s' image not found in '%s'" % (t, basetgz))
@@ -179,8 +182,6 @@ def get_distributions(distrib=None, basetgz=None):
     distrib = mapped
 
     return tuple(set(distrib))
-
-
 
 def get_architectures(archi=None):
     """ Ensure that the architectures exist
@@ -203,7 +204,10 @@ def get_architectures(archi=None):
     return archi
 
 def cached(func):
-    "A decorator that runs a function only once."
+    """run a function only once and return always the same cache
+
+       This decorator is used to reduce the overheads due to many system calls
+    """
     def decorated(*args, **kwargs):
         try:
             return decorated._once_result
