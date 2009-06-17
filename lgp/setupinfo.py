@@ -21,10 +21,7 @@ import os
 import stat
 import os.path
 import shutil
-import glob
 import logging
-import commands
-from debian_bundle.deb822 import Changes
 from string import Template
 from distutils.core import run_setup
 #from pkg_resources import FileMetadata
@@ -339,17 +336,6 @@ class SetupInfo(Configuration):
     @cached
     def get_upstream_version(self):
         return self._run_command('version')
-
-    def get_packages(self):
-        """copy packages from the temporary build area to the result directory
-        """
-        packages = []
-        for filename in os.listdir(self._tmpdir):
-            fullpath = os.path.join(self._tmpdir, filename)
-            if os.path.isfile(fullpath):
-                shutil.copy(fullpath, self.get_distrib_dir())
-                packages.append(os.path.join(self.get_distrib_dir(), filename))
-        self.packages = packages
 
     def get_versions(self):
         versions = self.get_debian_version().rsplit('-', 1)

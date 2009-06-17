@@ -291,7 +291,7 @@ class Builder(SetupInfo):
 
         # build the package using vbuild or default to fakeroot
         self._compile(distrib, arch, dscfile)
-        self.get_packages()
+        self.copy_package_files()
 
         # clean tmpdir
         self.clean_tmpdir()
@@ -412,3 +412,16 @@ class Builder(SetupInfo):
             check_call(cmd.split(), env={'DIST': distrib, 'ARCH': arch}, stdout=sys.stdout) #, stderr=sys.stderr)
         except CalledProcessError, err:
             raise LGPCommandException("failed autobuilding of package", err)
+
+    def copy_package_files(self):
+        """copy package files from the temporary build area to the result directory
+
+        we define here the self.packages variable used by post-treatment
+        """
+        self.packages = []
+        for filename in os.listdir(self._tmpdir):
+            fullpath = os.path.join(self._tmpdir, filename)
+            if os.path.isfile(fullpath):
+                shutil.copy(fullpath, self.get_distrib_dir())
+                self.packages.append(os.path.join(self.get_distrib_dir(), filename))
+
