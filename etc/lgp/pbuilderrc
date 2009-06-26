@@ -106,13 +106,15 @@ USEPROC=yes
 USEDEVPTS=yes
 USEDEVFS=no
 
-# Default value set to be used by hooks # Internally, lgp uses --buildresult option
-export BUILDRESULT="${HOME}/dists/${DIST}"
-
-# BINDMOUNTS is a space separated list of things to mount # inside the chroot.
+# BINDMOUNTS is a space separated list of things to mount inside the chroot.
+# Don't use array aggregation here
 BINDMOUNTS="/sys"
-if [ -d "$BUILDRESULT" ]; then
-	BINDMOUNTS=("${BINDMOUNTS[@]}" "$BUILDRESULT")
+if [ "$PBCURRENTCOMMANDLINEOPERATION" == "login" ]; then
+	# Default value set to be used by hooks
+	export BUILDRESULT="${HOME}/dists/${DIST}"
+fi
+if [ -d "${BUILDRESULT}" ]; then
+	BINDMOUNTS="${BINDMOUNTS} $BUILDRESULT"
 fi
 
 # Specify a cache for APT

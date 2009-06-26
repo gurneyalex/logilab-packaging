@@ -12,7 +12,7 @@
 - except OSError, e:
   if e.errno == errno.EINTR:
       continue
-
+- faire un clean avant build (fakeroot debian/rules clean + python setup.py clean au besoin)
 Limitations pbuilder:
 - debconf non-interactive par défaut
 - problème des démons
