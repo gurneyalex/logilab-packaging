@@ -106,6 +106,44 @@ def run_post_treatments(builder, distrib):
                                "This is a native package (really) ?" % package):
                     return
 
+    # FIXME move code to apycot and detection of options from .changes
+    from logilab.devtools.lgp.utils import get_architectures
+    if verbose: # and confirm("run piuparts on generated Debian packages ?"):
+        basetgz = "%s-%s.tgz" % (distrib, get_architectures()[0])
+        for package in builder.packages:
+            if package.endswith('.deb'):
+                #logging.info('piuparts checker information about %s' % package)
+                cmdline = ['sudo', 'piuparts', '--no-symlinks',
+                           '--warn-on-others', '--keep-sources-list',
+                           # the development repository can be somewhat buggy...
+                           '--no-upgrade-test',
+                           '-b', os.path.join(builder.config.basetgz, basetgz),
+                           # just violent but too many false positives otherwise
+                           '-I', '"/etc/shadow*"',
+                           '-I', '"/usr/share/pycentral-data.*"',
+                           '-I', '"/var/lib/dpkg/triggers/pysupport.*"',
+                           '-I', '"/var/lib/dpkg/triggers/File"',
+                           '-I', '"/usr/local/lib/python*"',
+                           package]
+                logging.warning('piuparts test has been disabled. But you can run it manually with:')
+                logging.debug("piuparts command: %s", ' '.join(cmdline))
+                #if cond_exec(' '.join(cmdline)):
+                #    logging.error("piuparts exits with error")
+                #else:
+                #    logging.info("piuparts exits normally")
+
+    # FIXME move code to debinstall
+    # Try Debian signing immediately if possible
+    if check_debsign(builder):
+        for package in builder.packages:
+            if package.endswith('.changes'):
+                logging.info('signing %s...' % package)
+                if cond_exec('debsign %s' % package):
+                    logging.error("the changes file has not been signed. "
+                                  "Please run debsign manually")
+    else:
+        logging.warning("don't forget to debsign your Debian changes file")
+
     # FIXME provide a useful utility outside of lgp and use post-build-hook
     logging.info('try updating local repository in %s...' % distdir)
     command = "dpkg-scanpackages %s /dev/null | gzip -9c > %s/Packages.gz" % (distrib, distrib)
@@ -121,45 +159,6 @@ def run_post_treatments(builder, distrib):
         except:
             # not a problem to pass silently here
             pass
-
-    # FIXME move code to apycot and detection of options from .changes
-    """
-    from logilab.devtools.lgp.utils import get_architectures
-    if verbose and confirm("run piuparts on generated Debian packages ?"):
-        basetgz = "%s-%s.tgz" % (distrib, get_architectures()[0])
-        for package in builder.packages:
-            if package.endswith('.deb'):
-                logging.info('piuparts checker information about %s' % package)
-                cmdline = ['sudo', 'piuparts', '--no-symlinks',
-                           '--warn-on-others', '--keep-sources-list',
-                           # the development repository can be somewhat buggy...
-                           '--no-upgrade-test',
-                           '-b', os.path.join(builder.config.basetgz, basetgz),
-                           # just violent but too many false positives otherwise
-                           '-I', '"/etc/shadow*"',
-                           '-I', '"/usr/share/pycentral-data.*"',
-                           '-I', '"/var/lib/dpkg/triggers/pysupport.*"',
-                           '-I', '"/var/lib/dpkg/triggers/File"',
-                           '-I', '"/usr/local/lib/python*"',
-                           package]
-                logging.debug("piuparts command: %s", ' '.join(cmdline))
-                if cond_exec(' '.join(cmdline)):
-                    logging.error("piuparts exits with error")
-                else:
-                    logging.info("piuparts exits normally")
-    """
-
-    # FIXME move code to debinstall
-    # Try Debian signing immediately if possible
-    if check_debsign(builder):
-        for package in builder.packages:
-            if package.endswith('.changes'):
-                logging.info('try signing %s...' % package)
-                if cond_exec('debsign %s' % package):
-                    logging.error("the changes file has not been signed. "
-                                  "Please run debsign manually")
-    else:
-        logging.warning("don't forget to debsign your Debian changes file")
 
 
 class Builder(SetupInfo):
