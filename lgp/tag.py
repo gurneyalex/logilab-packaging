@@ -73,6 +73,7 @@ class Tagger(SetupInfo):
             raise LGPException('you have to install python-vcslib package to use this command')
         self.vcs_agent = get_vcs_agent(self.config.pkg_dir)
         self.version = self.get_upstream_version()
+        self.project = self.get_upstream_name()
         self.debian_revision = self.get_debian_version().rsplit('-', 1)[1]
 
         # cleaning for unique entries
@@ -85,6 +86,7 @@ class Tagger(SetupInfo):
                              debian_revision=self.debian_revision,
                              distrib=self.config.distrib,
                              arch=self.config.archi,
+                             project=self.project
                             )
 
         logging.info("add tag to repository: %s" % tag)
