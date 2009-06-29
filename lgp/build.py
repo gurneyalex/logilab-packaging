@@ -53,8 +53,9 @@ def run(args):
     try :
         builder = Builder(args)
 
-        if not builder.config.no_treatment:
-            run_pre_treatments(builder)
+        # Too bloated to be used here. Use pre-hook if available
+        #if not builder.config.no_treatment:
+        #    run_pre_treatments(builder)
 
         for arch in builder.architectures:
             for distrib in builder.distributions:
