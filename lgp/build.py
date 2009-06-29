@@ -29,7 +29,7 @@ import logging
 import pprint
 import warnings
 import os.path as osp
-from subprocess import check_call, CalledProcessError
+from subprocess import check_call, CalledProcessError, PIPE
 
 from debian_bundle import deb822
 
@@ -62,9 +62,12 @@ def run(args):
                 if builder.compile(distrib=distrib, arch=arch):
                     if not builder.config.no_treatment and builder.packages:
                         run_post_treatments(builder, distrib)
-                    logging.info("new files are waiting in %s. Enjoy.\n%s"
-                                 % (builder.get_distrib_dir(),
-                                   pprint.pformat(builder.packages)))
+                    logging.info("new files are waiting in %s. Enjoy."
+                                 % builder.get_distrib_dir())
+                    logging.debug("complete list of files:\n%s" % pprint.pformat(builder.packages))
+                    # lastly print changes file to the console
+                    for changes in [c for c in  builder.packages if c.endswith('.changes')]:
+                        logging.info("Debian changes file is: %s" % changes)
     except LGPException, exc:
         logging.critical(exc)
         #if hasattr(builder, "config") and builder.config.verbose:
@@ -290,18 +293,21 @@ class Builder(SetupInfo):
         dscfile = self.make_debian_source_package(origpath)
 
         # build the package using vbuild or default to fakeroot
-        self._compile(distrib, arch, dscfile)
-        self.copy_package_files()
-
-        # clean tmpdir
-        self.clean_tmpdir()
+        try:
+            self._compile(distrib, arch, dscfile)
+        finally:
+            # copy some of created files like the build log
+            self.copy_package_files()
+            # clean tmpdir
+            self.clean_tmpdir()
         return True
 
     def clean_tmpdir(self):
         if not self.config.keep_tmpdir:
             shutil.rmtree(self._tmpdir)
         else:
-            logging.info("keep temporary directory '%s'" % self._tmpdir)
+            logging.warn("keep temporary directory '%s' for further investigation"
+                         % self._tmpdir)
 
     def make_debian_source_package(self, origpath):
         """create a debian source package
@@ -407,10 +413,12 @@ class Builder(SetupInfo):
         else:
             cmd = debuilder
 
-        logging.info("run build command: %s" % cmd)
+        logging.info("running build command: %s ..." % cmd)
         try:
-            check_call(cmd.split(), env={'DIST': distrib, 'ARCH': arch}, stdout=sys.stdout) #, stderr=sys.stderr)
+            check_call(cmd.split(), env={'DIST': distrib, 'ARCH': arch}, stdout=PIPE)
         except CalledProcessError, err:
+            # keep arborescence for further debug
+            self.config.keep_tmpdir = True
             raise LGPCommandException("failed autobuilding of package", err)
 
     def copy_package_files(self):
@@ -423,5 +431,8 @@ class Builder(SetupInfo):
             fullpath = os.path.join(self._tmpdir, filename)
             if os.path.isfile(fullpath):
                 shutil.copy(fullpath, self.get_distrib_dir())
-                self.packages.append(os.path.join(self.get_distrib_dir(), filename))
+                copied_filename = os.path.join(self.get_distrib_dir(), filename)
+                self.packages.append(copied_filename)
+                if filename.endswith('.lgp-build'):
+                    logging.info("a build logfile is available: %s" % copied_filename)
 
