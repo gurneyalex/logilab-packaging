@@ -232,9 +232,9 @@ class SetupInfo(Configuration):
         # print chroot information
         self.distributions = get_distributions(self.config.distrib,
                                                self.config.basetgz)
-        logging.info("running for distribution(s): %s" % ', '.join(self.distributions))
+        logging.debug("running for distribution(s): %s" % ', '.join(self.distributions))
         self.architectures = get_architectures(self.config.archi)
-        logging.info("running for architecture(s): %s" % ', '.join(self.architectures))
+        logging.debug("running for architecture(s): %s" % ', '.join(self.architectures))
 
         logging.debug("guess the setup package class: %s" % self.package_format)
 
@@ -367,8 +367,8 @@ class SetupInfo(Configuration):
 
     def clean_repository(self):
         """Clean the project repository"""
-        self._run_command('clean')
         logging.info("clean repository")
+        self._run_command('clean')
 
     def make_orig_tarball(self):
         """make upstream and debianized tarballs in a dedicated directory"""
@@ -432,7 +432,7 @@ class SetupInfo(Configuration):
             raise LGPCommandException('an error occured while extracting the '
                                       'upstream tarball', err)
 
-        logging.info("extract original source archive in %s" % self._tmpdir)
+        logging.debug("extract original source archive in %s" % self._tmpdir)
         return(upstream_tarball, tarball, origpath)
 
     def get_distrib_dir(self):
