@@ -148,8 +148,8 @@ def run_post_treatments(builder, distrib):
         logging.warning("don't forget to debsign your Debian changes file")
 
     # FIXME provide a useful utility outside of lgp and use post-build-hook
-    logging.info('try updating local repository in %s...' % distdir)
-    command = "dpkg-scanpackages %s /dev/null | gzip -9c > %s/Packages.gz" % (distrib, distrib)
+    logging.info('updating Debian local repository in %s...' % distdir)
+    command = "dpkg-scanpackages %s /dev/null 2>/dev/null | gzip -9c > %s/Packages.gz" % (distrib, distrib)
     logging.debug('run command: %s' % command)
     if cond_exec('which dpkg-scanpackages >/dev/null && cd %s && %s'
                  % (osp.dirname(distdir), command)):
