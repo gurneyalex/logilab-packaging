@@ -113,6 +113,14 @@ class SetupInfo(Configuration):
                  'dest': "dump_config",
                  'help': "dump lgp configuration (debugging purpose)"
                 }),
+               ('projectname',
+                {'action': 'store_true',
+                 'help': "print project name"
+                }),
+               ('projectversion',
+                {'action': 'store_true',
+                 'help': "print project version"
+                }),
                ('basetgz',
                 {'type': 'string',
                  'hide': True,
@@ -188,13 +196,6 @@ class SetupInfo(Configuration):
         except OSError, err:
             raise LGPException(err)
 
-        # print chroot information
-        self.distributions = get_distributions(self.config.distrib,
-                                               self.config.basetgz)
-        logging.info("running for distribution(s): %s" % ', '.join(self.distributions))
-        self.architectures = get_architectures(self.config.archi)
-        logging.info("running for architecture(s): %s" % ', '.join(self.architectures))
-
         # Setup command can be run anywhere, so skip setup file retrieval
         if sys.argv[1] in ["setup", "login"]:
             return
@@ -221,9 +222,21 @@ class SetupInfo(Configuration):
             raise LGPException('no valid setup file (expected: %s)'
                                % self.config.setup_file)
 
+        if self.config.projectname:
+            print self.get_upstream_name()
+            sys.exit()
+        if self.config.projectversion:
+            print self.get_upstream_version()
+            sys.exit()
+
+        # print chroot information
+        self.distributions = get_distributions(self.config.distrib,
+                                               self.config.basetgz)
+        logging.info("running for distribution(s): %s" % ', '.join(self.distributions))
+        self.architectures = get_architectures(self.config.archi)
+        logging.info("running for architecture(s): %s" % ', '.join(self.architectures))
+
         logging.debug("guess the setup package class: %s" % self.package_format)
-        self.get_upstream_name()
-        self.get_upstream_version()
 
     @property
     def package_format(self):
