@@ -23,8 +23,10 @@ __docformat__ = "restructuredtext en"
 
 import os
 import sys
+import time
 import tempfile
 import shutil
+import glob
 import logging
 import pprint
 import warnings
@@ -185,6 +187,12 @@ class Builder(SetupInfo):
                  'metavar' : "<tarball>",
                  'help': "path to orig.tar.gz file"
                 }),
+               ('suffix',
+                {'type': 'string',
+                 'dest': 'suffix',
+                 'metavar' : "<suffix>",
+                 'help': "suffix to append to the Debian package"
+                }),
                ('keep-tmpdir',
                 {'action': 'store_true',
                  #'default': False,
@@ -283,7 +291,6 @@ class Builder(SetupInfo):
             except CalledProcessError, err:
                 msg = "error with your package"
                 raise LGPCommandException(msg, err)
-            import glob
             self.packages = glob.glob('../%s_%s_*.changes'
                                       % (self.get_upstream_name(),
                                          self.get_debian_version()))
@@ -322,12 +329,8 @@ class Builder(SetupInfo):
         # change directory context
         os.chdir(self._tmpdir)
 
-        fileparts = (self.get_debian_name(), self.get_debian_version())
-        dscfile = '%s_%s.dsc' % fileparts
-        filelist = ('%s_%s.diff.gz' % fileparts, dscfile)
-
-        logging.debug("start creation of the debian source package '%s'"
-                      % osp.join(osp.dirname(origpath), dscfile))
+        logging.debug("start creation of the debian source package in '%s'"
+                      % origpath)
         try:
             cmd = 'dpkg-source -b %s' % origpath
             # FIXME use one copy of the upstream tarball
@@ -335,13 +338,17 @@ class Builder(SetupInfo):
             #    cmd += ' %s' % self.config.orig_tarball
             check_call(cmd.split(), stdout=sys.stdout, stderr=sys.stderr)
         except CalledProcessError, err:
-            msg = "cannot build valid dsc file '%s' with command %s" % (dscfile, cmd)
+            msg = "cannot build valid dsc file with command %s" % cmd
             raise LGPCommandException(msg, err)
 
+        # retrieve real filename (depending of Debian revision suffix)
+        dscfile = glob.glob('*.dsc')[0]
+
         if self.config.deb_src_only:
-            for filename in filelist:
+            for filename in [f['name'] for f in deb822.Dsc(file(dscfile))['Files']]:
                 logging.debug("copy '%s' to '%s'" % (filename, self.get_distrib_dir()))
                 cp(filename, self.get_distrib_dir())
+            cp(dscfile, self.get_distrib_dir())
             logging.info("Debian source control file is: %s"
                          % osp.join(self.get_distrib_dir(), dscfile))
 
@@ -392,6 +399,17 @@ class Builder(SetupInfo):
             check_call(cmd, stdout=sys.stdout) #, stderr=sys.stderr)
         except CalledProcessError, err:
             raise LGPCommandException("bad substitution for distribution field", err)
+
+        # substitute version string in appending timestamp and suffix
+        # suffix should not be empty
+        if self.config.suffix:
+            timestamp = int(time.time())
+            cmd = ['sed', '-i', '1s/(\(.*\))/(%s:\\1~%s)/' % (timestamp, self.config.suffix),
+                   osp.join(origpath, 'debian', 'changelog')]
+            try:
+                check_call(cmd, stdout=sys.stdout) #, stderr=sys.stderr)
+            except CalledProcessError, err:
+                raise LGPCommandException("bad substitution for version field", err)
 
     def _compile(self, distrib, arch, dscfile):
         """virtualize the package build process"""

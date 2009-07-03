@@ -27,7 +27,7 @@ from string import Template
 import logging
 
 from logilab.devtools.lgp.setupinfo import SetupInfo
-from logilab.devtools.lgp.exceptions import LGPException, LGPCommandException
+from logilab.devtools.lgp.exceptions import LGPException
 
 
 def run(args):
@@ -41,7 +41,6 @@ def run(args):
                 raise LGPException('cannot substitute format %s' % err)
             except Exception, err:
                 raise
-                #raise LGPCommandException('an error occured in tag process', err)
                 raise LGPException('an error occured in tag process')
     except LGPException, exc:
         logging.critical(exc)
