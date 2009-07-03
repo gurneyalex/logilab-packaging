@@ -178,7 +178,7 @@ class Builder(SetupInfo):
                 {'type': 'string',
                  'dest': 'suffix',
                  'metavar' : "<suffix>",
-                 'help': "suffix to append to the Debian package"
+                 'help': "suffix to append to the Debian package. Tip: prepend by '~' for pre-release and '+' for post-release"
                 }),
                ('keep-tmpdir',
                 {'action': 'store_true',
@@ -363,7 +363,7 @@ class Builder(SetupInfo):
         # suffix should not be empty
         if self.config.suffix:
             timestamp = int(time.time())
-            cmd = ['sed', '-i', '1s/(\(.*\))/(%s:\\1~%s)/' % (timestamp, self.config.suffix),
+            cmd = ['sed', '-i', '1s/(\(.*\))/(%s:\\1%s)/' % (timestamp, self.config.suffix),
                    osp.join(origpath, 'debian', 'changelog')]
             try:
                 check_call(cmd, stdout=sys.stdout) #, stderr=sys.stderr)
