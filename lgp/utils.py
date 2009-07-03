@@ -155,10 +155,6 @@ def cond_exec(cmd, confirm=False, retry=False):
 def get_distributions(distrib=None, basetgz=None):
     """ensure that the target distributions exist or return all the valid distributions
     """
-    # Allow lgp check to be run without valid images and for unstable
-    if (len(sys.argv)>1 and sys.argv[1] in ["check"]):
-        return ('unstable',)
-
     distributions = KNOWN_DISTRIBUTIONS
     if distrib is None or distrib == 'known':
         distrib = KNOWN_DISTRIBUTIONS.keys()
@@ -180,6 +176,11 @@ def get_distributions(distrib=None, basetgz=None):
         if (len(sys.argv)>1 and sys.argv[1] not in ["setup"]):
             distributions = get_distributions('all', basetgz)
         if t not in distributions:
+            # Allow lgp check to be run without valid images
+            if (len(sys.argv)>1 and sys.argv[1] in ["check"]):
+                logging.debug("'%s' image not found in '%s'" % (t, basetgz))
+                logging.info("act as if 'unstable' distribution was used")
+                return ('unstable',)
             logging.critical("'%s' image not found in '%s'" % (t, basetgz))
             raise DistributionException(t)
         mapped += (t,)
