@@ -45,10 +45,6 @@ from logilab.devtools.lgp.exceptions import LGPException, LGPCommandException
 
 from logilab.devtools.lgp.check import Checker, check_debsign
 
-# Set a list of checks to disable when we are in
-# intermediate stage (i.e. when developing package)
-INTERMEDIATE_STAGE = ['repository', ]
-
 
 def run(args):
     """main function of lgp build command"""
@@ -78,17 +74,8 @@ def run(args):
         return 1
 
 def run_pre_treatments(builder):
-    checker = Checker([])
-
-    # Use the intermediate stage (i.e. developing package)
-    if builder.config.intermediate:
-        intermediate_exclude = builder.config.intermediate_exclude
-        logging.info("ask for the intermediate stage (i.e. package development)")
-        checker.config.exclude_checks = intermediate_exclude
-
-    checker.start_checks()
-    if checker.errors():
-        logging.error('%d errors detected by pre-treatments' % checker.errors())
+    # TODO add lgp hook possibility
+    pass
 
 def run_post_treatments(builder, distrib):
     """ Run actions after package compiling """
@@ -130,7 +117,7 @@ def run_post_treatments(builder, distrib):
                            '-I', '"/var/lib/dpkg/triggers/File"',
                            '-I', '"/usr/local/lib/python*"',
                            package]
-                logging.warning('piuparts test has been disabled. But you can run it manually with:')
+                logging.debug('piuparts test has been disabled but you can run it manually with:')
                 logging.debug("piuparts command: %s", ' '.join(cmdline))
                 #if cond_exec(' '.join(cmdline)):
                 #    logging.error("piuparts exits with error")
@@ -223,20 +210,6 @@ class Builder(SetupInfo):
                  'dest' : "get_orig_source",
                  'help': "create a reasonable upstream tarball"
                 }),
-               ('intermediate',
-                {'action': 'store_true',
-                 #'default': False,
-                 'dest' : "intermediate",
-                 'short': 'i',
-                 'help': "use an intermediate mode when developing a package",
-                }),
-               ('intermediate-exclude',
-                {'type': 'csv',
-                 #'hide': True,
-                 'dest' : "intermediate_exclude",
-                 'default' : INTERMEDIATE_STAGE,
-                 'metavar' : "<comma separated names of checks to skip>",
-                }),
                ('hooks',
                 {'action': 'store_true',
                  'default': False,
@@ -282,26 +255,12 @@ class Builder(SetupInfo):
         # support of the multi-distribution
         self.manage_multi_distribution(origpath)
 
-        # Intermediate facility for debugging (really useful ?)
-        if self.config.intermediate:
-            os.chdir(origpath)
-            try:
-                cmd = 'debuild --no-tgz-check --no-lintian --clear-hooks -uc -us'
-                check_call(cmd.split(), stdout=sys.stdout, stderr=sys.stderr)
-            except CalledProcessError, err:
-                msg = "error with your package"
-                raise LGPCommandException(msg, err)
-            self.packages = glob.glob('../%s_%s_*.changes'
-                                      % (self.get_upstream_name(),
-                                         self.get_debian_version()))
-            return
-
         # create a debian source package
         dscfile = self.make_debian_source_package(origpath)
 
         # build the package using vbuild or default to fakeroot
         try:
-            self._compile(distrib, arch, dscfile)
+            self._compile(distrib, arch, dscfile, origpath)
         finally:
             # copy some of created files like the build log
             self.copy_package_files()
@@ -411,14 +370,14 @@ class Builder(SetupInfo):
             except CalledProcessError, err:
                 raise LGPCommandException("bad substitution for version field", err)
 
-    def _compile(self, distrib, arch, dscfile):
+    def _compile(self, distrib, arch, dscfile, origpath):
         """virtualize the package build process"""
-        debuilder = os.environ.get('DEBUILDER', 'internal')
+        debuilder = os.environ.get('DEBUILDER', 'pbuilder')
         logging.debug("select package builder: '%s'" % debuilder)
         dscfile = osp.join(self._tmpdir, dscfile)
         assert osp.exists(dscfile)
 
-        if debuilder == 'internal':
+        if debuilder == 'pbuilder':
             cmd = "sudo DIST=%s ARCH=%s pbuilder build --configfile %s --buildresult %s"
             cmd %= distrib, arch, CONFIG_FILE, self._tmpdir
             if self.config.hooks:
@@ -428,6 +387,12 @@ class Builder(SetupInfo):
         elif debuilder.endswith('vbuild'):
             cmd = '%s -d %s -a %s --result %s %s'
             cmd %= (debuilder, distrib, arch, self.get_distrib_dir(), dscfile)
+        elif debuilder == 'debuild':
+            os.chdir(origpath)
+            cmd = 'debuild --no-tgz-check --no-lintian --clear-hooks -uc -us'
+        elif debuilder == 'fakeroot':
+            os.chdir(origpath)
+            cmd = 'fakeroot debian/rules binary'
         else:
             cmd = debuilder
 
@@ -448,6 +413,8 @@ class Builder(SetupInfo):
         for filename in os.listdir(self._tmpdir):
             fullpath = os.path.join(self._tmpdir, filename)
             if os.path.isfile(fullpath):
+                logging.debug("copy %s to %s" % (fullpath,
+                                                 self.get_distrib_dir()))
                 shutil.copy(fullpath, self.get_distrib_dir())
                 copied_filename = os.path.join(self.get_distrib_dir(), filename)
                 self.packages.append(copied_filename)
