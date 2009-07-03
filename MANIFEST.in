@@ -3,7 +3,6 @@ recursive-exclude debian *
 recursive-exclude debian.hardy *
 
 include bin/lgp
-include bin/vbuild
 include bin/changelog
 include bin/update_gettext
 include bin/pycoverage
