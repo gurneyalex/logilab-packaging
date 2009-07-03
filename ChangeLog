@@ -2,6 +2,10 @@ ChangeLog for logilab.devtools
 ==============================
 
 2009-06-03 -- 0.15
+    * lgp: add project command to print useful information
+
+    * lgp: new suffix option for build command (incremental build)
+
     * #9031: lgp: include hooks to replace post-treatment
 
     * #5713: lgp: multi arch build (support i386 mode if linux32 is installed)

@@ -1,3 +1,9 @@
+logilab-devtools (0.15.1-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Julien Jehannet <julien.jehannet@logilab.fr>  Fri, 03 Jul 2009 20:54:23 +0200
+
 logilab-devtools (0.15.0-1) unstable; urgency=low
 
   * Add weekly cron entry for image update
