@@ -258,7 +258,7 @@ class Builder(SetupInfo):
         # create a debian source package
         dscfile = self.make_debian_source_package(origpath)
 
-        # build the package using vbuild or default to fakeroot
+        # build the package using one the available builders
         try:
             self._compile(distrib, arch, dscfile, origpath)
         finally:
@@ -384,9 +384,6 @@ class Builder(SetupInfo):
                 from logilab.devtools.lgp import HOOKS_DIR
                 cmd += " --hookdir %s" % HOOKS_DIR
             cmd += " %s" % dscfile
-        elif debuilder.endswith('vbuild'):
-            cmd = '%s -d %s -a %s --result %s %s'
-            cmd %= (debuilder, distrib, arch, self.get_distrib_dir(), dscfile)
         elif debuilder == 'debuild':
             os.chdir(origpath)
             cmd = 'debuild --no-tgz-check --no-lintian --clear-hooks -uc -us'
