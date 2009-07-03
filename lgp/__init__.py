@@ -40,12 +40,14 @@ def run(args):
                  'Log into a chrooted distribution'),
                 ('clean', 'logilab.devtools.lgp.clean',
                  'clean repository'),
+                ('project', 'logilab.devtools.lgp.project',
+                 'print project information'),
                ]
 
     if len(sys.argv) <= 1:
         return parser.usage
     elif sys.argv[1] in ("build", "check", "clean", "template", "setup",
-                         "login", "tag"):
+                         "login", "tag", "project"):
         exec 'from logilab.devtools.lgp.%s import run' % sys.argv[1]
         return run(args[1:])
     else:

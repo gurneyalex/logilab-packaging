@@ -113,14 +113,6 @@ class SetupInfo(Configuration):
                  'dest': "dump_config",
                  'help': "dump lgp configuration (debugging purpose)"
                 }),
-               ('projectname',
-                {'action': 'store_true',
-                 'help': "print project name"
-                }),
-               ('projectversion',
-                {'action': 'store_true',
-                 'help': "print project version"
-                }),
                ('basetgz',
                 {'type': 'string',
                  'hide': True,
@@ -226,13 +218,6 @@ class SetupInfo(Configuration):
         else:
             raise LGPException('no valid setup file (expected: %s)'
                                % self.config.setup_file)
-
-        if self.config.projectname:
-            print self.get_upstream_name()
-            sys.exit()
-        if self.config.projectversion:
-            print self.get_upstream_version()
-            sys.exit()
 
         # print chroot information
         logging.debug("running for distribution(s): %s" % ', '.join(self.distributions))
