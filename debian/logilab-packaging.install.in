@@ -4,7 +4,6 @@ debian/tmp/usr/lib/PY_VERSION/site-packages/logilab/devtools/lib/manifest.py
 debian/tmp/usr/lib/PY_VERSION/site-packages/logilab/devtools/lib/pkginfo.py
 debian/tmp/usr/lib/PY_VERSION/site-packages/logilab/devtools/lib/__init__.py
 debian/tmp/usr/bin/lgp
-debian/tmp/usr/bin/vbuild
 debian/tmp/usr/bin/update_gettext
 debian/tmp/usr/bin/changelog
 etc/lgp/pbuilderrc
