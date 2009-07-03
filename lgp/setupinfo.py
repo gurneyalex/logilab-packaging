@@ -196,6 +196,11 @@ class SetupInfo(Configuration):
         except OSError, err:
             raise LGPException(err)
 
+        # Define mandatory attributes for lgp commands
+        self.distributions = get_distributions(self.config.distrib,
+                                               self.config.basetgz)
+        self.architectures = get_architectures(self.config.archi)
+
         # Setup command can be run anywhere, so skip setup file retrieval
         if sys.argv[1] in ["setup", "login"]:
             return
@@ -230,10 +235,7 @@ class SetupInfo(Configuration):
             sys.exit()
 
         # print chroot information
-        self.distributions = get_distributions(self.config.distrib,
-                                               self.config.basetgz)
         logging.debug("running for distribution(s): %s" % ', '.join(self.distributions))
-        self.architectures = get_architectures(self.config.archi)
         logging.debug("running for architecture(s): %s" % ', '.join(self.architectures))
 
         logging.debug("guess the setup package class: %s" % self.package_format)
