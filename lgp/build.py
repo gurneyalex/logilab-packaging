@@ -123,7 +123,7 @@ def run_post_treatments(builder, distrib):
         for package in builder.packages:
             if package.endswith('.changes'):
                 logging.info('signing %s...' % package)
-                if cond_exec('debsign %s' % package):
+                if cond_exec('debsign %s' % package, force=not verbose):
                     logging.error("the changes file has not been signed. "
                                   "Please run debsign manually")
     else:
