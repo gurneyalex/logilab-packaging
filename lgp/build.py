@@ -390,7 +390,7 @@ class Builder(SetupInfo):
             if os.path.isfile(fullpath):
                 logging.debug("copy %s to %s" % (fullpath, distdir))
                 shutil.copy(fullpath, distdir)
-                copied_filename = os.path.join(distdir(), filename)
+                copied_filename = os.path.join(distdir, filename)
                 assert osp.exists(copied_filename)
                 self.packages.append(copied_filename)
                 if filename.endswith('.lgp-build'):
