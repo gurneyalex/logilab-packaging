@@ -127,7 +127,7 @@ def ask(msg, options):
 def confirm(msg):
     return ask(msg, 'Yn') == 'y'
 
-def cond_exec(cmd, confirm=False, retry=False):
+def cond_exec(cmd, confirm=False, retry=False, force=False):
     """demande confirmation, retourne 0 si oui, 1 si non"""
     # ask confirmation before execution
     if confirm:
@@ -139,10 +139,13 @@ def cond_exec(cmd, confirm=False, retry=False):
     while True:
         # if execution failed ask wether to continue or retry
         if os.system(cmd):
-            if retry:
-                answer = ask('Continue ?', 'yNr')
+            if not force:
+                if retry:
+                    answer = ask('Continue ?', 'yNr')
+                else:
+                    answer = ask('Continue ?', 'yN')
             else:
-                answer = ask('Continue ?', 'yN')
+                answer = 'y'
             if answer == 'y':
                 return True
             elif retry and answer == 'r':
