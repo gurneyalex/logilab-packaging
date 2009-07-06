@@ -127,7 +127,7 @@ def ask(msg, options):
 def confirm(msg):
     return ask(msg, 'Yn') == 'y'
 
-def cond_exec(cmd, confirm=False, retry=False):
+def cond_exec(cmd, confirm=False, retry=False, force=False):
     """demande confirmation, retourne 0 si oui, 1 si non"""
     # ask confirmation before execution
     if confirm:
@@ -139,10 +139,13 @@ def cond_exec(cmd, confirm=False, retry=False):
     while True:
         # if execution failed ask wether to continue or retry
         if os.system(cmd):
-            if retry:
-                answer = ask('Continue ?', 'yNr')
+            if not force:
+                if retry:
+                    answer = ask('Continue ?', 'yNr')
+                else:
+                    answer = ask('Continue ?', 'yN')
             else:
-                answer = ask('Continue ?', 'yN')
+                answer = 'y'
             if answer == 'y':
                 return True
             elif retry and answer == 'r':
@@ -177,9 +180,9 @@ def get_distributions(distrib=None, basetgz=None):
             distributions = get_distributions('all', basetgz)
         if t not in distributions:
             # Allow lgp check to be run without valid images
-            if (len(sys.argv)>1 and sys.argv[1] in ["check"]):
+            if (len(sys.argv)>1 and sys.argv[1] in ["check", "tag", "project"]):
                 logging.debug("'%s' image not found in '%s'" % (t, basetgz))
-                logging.info("act as if 'unstable' distribution was used")
+                logging.debug("act as if 'unstable' image was existing in filesystem")
                 return ('unstable',)
             logging.critical("'%s' image not found in '%s'" % (t, basetgz))
             raise DistributionException(t)
@@ -188,7 +191,7 @@ def get_distributions(distrib=None, basetgz=None):
 
     return tuple(set(distrib))
 
-def get_architectures(archi=None):
+def get_architectures(archi=None, basetgz=None):
     """ Ensure that the architectures exist
 
         :param:
@@ -201,8 +204,10 @@ def get_architectures(archi=None):
     if archi is None or archi == ["current"]:
         archi = Popen(["dpkg", "--print-architecture"], stdout=PIPE).communicate()[0].split()
     else:
-        if archi == ["all"]:
-            return archi
+        if 'all' in archi:
+            archi = [os.path.basename(f).split('-', 1)[1].split('.')[0]
+                       for f in glob.glob(os.path.join(basetgz,'*.tgz'))]
+            return set(known_archi) & set(archi)
         for a in archi:
             if a not in known_archi:
                 raise ArchitectureException(a)
