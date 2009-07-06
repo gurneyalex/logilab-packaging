@@ -34,6 +34,7 @@ from logilab.common.shellutils import cp, mv
 
 from logilab.devtools.lib.pkginfo import PackageInfo
 from logilab.devtools.lib import TextReporter
+from logilab.devtools.lgp import LGP_CONFIG_FILE
 from logilab.devtools.lgp.exceptions import LGPException, LGPCommandException
 from logilab.devtools.lgp.utils import get_distributions, get_architectures, cached
 
@@ -146,11 +147,9 @@ class SetupInfo(Configuration):
                 self.options += opt
         super(SetupInfo, self).__init__(options=self.options, **args)
 
-        # Load the optional config files
-        for config in ['/etc/lgp/lgprc', '~/.lgprc']:
-            config = os.path.expanduser(config)
-            if os.path.isfile(config):
-                self.load_file_configuration(config)
+        # Load the global settings for lgp
+        if os.path.isfile(LGP_CONFIG_FILE):
+            self.load_file_configuration(LGP_CONFIG_FILE)
 
         # Manage arguments (project path essentialy)
         self.arguments = self.load_command_line_configuration(arguments)
