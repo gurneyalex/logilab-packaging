@@ -180,9 +180,9 @@ def get_distributions(distrib=None, basetgz=None):
             distributions = get_distributions('all', basetgz)
         if t not in distributions:
             # Allow lgp check to be run without valid images
-            if (len(sys.argv)>1 and sys.argv[1] in ["check"]):
+            if (len(sys.argv)>1 and sys.argv[1] in ["check", "tag", "project"]):
                 logging.debug("'%s' image not found in '%s'" % (t, basetgz))
-                logging.info("act as if 'unstable' distribution was used")
+                logging.debug("act as if 'unstable' image was existing in filesystem")
                 return ('unstable',)
             logging.critical("'%s' image not found in '%s'" % (t, basetgz))
             raise DistributionException(t)
