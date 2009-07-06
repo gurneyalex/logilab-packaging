@@ -309,10 +309,8 @@ def check_builder(checker):
     return OK
 
 def check_debian_dir(checker):
-    """check the debian* directory """
-    checker.current_distrib = "unstable"
-    debian_dir = checker.get_debian_dir()
-    return isdir(debian_dir)
+    """check the debian directory"""
+    return isdir('debian')
 
 def check_debian_rules(checker):
     """check the debian*/rules file (filemode) """

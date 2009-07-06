@@ -197,10 +197,6 @@ class SetupInfo(Configuration):
         if sys.argv[1] in ["setup", "login"]:
             return
 
-        # FIXME
-        if not hasattr(self, 'current_distrib'):
-            self.current_distrib = 'unstable'
-
         # Guess the package format
         if self.config.setup_file == 'setup.py':
             # generic case for python project (distutils, setuptools)
@@ -251,12 +247,16 @@ class SetupInfo(Configuration):
         - 'debian' is for unstable distribution
         - 'debian.$OTHER' id for $OTHER distribution and if it exists
         """
-        debiandir = 'debian' # standard
+        debiandir = 'debian' # default debian config location
+
+        if not hasattr(self, 'current_distrib'):
+            return debiandir
+
+        # FIXME use another scheme with separate Debian repository in head
         # developper can create an overlay for the debian directory
-        if self.current_distrib != 'unstable':
-            new_debiandir = '%s.%s' % (debiandir, self.current_distrib)
-            if os.path.isdir(os.path.join(self.config.pkg_dir, new_debiandir)):
-                debiandir = new_debiandir
+        new_debiandir = '%s.%s' % (debiandir, self.current_distrib)
+        if os.path.isdir(os.path.join(self.config.pkg_dir, new_debiandir)):
+            debiandir = new_debiandir
         return debiandir
 
     def get_debian_name(self):
@@ -359,7 +359,6 @@ class SetupInfo(Configuration):
 
     def make_orig_tarball(self):
         """make upstream and debianized tarballs in a dedicated directory"""
-        dist_dir = os.path.dirname(self.get_distrib_dir())
         fileparts = (self.get_upstream_name(), self.get_upstream_version())
         # directory containing the debianized source tree
         # (i.e. with a debian sub-directory and maybe changes to the original files)
@@ -394,15 +393,9 @@ class SetupInfo(Configuration):
 
         # exit if asked by command-line
         if self.config.get_orig_source:
-            try:
-                cp(upstream_tarball, tarball)
-                logging.info('a new original source archive (tarball) in current directory (%s)'
-                             % tarball)
-                # clean tmpdir
-                self.clean_tmpdir()
-                sys.exit()
-            except shutil.Error, err:
-                raise LGPException(err)
+            # copy some of created files like the build log
+            self.copy_package_files()
+            sys.exit()
 
         # dpkg-source expects the  original source as a tarfile
         # by default: package_upstream-version.orig.tar.extension
@@ -421,16 +414,3 @@ class SetupInfo(Configuration):
 
         logging.debug("extract original source archive in %s" % self._tmpdir)
         return(upstream_tarball, tarball, origpath)
-
-    def get_distrib_dir(self):
-        """get the dynamic target release directory"""
-        distrib_dir = os.path.join(os.path.expanduser(self.config.dist_dir),
-                                   self.current_distrib)
-        # check if distribution directory exists, create it if necessary
-        try:
-            os.makedirs(distrib_dir)
-        except OSError:
-            # it's not a problem here to pass silently # when the directory
-            # already exists
-            pass
-        return distrib_dir
