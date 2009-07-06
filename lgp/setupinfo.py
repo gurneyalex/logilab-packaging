@@ -83,7 +83,7 @@ class SetupInfo(Configuration):
                   'default' : 'unstable',
                   'short': 'd',
                   'metavar': "<distribution>",
-                  'help': "list of distributions (e.g. 'stable, unstable'). Use 'all' for automatic detection"
+                  'help': "list of Debian distributions (from images created by setup). Use 'all' for automatic detection"
                 }),
                ('arch',
                 {'type': 'csv',
@@ -91,7 +91,7 @@ class SetupInfo(Configuration):
                  'default' : 'current',
                  'short': 'a',
                  'metavar' : "<architecture>",
-                 'help': "build for the requested debian architectures only"
+                 'help': "build for the requested debian architectures only. Use 'all' for automatic detection"
                 }),
                ('pkg_dir',
                 {'type': 'string',
@@ -191,7 +191,8 @@ class SetupInfo(Configuration):
         # Define mandatory attributes for lgp commands
         self.distributions = get_distributions(self.config.distrib,
                                                self.config.basetgz)
-        self.architectures = get_architectures(self.config.archi)
+        self.architectures = get_architectures(self.config.archi,
+                                               self.config.basetgz)
 
         # Setup command can be run anywhere, so skip setup file retrieval
         if sys.argv[1] in ["setup", "login"]:

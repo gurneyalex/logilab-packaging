@@ -191,7 +191,7 @@ def get_distributions(distrib=None, basetgz=None):
 
     return tuple(set(distrib))
 
-def get_architectures(archi=None):
+def get_architectures(archi=None, basetgz=None):
     """ Ensure that the architectures exist
 
         :param:
@@ -204,8 +204,10 @@ def get_architectures(archi=None):
     if archi is None or archi == ["current"]:
         archi = Popen(["dpkg", "--print-architecture"], stdout=PIPE).communicate()[0].split()
     else:
-        if archi == ["all"]:
-            return archi
+        if 'all' in archi:
+            archi = [os.path.basename(f).split('-', 1)[1].split('.')[0]
+                       for f in glob.glob(os.path.join(basetgz,'*.tgz'))]
+            return set(known_archi) & set(archi)
         for a in archi:
             if a not in known_archi:
                 raise ArchitectureException(a)
