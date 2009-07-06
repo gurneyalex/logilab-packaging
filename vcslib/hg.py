@@ -83,7 +83,7 @@ def find_repository(path):
 
     None if <path> is not under hg control
     """
-    path = osp.abspath(path)
+    path = osp.realpath(osp.abspath(path))
     while not osp.isdir(osp.join(path, ".hg")):
         oldpath = path
         path = osp.dirname(path)
@@ -278,7 +278,7 @@ class HGAgent(object):
         if tag:
             cmd += '; hg up -R %s %s' % (split_url_or_path(repository)[1], tag)
         if path:
-            cmd += '; mv %s .' % osp.join(split_url_or_path(repository)[1], path)
+            cmd += '; ln -s %s .' % osp.join(split_url_or_path(repository)[1], path)
         return cmd
 
     def log_info(self, repository, from_date, to_date, path=None, tag=None):
