@@ -19,6 +19,7 @@ import sys
 import os, os.path as osp
 from logilab.common.optparser import OptionParser
 
+LGP_CONFIG_FILE = '/etc/lgp/lgprc'
 CONFIG_FILE = '/etc/lgp/pbuilderrc'
 HOOKS_DIR = '/etc/lgp/hooks'
 
