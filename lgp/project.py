@@ -32,10 +32,12 @@ def run(args):
     """Main function of lgp project command"""
     try :
         project = Project(args)
+        if not set(args).intersection(set(['--name','--release'])):
+            project.config.release = project.config.name = True
         if project.config.name:
-           print project.get_upstream_name()
+            print project.get_upstream_name()
         if project.config.release:
-           print project.get_upstream_version()
+            print project.get_upstream_version()
     except LGPException, exc:
         logging.critical(exc)
         return 1
