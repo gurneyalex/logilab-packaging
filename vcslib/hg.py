@@ -96,7 +96,7 @@ def get_repository(path):
     """Simple function that open a hg repository"""
     repopath = find_repository(path)
     if repopath is None:
-        raise RuntimeError('no repository found in %s' % path)
+        raise RuntimeError('no repository found in %s' % osp.abspath(path))
     return Repository(Ui(), path=repopath)
 
 
