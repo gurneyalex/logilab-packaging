@@ -384,12 +384,13 @@ class Builder(SetupInfo):
         we define here the self.packages variable used by post-treatment
         """
         self.packages = []
+        distdir = self.get_distrib_dir()
         for filename in os.listdir(self._tmpdir):
             fullpath = os.path.join(self._tmpdir, filename)
             if os.path.isfile(fullpath):
-                logging.debug("copy %s to %s" % (fullpath, self.get_distrib_dir()))
-                shutil.copy(fullpath, self.get_distrib_dir())
-                copied_filename = os.path.join(self.get_distrib_dir(), filename)
+                logging.debug("copy %s to %s" % (fullpath, distdir))
+                shutil.copy(fullpath, distdir)
+                copied_filename = os.path.join(distdir(), filename)
                 assert osp.exists(copied_filename)
                 self.packages.append(copied_filename)
                 if filename.endswith('.lgp-build'):
