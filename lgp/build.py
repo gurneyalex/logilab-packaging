@@ -36,7 +36,6 @@ from subprocess import check_call, CalledProcessError, PIPE
 from debian_bundle import deb822
 
 from logilab.common.fileutils import export
-from logilab.common.shellutils import cp
 
 from logilab.devtools.lgp import CONFIG_FILE
 from logilab.devtools.lgp.setupinfo import SetupInfo
@@ -60,12 +59,6 @@ def run(args):
                 if builder.compile(distrib=distrib, arch=arch):
                     if not builder.config.no_treatment and builder.packages:
                         run_post_treatments(builder, distrib)
-                    logging.info("new files are waiting in %s. Enjoy."
-                                 % builder.get_distrib_dir())
-                    logging.debug("complete list of files:\n%s" % pprint.pformat(builder.packages))
-                    # lastly print changes file to the console
-                    for changes in [c for c in  builder.packages if c.endswith('.changes')]:
-                        logging.info("Debian changes file is: %s" % changes)
     except LGPException, exc:
         logging.critical(exc)
         #if hasattr(builder, "config") and builder.config.verbose:
@@ -240,7 +233,7 @@ class Builder(SetupInfo):
     def compile(self, distrib, arch):
         self.clean_repository()
 
-        logging.info("building debian package for distribution '%s' and arch '%s'"
+        logging.info("building debian package for distribution '%s' and arch '%s' ..."
                      % (distrib, arch))
 
         # rewrite distrib to manage the 'all' case in run()
@@ -253,7 +246,7 @@ class Builder(SetupInfo):
         upstream_tarball, tarball, origpath = self.make_orig_tarball()
 
         # support of the multi-distribution
-        self.manage_multi_distribution(origpath)
+        self.manage_multi_distribution(distrib, origpath)
 
         # create a debian source package
         dscfile = self.make_debian_source_package(origpath)
@@ -264,8 +257,6 @@ class Builder(SetupInfo):
         finally:
             # copy some of created files like the build log
             self.copy_package_files()
-            # clean tmpdir
-            self.clean_tmpdir()
         return True
 
     def clean_tmpdir(self):
@@ -295,7 +286,7 @@ class Builder(SetupInfo):
             # FIXME use one copy of the upstream tarball
             #if self.config.orig_tarball:
             #    cmd += ' %s' % self.config.orig_tarball
-            check_call(cmd.split(), stdout=sys.stdout, stderr=sys.stderr)
+            check_call(cmd.split(), stdout=sys.stdout)
         except CalledProcessError, err:
             msg = "cannot build valid dsc file with command %s" % cmd
             raise LGPCommandException(msg, err)
@@ -303,18 +294,9 @@ class Builder(SetupInfo):
         # retrieve real filename (depending of Debian revision suffix)
         dscfile = glob.glob('*.dsc')[0]
 
-        if self.config.deb_src_only:
-            for filename in [f['name'] for f in deb822.Dsc(file(dscfile))['Files']]:
-                logging.debug("copy '%s' to '%s'" % (filename, self.get_distrib_dir()))
-                cp(filename, self.get_distrib_dir())
-            cp(dscfile, self.get_distrib_dir())
-            logging.info("Debian source control file is: %s"
-                         % osp.join(self.get_distrib_dir(), dscfile))
-
         # exit if asked by command-line
         if self.config.deb_src_only:
-            # clean tmpdir
-            self.clean_tmpdir()
+            self.copy_package_files()
             sys.exit()
 
         # restore directory context
@@ -322,11 +304,11 @@ class Builder(SetupInfo):
 
         return dscfile
 
-    def manage_multi_distribution(self, origpath):
-        """manage debian files depending of the distrib option
+    def manage_multi_distribution(self, distrib, origpath):
+        """manage debian files depending of the current distrib from options
 
         We copy debian_dir directory into tmp build depending of the target distribution
-        in all cases, we copy the debian directory of the unstable version
+        in all cases, we copy the debian directory of the default version (unstable)
         If a file should not be included, touch an empty file in the overlay
         directory.
 
@@ -338,22 +320,17 @@ class Builder(SetupInfo):
         except IOError, err:
             raise LGPException(err)
 
-        if self.get_debian_dir() != "debian":
-            logging.info("overriding files from '%s' directory..." % self.get_debian_dir())
+        debian_dir = self.get_debian_dir()
+        if debian_dir != "debian":
+            logging.info("overriding files from '%s' directory..." % debian_dir)
             # don't forget the final slash!
-            export(osp.join(self.config.pkg_dir, self.get_debian_dir()), osp.join(origpath, 'debian/'),
+            export(osp.join(self.config.pkg_dir, debian_dir), osp.join(origpath, 'debian/'),
                    verbose=self.config.verbose)
-
-        distrib = self.current_distrib
-
-        #logging.debug("rewrite distribution name to '%s'" % distrib)
-        # dch will update the changelog timestamp as well
-        #cmd = ['dch', '--force-distribution', '--distribution', '%s' % distrib, '']
 
         # substitute distribution string in file only if line not starting by
         # spaces (simple heuristic to prevent other changes in content)
-        cmd = ['sed', '-i', '/^[[:alpha:]]/s/\([[:alpha:]]\+\);/%s;/' % distrib,
-               osp.join(origpath, 'debian', 'changelog')]
+        cmd = ['sed', '-i', '/^[[:alpha:]]/s/\([[:alpha:]]\+\);/%s;/'
+               % distrib, osp.join(origpath, 'debian', 'changelog')]
         try:
             check_call(cmd, stdout=sys.stdout) #, stderr=sys.stderr)
         except CalledProcessError, err:
@@ -399,7 +376,7 @@ class Builder(SetupInfo):
         except CalledProcessError, err:
             # keep arborescence for further debug
             self.config.keep_tmpdir = True
-            raise LGPCommandException("failed autobuilding of package", err)
+            raise LGPCommandException("failure in package build", err)
 
     def copy_package_files(self):
         """copy package files from the temporary build area to the result directory
@@ -410,11 +387,37 @@ class Builder(SetupInfo):
         for filename in os.listdir(self._tmpdir):
             fullpath = os.path.join(self._tmpdir, filename)
             if os.path.isfile(fullpath):
-                logging.debug("copy %s to %s" % (fullpath,
-                                                 self.get_distrib_dir()))
+                logging.debug("copy %s to %s" % (fullpath, self.get_distrib_dir()))
                 shutil.copy(fullpath, self.get_distrib_dir())
                 copied_filename = os.path.join(self.get_distrib_dir(), filename)
+                assert osp.exists(copied_filename)
                 self.packages.append(copied_filename)
                 if filename.endswith('.lgp-build'):
                     logging.info("a build logfile is available: %s" % copied_filename)
+                if self.config.deb_src_only and filename.endswith('.dsc'):
+                    logging.info("Debian source control file is: %s"
+                                 % copied_filename)
+                if self.config.get_orig_source and filename.endswith('.tar.gz'):
+                    logging.info('a new original source archive (tarball) is available: %s'
+                                 % copied_filename)
+                if filename.endswith('.changes'):
+                    logging.info("Debian changes file is: %s" % copied_filename)
 
+        # clean tmpdir
+        self.clean_tmpdir()
+
+        # lastly print changes file to the console
+        logging.debug("complete list of files:\n%s" % pprint.pformat(self.packages))
+
+    def get_distrib_dir(self):
+        """get the dynamic target release directory"""
+        distrib_dir = os.path.join(os.path.expanduser(self.config.dist_dir),
+                                   self.current_distrib)
+        # check if distribution directory exists, create it if necessary
+        try:
+            os.makedirs(distrib_dir)
+        except OSError:
+            # it's not a problem here to pass silently # when the directory
+            # already exists
+            pass
+        return distrib_dir
