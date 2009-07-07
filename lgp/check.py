@@ -30,7 +30,6 @@ __docformat__ = "restructuredtext en"
 
 
 import os
-import sys
 import stat
 import re
 import commands
@@ -40,7 +39,6 @@ from os.path import basename, join, exists, isdir, isfile
 from pprint import pformat
 
 from logilab.common.compat import set
-from logilab.common.fileutils import ensure_fs_mode
 
 from logilab.devtools.lib.pkginfo import check_url as _check_url, spell_check, get_default_scripts, sequence_equal
 from logilab.devtools.lib.manifest import (get_manifest_files, read_manifest_in,
@@ -48,7 +46,7 @@ from logilab.devtools.lib.manifest import (get_manifest_files, read_manifest_in,
 
 from logilab.devtools import templates
 from logilab.devtools.lgp.setupinfo import SetupInfo
-from logilab.devtools.lgp.utils import cond_exec, confirm
+from logilab.devtools.lgp.utils import cond_exec
 from logilab.devtools.lgp.exceptions import LGPException
 
 CHANGEFILE='ChangeLog'
