@@ -17,9 +17,8 @@ DEBIAN_SUITES=("unstable" "testing" "stable" "oldstable" "sid" "etch" "lenny" "s
 UBUNTU_SUITES=("jaunty" "intrepid" "hardy" "gutsy" "feisty" "dapper")
 
 # Mirrors to use. Update these to your preferred mirror.
-#DEBIAN_MIRROR="cdn.debian.net"
-DEBIAN_MIRROR="ftp.fr.debian.org"
-UBUNTU_MIRROR="fr.archive.ubuntu.com"
+DEBIAN_MIRROR="cdn.debian.net"
+UBUNTU_MIRROR="archive.ubuntu.com"
 
 # You can use valid sources.list files to add your personal repositories...
 DEBIAN_SOURCESLIST="/etc/lgp/sources.list.debian"
@@ -35,8 +34,8 @@ UBUNTU_OTHERMIRROR=
 #: ${DIST:="$(lsb_release --short --codename)"}
 #: ${DIST:="unstable"}
 
-# Optionally use the changelog of a package to determine the suite to use if
-# none set.
+# Optionally use the changelog of a package to determine the suite to use if none set
+# Will use generic 'unstable' distribution name
 if [ -z "${DIST}" ] && [ -r "debian/changelog" ]; then
 	DIST=$(dpkg-parsechangelog | awk '/^Distribution: / {print $2}')
 	# Use the unstable suite for Debian experimental packages.
@@ -48,12 +47,14 @@ if [ -z "${DIST}" ] && [ -r "debian/changelog" ]; then
 	echo "Retrieve distribution from debian/changelog: $DIST"
 fi
 
+# Cannot use DISTRIBUTION directly
+DISTRIBUTION="${DIST}"
+
 # Optionally set the architecture to the host architecture if none set. Note
 # that you can set your own default (i.e. ${ARCH:="i386"}).
 : ${ARCH:="$(dpkg --print-architecture)"}
 #export DEBIAN_BUILDARCH=athlon
 
-DISTRIBUTION="${DIST}"
 NAME="${DIST}"
 if [ -n "${ARCH}" ]; then
     NAME="$NAME-$ARCH"
@@ -62,15 +63,20 @@ if [ -n "${ARCH}" ]; then
     DEBOOTSTRAP="cdebootstrap"
 
     DEBOOTSTRAPOPTS=()
-    DEBOOTSTRAPOPTS=("--include" "sysv-rc" "--debug" "-v" "--arch" "$ARCH" "${DEBOOTSTRAPOPTS[@]}")
+    DEBOOTSTRAPOPTS=("--include" "sysv-rc" "${DEBOOTSTRAPOPTS[@]}")
+    DEBOOTSTRAPOPTS=("--debug" "-v" "${DEBOOTSTRAPOPTS[@]}")
+    DEBOOTSTRAPOPTS=("--arch" "$ARCH" "${DEBOOTSTRAPOPTS[@]}")
     DEBOOTSTRAPOPTS=("--allow-unauthenticated" "${DEBOOTSTRAPOPTS[@]}")
+    DEBOOTSTRAPOPTS=("--flavour=build" "${DEBOOTSTRAPOPTS[@]}")
 fi
 
-# BASETGZ directory
-# A BASETGZ value is always set by lgp normally
-: ${BASETGZ:="/var/cache/lgp/buildd/$NAME.tgz"}
-if [ "$PBCURRENTCOMMANDLINEOPERATION" == "create" ]; then
-	mkdir -p $(dirname $BASETGZ) 2>/dev/null
+# Cannot use BASETGZ directly
+# Set the BASETGZ using lgp IMAGE environment variable
+: ${IMAGE:="/var/cache/lgp/buildd/$NAME.tgz"}
+BASETGZ=${IMAGE}
+if [ ! -d $(dirname $BASETGZ) ]; then
+	echo "Error: parent directory '$(dirname $BASETGZ)' has not been fully created" >/dev/stderr
+	exit 2
 fi
 if [ ! -r ${BASETGZ} -a "$PBCURRENTCOMMANDLINEOPERATION" != "create" ]; then
 	echo "Error: pbuilder image '$BASETGZ' has not been created" >/dev/stderr
@@ -92,6 +98,7 @@ elif $(echo ${UBUNTU_SUITES[@]} | grep -q $DIST); then
     eval "OTHERMIRROR=\"$(grep -v '#' $UBUNTU_SOURCESLIST | tr '\n' '|')\""
     [[ -f $UBUNTU_SOURCESLIST.$DIST ]] && OTHERMIRROR=$(grep -v '#' $UBUNTU_SOURCESLIST.$DIST | tr '\n' '|')
     OTHERMIRROR=${OTHERMIRROR:-$UBUNTU_OTHERMIRROR}
+    #DEBOOTSTRAPOPTS=("--exclude" "ubuntu-keyring" "${DEBOOTSTRAPOPTS[@]}")
 else
     # FIXME Should be dead code now (managed in lgp)
     # Debian could be the default case
@@ -127,6 +134,7 @@ APTCACHE="/var/cache/pbuilder/$NAME/aptcache/"
 REMOVEPACKAGES="lilo"
 #EXTRAPACKAGES=gcc3.0-athlon-builder
 
+# Use DEBOOTSTRAPOPTS instead ?
 # "debconf: delaying package configuration, since apt-utils is not installed"
 EXTRAPACKAGES="apt-utils nvi"
 
@@ -177,8 +185,8 @@ PKGNAME_LOGFILE=yes
 BUILDSOURCEROOTCMD="fakeroot"
 PBUILDERROOTCMD="sudo"
 
-#TIMEOUT_TIME=20min
 #DEBEMAIL=""
+TIMEOUT_TIME=20min
 export TERM=linux
 export IGNOREEOF=1
 export TMPDIR=/tmp

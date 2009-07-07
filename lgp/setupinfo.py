@@ -408,3 +408,7 @@ class SetupInfo(Configuration):
 
         logging.debug("extract original source archive in %s" % self._tmpdir)
         return(upstream_tarball, tarball, origpath)
+
+    def get_basetgz(self, distrib, arch):
+        basetgz = os.path.join(self.config.basetgz, "%s-%s.tgz" % (distrib, arch))
+        return basetgz
