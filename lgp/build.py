@@ -59,6 +59,10 @@ def run(args):
                 if builder.compile(distrib=distrib, arch=arch):
                     if not builder.config.no_treatment and builder.packages:
                         run_post_treatments(builder, distrib)
+    except KeyboardInterrupt:
+        logging.critical('lgp aborted by keyboard interrupt')
+        builder.clean_tmpdir()
+        return 1
     except LGPException, exc:
         logging.critical(exc)
         #if hasattr(builder, "config") and builder.config.verbose:
@@ -261,7 +265,8 @@ class Builder(SetupInfo):
 
     def clean_tmpdir(self):
         if not self.config.keep_tmpdir:
-            shutil.rmtree(self._tmpdir)
+            if hasattr(self, '_tmpdir'):
+                shutil.rmtree(self._tmpdir)
         else:
             logging.warn("keep temporary directory '%s' for further investigation"
                          % self._tmpdir)
