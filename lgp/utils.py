@@ -32,27 +32,6 @@ BASE_EXCLUDE = ('CVS', '.svn', '.hg', 'bzr')
 
 PUBLIC_RGX = re.compile('PUBLIC\s+"-//(?P<group>.*)//DTD (?P<pubid>.*)//(?P<lang>\w\w)(//XML)?"\s*"(?P<dtd>.*)"')
 
-# The known distribution are depending on the pbuilder setup in /opt/buildd
-# Find a way to retrieve dynamically
-# f = email.message_from_file(file('/usr/share/cdebootstrap/suites'))
-# [i.split() for i in f.get_payload().split('\n\n') if i]
-KNOWN_DISTRIBUTIONS = {'etch': 'oldstable',
-                       'oldstable': 'oldstable',
-                       'lenny': 'stable',
-                       'stable': 'stable',
-                       'unstable': 'unstable',
-                       'sid': 'unstable',
-                       'squeeze': 'testing',
-                       'testing': 'testing',
-                       'feisty':'feisty',
-                       'gutsy':'gutsy',
-                       'hardy':'hardy',
-                       'intrepid':'intrepid',
-                       'jaunty':'jaunty',
-                       'dapper':'dapper',
-                       'experimental': 'unstable',
-                      }
-
 
 class SGMLCatalog:
     """ handle SGML catalog information
@@ -155,39 +134,40 @@ def cond_exec(cmd, confirm=False, retry=False, force=False):
         else:
             return False
 
-def get_distributions(distrib=None, basetgz=None):
+def get_distributions(distrib=None, basetgz=None, suites='/usr/share/cdebootstrap/suites'):
     """ensure that the target distributions exist or return all the valid distributions
+
+    param distrib: specified distrib
+                   'all' to retrieved created distributions on filesystem
+                   'None' to detect available images by cdebootstrap
+    param basetgz: location of the pbuilder images
     """
-    distributions = KNOWN_DISTRIBUTIONS
-    if distrib is None or distrib == 'known':
-        distrib = KNOWN_DISTRIBUTIONS.keys()
-        return tuple(set(distrib))
-    elif distrib == 'target':
-        distrib = KNOWN_DISTRIBUTIONS.values()
-        return tuple(set(distrib))
+    if distrib is None:
+        import email
+        distrib = email.message_from_file(file(suites))
+        distrib = [i.split()[1] for i in distrib.get_payload().split('\n\n') if i]
     elif 'all' in distrib:
         # this case fixes unittest_distributions.py when basetgz is None
         if basetgz is None:
-            return set(KNOWN_DISTRIBUTIONS)
+            return get_distributions(basetgz=basetgz, suites=suites)
         distrib = [os.path.basename(f).split('-', 1)[0]
                    for f in glob.glob(os.path.join(basetgz,'*.tgz'))]
-        return set(KNOWN_DISTRIBUTIONS) & set(distrib)
-
-    mapped = ()
-    # check and filter if known
-    for t in distrib:
-        if (len(sys.argv)>1 and sys.argv[1] not in ["setup"]):
-            distributions = get_distributions('all', basetgz)
-        if t not in distributions:
-            # Allow lgp check to be run without valid images
-            if (len(sys.argv)>1 and sys.argv[1] in ["check", "tag", "project"]):
-                logging.debug("'%s' image not found in '%s'" % (t, basetgz))
-                logging.debug("act as if 'unstable' image was existing in filesystem")
-                return ('unstable',)
-            logging.critical("'%s' image not found in '%s'" % (t, basetgz))
-            raise DistributionException(t)
-        mapped += (t,)
-    distrib = mapped
+    elif distrib:
+        mapped = ()
+        # check and filter if known
+        for t in distrib:
+            if (len(sys.argv)>1 and sys.argv[1] not in ["setup"]):
+                distributions = get_distributions('all', basetgz, suites)
+            if t not in get_distributions(basetgz=basetgz, suites=suites):
+                # Allow lgp check to be run without valid images
+                if (len(sys.argv)>1 and sys.argv[1] in ["check", "tag", "project"]):
+                    logging.debug("'%s' image not found in '%s'" % (t, basetgz))
+                    logging.debug("act as if 'unstable' image was existing in filesystem")
+                    return ('unstable',)
+                logging.critical("'%s' image not found in '%s'" % (t, basetgz))
+                raise DistributionException(t)
+            mapped += (t,)
+        distrib = mapped
 
     return tuple(set(distrib))
 
