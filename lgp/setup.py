@@ -21,16 +21,14 @@
 __docformat__ = "restructuredtext en"
 
 import os
-import sys
 import logging
-from subprocess import Popen, PIPE
 try:
     from subprocess import check_call, CalledProcessError # only python2.5
 except ImportError:
     from logilab.common.compat import check_call, CalledProcessError
 
 from logilab.devtools.lgp.setupinfo import SetupInfo
-from logilab.devtools.lgp.utils import cond_exec, confirm
+from logilab.devtools.lgp.utils import get_architectures
 from logilab.devtools.lgp.exceptions import LGPException, LGPCommandException
 from logilab.devtools.lgp.check import check_keyrings
 from logilab.devtools.lgp import CONFIG_FILE
@@ -62,7 +60,7 @@ def run(args):
 
                 # run setup command
                 try:
-                    if arch == 'i386' and os.path.exists('/usr/bin/linux32'):
+                    if arch not in get_architectures() and arch == 'i386' and os.path.exists('/usr/bin/linux32'):
                         cmd = 'linux32 ' + cmd
                     cmd = cmd % (distrib, arch, CONFIG_FILE)
                     check_call(cmd.split(), env={'DIST': distrib, 'ARCH': arch})
