@@ -76,7 +76,7 @@ class SetupInfo(Configuration):
                 {'action': 'store_true',
                  'dest' : "verbose",
                  'short': 'v',
-                 'help': "run silently without confirmation"
+                 'help': "run silently without confirmation",
                 }),
                ('distrib',
                 {'type': 'csv',
@@ -84,7 +84,8 @@ class SetupInfo(Configuration):
                   'default' : 'unstable',
                   'short': 'd',
                   'metavar': "<distribution>",
-                  'help': "list of Debian distributions (from images created by setup). Use 'all' for automatic detection"
+                  'help': "list of Debian distributions (from images created by setup). Use 'all' for automatic detection",
+                 'group': 'Default',
                 }),
                ('arch',
                 {'type': 'csv',
@@ -92,7 +93,8 @@ class SetupInfo(Configuration):
                  'default' : 'current',
                  'short': 'a',
                  'metavar' : "<architecture>",
-                 'help': "build for the requested debian architectures only. Use 'all' for automatic detection"
+                 'help': "build for the requested debian architectures only. Use 'all' for automatic detection",
+                 'group': 'Default',
                 }),
                ('pkg_dir',
                 {'type': 'string',
@@ -100,13 +102,13 @@ class SetupInfo(Configuration):
                  'dest': "pkg_dir",
                  'short': 'p',
                  'metavar' : "<project directory>",
-                 'help': "set a specific project directory"
+                 'help': "set a specific project directory",
                 }),
                ('no-color',
                 {'action': 'store_true',
                  'default': not isatty,
                  'dest': "no_color",
-                 'help': "print log messages without color"
+                 'help': "print log messages without color",
                 }),
                ('dump-config',
                 {'action': 'store_true',
@@ -117,10 +119,11 @@ class SetupInfo(Configuration):
                ('basetgz',
                 {'type': 'string',
                  'hide': True,
-                 'default': '/opt/buildd',
+                 'default': '/var/cache/lgp/buildd',
                  'dest': "basetgz",
                  'metavar' : "<pbuilder basetgz location>",
-                 'help': "specifies the location of base.tgz used by pbuilder"
+                 'help': "specifies the location of base.tgz used by pbuilder",
+                 'group': 'Default',
                 }),
                ('setup-file',
                 #{'type': 'csv',
@@ -131,15 +134,6 @@ class SetupInfo(Configuration):
                  'default' : 'setup.mk',
                  'metavar': "<setup file names>",
                  'help': "list of setup files to use"
-                }),
-               ('known-distributions',
-                {'type': 'csv',
-                 'dest': 'known_distributions',
-                 'hide': True,
-                 'default' : ['oldstable', 'stable', 'unstable', 'testing',
-                              'feisty', 'gutsy', 'hardy', 'intrepid', 'jaunty',
-                             'dapper'],
-                 'help': "List of hard-coded distributions"
                 }),
                )
         if options:
