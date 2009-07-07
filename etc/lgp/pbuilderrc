@@ -17,7 +17,7 @@ DEBIAN_SUITES=("unstable" "testing" "stable" "oldstable" "sid" "etch" "lenny" "s
 UBUNTU_SUITES=("jaunty" "intrepid" "hardy" "gutsy" "feisty" "dapper")
 
 # Mirrors to use. Update these to your preferred mirror.
-#DEBIAN_MIRROR="cdn.debian.net/debian"
+#DEBIAN_MIRROR="cdn.debian.net"
 DEBIAN_MIRROR="ftp.fr.debian.org"
 UBUNTU_MIRROR="fr.archive.ubuntu.com"
 
@@ -67,10 +67,8 @@ if [ -n "${ARCH}" ]; then
 fi
 
 # BASETGZ directory
-# FIXME source a /etc/default/lgp file ?
-# FIXME the default path should /var/cache/lgp
-#BASETGZ="/var/cache/lgp/buildd/$NAME.tgz"
-BASETGZ="/opt/buildd/$NAME.tgz"
+# A BASETGZ value is always set by lgp normally
+: ${BASETGZ:="/var/cache/lgp/buildd/$NAME.tgz"}
 if [ "$PBCURRENTCOMMANDLINEOPERATION" == "create" ]; then
 	mkdir -p $(dirname $BASETGZ) 2>/dev/null
 fi

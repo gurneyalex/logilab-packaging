@@ -1,4 +1,4 @@
 etc/lgp
 etc/lgp/apt.d
 usr/bin
-var/cache/lgp
+var/cache/lgp/buildd
