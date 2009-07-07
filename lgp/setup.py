@@ -50,20 +50,21 @@ def run(args):
             for distrib in setup.distributions:
                 if setup.config.command == "create":
                     logging.info("creating '%s' image now... It will take a while." % distrib)
-                    cmd = "sudo DIST=%s ARCH=%s pbuilder create --override-config --configfile %s"
+                    cmd = "sudo IMAGE=%s DIST=%s ARCH=%s pbuilder create --override-config --configfile %s"
                 elif setup.config.command == "update":
                     logging.info("updating '%s' image now... It will take a while." % distrib)
-                    cmd = "sudo DIST=%s ARCH=%s pbuilder update --override-config --configfile %s"
+                    cmd = "sudo IMAGE=%s DIST=%s ARCH=%s pbuilder update --override-config --configfile %s"
                 elif setup.config.command == "dumpconfig":
                     logging.info("dump '%s' image configuration" % distrib)
-                    cmd = "sudo DIST=%s ARCH=%s pbuilder dumpconfig --configfile %s"
+                    cmd = "sudo IMAGE=%s DIST=%s ARCH=%s pbuilder dumpconfig --configfile %s"
 
                 # run setup command
                 try:
                     if arch not in get_architectures() and arch == 'i386' and os.path.exists('/usr/bin/linux32'):
                         cmd = 'linux32 ' + cmd
-                    cmd = cmd % (distrib, arch, CONFIG_FILE)
-                    check_call(cmd.split(), env={'DIST': distrib, 'ARCH': arch})
+                    cmd = cmd % (setup.get_basetgz(distrib, arch), distrib, arch, CONFIG_FILE)
+                    check_call(cmd.split(), env={'DIST': distrib, 'ARCH': arch,
+                                                 'IMAGE': setup.get_basetgz(distrib, arch)})
                 except CalledProcessError, err:
                     # FIXME command always returns exit code 1
                     if setup.config.command == "dumpconfig":

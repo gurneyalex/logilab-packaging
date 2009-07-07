@@ -360,8 +360,9 @@ class Builder(SetupInfo):
         assert osp.exists(dscfile)
 
         if debuilder == 'pbuilder':
-            cmd = "sudo DIST=%s ARCH=%s pbuilder build --configfile %s --buildresult %s"
-            cmd %= distrib, arch, CONFIG_FILE, self._tmpdir
+            assert osp.exists(self.get_basetgz(distrib, arch))
+            cmd = "sudo IMAGE=%s DIST=%s ARCH=%s pbuilder build --configfile %s --buildresult %s"
+            cmd %= self.get_basetgz(distrib, arch), distrib, arch, CONFIG_FILE, self._tmpdir
             if self.config.hooks:
                 from logilab.devtools.lgp import HOOKS_DIR
                 cmd += " --hookdir %s" % HOOKS_DIR
@@ -377,7 +378,9 @@ class Builder(SetupInfo):
 
         logging.info("running build command: %s ..." % cmd)
         try:
-            check_call(cmd.split(), env={'DIST': distrib, 'ARCH': arch}, stdout=PIPE)
+            check_call(cmd.split(), env={'DIST': distrib, 'ARCH': arch,
+                                         'IMAGE': self.get_basetgz(distrib, arch)},
+                       stdout=PIPE)
         except CalledProcessError, err:
             # keep arborescence for further debug
             self.config.keep_tmpdir = True
