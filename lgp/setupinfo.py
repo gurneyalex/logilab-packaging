@@ -316,12 +316,13 @@ class SetupInfo(Configuration):
                          " at 1 each time the upstream_version is increased.")
 
         if debian_revision not in ['0', '1']:
-            logging.critical('unable to build %s package for the Debian revision "%s"'
-                             % (self.get_debian_name(), debian_revision))
-            raise LGPException('--orig-tarball option is required when you don\'t'\
-                               'build the first revision of a debian package.\n' \
-                               'If you haven\'t the original tarball version, ' \
-                               'please do an apt-get source of the Debian source package.')
+            logging.error("--orig-tarball option is required when you don't "
+                          "build the first revision of a debian package")
+            logging.error("If you haven't the original tarball version, please do "
+                          "an apt-get source of the Debian source package")
+            raise LGPException('unable to build upstream tarball of %s package '
+                               'for Debian revision "%s"'
+                               % (self.get_debian_name(), debian_revision))
 
     @cached
     def get_upstream_name(self):
