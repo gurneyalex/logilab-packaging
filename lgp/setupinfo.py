@@ -303,8 +303,9 @@ class SetupInfo(Configuration):
         finally:
             os.chdir(cwd)
 
-    def check_debian_revision(self):
+    def is_initial_debian_revision(self):
         # http://www.debian.org/doc/debian-policy/ch-controlfields.html#s-f-Version
+        initial = True
         try:
             debian_revision = self.get_debian_version().rsplit('-', 1)[1]
         except IndexError:
@@ -316,13 +317,16 @@ class SetupInfo(Configuration):
                          " at 1 each time the upstream_version is increased.")
 
         if debian_revision not in ['0', '1']:
-            logging.error("--orig-tarball option is required when you don't "
-                          "build the first revision of a debian package")
-            logging.error("If you haven't the original tarball version, please do "
-                          "an apt-get source of the Debian source package")
-            raise LGPException('unable to build upstream tarball of %s package '
-                               'for Debian revision "%s"'
-                               % (self.get_debian_name(), debian_revision))
+            initial = False
+            if not self.config.orig_tarball:
+                logging.error("--orig-tarball option is required when you don't "
+                              "build the first revision of a debian package")
+                logging.error("If you haven't the original tarball version, please do "
+                              "an apt-get source of the Debian source package")
+                raise LGPException('unable to build upstream tarball of %s package '
+                                   'for Debian revision "%s"'
+                                   % (self.get_debian_name(), debian_revision))
+        return initial
 
     @cached
     def get_upstream_name(self):
@@ -361,12 +365,13 @@ class SetupInfo(Configuration):
         origpath = os.path.join(self._tmpdir, "%s-%s" % fileparts)
         tarball = '%s_%s.orig.tar.gz' % fileparts
         upstream_tarball = '%s-%s.tar.gz' % fileparts
+        initial_revision = self.is_initial_debian_revision()
 
         if self.config.orig_tarball is None:
             copy_command = mv
-            logging.info("create a new source archive (tarball) from upstream release")
+            logging.info("add new source archive '%s' (pristine tarball) from upstream release"
+                        % tarball)
             try:
-                self.check_debian_revision()
                 self._run_command("sdist", dist_dir=self._tmpdir)
             except CalledProcessError, err:
                 logging.error("creation of the source archive failed")
@@ -394,13 +399,17 @@ class SetupInfo(Configuration):
 
         # dpkg-source expects the  original source as a tarfile
         # by default: package_upstream-version.orig.tar.extension
-        logging.debug("rename '%s' to '%s'" % (upstream_tarball, tarball))
+        if os.path.basename(upstream_tarball) != tarball:
+            logging.debug("rename '%s' to '%s'" % (upstream_tarball, tarball))
         tarball = os.path.join(self._tmpdir, tarball) # rewrite with absolute path
-        copy_command(upstream_tarball, tarball)
+
+        # only provide a pristine tarball when it's an initial revision
+        if initial_revision:
+            copy_command(upstream_tarball, tarball)
 
         # test and extracting the .orig.tar.gz
         try:
-            cmd = 'tar xzf %s -C %s' % (tarball, self._tmpdir)
+            cmd = 'tar xzf %s -C %s' % (upstream_tarball, self._tmpdir)
             check_call(cmd.split(), stdout=sys.stdout,
                                     stderr=sys.stderr)
         except CalledProcessError, err:

@@ -71,7 +71,7 @@ def run(args):
         return 1
 
 def run_pre_treatments(builder):
-    # TODO add lgp hook possibility
+    # TODO add new lgp hooks instead
     pass
 
 def run_post_treatments(builder, distrib):
@@ -89,11 +89,10 @@ def run_post_treatments(builder, distrib):
                 if dscfile['name'].endswith('orig.tar.gz'):
                     orig = dscfile
                     break
-            # There is no orig.tar.gz file in the dsc file. This is probably a native package.
-            if verbose and orig is None:
-                if not confirm("No orig.tar.gz file found in %s.\n"
-                               "This is a native package (really) ?" % package):
-                    return
+            # there is no orig.tar.gz file in the dsc file
+            if orig is None and builder.is_initial_debian_revision():
+                logging.error("no orig.tar.gz file found in %s (few chances "
+                              "to be a real native package)" % package)
 
     # FIXME move code to apycot and detection of options from .changes
     from logilab.devtools.lgp.utils import get_architectures
