@@ -368,19 +368,17 @@ class SetupInfo(Configuration):
         initial_revision = self.is_initial_debian_revision()
 
         if self.config.orig_tarball is None:
-            copy_command = mv
             logging.info("add new source archive '%s' (pristine tarball) from upstream release"
                         % tarball)
             try:
-                self._run_command("sdist", dist_dir=self._tmpdir)
+                self._run_command("sdist", dist_dir=os.path.join(self._tmpdir, 'dist'))
             except CalledProcessError, err:
                 logging.error("creation of the source archive failed")
                 logging.error("check if the version '%s' is really tagged in"\
                                   " your repository" % self.get_upstream_version())
                 raise LGPCommandException("source distribution wasn't properly built", err)
-            upstream_tarball = os.path.join(self._tmpdir, upstream_tarball)
+            upstream_tarball = os.path.join(self._tmpdir, 'dist', upstream_tarball)
         else:
-            copy_command = cp
             expected = [upstream_tarball, tarball]
             if os.path.basename(self.config.orig_tarball) not in expected:
                 logging.error("the provided archive hasn't one of the expected formats (%s)"
@@ -391,23 +389,21 @@ class SetupInfo(Configuration):
 
         assert os.path.isfile(upstream_tarball), 'original source archive (tarball) not found'
 
+        tarball = os.path.join(self._tmpdir, tarball) # rewrite with absolute path
+
+        # only provide a pristine tarball when it's an initial revision
+        if initial_revision:
+            # dpkg-source expects the original source as a tarfile
+            # by default: package_upstream-version.orig.tar.extension
+            cp(upstream_tarball, tarball)
+
         # exit if asked by command-line
         if self.config.get_orig_source:
             # copy some of created files like the build log
             self.copy_package_files()
             sys.exit()
 
-        # dpkg-source expects the  original source as a tarfile
-        # by default: package_upstream-version.orig.tar.extension
-        if os.path.basename(upstream_tarball) != tarball:
-            logging.debug("rename '%s' to '%s'" % (upstream_tarball, tarball))
-        tarball = os.path.join(self._tmpdir, tarball) # rewrite with absolute path
-
-        # only provide a pristine tarball when it's an initial revision
-        if initial_revision:
-            copy_command(upstream_tarball, tarball)
-
-        # test and extracting the .orig.tar.gz
+        # test and extracting the upstream tarball
         try:
             cmd = 'tar xzf %s -C %s' % (upstream_tarball, self._tmpdir)
             check_call(cmd.split(), stdout=sys.stdout,
