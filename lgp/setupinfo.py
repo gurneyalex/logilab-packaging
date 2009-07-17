@@ -415,6 +415,8 @@ class SetupInfo(Configuration):
         logging.debug("extract original source archive in %s" % self._tmpdir)
         return(upstream_tarball, tarball, origpath)
 
-    def get_basetgz(self, distrib, arch):
+    def get_basetgz(self, distrib, arch, check=True):
         basetgz = os.path.join(self.config.basetgz, "%s-%s.tgz" % (distrib, arch))
+        if check and not os.path.exists(basetgz):
+            raise LGPException("lgp image '%s' not found. Please create it with lgp setup" % basetgz)
         return basetgz
