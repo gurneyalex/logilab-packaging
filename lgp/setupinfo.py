@@ -347,17 +347,20 @@ class SetupInfo(Configuration):
         assert debian_upstream_version == self.get_versions()[0], "get_versions() failed"
         logging.debug("don't forget to track vcs tags if in use")
         if upstream_version != debian_upstream_version:
-            logging.info("version provided by upstream is '%s'" % upstream_version)
-            logging.info("upstream version read from Debian changelog is '%s'" % debian_upstream_version)
-            logging.warn('please check coherence of the previous version numbers')
+            logging.warn("version provided by upstream is '%s'" % upstream_version)
+            logging.warn("upstream version read from Debian changelog is '%s'" % debian_upstream_version)
+            logging.error('please check coherence of the previous version numbers')
 
     def clean_repository(self):
-        """Clean the project repository"""
-        logging.info("clean repository")
+        """clean the project repository"""
+        logging.info("clean the project repository")
         self._run_command('clean')
 
     def make_orig_tarball(self):
         """make upstream and debianized tarballs in a dedicated directory"""
+        # compare versions here to alert developpers
+        self.compare_versions()
+
         fileparts = (self.get_upstream_name(), self.get_upstream_version())
         # directory containing the debianized source tree
         # (i.e. with a debian sub-directory and maybe changes to the original files)
