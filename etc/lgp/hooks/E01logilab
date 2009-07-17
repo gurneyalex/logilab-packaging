@@ -1,0 +1,3 @@
+#!/bin/sh -ex
+
+wget -q http://ftp.logilab.org/dists/logilab-dists-key.asc  -O - | apt-key add -
