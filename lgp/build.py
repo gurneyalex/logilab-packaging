@@ -359,7 +359,6 @@ class Builder(SetupInfo):
         assert osp.exists(dscfile)
 
         if debuilder == 'pbuilder':
-            assert osp.exists(self.get_basetgz(distrib, arch))
             cmd = "sudo IMAGE=%s DIST=%s ARCH=%s pbuilder build --configfile %s --buildresult %s"
             cmd %= self.get_basetgz(distrib, arch), distrib, arch, CONFIG_FILE, self._tmpdir
             if self.config.hooks:

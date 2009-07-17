@@ -60,11 +60,12 @@ def run(args):
 
                 # run setup command
                 try:
+                    image = setup.get_basetgz(distrib, arch, check=False)
                     if arch not in get_architectures() and arch == 'i386' and os.path.exists('/usr/bin/linux32'):
                         cmd = 'linux32 ' + cmd
-                    cmd = cmd % (setup.get_basetgz(distrib, arch), distrib, arch, CONFIG_FILE)
+                    cmd = cmd % (image, distrib, arch, CONFIG_FILE)
                     check_call(cmd.split(), env={'DIST': distrib, 'ARCH': arch,
-                                                 'IMAGE': setup.get_basetgz(distrib, arch)})
+                                                 'IMAGE': image})
                 except CalledProcessError, err:
                     # FIXME command always returns exit code 1
                     if setup.config.command == "dumpconfig":
