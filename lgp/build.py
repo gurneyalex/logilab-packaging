@@ -375,6 +375,8 @@ class Builder(SetupInfo):
             cmd = debuilder
 
         logging.info("running build command: %s ..." % cmd)
+        logging.debug("a build logfile is readable with: 'tail -f %s/*.lgp-build'" % self._tmpdir)
+
         try:
             check_call(cmd.split(), env={'DIST': distrib, 'ARCH': arch,
                                          'IMAGE': self.get_basetgz(distrib, arch)},
