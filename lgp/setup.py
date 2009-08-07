@@ -31,7 +31,7 @@ from logilab.devtools.lgp.setupinfo import SetupInfo
 from logilab.devtools.lgp.utils import get_architectures
 from logilab.devtools.lgp.exceptions import LGPException, LGPCommandException
 from logilab.devtools.lgp.check import check_keyrings
-from logilab.devtools.lgp import CONFIG_FILE
+from logilab.devtools.lgp import CONFIG_FILE, HOOKS_DIR
 
 
 def run(args):
@@ -63,7 +63,8 @@ def run(args):
                     image = setup.get_basetgz(distrib, arch, check=False)
                     if arch not in get_architectures() and arch == 'i386' and os.path.exists('/usr/bin/linux32'):
                         cmd = 'linux32 ' + cmd
-                    cmd = cmd % (image, distrib, arch, CONFIG_FILE)
+                    cmd = cmd + ' --hookdir %s'
+                    cmd = cmd % (image, distrib, arch, CONFIG_FILE, HOOKS_DIR)
                     check_call(cmd.split(), env={'DIST': distrib, 'ARCH': arch,
                                                  'IMAGE': image})
                 except CalledProcessError, err:
