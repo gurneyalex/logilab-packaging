@@ -31,7 +31,7 @@ import logging
 import pprint
 import warnings
 import os.path as osp
-from subprocess import check_call, CalledProcessError, PIPE
+from subprocess import check_call, CalledProcessError
 
 from debian_bundle import deb822
 
@@ -265,7 +265,11 @@ class Builder(SetupInfo):
     def clean_tmpdir(self):
         if not self.config.keep_tmpdir:
             if hasattr(self, '_tmpdir'):
-                shutil.rmtree(self._tmpdir)
+                try:
+                    shutil.rmtree(self._tmpdir)
+                except OSError, exc:
+                    logging.error("cannot remove '%s' (%s)"
+                                  % (self._tmpdir, exc))
         else:
             logging.warn("keep temporary directory '%s' for further investigation"
                          % self._tmpdir)
@@ -375,12 +379,10 @@ class Builder(SetupInfo):
             cmd = debuilder
 
         logging.info("running build command: %s ..." % cmd)
-        logging.debug("a build logfile is readable with: 'tail -f %s/*.lgp-build'" % self._tmpdir)
-
         try:
             check_call(cmd.split(), env={'DIST': distrib, 'ARCH': arch,
                                          'IMAGE': self.get_basetgz(distrib, arch)},
-                       stdout=PIPE)
+                       stdout=sys.stdout)
         except CalledProcessError, err:
             # keep arborescence for further debug
             self.config.keep_tmpdir = True
