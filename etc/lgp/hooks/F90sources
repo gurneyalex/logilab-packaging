@@ -1,9 +1,11 @@
 #!/bin/sh
 
-echo "\n# Uncomment the next line if you want to use your remote repository" >> /etc/apt/sources.list
+echo >> /etc/apt/sources.list
+echo "# Uncomment the next line if you want to use your remote repository" >> /etc/apt/sources.list
 echo "#deb http://$SUDO_USER:$SUDO_USER@intranet.logilab.fr/~$SUDO_USER/dists $DIST/" >> /etc/apt/sources.list
 
 if [ -f "$BUILDRESULT/Packages.gz" ]; then
 	echo "Adding a new sources.list entry for '$BUILDRESULT'..."
-	echo "\ndeb file://$(dirname $BUILDRESULT) $(basename $BUILDRESULT)/" >> /etc/apt/sources.list
+	echo >> /etc/apt/sources.list
+	echo "deb file://$(dirname $BUILDRESULT) $(basename $BUILDRESULT)/" >> /etc/apt/sources.list
 fi
