@@ -348,7 +348,7 @@ def check_debian_changelog(checker):
         cmd = "sed -ne '/DISTRIBUTION/p' %s" % CHANGELOG
         _, output = commands.getstatusoutput(cmd)
         if output:
-            checker.logger.info('Default distribution value should be "unstable" in your debian changelog')
+            checker.logger.info("Default distribution should be a valid image name in '%s'" % CHANGELOG)
         cmd = "dpkg-parsechangelog >/dev/null"
         _, output = commands.getstatusoutput(cmd)
         if output:

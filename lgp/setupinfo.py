@@ -20,7 +20,6 @@ import sys
 import os
 import stat
 import os.path
-import shutil
 import logging
 from string import Template
 from distutils.core import run_setup
@@ -30,7 +29,7 @@ from subprocess import check_call, CalledProcessError
 
 from logilab.common.configuration import Configuration
 from logilab.common.logging_ext import ColorFormatter
-from logilab.common.shellutils import cp, mv
+from logilab.common.shellutils import cp
 
 from logilab.devtools.lib.pkginfo import PackageInfo
 from logilab.devtools.lib import TextReporter
@@ -81,10 +80,11 @@ class SetupInfo(Configuration):
                ('distrib',
                 {'type': 'csv',
                   'dest': 'distrib',
-                  'default' : 'unstable',
                   'short': 'd',
                   'metavar': "<distribution>",
-                  'help': "list of Debian distributions (from images created by setup). Use 'all' for automatic detection",
+                  'help': "list of Debian distributions (from images created by setup). "
+                          "Use 'all' for automatic detection or 'changelog' "
+                          "for the value found in debian/changelog",
                  'group': 'Default',
                 }),
                ('arch',
@@ -181,6 +181,10 @@ class SetupInfo(Configuration):
         except OSError, err:
             raise LGPException(err)
 
+        # no default value for distribution. Try to retrieve it in changelog
+        if self.config.distrib is None or 'changelog' in self.config.distrib:
+            self.config.distrib = self.get_debian_distribution()
+
         # Define mandatory attributes for lgp commands
         self.distributions = get_distributions(self.config.distrib,
                                                self.config.basetgz)
@@ -238,15 +242,15 @@ class SetupInfo(Configuration):
         """get the dynamic debian directory for the configuration override
 
         The convention is :
-        - 'debian' is for unstable/sid distribution
+        - 'debian' is for distribution found in debian/changelog
         - 'debian/$OTHER' subdirectory for $OTHER distribution if need
         """
         # TODO Check the X-Vcs-* to fetch remote Debian configuration files
         debiandir = 'debian' # default debian config location
-        override_dir = os.path.join(debiandir, self.current_distrib)
-
         if not hasattr(self, 'current_distrib'):
             return debiandir
+
+        override_dir = os.path.join(debiandir, self.current_distrib)
 
         # FIXME use new scheme with separate Debian repository in head
         # developper can create an overlay for the debian directory
@@ -273,6 +277,31 @@ class SetupInfo(Configuration):
                     return line[1].rstrip()
         except IOError, err:
             raise LGPException('a Debian control file should exist in "%s"' % control)
+
+    def get_debian_distribution(self):
+        """get the default debian distribution in debian/changelog
+
+           Useful to determine a default distribution different from unstable if need
+        """
+        try:
+            cmd = "dpkg-parsechangelog"
+            process = Popen(cmd.split(), stdout=PIPE)
+            pipe = process.communicate()[0]
+            if process.returncode > 0:
+                msg = 'dpkg-parsechangelog exited with status %s' % process.returncode
+                process.cmd = cmd.split()
+                raise LGPCommandException(msg, process)
+
+            for line in pipe.split('\n'):
+                line = line.strip()
+                if line and line.startswith('Distribution:'):
+                    distribution = line.split(' ', 1)[1].strip()
+                    logging.info('retrieve default debian distribution from debian/changelog: %s'
+                                 % distribution)
+                    return [distribution,]
+            raise LGPException('Debian Distribution field not found in debian/changelog')
+        except CalledProcessError, err:
+            raise LGPCommandException(msg, err)
 
     def get_debian_version(self):
         """get upstream and debian versions depending of the last changelog entry found in Debian changelog
