@@ -67,7 +67,9 @@ def run(args):
         logging.critical(exc)
         #if hasattr(builder, "config") and builder.config.verbose:
         #    logging.debug("printing traceback...")
-        #    raise
+        #    import traceback
+        #    logging.critical(traceback.format_exc())
+        #    #raise
         return 1
 
 def run_pre_treatments(builder):

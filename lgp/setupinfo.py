@@ -238,19 +238,26 @@ class SetupInfo(Configuration):
         """get the dynamic debian directory for the configuration override
 
         The convention is :
-        - 'debian' is for unstable distribution
-        - 'debian.$OTHER' id for $OTHER distribution and if it exists
+        - 'debian' is for unstable/sid distribution
+        - 'debian/$OTHER' subdirectory for $OTHER distribution if need
         """
+        # TODO Check the X-Vcs-* to fetch remote Debian configuration files
         debiandir = 'debian' # default debian config location
+        override_dir = os.path.join(debiandir, self.current_distrib)
 
         if not hasattr(self, 'current_distrib'):
             return debiandir
 
-        # FIXME use another scheme with separate Debian repository in head
+        # FIXME use new scheme with separate Debian repository in head
         # developper can create an overlay for the debian directory
-        new_debiandir = '%s.%s' % (debiandir, self.current_distrib)
-        if os.path.isdir(os.path.join(self.config.pkg_dir, new_debiandir)):
-            debiandir = new_debiandir
+        old_override_dir = '%s.%s' % (debiandir, self.current_distrib)
+        if os.path.isdir(os.path.join(self.config.pkg_dir, old_override_dir)):
+            logging.warn("Debian overriding scheme '%s' is deprecated now" % old_override_dir)
+            logging.warn("you should instead use a new '%s' subdirectory and merge the files" % override_dir)
+            debiandir = old_override_dir
+
+        if os.path.isdir(os.path.join(self.config.pkg_dir, override_dir)):
+            debiandir = override_dir
         return debiandir
 
     def get_debian_name(self):
