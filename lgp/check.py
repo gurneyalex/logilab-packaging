@@ -625,7 +625,7 @@ def check_shebang(checker):
 
 def check_deprecated(checker):
     """check attributes in deprecation (not implemented)"""
-    raise NotImplementedError("use right pylint options")
+    raise NotImplementedError("check deprecations")
 
 def check_pylint(checker):
     """check with pylint (not implemented) """
