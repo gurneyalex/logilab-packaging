@@ -1,0 +1,46 @@
+# Lgp configuration file
+
+[DEFAULT]
+# list of distributions (e.g. 'stable, unstable'). Use 'all' for automatic detection
+#distrib=unstable
+distrib=all
+
+# build for the requested debian architectures only. Use 'all' for automatic detection
+#arch=current
+arch=all
+
+# specifies the location of base.tgz used by pbuilder
+basetgz=/var/cache/lgp/buildd
+
+# list of setup files to use
+#setup-file=setup.mk
+
+
+# Lgp builder config
+# Specific options are added. See lgp build --help
+[LGP-BUILD]
+
+# where to put compilation results
+result=~/dists
+
+
+# Lgp checker config
+# Specific options are added. See lgp check --help
+[LGP-CHECK]
+
+# force the inclusion of other check functions
+#include=
+
+# force the exclusion of other check functions
+#exclude=
+
+# set a specific check functions list
+#set=debian_dir,debian_rules,debian_copying,debian_changelog,package_info,readme,changelog,bin,tests_directory,setup_file,repository,copying,documentation,homepage,builder,keyrings,announce,release_number,manifest_in,include_dirs,scripts,pydistutils,debian_maintainer,debian_uploader
+
+
+# Lgp tagger class
+# Specific options are added. See lgp tag --help
+[LGP-TAG]
+
+# list of tag formats to apply (Logilab policy. Feel free to change!)
+format=$project-version-$version, $project-debian-version-$version-$debian_revision
