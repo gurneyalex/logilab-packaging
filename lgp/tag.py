@@ -47,7 +47,7 @@ def run(args):
         return 1
 
 class Tagger(SetupInfo):
-    """Tagger class
+    """Lgp tagger class
 
     Specific options are added. See lgp tag --help
     """
