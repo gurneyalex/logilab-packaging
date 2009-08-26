@@ -252,12 +252,14 @@ class SetupInfo(Configuration):
 
         override_dir = os.path.join(debiandir, self.current_distrib)
 
-        # FIXME use new scheme with separate Debian repository in head
+        # Use new directory scheme with separate Debian repository in head
         # developper can create an overlay for the debian directory
         old_override_dir = '%s.%s' % (debiandir, self.current_distrib)
         if os.path.isdir(os.path.join(self.config.pkg_dir, old_override_dir)):
-            logging.warn("Debian overriding scheme '%s' is deprecated now" % old_override_dir)
-            logging.warn("you should instead use a new '%s' subdirectory and merge the files" % override_dir)
+            logging.warn("new distribution overlay system available: you "
+                         "can use '%s' subdirectory instead of '%s' and "
+                         "merge the files"
+                         % (override_dir, old_override_dir))
             debiandir = old_override_dir
 
         if os.path.isdir(os.path.join(self.config.pkg_dir, override_dir)):
@@ -389,7 +391,7 @@ class SetupInfo(Configuration):
 
     def clean_repository(self):
         """clean the project repository"""
-        logging.info("clean the project repository")
+        logging.debug("clean the project repository")
         self._run_command('clean')
 
     def make_orig_tarball(self):
