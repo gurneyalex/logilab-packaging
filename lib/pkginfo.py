@@ -33,7 +33,7 @@ from logilab.common.shellutils import find
 
 import logilab.devtools
 from logilab.devtools.lib import TextReporter
-from logilab.devtools.lgp.utils import SGMLCatalog, get_scripts, glob_match
+from logilab.devtools.lib.utils import SGMLCatalog, get_scripts, glob_match
 from logilab.devtools.vcslib import BASE_EXCLUDE
 
 try:
