@@ -16,77 +16,14 @@
 """miscellaneous utilities, mostly shared by package'checkers
 """
 
-import re
-import os
 import glob
 import sys
-from os.path import basename, join, split, exists
+import os.path
 from subprocess import Popen, PIPE
 import logging
 
 from logilab.devtools.lgp.exceptions import (ArchitectureException,
                                              DistributionException)
-
-#from logilab.devtools.vcslib import BASE_EXCLUDE
-BASE_EXCLUDE = ('CVS', '.svn', '.hg', 'bzr')
-
-PUBLIC_RGX = re.compile('PUBLIC\s+"-//(?P<group>.*)//DTD (?P<pubid>.*)//(?P<lang>\w\w)(//XML)?"\s*"(?P<dtd>.*)"')
-
-
-class SGMLCatalog:
-    """ handle SGML catalog information
-    i.e. map dtds to their public id
-    """
-    def __init__(self, path, stream):
-        self.path = path
-        self.id = basename(path)
-        self.dtds = {}
-        for m in PUBLIC_RGX.finditer(stream.read()):
-            dtd = m.group('dtd').split('/')[-1]
-            self.dtds[dtd] = (m.group('group'), m.group('pubid'))
-
-    def dtd_infos(self, dtd):
-        """return infos for a dtd file"""
-        return self.dtds[dtd]
-
-    def check_dtds(self, dtds, reporter):
-        """check given dtd files are registered"""
-        for dtd in dtds:
-            dtddir, dtdname = split(dtd)
-            try:
-                self.dtd_infos(dtdname)
-            except KeyError:
-                msg = 'DTD %s is not registered by the main catalog' % dtd
-                reporter.error(dtd, None, msg)
-
-def glob_match(pattern, prefix=None):
-    """return a list of files matching <pattern> from the <prefix> directory
-    """
-    cwd = os.getcwd()
-    if prefix:
-        try:
-            os.chdir(prefix)
-        except OSError:
-            return []
-    try: 
-        return glob.glob(pattern)
-    finally:
-        if prefix:
-            os.chdir(cwd)
-
-def get_scripts(dirname, include_bat=0):
-    """return a list of executable scripts
-    """
-    bindir = join(dirname, 'bin')
-    if not exists(bindir):
-        return ()
-    result = []
-    for filename in os.listdir(bindir):
-        if filename in BASE_EXCLUDE:
-            continue
-        if include_bat or filename[-4:] != '.bat':
-            result.append(join('bin', filename))
-    return result
 
 
 def ask(msg, options): 
@@ -154,11 +91,15 @@ def get_distributions(distrib=None, basetgz=None, suites='/usr/share/cdebootstra
                    for f in glob.glob(os.path.join(basetgz,'*.tgz'))]
     elif distrib:
         mapped = ()
-        # check and filter if known
+        # special setup case (all distribution names are available)
+        if (len(sys.argv)>1 and sys.argv[1] in ["setup"]):
+            distributions = get_distributions(basetgz=basetgz, suites=suites)
+        # generic case: we retrieve distributions based on filesystem
+        else:
+            distributions = get_distributions('all', basetgz, suites)
+        # check input distrib parameter and filter if really known
         for t in distrib:
-            if (len(sys.argv)>1 and sys.argv[1] not in ["setup"]):
-                distributions = get_distributions('all', basetgz, suites)
-            if t not in get_distributions(basetgz=basetgz, suites=suites):
+            if t not in distributions:
                 # Allow lgp check to be run without valid images
                 if (len(sys.argv)>1 and sys.argv[1] in ["check", "tag", "project"]):
                     logging.debug("'%s' image not found in '%s'" % (t, basetgz))
