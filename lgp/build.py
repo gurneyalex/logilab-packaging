@@ -60,17 +60,18 @@ def run(args):
                     if not builder.config.no_treatment and builder.packages:
                         run_post_treatments(builder, distrib)
     except KeyboardInterrupt:
-        logging.critical('lgp aborted by keyboard interrupt')
+        logging.warning('lgp aborted by keyboard interrupt')
         builder.clean_tmpdir()
-        return 1
     except LGPException, exc:
+        if hasattr(builder, "config") and builder.config.verbose:
+            import traceback
+            logging.critical(traceback.format_exc())
         logging.critical(exc)
-        #if hasattr(builder, "config") and builder.config.verbose:
-        #    logging.debug("printing traceback...")
-        #    import traceback
-        #    logging.critical(traceback.format_exc())
-        #    #raise
         return 1
+
+    # use build failure flag to return exit status (integer casting is made
+    # by sys.exit)
+    return getattr(builder, 'build_failure', False)
 
 def run_pre_treatments(builder):
     # TODO add new lgp hooks instead
@@ -258,11 +259,13 @@ class Builder(SetupInfo):
 
         # build the package using one the available builders
         try:
-            self._compile(distrib, arch, dscfile, origpath)
+            status = self._compile(distrib, arch, dscfile, origpath)
         finally:
             # copy some of created files like the build log
             self.copy_package_files()
-        return True
+
+        # return build status to run post-treatment if success
+        return status
 
     def clean_tmpdir(self):
         if not self.config.keep_tmpdir:
@@ -386,9 +389,13 @@ class Builder(SetupInfo):
                                          'IMAGE': self.get_basetgz(distrib, arch)},
                        stdout=sys.stdout)
         except CalledProcessError, err:
-            # keep arborescence for further debug
-            self.config.keep_tmpdir = True
-            raise LGPCommandException("failure in package build", err)
+            self.keep_tmpdir = self.build_failure = True
+            logging.critical("build failure (%s/%s) for %s (%s)"
+                             % (distrib, arch, self.get_debian_name(),
+                                self.get_debian_version()))
+            return False
+        return True
+
 
     def copy_package_files(self):
         """copy package files from the temporary build area to the result directory
