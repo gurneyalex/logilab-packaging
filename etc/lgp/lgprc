@@ -5,10 +5,6 @@
 #distrib=unstable
 distrib=all
 
-# build for the requested debian architectures only. Use 'all' for automatic detection
-#arch=current
-arch=all
-
 # specifies the location of base.tgz used by pbuilder
 basetgz=/var/cache/lgp/buildd
 

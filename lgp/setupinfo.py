@@ -175,7 +175,9 @@ class SetupInfo(Configuration):
 
         # Go to package directory
         if self.config.pkg_dir is None:
-            self.config.pkg_dir = os.path.abspath(self.arguments and self.arguments[0] or os.getcwd())
+            self.config.pkg_dir = os.path.abspath(self.arguments
+                                                  and self.arguments[0]
+                                                  or os.getcwd())
         try:
             os.chdir(self.config.pkg_dir)
         except OSError, err:
@@ -186,9 +188,14 @@ class SetupInfo(Configuration):
             self.config.distrib = self.get_debian_distribution()
 
         # Define mandatory attributes for lgp commands
-        self.distributions = get_distributions(self.config.distrib,
-                                               self.config.basetgz)
+        self.config.archi = None
+        if self.config.archi is None:
+            self.config.archi = self.get_debian_architecture()
+            logging.info("retrieve target architecture(s) from debian/control: %s"
+                         % ','.join(self.config.archi))
         self.architectures = get_architectures(self.config.archi,
+                                               self.config.basetgz)
+        self.distributions = get_distributions(self.config.distrib,
                                                self.config.basetgz)
 
         # Setup command can be run anywhere, so skip setup file retrieval
@@ -235,7 +242,7 @@ class SetupInfo(Configuration):
         if process.returncode > 0:
             process.cmd = cmdline.split()
             raise LGPCommandException("lgp aborted by the '%s' command child process"
-                                      % cmd, process)
+                                      % cmdline, process)
         return pipe
 
     def get_debian_dir(self):
@@ -279,6 +286,23 @@ class SetupInfo(Configuration):
                     return line[1].rstrip()
         except IOError, err:
             raise LGPException('a Debian control file should exist in "%s"' % control)
+
+    def get_debian_architecture(self):
+        """obtain the debian architecture(s)
+
+        The information is found in debian/control withe the 'Architecture:' field
+        """
+        try:
+            control = os.path.join(self.config.pkg_dir, 'debian', 'control')
+            for line in open(control):
+                line = line.split(' ', 1)
+                if line[0] == "Architecture:":
+                    return line[1].rstrip().split(',')
+        except IOError, err:
+            raise LGPException('a Debian control file should exist in "%s"' % control)
+
+    def is_architecture_dependant(self):
+        return 'all' in self.get_debian_architecture()
 
     def get_debian_distribution(self):
         """get the default debian distribution in debian/changelog
@@ -424,6 +448,7 @@ class SetupInfo(Configuration):
             if os.path.basename(self.config.orig_tarball) not in expected:
                 logging.error("the provided archive hasn't one of the expected formats (%s)"
                               % ','.join(expected))
+            # TODO use urlopen() in case of remote file (__pkginfo__.ftp or debian/watch (uscan))
             upstream_tarball = os.path.abspath(os.path.expanduser(self.config.orig_tarball))
             logging.info("use provided archive '%s' as original source archive (tarball)"
                          % upstream_tarball)

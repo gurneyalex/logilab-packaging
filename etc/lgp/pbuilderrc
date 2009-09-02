@@ -150,7 +150,7 @@ PBUILDERSATISFYDEPENDSCMD="/usr/lib/pbuilder/pbuilder-satisfydepends"
 
 #Command-line option passed on to dpkg-buildpackage.
 #DEBBUILDOPTS="-IXXX -iXXX"
-DEBBUILDOPTS=""
+#DEBBUILDOPTS=""
 
 # Hooks directory for pbuilder
 # Force an alternate value of hookdir since hooks can be sensitive
