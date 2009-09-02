@@ -47,6 +47,7 @@ from logilab.devtools.lgp.check import Checker, check_debsign
 
 def run(args):
     """main function of lgp build command"""
+    builder = None
     try :
         builder = Builder(args)
 
@@ -259,6 +260,19 @@ class Builder(SetupInfo):
 
         # build the package using one the available builders
         try:
+            # TODO large area for improvements here
+            debuildoptions = []
+            debuildoptions.append(os.environ.get('DEBUILDOPTS', ''))
+            #debuildoptions.append('-E')
+            debuildoptions.append('-b')
+            #debuildoptions.append('-D')
+            #debuildoptions.append('-B')
+            # TODO buildpackage sans options sur arch amd64
+            # 1. _compile sans options sur architecture courante (dpkg-buildpackage)
+            # 2. si is_architecture_dependant:
+            #    _compile sur chaque architecture donnée (dpkg-buildpackage -B -a <archi>)
+            logging.debug("use build options: %s" % ",".join(debuildoptions))
+
             status = self._compile(distrib, arch, dscfile, origpath)
         finally:
             # copy some of created files like the build log
@@ -289,11 +303,13 @@ class Builder(SetupInfo):
         :param:
             origpath: path to orig.tar.gz tarball
         """
+        # TODO ajout d'une arborescence 'source/' pour "distribution upstream"
         # change directory context
         os.chdir(self._tmpdir)
 
         logging.debug("start creation of the debian source package in '%s'"
                       % origpath)
+
         try:
             cmd = 'dpkg-source -b %s' % origpath
             # FIXME use one copy of the upstream tarball
@@ -360,16 +376,17 @@ class Builder(SetupInfo):
             except CalledProcessError, err:
                 raise LGPCommandException("bad substitution for version field", err)
 
-    def _compile(self, distrib, arch, dscfile, origpath):
-        """virtualize the package build process"""
+    def _compile(self, distrib, arch, dscfile, origpath, debuildoptions=""):
+        """virtualize/parallelize the package build process"""
         debuilder = os.environ.get('DEBUILDER', 'pbuilder')
         logging.debug("select package builder: '%s'" % debuilder)
         dscfile = osp.join(self._tmpdir, dscfile)
         assert osp.exists(dscfile)
 
         if debuilder == 'pbuilder':
-            cmd = "sudo IMAGE=%s DIST=%s ARCH=%s pbuilder build --configfile %s --buildresult %s"
-            cmd %= self.get_basetgz(distrib, arch), distrib, arch, CONFIG_FILE, self._tmpdir
+            cmd = "sudo IMAGE=%s DIST=%s ARCH=%s pbuilder build --debbuildopts '%s' --configfile %s --buildresult %s"
+            cmd %= self.get_basetgz(distrib, arch), distrib, arch,\
+                   ''.join(debuildoptions), CONFIG_FILE, self._tmpdir
             if self.config.hooks:
                 from logilab.devtools.lgp import HOOKS_DIR
                 cmd += " --hookdir %s" % HOOKS_DIR

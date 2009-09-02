@@ -125,7 +125,7 @@ def get_architectures(archi=None, basetgz=None):
     if archi is None or archi == ["current"]:
         archi = Popen(["dpkg", "--print-architecture"], stdout=PIPE).communicate()[0].split()
     else:
-        if 'all' in archi:
+        if 'all' in archi or 'any' in archi:
             archi = [os.path.basename(f).split('-', 1)[1].split('.')[0]
                        for f in glob.glob(os.path.join(basetgz,'*.tgz'))]
             return set(known_archi) & set(archi)
