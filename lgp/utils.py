@@ -18,6 +18,7 @@
 
 import glob
 import sys
+import time
 import os.path
 from subprocess import Popen, PIPE
 import logging
@@ -147,3 +148,16 @@ def cached(func):
             return decorated._once_result
     return decorated
 
+def wait_jobs(joblist):
+    t0 = time.time()
+    status = 0
+    while joblist:
+        for j in joblist:
+            j.poll()
+            if j.returncode is not None:
+                status += status
+                joblist.remove(j)
+        time.sleep(1)
+        sys.stderr.write('.')
+    sys.stderr.write('\n')
+    return status, time.time() - t0
