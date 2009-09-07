@@ -200,7 +200,7 @@ class SetupInfo(Configuration):
                                                self.config.basetgz)
 
         # Setup command can be run anywhere, so skip setup file retrieval
-        if sys.argv[1] in ["setup", "login"]:
+        if sys.argv[1] in ["setup", "login", "script"]:
             return
 
         # Guess the package format
