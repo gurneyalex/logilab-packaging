@@ -138,7 +138,8 @@ def run_post_treatments(builder, distrib):
 
     # FIXME provide a useful utility outside of lgp and use post-build-hook
     logging.info('updating Debian local repository in %s...' % distdir)
-    command = "dpkg-scanpackages %s /dev/null 2>/dev/null | gzip -9c > %s/Packages.gz" % (distrib, distrib)
+    command = "dpkg-scanpackages -m %s /dev/null 2>/dev/null | gzip -9c > %s/Packages.gz"\
+              % (distrib, distrib)
     logging.debug('run command: %s' % command)
     if cond_exec('which dpkg-scanpackages >/dev/null && cd %s && %s'
                  % (osp.dirname(distdir), command)):
