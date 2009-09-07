@@ -20,14 +20,9 @@ import os, os.path as osp
 from logilab.common.optparser import OptionParser
 
 LGP_CONFIG_FILE = '/etc/lgp/lgprc'
-CONFIG_FILE = '/etc/lgp/pbuilderrc'
-HOOKS_DIR = '/etc/lgp/hooks'
-# DEBUG
-# juj@crater:~ldi % rm -vf /home/juj/dists/sid/debinstall_2.2.6* ; lgp build -d sid --no-treatment -v --hooks
-CONFIG_FILE = '/home/juj/.pbuilderrc.old'
-HOOKS_DIR = '/home/juj/src/public/logilab/devtools/etc/lgp/hooks'
-
-
+CONFIG_FILE     = '/etc/lgp/pbuilderrc'
+HOOKS_DIR       = '/etc/lgp/hooks'
+SCRIPTS_DIR     = '/etc/lgp/scripts'
 
 
 def run(args):
@@ -41,12 +36,16 @@ def run(args):
                  'tag package repository'),
                 ('check', 'logilab.devtools.lgp.check',
                  'check that package is ready to be built'),
+                ('script', 'logilab.devtools.lgp.script',
+                 'execute a script into a chrooted distribution'),
                 ('setup', 'logilab.devtools.lgp.setup',
                  'prepare a chrooted distribution'),
                 ('login', 'logilab.devtools.lgp.login',
                  'Log into a chrooted distribution'),
                 ('clean', 'logilab.devtools.lgp.clean',
                  'clean repository'),
+                ('piuparts', 'logilab.devtools.lgp.piuparts',
+                 'run piuparts with lgp configuration'),
                 ('project', 'logilab.devtools.lgp.project',
                  'print project information'),
                ]
@@ -54,7 +53,7 @@ def run(args):
     if len(sys.argv) <= 1:
         return parser.usage
     elif sys.argv[1] in ("build", "check", "clean", "template", "setup",
-                         "login", "tag", "project"):
+                         "login", "tag", "project", "script", "piuparts"):
         exec 'from logilab.devtools.lgp.%s import run' % sys.argv[1]
         return run(args[1:])
     else:
