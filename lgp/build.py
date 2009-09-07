@@ -17,112 +17,67 @@
 """ lgp build [options]
 
     Provides functions to build a debian package for a python package
-    You can use a setup.cfg file with the [LGP-BUILD] section
+    You can change options in /etc/lgp/lgprc inside the [LGP-BUILD] section
 """
 __docformat__ = "restructuredtext en"
 
 import os
 import sys
-import time
-import tempfile
 import shutil
-import glob
 import logging
-import pprint
 import warnings
+import hashlib
 import os.path as osp
-from subprocess import check_call, CalledProcessError
+from subprocess import check_call, CalledProcessError, Popen
 
 from debian_bundle import deb822
 
-from logilab.common.fileutils import export
+from logilab.common.shellutils import mv
 
-from logilab.devtools.lgp import CONFIG_FILE
+from logilab.devtools.lgp import CONFIG_FILE, HOOKS_DIR
 from logilab.devtools.lgp.setupinfo import SetupInfo
-from logilab.devtools.lgp.utils import confirm, cond_exec
+from logilab.devtools.lgp.utils import cond_exec, wait_jobs
 from logilab.devtools.lgp.exceptions import LGPException, LGPCommandException
 
 from logilab.devtools.lgp.check import Checker, check_debsign
-
 
 def run(args):
     """main function of lgp build command"""
     builder = None
     try :
         builder = Builder(args)
+        builder.clean_repository()
 
-        # Too bloated to be used here. Use pre-hook if available
-        #if not builder.config.no_treatment:
-        #    run_pre_treatments(builder)
+        # create the upstream tarball if necessary and move it to result directory
+        builder.make_orig_tarball()
 
-        for arch in builder.architectures:
-            for distrib in builder.distributions:
-                if builder.compile(distrib=distrib, arch=arch):
-                    if not builder.config.no_treatment and builder.packages:
-                        run_post_treatments(builder, distrib)
+        while builder.distributions:
+            builder.prepare_source_archive()
+
+            # create a debian source package
+            builder.make_debian_source_package()
+
+            if builder.make_debian_binary_package():
+                # do post-treatment only for sucessful binary build
+                if not builder.config.no_treatment and builder.packages:
+                    run_post_treatments(builder, builder.current_distrib)
+
+            # forget distribution
+            builder.distributions = builder.distributions[1:]
     except KeyboardInterrupt:
         logging.warning('lgp aborted by keyboard interrupt')
-        builder.clean_tmpdir()
     except LGPException, exc:
         if hasattr(builder, "config") and builder.config.verbose:
             import traceback
             logging.critical(traceback.format_exc())
         logging.critical(exc)
         return 1
-
-    # use build failure flag to return exit status (integer casting is made
-    # by sys.exit)
-    return getattr(builder, 'build_failure', False)
-
-def run_pre_treatments(builder):
-    # TODO add new lgp hooks instead
-    pass
+    return builder.finalize()
 
 def run_post_treatments(builder, distrib):
     """ Run actions after package compiling """
     distdir = builder.get_distrib_dir()
     verbose = builder.config.verbose
-
-    # Check occurence in filesystem
-    for package in builder.packages:
-        # Detect native package (often an error)
-        if package.endswith('.dsc'):
-            dsc = deb822.Dsc(file(package))
-            orig = None
-            for dscfile in dsc['Files']:
-                if dscfile['name'].endswith('orig.tar.gz'):
-                    orig = dscfile
-                    break
-            # there is no orig.tar.gz file in the dsc file
-            if orig is None and builder.is_initial_debian_revision():
-                logging.error("no orig.tar.gz file found in %s (few chances "
-                              "to be a real native package)" % package)
-
-    # FIXME move code to apycot and detection of options from .changes
-    from logilab.devtools.lgp.utils import get_architectures
-    if verbose: # and confirm("run piuparts on generated Debian packages ?"):
-        basetgz = "%s-%s.tgz" % (distrib, get_architectures()[0])
-        for package in builder.packages:
-            if package.endswith('.deb'):
-                #logging.info('piuparts checker information about %s' % package)
-                cmdline = ['sudo', 'piuparts', '--no-symlinks',
-                           '--warn-on-others', '--keep-sources-list',
-                           # the development repository can be somewhat buggy...
-                           '--no-upgrade-test',
-                           '-b', os.path.join(builder.config.basetgz, basetgz),
-                           # just violent but too many false positives otherwise
-                           '-I', '"/etc/shadow*"',
-                           '-I', '"/usr/share/pycentral-data.*"',
-                           '-I', '"/var/lib/dpkg/triggers/pysupport.*"',
-                           '-I', '"/var/lib/dpkg/triggers/File"',
-                           '-I', '"/usr/local/lib/python*"',
-                           package]
-                logging.debug('piuparts test has been disabled but you can run it manually with:')
-                logging.debug("piuparts command: %s", ' '.join(cmdline))
-                #if cond_exec(' '.join(cmdline)):
-                #    logging.error("piuparts exits with error")
-                #else:
-                #    logging.info("piuparts exits normally")
 
     # FIXME move code to debinstall
     # Try Debian signing immediately if possible
@@ -223,7 +178,13 @@ class Builder(SetupInfo):
         # Retrieve upstream information
         super(Builder, self).__init__(arguments=args, options=self.options, usage=__doc__)
 
-        # Add packages metadata
+        # global build status (for every build)
+        self.build_status = os.EX_OK
+
+        # list of all temporary directories
+        self._tmpdirs = []
+
+        # hotlist of the recent generated package files
         self.packages = []
 
         # TODO make a more readable logic in OptParser values
@@ -237,64 +198,20 @@ class Builder(SetupInfo):
             sys.stdout = open(os.devnull,"w")
             #sys.stderr = open(os.devnull,"w")
 
-
-    def compile(self, distrib, arch):
-        self.clean_repository()
-
-        logging.info("building debian package for distribution '%s' and arch '%s' ..."
-                     % (distrib, arch))
-
-        # rewrite distrib to manage the 'all' case in run()
-        self.current_distrib = distrib
-
-        self._tmpdir = tempfile.mkdtemp()
-
-        # create the upstream tarball if necessary and copy to the temporary
-        # directory following the Debian practices
-        upstream_tarball, tarball, origpath = self.make_orig_tarball()
-
-        # support of the multi-distribution
-        self.manage_multi_distribution(distrib, origpath)
-
-        # create a debian source package
-        dscfile = self.make_debian_source_package(origpath)
-
-        # build the package using one the available builders
-        try:
-            # TODO large area for improvements here
-            debuildoptions = []
-            debuildoptions.append(os.environ.get('DEBUILDOPTS', ''))
-            #debuildoptions.append('-E')
-            debuildoptions.append('-b')
-            #debuildoptions.append('-D')
-            #debuildoptions.append('-B')
-            # TODO buildpackage sans options sur arch amd64
-            # 1. _compile sans options sur architecture courante (dpkg-buildpackage)
-            # 2. si is_architecture_dependant:
-            #    _compile sur chaque architecture donnée (dpkg-buildpackage -B -a <archi>)
-            logging.debug("use build options: %s" % ",".join(debuildoptions))
-
-            status = self._compile(distrib, arch, dscfile, origpath)
-        finally:
-            # copy some of created files like the build log
-            self.copy_package_files()
-
-        # return build status to run post-treatment if success
-        return status
-
-    def clean_tmpdir(self):
+    def clean_tmpdirs(self):
         if not self.config.keep_tmpdir:
-            if hasattr(self, '_tmpdir'):
-                try:
-                    shutil.rmtree(self._tmpdir)
-                except OSError, exc:
-                    logging.error("cannot remove '%s' (%s)"
-                                  % (self._tmpdir, exc))
+            if hasattr(self, '_tmpdirs'):
+                for tmpdir in self._tmpdirs:
+                    try:
+                        shutil.rmtree(tmpdir)
+                    except OSError, exc:
+                        logging.error("cannot remove '%s' (%s)"
+                                      % (tmpdir, exc))
         else:
             logging.warn("keep temporary directory '%s' for further investigation"
-                         % self._tmpdir)
+                         % ",".join(self._tmpdirs))
 
-    def make_debian_source_package(self, origpath):
+    def make_debian_source_package(self):
         """create a debian source package
 
         This function must be called inside an unpacked source
@@ -304,148 +221,188 @@ class Builder(SetupInfo):
         :param:
             origpath: path to orig.tar.gz tarball
         """
-        # TODO ajout d'une arborescence 'source/' pour "distribution upstream"
         # change directory context
         os.chdir(self._tmpdir)
 
         logging.debug("start creation of the debian source package in '%s'"
-                      % origpath)
+                      % self.origpath)
 
         try:
-            cmd = 'dpkg-source -b %s' % origpath
-            # FIXME use one copy of the upstream tarball
-            #if self.config.orig_tarball:
-            #    cmd += ' %s' % self.config.orig_tarball
+            cmd = 'dpkg-source -b %s' % self.origpath
             check_call(cmd.split(), stdout=sys.stdout)
         except CalledProcessError, err:
             msg = "cannot build valid dsc file with command %s" % cmd
             raise LGPCommandException(msg, err)
 
-        # retrieve real filename (depending of Debian revision suffix)
-        dscfile = glob.glob('*.dsc')[0]
+        # move Debian source package files
+        self.move_package_files()
 
         # exit if asked by command-line
         if self.config.deb_src_only:
-            self.copy_package_files()
             sys.exit()
 
         # restore directory context
         os.chdir(self.config.pkg_dir)
 
-        return dscfile
-
-    def manage_multi_distribution(self, distrib, origpath):
-        """manage debian files depending of the current distrib from options
-
-        We copy debian_dir directory into tmp build depending of the target distribution
-        in all cases, we copy the debian directory of the default version (unstable)
-        If a file should not be included, touch an empty file in the overlay
-        directory.
-
-        The distribution value will always be rewritten in final changelog.
-        """
-        try:
-            # don't forget the final slash!
-            export(osp.join(self.config.pkg_dir, 'debian'), osp.join(origpath, 'debian/'))
-        except IOError, err:
-            raise LGPException(err)
-
-        debian_dir = self.get_debian_dir()
-        if debian_dir != "debian":
-            logging.info("overriding files from '%s' directory..." % debian_dir)
-            # don't forget the final slash!
-            export(osp.join(self.config.pkg_dir, debian_dir), osp.join(origpath, 'debian/'),
-                   verbose=self.config.verbose)
-
-        # substitute distribution string in file only if line not starting by
-        # spaces (simple heuristic to prevent other changes in content)
-        cmd = ['sed', '-i', '/^[[:alpha:]]/s/\([[:alpha:]]\+\);/%s;/'
-               % distrib, osp.join(origpath, 'debian', 'changelog')]
-        try:
-            check_call(cmd, stdout=sys.stdout) #, stderr=sys.stderr)
-        except CalledProcessError, err:
-            raise LGPCommandException("bad substitution for distribution field", err)
-
-        # substitute version string in appending timestamp and suffix
-        # suffix should not be empty
-        if self.config.suffix:
-            timestamp = int(time.time())
-            cmd = ['sed', '-i', '1s/(\(.*\))/(%s:\\1%s)/' % (timestamp, self.config.suffix),
-                   osp.join(origpath, 'debian', 'changelog')]
-            try:
-                check_call(cmd, stdout=sys.stdout) #, stderr=sys.stderr)
-            except CalledProcessError, err:
-                raise LGPCommandException("bad substitution for version field", err)
-
-    def _compile(self, distrib, arch, dscfile, origpath, debuildoptions=""):
-        """virtualize/parallelize the package build process"""
+    def _builder_command(self, build_vars):
         debuilder = os.environ.get('DEBUILDER', 'pbuilder')
-        logging.debug("select package builder: '%s'" % debuilder)
-        dscfile = osp.join(self._tmpdir, dscfile)
-        assert osp.exists(dscfile)
-
+        logging.debug("package builder flavour: '%s'" % debuilder)
         if debuilder == 'pbuilder':
-            cmd = "sudo IMAGE=%s DIST=%s ARCH=%s pbuilder build --debbuildopts '%s' --configfile %s --buildresult %s"
-            cmd %= self.get_basetgz(distrib, arch), distrib, arch,\
-                   ''.join(debuildoptions), CONFIG_FILE, self._tmpdir
-            if self.config.hooks:
-                from logilab.devtools.lgp import HOOKS_DIR
-                cmd += " --hookdir %s" % HOOKS_DIR
-            cmd += " %s" % dscfile
+            cmd = ['sudo', 'IMAGE=%(image)s' % build_vars,
+                   'DIST=%(distrib)s' % build_vars,
+                   'ARCH=%(arch)s' % build_vars,
+                   debuilder, 'build',
+                   '--configfile', CONFIG_FILE,
+                   '--buildresult', self._tmpdir,
+                   '--debbuildopts', "%(buildopts)s" % build_vars,
+                   '--hookdir', HOOKS_DIR, self.dscfile]
         elif debuilder == 'debuild':
-            os.chdir(origpath)
-            cmd = 'debuild --no-tgz-check --no-lintian --clear-hooks -uc -us'
+            os.chdir(self.origpath)
+            cmd = ['debuild', '--no-tgz-check', '--no-lintian',
+                   '--clear-hooks', '-uc', '-us']
         elif debuilder == 'fakeroot':
-            os.chdir(origpath)
-            cmd = 'fakeroot debian/rules binary'
+            os.chdir(self.origpath)
+            cmd = ['fakeroot', 'debian/rules binary']
         else:
-            cmd = debuilder
+            cmd = debuilder.split()
+        return cmd
 
-        logging.info("running build command: %s ..." % cmd)
-        try:
-            check_call(cmd.split(), env={'DIST': distrib, 'ARCH': arch,
-                                         'IMAGE': self.get_basetgz(distrib, arch)},
-                       stdout=sys.stdout)
-        except CalledProcessError, err:
-            self.keep_tmpdir = self.build_failure = True
-            logging.critical("build failure (%s/%s) for %s (%s)"
-                             % (distrib, arch, self.get_debian_name(),
-                                self.get_debian_version()))
-            return False
-        return True
+    def make_debian_binary_package(self):
+        """create debian binary package(s)
+
+        virtualize/parallelize the binary package build process
+        This is a rudimentary multiprocess support for parallel build by architecture
+        Just waiting standard multiprocess module in python 2.6
+        """
+        joblist = []
+        for build in self.use_build_series():
+            cmd = self._builder_command(build)
+            logging.info("building binary debian package for '%s/%s' "
+                         "using build options '%s' ..."
+                         % (build['distrib'], build['arch'], build['buildopts']))
+
+            logging.debug("running build command: %s ..." % ' '.join(cmd))
+            try:
+                joblist.append(Popen(cmd,
+                                     env={'DIST':  build['distrib'],
+                                          'ARCH':  build['arch'],
+                                          'IMAGE': build['image']},
+                                     stdout=file(os.devnull, "w")))
+            except Exception, err:
+                self.keep_tmpdir = True
+                logging.crirical(err)
+                logging.critical("build failure (%s/%s) for %s (%s)"
+                                 % (build['distrib'],
+                                    build['arch'],
+                                    self.get_debian_name(),
+                                    self.get_debian_version()))
+                return False
+
+        build_status, timedelta = wait_jobs(joblist)
+        logging.info("binary builds for '%s' finished in %d seconds with global exit status %d"
+                     % (build['distrib'], timedelta, build_status))
+
+        # move Debian binary package files
+        self.move_package_files()
+
+        self.build_status += build_status
+        return build_status == os.EX_OK
+
+    def use_build_series(self):
+        """create a series of binary build command
+
+        Architecture is checked against the debian/control to detect
+        architecture-independant packages
+
+        You have the possiblity to add some dpkg-buildpackage options with the
+        DEBBUILDOPTS environment variable.
+        """
+        def _build_options(arch=None):
+            optline = list()
+            optline.append('-b')
+            if arch:
+                optline.append('-B')
+                optline.append('-a%s' % arch)
+            else:
+                optline.append('-A')
+            if os.environ.get('DEBBUILDOPTS'):
+                optline.append(os.environ.get('DEBBUILDOPTS'))
+            return ' '.join(optline)
+
+        series = []
+        if self.is_architecture_independant():
+            options = dict()
+            options['distrib'] = self.current_distrib
+            options['buildopts'] = _build_options()
+            options['arch'] = self.get_architectures(['current'])[0]
+            options['image'] = self.get_basetgz(options['distrib'],
+                                                options['arch'])
+            series.append(options)
+            logging.info('this build is arch-independant. Lgp will only build on '
+                         'current architecture (%s)' % options['arch'])
+        else:
+            for arch in self.architectures:
+                options = dict()
+                options['distrib'] = self.current_distrib
+                options['buildopts'] = _build_options(arch)
+                options['arch'] = arch
+                options['image'] = self.get_basetgz(options['distrib'],
+                                                    options['arch'])
+                series.append(options)
+        return series
 
 
-    def copy_package_files(self):
-        """copy package files from the temporary build area to the result directory
+    def move_package_files(self):
+        """move package files from the temporary build area to the result directory
 
         we define here the self.packages variable used by post-treatment
+        some tests are performed before copying to result directory
         """
+        def check_file(filename):
+            if os.path.isfile(filename):
+                hash1 = hashlib.md5(open(fullpath).read()).hexdigest()
+                hash2 = hashlib.md5(open(filename).read()).hexdigest()
+                if hash1 == hash2:
+                    logging.debug("overwrite same file file '%s'" % filename)
+                else:
+                    logging.warn("theses files shouldn't be different:\n- %s (%s)\n- %s (%s)"
+                                 % (fullpath, hash1, filename, hash2))
+                    os.system('diff -u %s %s' % (fullpath, filename))
+                    #raise LGPException("bad md5 sums of source archives (tarball)")
+
         self.packages = []
         distdir = self.get_distrib_dir()
         for filename in os.listdir(self._tmpdir):
             fullpath = os.path.join(self._tmpdir, filename)
             if os.path.isfile(fullpath):
-                logging.debug("copy %s to %s" % (fullpath, distdir))
-                shutil.copy(fullpath, distdir)
                 copied_filename = os.path.join(distdir, filename)
-                assert osp.exists(copied_filename)
                 self.packages.append(copied_filename)
-                if filename.endswith('.lgp-build'):
-                    logging.info("a build logfile is available: %s" % copied_filename)
-                if self.config.deb_src_only and filename.endswith('.dsc'):
-                    logging.info("Debian source control file is: %s"
-                                 % copied_filename)
-                if self.config.get_orig_source and filename.endswith('.tar.gz'):
-                    logging.info('a new original source archive (tarball) is available: %s'
-                                 % copied_filename)
-                if filename.endswith('.changes'):
-                    logging.info("Debian changes file is: %s" % copied_filename)
-
-        # clean tmpdir
-        self.clean_tmpdir()
+                if filename.endswith('.dsc'):
+                    self.dscfile = copied_filename
+                    dsc = deb822.Dsc(file(fullpath))
+                    orig = None
+                    for entry in dsc['Files']:
+                        if entry['name'].endswith('orig.tar.gz'):
+                            orig = entry
+                            break
+                    # there is no orig.tar.gz file in the dsc file
+                    if orig is None and self.is_initial_debian_revision():
+                        logging.error("no orig.tar.gz file found in %s (few chances "
+                                      "to be a real native package)"
+                                      % self.dscfile)
+                    #check_file(copied_filename)
+                #if filename.endswith('.diff.gz'):
+                #    check_file(copied_filename)
+                if filename.endswith('.orig.tar.gz'):
+                    if self.config.orig_tarball is None:
+                        self.config.orig_tarball = copied_filename
+                    check_file(copied_filename)
+                mv(fullpath, distdir)
+                assert osp.exists(copied_filename)
 
         # lastly print changes file to the console
-        logging.debug("complete list of files:\n%s" % pprint.pformat(self.packages))
+        logging.info("recent generated files:\n* %s"
+                     % '\n* '.join(sorted(self.packages)))
 
     def get_distrib_dir(self):
         """get the dynamic target release directory"""
@@ -459,3 +416,7 @@ class Builder(SetupInfo):
             # already exists
             pass
         return distrib_dir
+
+    def finalize(self):
+        self.clean_tmpdirs()
+        return self.build_status
