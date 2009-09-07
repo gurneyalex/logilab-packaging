@@ -34,6 +34,11 @@ UBUNTU_OTHERMIRROR=
 #: ${DIST:="$(lsb_release --short --codename)"}
 #: ${DIST:="unstable"}
 
+# Source local configuration if any
+if [[ -f "/etc/lgp/pbuilderrc.local" ]];
+	source /etc/lgp/pbuilderrc.local
+fi
+
 # Optionally use the changelog of a package to determine the suite to use if none set
 # Will use generic 'unstable' distribution name
 if [ -z "${DIST}" ] && [ -r "debian/changelog" ]; then
@@ -114,7 +119,7 @@ USEDEVFS=no
 # BINDMOUNTS is a space separated list of things to mount inside the chroot.
 # Don't use array aggregation here
 BINDMOUNTS="/sys"
-if [ "$PBCURRENTCOMMANDLINEOPERATION" == "login" ]; then
+if [ "$PBCURRENTCOMMANDLINEOPERATION" == "login" -o "$PBCURRENTCOMMANDLINEOPERATION" == "scripts" ]; then
 	# Default value set to be used by hooks
 	export BUILDRESULT="${HOME}/dists/${DIST}"
 fi
