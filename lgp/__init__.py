@@ -22,6 +22,12 @@ from logilab.common.optparser import OptionParser
 LGP_CONFIG_FILE = '/etc/lgp/lgprc'
 CONFIG_FILE = '/etc/lgp/pbuilderrc'
 HOOKS_DIR = '/etc/lgp/hooks'
+# DEBUG
+# juj@crater:~ldi % rm -vf /home/juj/dists/sid/debinstall_2.2.6* ; lgp build -d sid --no-treatment -v --hooks
+CONFIG_FILE = '/home/juj/.pbuilderrc.old'
+HOOKS_DIR = '/home/juj/src/public/logilab/devtools/etc/lgp/hooks'
+
+
 
 
 def run(args):

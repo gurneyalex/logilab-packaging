@@ -113,28 +113,6 @@ def get_distributions(distrib=None, basetgz=None, suites='/usr/share/cdebootstra
 
     return tuple(set(distrib))
 
-def get_architectures(archi=None, basetgz=None):
-    """ Ensure that the architectures exist
-
-        :param:
-            archi: str or list
-                name of a architecture
-        :return:
-            list of architecture
-    """
-    known_archi = Popen(["dpkg-architecture", "-L"], stdout=PIPE).communicate()[0].split()
-    if archi is None or archi == ["current"]:
-        archi = Popen(["dpkg", "--print-architecture"], stdout=PIPE).communicate()[0].split()
-    else:
-        if 'all' in archi or 'any' in archi:
-            archi = [os.path.basename(f).split('-', 1)[1].split('.')[0]
-                       for f in glob.glob(os.path.join(basetgz,'*.tgz'))]
-            return set(known_archi) & set(archi)
-        for a in archi:
-            if a not in known_archi:
-                raise ArchitectureException(a)
-    return archi
-
 def cached(func):
     """run a function only once and return always the same cache
 

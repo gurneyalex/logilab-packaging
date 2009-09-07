@@ -19,8 +19,11 @@
 import sys
 import os
 import stat
-import os.path
+import os.path as osp
 import logging
+import time
+import glob
+import tempfile
 from string import Template
 from distutils.core import run_setup
 #from pkg_resources import FileMetadata
@@ -29,13 +32,16 @@ from subprocess import check_call, CalledProcessError
 
 from logilab.common.configuration import Configuration
 from logilab.common.logging_ext import ColorFormatter
-from logilab.common.shellutils import cp
+from logilab.common.shellutils import cp, mv
+from logilab.common.fileutils import export
 
 from logilab.devtools.lib.pkginfo import PackageInfo
 from logilab.devtools.lib import TextReporter
 from logilab.devtools.lgp import LGP_CONFIG_FILE
 from logilab.devtools.lgp.exceptions import LGPException, LGPCommandException
-from logilab.devtools.lgp.utils import get_distributions, get_architectures, cached
+from logilab.devtools.lgp.exceptions import (ArchitectureException,
+                                             DistributionException)
+from logilab.devtools.lgp.utils import get_distributions, cached
 
 LOG_FORMAT='%(levelname)1.1s:%(name)s: %(message)s'
 COMMANDS = {
@@ -142,7 +148,7 @@ class SetupInfo(Configuration):
         super(SetupInfo, self).__init__(options=self.options, **args)
 
         # Load the global settings for lgp
-        if os.path.isfile(LGP_CONFIG_FILE):
+        if osp.isfile(LGP_CONFIG_FILE):
             self.load_file_configuration(LGP_CONFIG_FILE)
 
         # Manage arguments (project path essentialy)
@@ -175,9 +181,9 @@ class SetupInfo(Configuration):
 
         # Go to package directory
         if self.config.pkg_dir is None:
-            self.config.pkg_dir = os.path.abspath(self.arguments
-                                                  and self.arguments[0]
-                                                  or os.getcwd())
+            self.config.pkg_dir = osp.abspath(self.arguments
+                                              and self.arguments[0]
+                                              or os.getcwd())
         try:
             os.chdir(self.config.pkg_dir)
         except OSError, err:
@@ -188,13 +194,8 @@ class SetupInfo(Configuration):
             self.config.distrib = self.get_debian_distribution()
 
         # Define mandatory attributes for lgp commands
-        self.config.archi = None
-        if self.config.archi is None:
-            self.config.archi = self.get_debian_architecture()
-            logging.info("retrieve target architecture(s) from debian/control: %s"
-                         % ','.join(self.config.archi))
-        self.architectures = get_architectures(self.config.archi,
-                                               self.config.basetgz)
+        self.architectures = self.get_architectures(self.config.archi,
+                                                    self.config.basetgz)
         self.distributions = get_distributions(self.config.distrib,
                                                self.config.basetgz)
 
@@ -206,12 +207,12 @@ class SetupInfo(Configuration):
         if self.config.setup_file == 'setup.py':
             # generic case for python project (distutils, setuptools)
             self._package = run_setup('./setup.py', None, stop_after="init")
-        elif os.path.isfile('__pkginfo__.py'):
+        elif osp.isfile('__pkginfo__.py'):
             # Logilab's specific format
             self._package = PackageInfo(reporter=TextReporter(sys.stderr, sys.stderr.isatty()),
                                         directory=self.config.pkg_dir)
         # Other script can be used if compatible with the expected targets in COMMANDS
-        elif os.path.isfile(self.config.setup_file):
+        elif osp.isfile(self.config.setup_file):
             self._package = file(self.config.setup_file)
             if not os.stat(self.config.setup_file).st_mode & stat.S_IEXEC:
                 raise LGPException('setup file %s has no execute permission'
@@ -225,6 +226,12 @@ class SetupInfo(Configuration):
         logging.debug("running for architecture(s): %s" % ', '.join(self.architectures))
 
         logging.debug("guess the setup package class: %s" % self.package_format)
+
+    @property
+    def current_distrib(self):
+        # workaround: we set current distrib immediately to be able to copy
+        # pristine tarball in a valid location
+        return self.distributions[0]
 
     @property
     def package_format(self):
@@ -254,22 +261,23 @@ class SetupInfo(Configuration):
         """
         # TODO Check the X-Vcs-* to fetch remote Debian configuration files
         debiandir = 'debian' # default debian config location
-        if not hasattr(self, 'current_distrib'):
+
+        if not self.current_distrib:
             return debiandir
 
-        override_dir = os.path.join(debiandir, self.current_distrib)
+        override_dir = osp.join(debiandir, self.current_distrib)
 
         # Use new directory scheme with separate Debian repository in head
         # developper can create an overlay for the debian directory
         old_override_dir = '%s.%s' % (debiandir, self.current_distrib)
-        if os.path.isdir(os.path.join(self.config.pkg_dir, old_override_dir)):
+        if osp.isdir(osp.join(self.config.pkg_dir, old_override_dir)):
             logging.warn("new distribution overlay system available: you "
                          "can use '%s' subdirectory instead of '%s' and "
                          "merge the files"
                          % (override_dir, old_override_dir))
             debiandir = old_override_dir
 
-        if os.path.isdir(os.path.join(self.config.pkg_dir, override_dir)):
+        if osp.isdir(osp.join(self.config.pkg_dir, override_dir)):
             debiandir = override_dir
         return debiandir
 
@@ -279,7 +287,7 @@ class SetupInfo(Configuration):
         The information is found in debian/control withe the 'Source:' field
         """
         try:
-            control = os.path.join(self.config.pkg_dir, 'debian', 'control')
+            control = osp.join(self.config.pkg_dir, 'debian', 'control')
             for line in open(control):
                 line = line.split(' ', 1)
                 if line[0] == "Source:":
@@ -293,7 +301,7 @@ class SetupInfo(Configuration):
         The information is found in debian/control withe the 'Architecture:' field
         """
         try:
-            control = os.path.join(self.config.pkg_dir, 'debian', 'control')
+            control = osp.join('debian', 'control')
             for line in open(control):
                 line = line.split(' ', 1)
                 if line[0] == "Architecture:":
@@ -301,7 +309,7 @@ class SetupInfo(Configuration):
         except IOError, err:
             raise LGPException('a Debian control file should exist in "%s"' % control)
 
-    def is_architecture_dependant(self):
+    def is_architecture_independant(self):
         return 'all' in self.get_debian_architecture()
 
     def get_debian_distribution(self):
@@ -338,10 +346,10 @@ class SetupInfo(Configuration):
         cwd = os.getcwd()
         os.chdir(self.config.pkg_dir)
         try:
-            changelog = os.path.join(self.get_debian_dir(), 'changelog')
+            changelog = osp.join(self.get_debian_dir(), 'changelog')
             try:
                 cmd = 'dpkg-parsechangelog'
-                if os.path.isfile(changelog):
+                if osp.isfile(changelog):
                     cmd += ' -l%s' % changelog
 
                 process = Popen(cmd.split(), stdout=PIPE)
@@ -384,11 +392,43 @@ class SetupInfo(Configuration):
                 logging.error("--orig-tarball option is required when you don't "
                               "build the first revision of a debian package")
                 logging.error("If you haven't the original tarball version, please do "
-                              "an apt-get source of the Debian source package")
+                              "an 'apt-get source --tar-only %s' of the Debian source package"
+                             % self.get_debian_name())
                 raise LGPException('unable to build upstream tarball of %s package '
                                    'for Debian revision "%s"'
                                    % (self.get_debian_name(), debian_revision))
         return initial
+
+    def get_architectures(self, archi=None, basetgz=None):
+        """ Ensure that the architectures exist
+
+            :param:
+                archi: str or list
+                    name of a architecture
+            :return:
+                list of architecture
+        """
+        known_archi = Popen(["dpkg-architecture", "-L"], stdout=PIPE).communicate()[0].split()
+        if archi is None:
+            archi = self.get_debian_architecture()
+            logging.debug('retrieve architecture field value from debian/control: %s'
+                          % ','.join(archi))
+        if 'current' in archi:
+            archi = Popen(["dpkg", "--print-architecture"], stdout=PIPE).communicate()[0].split()
+        else:
+            if 'all' in archi:
+                logging.warning('the "all" keyword is confusing about the '
+                                'architecture. Use "any" instead or keep lgp find '
+                                'the field value in debian/changelog.')
+                archi = ['any']
+            if 'any' in archi:
+                archi = [os.path.basename(f).split('-', 1)[1].split('.')[0]
+                           for f in glob.glob(os.path.join(basetgz,'*.tgz'))]
+                archi = set(known_archi) & set(archi)
+            for a in archi:
+                if a not in known_archi:
+                    raise ArchitectureException(a)
+        return archi
 
     @cached
     def get_upstream_name(self):
@@ -407,7 +447,6 @@ class SetupInfo(Configuration):
         #debian_upstream_version = self.get_versions()[0]
         debian_upstream_version = self.get_debian_version().rsplit('-', 1)[0]
         assert debian_upstream_version == self.get_versions()[0], "get_versions() failed"
-        logging.debug("don't forget to track vcs tags if in use")
         if upstream_version != debian_upstream_version:
             logging.warn("version provided by upstream is '%s'" % upstream_version)
             logging.warn("upstream version read from Debian changelog is '%s'" % debian_upstream_version)
@@ -419,70 +458,135 @@ class SetupInfo(Configuration):
         self._run_command('clean')
 
     def make_orig_tarball(self):
-        """make upstream and debianized tarballs in a dedicated directory"""
+        """make upstream and debianized tarballs in a dedicated directory
+
+        call to move_package_files() will reset instance variable
+        config.orig_tarball to its new name for later reuse
+        """
         # compare versions here to alert developpers
         self.compare_versions()
 
+        self._tmpdir = tempfile.mkdtemp()
+        self._tmpdirs.append(self._tmpdir)
+
         fileparts = (self.get_upstream_name(), self.get_upstream_version())
-        # directory containing the debianized source tree
-        # (i.e. with a debian sub-directory and maybe changes to the original files)
-        # origpath is depending of the upstream convention
-        origpath = os.path.join(self._tmpdir, "%s-%s" % fileparts)
         tarball = '%s_%s.orig.tar.gz' % fileparts
         upstream_tarball = '%s-%s.tar.gz' % fileparts
-        initial_revision = self.is_initial_debian_revision()
+
+        # unlink old archive file if any (it's surely a test package)
+        old_tarball = osp.join(self.get_distrib_dir(), tarball)
+        if osp.isfile(osp.join(self.get_distrib_dir(), tarball)):
+            os.unlink(old_tarball)
+            logging.debug("a precedent Debian source archive was detected in '%s' "
+                          "and is now deleted for the current build"
+                          % self.get_distrib_dir())
 
         if self.config.orig_tarball is None:
-            logging.info("add new source archive '%s' (pristine tarball) from upstream release"
-                        % tarball)
+            logging.info("creation of a new Debian source archive (pristine tarball) from upstream release")
             try:
-                self._run_command("sdist", dist_dir=os.path.join(self._tmpdir, 'dist'))
+                self._run_command("sdist", dist_dir=self._tmpdir)
             except CalledProcessError, err:
                 logging.error("creation of the source archive failed")
                 logging.error("check if the version '%s' is really tagged in"\
                                   " your repository" % self.get_upstream_version())
                 raise LGPCommandException("source distribution wasn't properly built", err)
-            upstream_tarball = os.path.join(self._tmpdir, 'dist', upstream_tarball)
+            upstream_tarball = osp.join(self._tmpdir, upstream_tarball)
         else:
             expected = [upstream_tarball, tarball]
-            if os.path.basename(self.config.orig_tarball) not in expected:
+            if osp.basename(self.config.orig_tarball) not in expected:
                 logging.error("the provided archive hasn't one of the expected formats (%s)"
                               % ','.join(expected))
             # TODO use urlopen() in case of remote file (__pkginfo__.ftp or debian/watch (uscan))
-            upstream_tarball = os.path.abspath(os.path.expanduser(self.config.orig_tarball))
-            logging.info("use provided archive '%s' as original source archive (tarball)"
+            upstream_tarball = osp.abspath(osp.expanduser(self.config.orig_tarball))
+            logging.info("reuse provided archive '%s' as original source archive (tarball)"
                          % upstream_tarball)
 
-        assert os.path.isfile(upstream_tarball), 'original source archive (tarball) not found'
+        assert osp.isfile(upstream_tarball), 'original source archive (tarball) not found'
+        tarball = osp.join(self._tmpdir, tarball)
+        mv(upstream_tarball, tarball)
+        assert osp.isfile(tarball), 'Debian source archive (pristine tarball) not found'
 
-        tarball = os.path.join(self._tmpdir, tarball) # rewrite with absolute path
+        # move pristine tarball
+        self.move_package_files()
 
-        # only provide a pristine tarball when it's an initial revision
-        if initial_revision:
-            # dpkg-source expects the original source as a tarfile
-            # by default: package_upstream-version.orig.tar.extension
-            cp(upstream_tarball, tarball)
-
-        # exit if asked by command-line
-        if self.config.get_orig_source:
-            # copy some of created files like the build log
-            self.copy_package_files()
-            sys.exit()
-
-        # test and extracting the upstream tarball
+    def prepare_source_archive(self):
+        """prepare and extract the upstream tarball"""
+        logging.debug("prepare for %s distribution" % self.current_distrib)
+        logging.debug("extracting original source archive in %s" % self._tmpdir)
         try:
-            cmd = 'tar xzf %s -C %s' % (upstream_tarball, self._tmpdir)
+            cmd = 'tar --atime-preserve --preserve --same-owner -xzf %s -C %s'\
+                  % (self.config.orig_tarball, self._tmpdir)
             check_call(cmd.split(), stdout=sys.stdout,
                                     stderr=sys.stderr)
         except CalledProcessError, err:
             raise LGPCommandException('an error occured while extracting the '
                                       'upstream tarball', err)
 
-        logging.debug("extract original source archive in %s" % self._tmpdir)
-        return(upstream_tarball, tarball, origpath)
+        # only provide a pristine tarball when it's an initial revision
+        if self.is_initial_debian_revision():
+            cp(self.config.orig_tarball, self._tmpdir)
+            logging.debug("copy original source archive (pristine tarball) to "
+                          "Debian source manifest (first revision of package)")
+
+        # support of the multi-distribution
+        return self.manage_current_distribution()
+
+
+    def manage_current_distribution(self):
+        """manage debian files depending of the current distrib from options
+
+        We copy debian_dir directory into tmp build depending of the target distribution
+        in all cases, we copy the debian directory of the default version (unstable)
+        If a file should not be included, touch an empty file in the overlay
+        directory.
+
+        The distribution value will always be rewritten in final changelog.
+        """
+        fileparts = (self.get_upstream_name(), self.get_upstream_version())
+        # directory containing the debianized source tree
+        # (i.e. with a debian sub-directory and maybe changes to the original files)
+        # origpath is depending of the upstream convention
+        origpath = osp.join(self._tmpdir, "%s-%s" % fileparts)
+
+        try:
+            # don't forget the final slash!
+            export(osp.join(self.config.pkg_dir, 'debian'), osp.join(origpath, 'debian/'))
+        except IOError, err:
+            raise LGPException(err)
+
+        debian_dir = self.get_debian_dir()
+        if debian_dir != "debian":
+            logging.info("overriding files from '%s' directory..." % debian_dir)
+            # don't forget the final slash!
+            export(osp.join(self.config.pkg_dir, debian_dir), osp.join(origpath, 'debian/'),
+                   verbose=self.config.verbose)
+
+        # substitute distribution string in file only if line not starting by
+        # spaces (simple heuristic to prevent other changes in content)
+        cmd = ['sed', '-i', '/^[[:alpha:]]/s/\([[:alpha:]]\+\);/%s;/'
+               % self.current_distrib, osp.join(origpath, 'debian', 'changelog')]
+        try:
+            check_call(cmd, stdout=sys.stdout) #, stderr=sys.stderr)
+        except CalledProcessError, err:
+            raise LGPCommandException("bad substitution for distribution field", err)
+
+        # substitute version string in appending timestamp and suffix
+        # suffix should not be empty
+        if self.config.suffix:
+            timestamp = int(time.time())
+            cmd = ['sed', '-i', '1s/(\(.*\))/(%s:\\1%s)/' % (timestamp, self.config.suffix),
+                   osp.join(origpath, 'debian', 'changelog')]
+            try:
+                check_call(cmd, stdout=sys.stdout) #, stderr=sys.stderr)
+            except CalledProcessError, err:
+                raise LGPCommandException("bad substitution for version field", err)
+
+        self.origpath = origpath
+        return origpath
+
 
     def get_basetgz(self, distrib, arch, check=True):
-        basetgz = os.path.join(self.config.basetgz, "%s-%s.tgz" % (distrib, arch))
-        if check and not os.path.exists(basetgz):
+        basetgz = osp.join(self.config.basetgz, "%s-%s.tgz" % (distrib, arch))
+        if check and not osp.exists(basetgz):
             raise LGPException("lgp image '%s' not found. Please create it with lgp setup" % basetgz)
         return basetgz
