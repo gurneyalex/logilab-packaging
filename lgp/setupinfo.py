@@ -22,6 +22,7 @@ import stat
 import os.path as osp
 import logging
 import time
+import urllib
 import glob
 import tempfile
 from string import Template
@@ -462,6 +463,11 @@ class SetupInfo(Configuration):
 
         call to move_package_files() will reset instance variable
         config.orig_tarball to its new name for later reuse
+
+        # TODO get-orig-source
+        # http://www.debian.org/doc/debian-policy/ch-source.html
+        # http://wiki.debian.org/SandroTosi/Svn_get-orig-source
+        # http://hg.logilab.org/<upstream_name>/archive/<upstream_version>.tar.gz
         """
         # compare versions here to alert developpers
         self.compare_versions()
@@ -473,13 +479,12 @@ class SetupInfo(Configuration):
         tarball = '%s_%s.orig.tar.gz' % fileparts
         upstream_tarball = '%s-%s.tar.gz' % fileparts
 
-        # unlink old archive file if any (it's surely a test package)
+        # warn if old archive file (it's surely a test package)
         old_tarball = osp.join(self.get_distrib_dir(), tarball)
         if osp.isfile(osp.join(self.get_distrib_dir(), tarball)):
-            os.unlink(old_tarball)
-            logging.debug("a precedent Debian source archive was detected in '%s' "
-                          "and is now deleted for the current build"
-                          % self.get_distrib_dir())
+            logging.warn("a precedent Debian source archive detected in "
+                         "'%s' will be deleted by the current build"
+                         % self.get_distrib_dir())
 
         if self.config.orig_tarball is None:
             logging.info("creation of a new Debian source archive (pristine tarball) from upstream release")
@@ -490,31 +495,38 @@ class SetupInfo(Configuration):
                 logging.error("check if the version '%s' is really tagged in"\
                                   " your repository" % self.get_upstream_version())
                 raise LGPCommandException("source distribution wasn't properly built", err)
-            upstream_tarball = osp.join(self._tmpdir, upstream_tarball)
+            self.config.orig_tarball = osp.join(self._tmpdir, upstream_tarball)
         else:
             expected = [upstream_tarball, tarball]
             if osp.basename(self.config.orig_tarball) not in expected:
-                logging.error("the provided archive hasn't one of the expected formats (%s)"
-                              % ','.join(expected))
-            # TODO use urlopen() in case of remote file (__pkginfo__.ftp or debian/watch (uscan))
-            upstream_tarball = osp.abspath(osp.expanduser(self.config.orig_tarball))
+                logging.warn("the provided archive hasn't one of the expected formats (%s)"
+                             % ', '.join(expected))
+            self.config.orig_tarball = osp.expanduser(self.config.orig_tarball)
             logging.info("reuse provided archive '%s' as original source archive (tarball)"
-                         % upstream_tarball)
+                         % self.config.orig_tarball)
 
-        assert osp.isfile(upstream_tarball), 'original source archive (tarball) not found'
         tarball = osp.join(self._tmpdir, tarball)
-        mv(upstream_tarball, tarball)
+        try:
+            urllib.urlretrieve(self.config.orig_tarball, tarball)
+        except Exception, err:
+            raise LGPCommandException("the provided original source archive "
+                                      "(tarball) can't be retrieved",
+                                     err)
         assert osp.isfile(tarball), 'Debian source archive (pristine tarball) not found'
 
         # move pristine tarball
         self.move_package_files()
 
     def prepare_source_archive(self):
-        """prepare and extract the upstream tarball"""
+        """prepare and extract the upstream tarball
+        
+        FIXME replace by TarFile Object
+        FIXME rename internal directory if not <upstream-name>-<upstream-version>
+        """
         logging.debug("prepare for %s distribution" % self.current_distrib)
         logging.debug("extracting original source archive in %s" % self._tmpdir)
         try:
-            cmd = 'tar --atime-preserve --preserve --same-owner -xzf %s -C %s'\
+            cmd = 'tar --atime-preserve --preserve -xzf %s -C %s'\
                   % (self.config.orig_tarball, self._tmpdir)
             check_call(cmd.split(), stdout=sys.stdout,
                                     stderr=sys.stderr)
@@ -527,6 +539,22 @@ class SetupInfo(Configuration):
             cp(self.config.orig_tarball, self._tmpdir)
             logging.debug("copy original source archive (pristine tarball) to "
                           "Debian source manifest (first revision of package)")
+
+        # Find the right orig path in tarball
+        # It can be different of the standard <upstream-name>-<upstream-version>
+        # if pristine tarball was retrieve remotely (vcs frontend for example)
+        self.origpath = [d for d in os.listdir(self._tmpdir)
+                         if osp.isdir(osp.join(self._tmpdir,d))][0]
+
+        format = "%s-%s" % (self.get_upstream_name(), self.get_upstream_version())
+        if self.origpath != format:
+            logging.warn("source directory of original source archive (pristine tarball) "
+                         "has not the expected format (%s): %s" % (format, self.origpath))
+
+        # directory containing the debianized source tree
+        # (i.e. with a debian sub-directory and maybe changes to the original files)
+        # origpath is depending of the upstream convention
+        self.origpath = osp.join(self._tmpdir, self.origpath)
 
         # support of the multi-distribution
         return self.manage_current_distribution()
@@ -541,16 +569,12 @@ class SetupInfo(Configuration):
         directory.
 
         The distribution value will always be rewritten in final changelog.
-        """
-        fileparts = (self.get_upstream_name(), self.get_upstream_version())
-        # directory containing the debianized source tree
-        # (i.e. with a debian sub-directory and maybe changes to the original files)
-        # origpath is depending of the upstream convention
-        origpath = osp.join(self._tmpdir, "%s-%s" % fileparts)
 
+        This is specific to Logilab (debian directory is in project directory)
+        """
         try:
             # don't forget the final slash!
-            export(osp.join(self.config.pkg_dir, 'debian'), osp.join(origpath, 'debian/'))
+            export(osp.join(self.config.pkg_dir, 'debian'), osp.join(self.origpath, 'debian/'))
         except IOError, err:
             raise LGPException(err)
 
@@ -558,13 +582,13 @@ class SetupInfo(Configuration):
         if debian_dir != "debian":
             logging.info("overriding files from '%s' directory..." % debian_dir)
             # don't forget the final slash!
-            export(osp.join(self.config.pkg_dir, debian_dir), osp.join(origpath, 'debian/'),
+            export(osp.join(self.config.pkg_dir, debian_dir), osp.join(self.origpath, 'debian/'),
                    verbose=self.config.verbose)
 
         # substitute distribution string in file only if line not starting by
         # spaces (simple heuristic to prevent other changes in content)
         cmd = ['sed', '-i', '/^[[:alpha:]]/s/\([[:alpha:]]\+\);/%s;/'
-               % self.current_distrib, osp.join(origpath, 'debian', 'changelog')]
+               % self.current_distrib, osp.join(self.origpath, 'debian', 'changelog')]
         try:
             check_call(cmd, stdout=sys.stdout) #, stderr=sys.stderr)
         except CalledProcessError, err:
@@ -575,14 +599,13 @@ class SetupInfo(Configuration):
         if self.config.suffix:
             timestamp = int(time.time())
             cmd = ['sed', '-i', '1s/(\(.*\))/(%s:\\1%s)/' % (timestamp, self.config.suffix),
-                   osp.join(origpath, 'debian', 'changelog')]
+                   osp.join(self.origpath, 'debian', 'changelog')]
             try:
                 check_call(cmd, stdout=sys.stdout) #, stderr=sys.stderr)
             except CalledProcessError, err:
                 raise LGPCommandException("bad substitution for version field", err)
 
-        self.origpath = origpath
-        return origpath
+        return self.origpath
 
 
     def get_basetgz(self, distrib, arch, check=True):
