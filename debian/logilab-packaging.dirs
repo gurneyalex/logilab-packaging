@@ -1,4 +1,6 @@
 etc/lgp
-etc/lgp/apt.d
+etc/lgp/hooks
+etc/lgp/scripts
+etc/lgp/apt.conf.d
 usr/bin
 var/cache/lgp/buildd
