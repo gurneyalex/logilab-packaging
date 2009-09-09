@@ -16,7 +16,10 @@ DEBIAN_SUITES=("unstable" "testing" "stable" "oldstable" "sid" "etch" "lenny" "s
 # List of Ubuntu suites. Update these when needed
 UBUNTU_SUITES=("jaunty" "intrepid" "hardy" "gutsy" "feisty" "dapper")
 
-# Mirrors to use. Update these to your preferred mirror.
+# Mirrors to use. Update these to your preferred mirror or proxy.
+#export http_proxy=http://your-proxy:8080/
+#DEBIAN_PROXY="http://213.215.7.52:3142"
+#UBUNTU_PROXY="http://213.215.7.52:3142"
 DEBIAN_MIRROR="cdn.debian.net"
 UBUNTU_MIRROR="archive.ubuntu.com"
 
@@ -35,7 +38,7 @@ UBUNTU_OTHERMIRROR=
 #: ${DIST:="unstable"}
 
 # Source local configuration if any
-if [[ -f "/etc/lgp/pbuilderrc.local" ]];
+if [[ -f "/etc/lgp/pbuilderrc.local" ]]; then
 	source /etc/lgp/pbuilderrc.local
 fi
 
@@ -96,6 +99,7 @@ if $(echo ${DEBIAN_SUITES[@]} | grep -q $DIST); then
     eval "OTHERMIRROR=\"$(grep -v '#' $DEBIAN_SOURCESLIST | tr '\n' '|')\""
     [[ -f $DEBIAN_SOURCESLIST.$DIST ]] && OTHERMIRROR=$(grep -v '#' $DEBIAN_SOURCESLIST.$DIST | tr '\n' '|')
     OTHERMIRROR=${OTHERMIRROR:-$DEBIAN_OTHERMIRROR}
+    export PROXY=${DEBIAN_PROXY}
 elif $(echo ${UBUNTU_SUITES[@]} | grep -q $DIST); then
     # Ubuntu configuration
     MIRRORSITE="http://$UBUNTU_MIRROR/ubuntu/"
@@ -104,6 +108,7 @@ elif $(echo ${UBUNTU_SUITES[@]} | grep -q $DIST); then
     [[ -f $UBUNTU_SOURCESLIST.$DIST ]] && OTHERMIRROR=$(grep -v '#' $UBUNTU_SOURCESLIST.$DIST | tr '\n' '|')
     OTHERMIRROR=${OTHERMIRROR:-$UBUNTU_OTHERMIRROR}
     #DEBOOTSTRAPOPTS=("--exclude" "ubuntu-keyring" "${DEBOOTSTRAPOPTS[@]}")
+    export PROXY=${UBUNTU_PROXY}
 else
     # FIXME Should be dead code now (managed in lgp)
     # Debian could be the default case
@@ -111,7 +116,6 @@ else
     exit 3
 fi
 
-#export http_proxy=http://your-proxy:8080/
 USEPROC=yes
 USEDEVPTS=yes
 USEDEVFS=no
@@ -158,12 +162,19 @@ PBUILDERSATISFYDEPENDSCMD="/usr/lib/pbuilder/pbuilder-satisfydepends"
 #PDEBUILD_PBUILDER=pbuilder
 #USE_PDEBUILD_INTERNAL=yes
 
+# pdebuild wants invoke debsign command after building
+# We use pdebuild only for package debugging. Say 'no' (or commented) here.
+#AUTO_DEBSIGN=no
+
 # Hooks directory for pbuilder
 # Force an alternate value of hookdir since hooks can be sensitive
 HOOKDIR=${HOOKDIR:+"/etc/lgp/hooks"}
 
 # APT configuration files directory
-#APTCONFDIR="/etc/lgp/apt.d"
+_APTCONFDIR="/etc/lgp/apt.conf.d"
+if [[ -n "$(ls $_APTCONFDIR 2>/dev/null)" ]]; then
+	APTCONFDIR=$_APTCONFDIR
+fi
 
 # the username and ID used by pbuilder, inside chroot. Needs fakeroot, really
 #BUILDUSERID=$SUDO_UID
@@ -182,10 +193,6 @@ export SHELL=/bin/sh
 #PBUILDER_BUILD_LOGFILE="${BUILDRESULT}/"$(basename "${PACKAGENAME}" .dsc)"${PKGNAME_LOGFILE_EXTENTION}"
 PKGNAME_LOGFILE_EXTENTION="_${ARCH}_${DIST}.lgp-build"
 PKGNAME_LOGFILE=yes
-
-# pdebuild wants invoke debsign command after building
-# We use pdebuild only for package debugging. Say 'no' (or commented) here.
-#AUTO_DEBSIGN=no
 
 # for pbuilder debuild
 BUILDSOURCEROOTCMD="fakeroot"
