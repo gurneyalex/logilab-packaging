@@ -193,7 +193,8 @@ class SetupInfo(Configuration):
         try:
             os.chdir(self.config.pkg_dir)
         except OSError, err:
-            raise LGPException(err)
+            if sys.argv[1] != "piuparts":
+                raise LGPException(err)
 
         # no default value for distribution. Try to retrieve it in changelog
         if self.config.distrib is None or 'changelog' in self.config.distrib:
@@ -206,7 +207,7 @@ class SetupInfo(Configuration):
                                                self.config.basetgz)
 
         # Setup command can be run anywhere, so skip setup file retrieval
-        if sys.argv[1] in ["setup", "login", "script"]:
+        if sys.argv[1] in ["setup", "login", "script", "piuparts"]:
             return
 
         # Guess the package format
