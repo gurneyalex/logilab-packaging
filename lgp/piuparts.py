@@ -21,13 +21,13 @@
 __docformat__ = "restructuredtext en"
 
 import os
+import sys
 import logging
-import glob
 from subprocess import check_call, CalledProcessError
+from debian_bundle import (deb822, debfile)
 
 from logilab.devtools.lgp.setupinfo import SetupInfo
 from logilab.devtools.lgp.exceptions import LGPException, LGPCommandException
-from logilab.devtools.lgp import CONFIG_FILE, SCRIPTS_DIR
 
 
 def run(args):
@@ -35,45 +35,60 @@ def run(args):
     try :
         piuparts = Piuparts(args)
 
-        command, = glob.glob(os.path.join(SCRIPTS_DIR, piuparts.config.command))
-        for arch in piuparts.architectures:
-            for distrib in piuparts.distributions:
-                logging.info("execute piuparts '%s' with parameters: %s"
-                             % (piuparts.config.command, ' '.join(piuparts.arguments)))
-                cmd = "sudo IMAGE=%s DIST=%s ARCH=%s pbuilder execute --configfile %s %s -- %s "
-                image = piuparts.get_basetgz(distrib, arch, check=False)
-                cmd = cmd % (image, distrib, arch, CONFIG_FILE, command, piuparts.arguments)
+        for f in piuparts.arguments:
+            if os.path.isfile(f):
+                packages = list()
+                if f.endswith('.changes'):
+                    f        = deb822.Changes(file(f))
+                    arch     = f['Architecture']
+                    distrib  = f['Distribution']
+                    packages = [deb['name'] for deb in f['Files'] if deb['name'].endswith('.deb')]
+                elif f.endswith('.deb'):
+                    deb     = debfile.DebFile(f)
+                    arch    = deb.debcontrol()['Architecture']
+                    distrib = deb.changelog().distributions
+                    packages.append(f)
+                else:
+                    # FIXME
+                    arch = piuparts.config.archi
+                    distrib = "sid"
 
-                # run piuparts command
-                try:
-                    check_call(cmd.split(), env={'DIST': distrib, 'ARCH': arch,
-                                                 'IMAGE': image})
-                except CalledProcessError, err:
-                    raise LGPCommandException('an error occured in piuparts execution', err)
+                architectures = piuparts.get_architectures([arch])
+                # we loop on different architectures of available base images if arch-independant
+                for arch in architectures:
+                    cmd = ['sudo', 'piuparts', '--no-symlinks',
+                           '--apt',
+                           '--skip-minimize', 
+                           '--warn-on-others', '--keep-sources-list',
+                           # the development repository can be somewhat buggy...
+                           '--no-upgrade-test',
+                           '-b', piuparts.get_basetgz(distrib, arch),
+                           # just violent but too many false positives otherwise
+                           '-I', '"/etc/shadow*"',
+                           '-I', '"/usr/share/pycentral-data.*"',
+                           '-I', '"/var/lib/dpkg/triggers/pysupport.*"',
+                           '-I', '"/var/lib/dpkg/triggers/File"',
+                           '-I', '"/usr/local/lib/python*"',
+                          ] + packages
+                    logging.info("execute piuparts: %s" % ' '.join(cmd))
 
-    except NotImplementedError, exc:
-        logging.error(exc)
-        return 1
+                    # run piuparts command
+                    try:
+                        check_call(cmd, stdout=sys.stdout)
+                    except CalledProcessError, err:
+                        raise LGPCommandException('an error occured in piuparts execution', err)
+
     except LGPException, exc:
         logging.critical(exc)
         return 1
 
 
 class Piuparts(SetupInfo):
-    """Helper class for running piupartss
+    """Helper class for running piuparts
 
-    Specific options are added. See lgp piuparts --help
+    Specific options can be added. See lgp piuparts --help
     """
     name = "lgp-piuparts"
-
-    options = (('command',
-                {'type': 'choice',
-                 'dest': 'command',
-                 'short': 'c',
-                 'metavar': "<command>",
-                 'help': "piuparts command to run with pbuilder"
-                }),
-              ),
 
     def __init__(self, args):
         # Retrieve upstream information
