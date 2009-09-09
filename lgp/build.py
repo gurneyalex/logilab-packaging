@@ -128,7 +128,7 @@ class Builder(SetupInfo):
                  'default' : None,
                  'dest': 'orig_tarball',
                  'metavar' : "<tarball>",
-                 'help': "path to orig.tar.gz file"
+                 'help': "URI to orig.tar.gz file"
                 }),
                ('suffix',
                 {'type': 'string',
@@ -224,9 +224,7 @@ class Builder(SetupInfo):
         # change directory context
         os.chdir(self._tmpdir)
 
-        logging.debug("start creation of the debian source package in '%s'"
-                      % self.origpath)
-
+        logging.info("creation of the Debian source package files (.dsc, .diff.gz)")
         try:
             cmd = 'dpkg-source -b %s' % self.origpath
             check_call(cmd.split(), stdout=sys.stdout)
@@ -394,9 +392,18 @@ class Builder(SetupInfo):
                 #if filename.endswith('.diff.gz'):
                 #    check_file(copied_filename)
                 if filename.endswith('.orig.tar.gz'):
-                    if self.config.orig_tarball is None:
-                        self.config.orig_tarball = copied_filename
-                    check_file(copied_filename)
+                    # always reuse previous copied tarball as pointer
+                    # thus we are sure to have a local file at the end
+                    self.config.orig_tarball = copied_filename
+                    #check_file(copied_filename)
+                    if self.config.get_orig_source:
+                        logging.info('a new original source archive (tarball) '
+                                     'is available: %s' % copied_filename)
+                if filename.endswith('.lgp-build'):
+                    logging.info("a build logfile is available: %s" % copied_filename)
+                if filename.endswith('.changes'):
+                    logging.info("Debian changes file is: %s" % copied_filename)
+
                 mv(fullpath, distdir)
                 assert osp.exists(copied_filename)
 
