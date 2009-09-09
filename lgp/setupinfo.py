@@ -108,8 +108,7 @@ class SetupInfo(Configuration):
                  'hide': True,
                  'dest': "pkg_dir",
                  'short': 'p',
-                 'metavar' : "<project directory>",
-                 'help': "set a specific project directory",
+                 'metavar' : "<root of the debian project directory>",
                 }),
                ('no-color',
                 {'action': 'store_true',
@@ -119,7 +118,6 @@ class SetupInfo(Configuration):
                 }),
                ('dump-config',
                 {'action': 'store_true',
-                 'hide': True,
                  'dest': "dump_config",
                  'help': "dump lgp configuration (debugging purpose)"
                 }),
