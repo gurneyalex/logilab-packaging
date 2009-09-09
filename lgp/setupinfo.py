@@ -175,6 +175,11 @@ class SetupInfo(Configuration):
 
             if self.config.verbose:
                 logging.getLogger().setLevel(logging.DEBUG)
+            else:
+                # Redirect subprocesses stdout output only in case of verbose mode
+                # We always allow subprocesses to print on the stderr (more convenient)
+                sys.stdout = open(os.devnull,"w")
+                #sys.stderr = open(os.devnull,"w")
 
         if self.config.dump_config:
             self.generate_config()
@@ -515,7 +520,11 @@ class SetupInfo(Configuration):
         assert osp.isfile(tarball), 'Debian source archive (pristine tarball) not found'
 
         # move pristine tarball
-        self.move_package_files()
+        self.move_package_files(verbose=self.config.get_orig_source)
+
+        # exit if asked by command-line
+        if self.config.get_orig_source:
+            sys.exit()
 
     def prepare_source_archive(self):
         """prepare and extract the upstream tarball

@@ -192,12 +192,6 @@ class Builder(SetupInfo):
             warnings.warn("Option post-treatment is deprecated. Use no-treatment instead.", DeprecationWarning)
             self.config.no_treatment = True
 
-        # Redirect subprocesses stdout output only in case of verbose mode
-        # We always allow subprocesses to print on the stderr (more convenient)
-        if not self.config.verbose:
-            sys.stdout = open(os.devnull,"w")
-            #sys.stderr = open(os.devnull,"w")
-
     def clean_tmpdirs(self):
         if not self.config.keep_tmpdir:
             if hasattr(self, '_tmpdirs'):
@@ -233,7 +227,7 @@ class Builder(SetupInfo):
             raise LGPCommandException(msg, err)
 
         # move Debian source package files
-        self.move_package_files()
+        self.move_package_files(verbose=self.config.deb_src_only)
 
         # exit if asked by command-line
         if self.config.deb_src_only:
@@ -350,7 +344,7 @@ class Builder(SetupInfo):
         return series
 
 
-    def move_package_files(self):
+    def move_package_files(self, verbose=True):
         """move package files from the temporary build area to the result directory
 
         we define here the self.packages variable used by post-treatment
@@ -389,6 +383,9 @@ class Builder(SetupInfo):
                                       "to be a real native package)"
                                       % self.dscfile)
                     #check_file(copied_filename)
+                    if self.config.deb_src_only:
+                        logging.info("Debian source control file is: %s"
+                                     % copied_filename)
                 #if filename.endswith('.diff.gz'):
                 #    check_file(copied_filename)
                 if filename.endswith('.orig.tar.gz'):
@@ -408,8 +405,9 @@ class Builder(SetupInfo):
                 assert osp.exists(copied_filename)
 
         # lastly print changes file to the console
-        logging.info("recent generated files:\n* %s"
-                     % '\n* '.join(sorted(self.packages)))
+        if verbose:
+            logging.info("recent generated files:\n* %s"
+                         % '\n* '.join(sorted(self.packages)))
 
     def get_distrib_dir(self):
         """get the dynamic target release directory"""
