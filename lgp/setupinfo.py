@@ -420,14 +420,15 @@ class SetupInfo(Configuration):
             archi = self.get_debian_architecture()
             logging.debug('retrieve architecture field value from debian/control: %s'
                           % ','.join(archi))
+        if 'all' in self.config.archi:
+            logging.warn('the "all" keyword can be confusing about the '
+                        'target architecture. You should let lgp finds '
+                        'the value in debian/changelog by itself.')
+            archi = ['any']
+            logging.warn('"any" keyword will be use for this build')
         if 'current' in archi:
             archi = Popen(["dpkg", "--print-architecture"], stdout=PIPE).communicate()[0].split()
         else:
-            if 'all' in archi:
-                logging.warning('the "all" keyword is confusing about the '
-                                'architecture. Use "any" instead or keep lgp find '
-                                'the field value in debian/changelog.')
-                archi = ['any']
             if 'any' in archi:
                 archi = [os.path.basename(f).split('-', 1)[1].split('.')[0]
                            for f in glob.glob(os.path.join(basetgz,'*.tgz'))]
@@ -470,10 +471,11 @@ class SetupInfo(Configuration):
         call to move_package_files() will reset instance variable
         config.orig_tarball to its new name for later reuse
 
-        # TODO get-orig-source
+        # TODO run 'fakeroot debian/rules get-orig-source' if available
         # http://www.debian.org/doc/debian-policy/ch-source.html
         # http://wiki.debian.org/SandroTosi/Svn_get-orig-source
         # http://hg.logilab.org/<upstream_name>/archive/<upstream_version>.tar.gz
+        logging.info("fetch creation of a new Debian source archive (pristine tarball) from upstream release")
         """
         # compare versions here to alert developpers
         self.compare_versions()
@@ -529,9 +531,8 @@ class SetupInfo(Configuration):
 
     def prepare_source_archive(self):
         """prepare and extract the upstream tarball
-        
+
         FIXME replace by TarFile Object
-        FIXME rename internal directory if not <upstream-name>-<upstream-version>
         """
         logging.debug("prepare for %s distribution" % self.current_distrib)
         logging.debug("extracting original source archive in %s" % self._tmpdir)
