@@ -188,10 +188,10 @@ class SetupInfo(Configuration):
             self.config.pkg_dir = osp.abspath(self.arguments
                                               and self.arguments[0]
                                               or os.getcwd())
-        try:
-            os.chdir(self.config.pkg_dir)
-        except OSError, err:
-            if sys.argv[1] != "piuparts":
+        if sys.argv[1] != "piuparts": #FIXME
+            try:
+                os.chdir(self.config.pkg_dir)
+            except OSError, err:
                 raise LGPException(err)
 
         # no default value for distribution. Try to retrieve it in changelog
@@ -244,8 +244,11 @@ class SetupInfo(Configuration):
 
     def _run_command(self, cmd, output=False, **args):
         """run an internal declared command as new subprocess"""
-        cmdline = Template(COMMANDS[cmd][self.package_format])
-        cmdline = cmdline.substitute(setup=self.config.setup_file, **args)
+        if isinstance(cmd, list):
+            cmdline = ' '.join(cmd)
+        else:
+            cmdline = Template(COMMANDS[cmd][self.package_format])
+            cmdline = cmdline.substitute(setup=self.config.setup_file, **args)
         logging.debug('run subprocess command: %s' % cmdline)
         if args:
             logging.debug('command substitutions: %s' % args)
@@ -262,6 +265,9 @@ class SetupInfo(Configuration):
 
         The convention is :
         - 'debian' is for distribution found in debian/changelog
+        - 'debian.$OTHER' directory for $OTHER distribution if need
+
+        Extra possibility:
         - 'debian/$OTHER' subdirectory for $OTHER distribution if need
         """
         # TODO Check the X-Vcs-* to fetch remote Debian configuration files
@@ -276,10 +282,12 @@ class SetupInfo(Configuration):
         # developper can create an overlay for the debian directory
         old_override_dir = '%s.%s' % (debiandir, self.current_distrib)
         if osp.isdir(osp.join(self.config.pkg_dir, old_override_dir)):
-            logging.warn("new distribution overlay system available: you "
-                         "can use '%s' subdirectory instead of '%s' and "
-                         "merge the files"
-                         % (override_dir, old_override_dir))
+            logging.info("overlay directory is provided for this distribution: %s"
+                         % old_override_dir)
+            #logging.warn("new distribution overlay system available: you "
+            #             "can use '%s' subdirectory instead of '%s' and "
+            #             "merge the files"
+            #             % (override_dir, old_override_dir))
             debiandir = old_override_dir
 
         if osp.isdir(osp.join(self.config.pkg_dir, override_dir)):
@@ -466,14 +474,16 @@ class SetupInfo(Configuration):
     def make_orig_tarball(self):
         """make upstream and debianized tarballs in a dedicated directory
 
-        call to move_package_files() will reset instance variable
+        Start by calling the optional get-orig-source from debian/rules
+        If not possible, failback to a local creation
+
+        A call to move_package_files() will reset instance variable
         config.orig_tarball to its new name for later reuse
 
-        # TODO run 'fakeroot debian/rules get-orig-source' if available
-        # http://www.debian.org/doc/debian-policy/ch-source.html
-        # http://wiki.debian.org/SandroTosi/Svn_get-orig-source
-        # http://hg.logilab.org/<upstream_name>/archive/<upstream_version>.tar.gz
-        logging.info("fetch creation of a new Debian source archive (pristine tarball) from upstream release")
+        See:
+        http://www.debian.org/doc/debian-policy/ch-source.html
+        http://wiki.debian.org/SandroTosi/Svn_get-orig-source
+        http://hg.logilab.org/<upstream_name>/archive/<upstream_version>.tar.gz
         """
         # compare versions here to alert developpers
         self.compare_versions()
@@ -493,7 +503,14 @@ class SetupInfo(Configuration):
                          % self.get_distrib_dir())
 
         if self.config.orig_tarball is None:
-            logging.info("creation of a new Debian source archive (pristine tarball) from upstream release")
+            try:
+                self._run_command(["fakeroot", "debian/rules", "get-orig-source"])
+                assert osp.isfile(tarball)
+                self.config.orig_tarball = osp.abspath(tarball)
+            except:
+                logging.warn("cannot fetch the Debian source archive (pristine tarball) "
+                             "with get-orig-source target from debian/rules")
+            logging.info("creation of a new Debian source archive (pristine tarball) from current directory")
             try:
                 self._run_command("sdist", dist_dir=self._tmpdir)
             except CalledProcessError, err:
@@ -525,7 +542,7 @@ class SetupInfo(Configuration):
 
         # exit if asked by command-line
         if self.config.get_orig_source:
-            sys.exit()
+            self.finalize()
 
     def prepare_source_archive(self):
         """prepare and extract the upstream tarball
