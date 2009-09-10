@@ -220,7 +220,7 @@ class Builder(SetupInfo):
 
         logging.info("creation of the Debian source package files (.dsc, .diff.gz)")
         try:
-            cmd = 'dpkg-source -b %s' % self.origpath
+            cmd = 'dpkg-source --no-copy -sp -b %s' % self.origpath
             check_call(cmd.split(), stdout=sys.stdout)
         except CalledProcessError, err:
             msg = "cannot build valid dsc file with command %s" % cmd
@@ -231,7 +231,7 @@ class Builder(SetupInfo):
 
         # exit if asked by command-line
         if self.config.deb_src_only:
-            sys.exit()
+            self.finalize()
 
         # restore directory context
         os.chdir(self.config.pkg_dir)
@@ -281,7 +281,7 @@ class Builder(SetupInfo):
                                           'IMAGE': build['image']},
                                      stdout=file(os.devnull, "w")))
             except Exception, err:
-                self.keep_tmpdir = True
+                #self.keep_tmpdir = True
                 logging.crirical(err)
                 logging.critical("build failure (%s/%s) for %s (%s)"
                                  % (build['distrib'],
@@ -424,4 +424,4 @@ class Builder(SetupInfo):
 
     def finalize(self):
         self.clean_tmpdirs()
-        return self.build_status
+        sys.exit(self.build_status)
