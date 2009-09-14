@@ -45,28 +45,39 @@ from mercurial.hg import repository as Repository
 from mercurial.ui import ui as Ui
 from mercurial.node import short
 try:
+    # mercurial >= 1.2 (?)
     from mercurial.cmdutil import walkchangerevs
-    from mercurial.util import cachefunc, _encoding
-except ImportError:
+except ImportError, ex:
     from mercurial.commands import walkchangerevs
-    import locale
+try:
+    # mercurial >= 1.1 (.1?)
+    from mercurial.util import cachefunc
+except ImportError, ex:
     def cachefunc(func):
         return func
-    # stay compatible with mercurial 0.9.1 (etch debian release)
-    # (borrowed from mercurial.util 1.1.2)
+try:
+    # mercurial >= 1.3.1
+    from mercurial import encoding
+    _encoding = encoding.encoding
+except ImportError:
     try:
-        _encoding = os.environ.get("HGENCODING")
-        if sys.platform == 'darwin' and not _encoding:
-            # On darwin, getpreferredencoding ignores the locale environment and
-            # always returns mac-roman. We override this if the environment is
-            # not C (has been customized by the user).
-            locale.setlocale(locale.LC_CTYPE, '')
-            _encoding = locale.getlocale()[1]
-        if not _encoding:
-            _encoding = locale.getpreferredencoding() or 'ascii'
-    except locale.Error:
-        _encoding = 'ascii'
-
+        from mercurial.util import _encoding
+    except ImportError:
+        import locale
+        # stay compatible with mercurial 0.9.1 (etch debian release)
+        # (borrowed from mercurial.util 1.1.2)
+        try:
+            _encoding = os.environ.get("HGENCODING")
+            if sys.platform == 'darwin' and not _encoding:
+                # On darwin, getpreferredencoding ignores the locale environment and
+                # always returns mac-roman. We override this if the environment is
+                # not C (has been customized by the user).
+                locale.setlocale(locale.LC_CTYPE, '')
+                _encoding = locale.getlocale()[1]
+            if not _encoding:
+                _encoding = locale.getpreferredencoding() or 'ascii'
+        except locale.Error:
+            _encoding = 'ascii'
 try:
     # demandimport causes problems when activated, ensure it isn't
     # XXX put this in apycot where the pb has been noticed?
