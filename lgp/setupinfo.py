@@ -100,7 +100,7 @@ class SetupInfo(Configuration):
                  'default' : 'current',
                  'short': 'a',
                  'metavar' : "<architecture>",
-                 'help': "build for the requested debian architectures only. Use 'all' for automatic detection",
+                 'help': "build for the requested debian architectures only (no automatic detection)",
                  'group': 'Default',
                 }),
                ('pkg_dir',
@@ -426,12 +426,14 @@ class SetupInfo(Configuration):
             archi = self.get_debian_architecture()
             logging.debug('retrieve architecture field value from debian/control: %s'
                           % ','.join(archi))
+        # just a warning issuing for possibly confused configuration
         if 'all' in self.config.archi:
             logging.warn('the "all" keyword can be confusing about the '
-                        'target architecture. You should let lgp finds '
-                        'the value in debian/changelog by itself.')
-            archi = ['any']
-            logging.warn('"any" keyword will be use for this build')
+                        'targeted architectures. Consider using the "any" keyword '
+                        'to force the build on all architectures or let lgp finds '
+                        'the value in debian/changelog by itself in doubt.')
+            archi = ['current']
+            logging.warn('lgp replaces "all" with "current" architecture value for this command')
         if 'current' in archi:
             archi = Popen(["dpkg", "--print-architecture"], stdout=PIPE).communicate()[0].split()
         else:
@@ -510,7 +512,7 @@ class SetupInfo(Configuration):
             except:
                 logging.warn("cannot fetch the Debian source archive (pristine tarball) "
                              "with get-orig-source target from debian/rules")
-            logging.info("creation of a new Debian source archive (pristine tarball) from current directory")
+            logging.info("creation of a new Debian source archive (pristine tarball) from working directory")
             try:
                 self._run_command("sdist", dist_dir=self._tmpdir)
             except CalledProcessError, err:
