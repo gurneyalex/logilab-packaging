@@ -23,7 +23,7 @@ class LGPCommandException(LGPException):
         if cmd:
             msg = "command '%s' returned non-zero exit status %s" \
                   % (' '.join(cmd.cmd), cmd.returncode)
-            logging.error(msg)
+            logging.warn(msg)
     def __str__(self):
         return self.value
 
