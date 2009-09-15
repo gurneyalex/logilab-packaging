@@ -133,7 +133,7 @@ def wait_jobs(joblist):
         for j in joblist:
             j.poll()
             if j.returncode is not None:
-                status += status
+                status += j.returncode
                 joblist.remove(j)
         time.sleep(1)
         sys.stderr.write('.')

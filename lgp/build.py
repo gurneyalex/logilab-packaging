@@ -39,7 +39,7 @@ from logilab.devtools.lgp.setupinfo import SetupInfo
 from logilab.devtools.lgp.utils import cond_exec, wait_jobs
 from logilab.devtools.lgp.exceptions import LGPException, LGPCommandException
 
-from logilab.devtools.lgp.check import Checker, check_debsign
+from logilab.devtools.lgp.check import check_debsign
 
 def run(args):
     """main function of lgp build command"""
@@ -254,7 +254,7 @@ class Builder(SetupInfo):
                    '--clear-hooks', '-uc', '-us']
         elif debuilder == 'fakeroot':
             os.chdir(self.origpath)
-            cmd = ['fakeroot', 'debian/rules binary']
+            cmd = ['fakeroot', 'debian/rules', 'binary']
         else:
             cmd = debuilder.split()
         return cmd
@@ -291,8 +291,12 @@ class Builder(SetupInfo):
                 return False
 
         build_status, timedelta = wait_jobs(joblist)
-        logging.info("binary builds for '%s' finished in %d seconds with global exit status %d"
-                     % (build['distrib'], timedelta, build_status))
+        if build_status:
+            logging.critical("binary builds failed for '%s' with global exit status %d"
+                             % (build['distrib'], build_status))
+        else:
+            logging.info("binary builds for '%s' finished in %d seconds with global exit status %d"
+                         % (build['distrib'], timedelta, build_status))
 
         # move Debian binary package files
         self.move_package_files()
