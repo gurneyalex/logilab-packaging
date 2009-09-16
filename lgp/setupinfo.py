@@ -41,6 +41,7 @@ from logilab.devtools.lib import TextReporter
 from logilab.devtools.lgp import LGP_CONFIG_FILE
 from logilab.devtools.lgp.exceptions import LGPException, LGPCommandException
 from logilab.devtools.lgp.exceptions import (ArchitectureException,
+                                             SetupException,
                                              DistributionException)
 from logilab.devtools.lgp.utils import get_distributions, cached
 
@@ -282,8 +283,6 @@ class SetupInfo(Configuration):
         # developper can create an overlay for the debian directory
         old_override_dir = '%s.%s' % (debiandir, self.current_distrib)
         if osp.isdir(osp.join(self.config.pkg_dir, old_override_dir)):
-            logging.info("overlay directory is provided for this distribution: %s"
-                         % old_override_dir)
             #logging.warn("new distribution overlay system available: you "
             #             "can use '%s' subdirectory instead of '%s' and "
             #             "merge the files"
@@ -438,8 +437,17 @@ class SetupInfo(Configuration):
             archi = Popen(["dpkg", "--print-architecture"], stdout=PIPE).communicate()[0].split()
         else:
             if 'any' in archi:
-                archi = [os.path.basename(f).split('-', 1)[1].split('.')[0]
-                           for f in glob.glob(os.path.join(basetgz,'*.tgz'))]
+                if not osp.isdir(basetgz):
+                    raise SetupException("default location '%s' for the archived "
+                                         "chroot images was not found"
+                                         % basetgz)
+                try:
+                    archi = [os.path.basename(f).split('-', 1)[1].split('.')[0]
+                               for f in glob.glob(os.path.join(basetgz,'*.tgz'))]
+                except IndexError:
+                    raise SetupException("there is no available chroot images in default location '%s'"
+                                         "\nPlease run 'lgp setup -c create'"
+                                         % basetgz)
                 archi = set(known_archi) & set(archi)
             for a in archi:
                 if a not in known_archi:

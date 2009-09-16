@@ -36,3 +36,6 @@ class DistributionException(LGPException):
     """distribution availability exception"""
     def __str__(self):
         return "unknown distribution '%s'" % self.value
+
+class SetupException(LGPException):
+    pass
