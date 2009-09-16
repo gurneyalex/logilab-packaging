@@ -22,6 +22,8 @@
 """
 __docformat__ = "restructuredtext en"
 
+from os import linesep
+import sys
 import logging
 
 from logilab.devtools.lgp.setupinfo import SetupInfo
@@ -35,9 +37,9 @@ def run(args):
         if not set(args).intersection(set(['--name','--release'])):
             project.config.release = project.config.name = True
         if project.config.name:
-            print project.get_upstream_name()
+            sys.__stdout__.write(project.get_upstream_name() + linesep)
         if project.config.release:
-            print project.get_upstream_version()
+            sys.__stdout__.write(project.get_upstream_version() + linesep)
     except LGPException, exc:
         logging.critical(exc)
         return 1
