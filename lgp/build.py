@@ -292,11 +292,11 @@ class Builder(SetupInfo):
 
         build_status, timedelta = wait_jobs(joblist)
         if build_status:
-            logging.critical("binary builds failed for '%s' with global exit status %d"
+            logging.critical("binary builds failed for '%s' with exit status %d"
                              % (build['distrib'], build_status))
         else:
-            logging.info("binary builds for '%s' finished in %d seconds with global exit status %d"
-                         % (build['distrib'], timedelta, build_status))
+            logging.info("binary builds for '%s' finished in %d seconds."
+                         % (build['distrib'], timedelta))
 
         # move Debian binary package files
         self.move_package_files()

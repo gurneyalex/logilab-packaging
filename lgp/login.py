@@ -34,7 +34,7 @@ def run(args):
         login = Login(args)
         for arch in login.architectures:
             for distrib in login.distributions:
-                logging.info("login into '%s' image" % distrib)
+                logging.info("login into '%s/%s' image" % (distrib, arch))
                 cmd = "sudo DIST=%s ARCH=%s pbuilder login --configfile %s --hookdir %s"
                 # run login command
                 try:
