@@ -43,21 +43,24 @@ def run(args):
                     arch     = f['Architecture']
                     distrib  = f['Distribution']
                     packages = [deb['name'] for deb in f['Files'] if deb['name'].endswith('.deb')]
+                    logging.debug("read information from .changes: %s/%s"
+                                  % (distrib, arch))
                 elif f.endswith('.deb'):
                     deb     = debfile.DebFile(f)
                     arch    = deb.debcontrol()['Architecture']
                     distrib = deb.changelog().distributions
                     packages.append(f)
+                    logging.debug("read information from .deb: %s/%s"
+                                  % (distrib, arch))
                 else:
                     # FIXME
                     arch = piuparts.config.archi
                     distrib = "sid"
 
-                architectures = piuparts.get_architectures([arch])
+                piuparts.architectures = piuparts.get_architectures([arch])
                 # we loop on different architectures of available base images if arch-independant
-                for arch in architectures:
+                for arch in piuparts.architectures:
                     cmd = ['sudo', 'piuparts', '--no-symlinks',
-                           '--apt',
                            '--skip-minimize', 
                            '--warn-on-others', '--keep-sources-list',
                            # the development repository can be somewhat buggy...
@@ -70,8 +73,11 @@ def run(args):
                            '-I', '"/var/lib/dpkg/triggers/File"',
                            '-I', '"/usr/local/lib/python*"',
                           ] + packages
-                    logging.info("execute piuparts: %s" % ' '.join(cmd))
 
+                    if piuparts.config.use_apt:
+                        cmd.insert(3, '--apt')
+
+                    logging.info("execute piuparts: %s" % ' '.join(cmd))
                     # run piuparts command
                     try:
                         check_call(cmd, stdout=sys.stdout)
@@ -89,6 +95,14 @@ class Piuparts(SetupInfo):
     Specific options can be added. See lgp piuparts --help
     """
     name = "lgp-piuparts"
+    options = (('use-apt',
+                {'action': 'store_true',
+                 #'default': False,
+                 'dest' : "use_apt",
+                 'short': 'A',
+                 'help': "be treated as package names and installed via apt-get instead of dpkg -i"
+                }),
+              ),
 
     def __init__(self, args):
         # Retrieve upstream information
