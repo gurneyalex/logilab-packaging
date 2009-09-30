@@ -421,18 +421,21 @@ class SetupInfo(Configuration):
                 list of architecture
         """
         known_archi = Popen(["dpkg-architecture", "-L"], stdout=PIPE).communicate()[0].split()
-        if archi is None:
-            archi = self.get_debian_architecture()
-            logging.debug('retrieve architecture field value from debian/control: %s'
-                          % ','.join(archi))
+
         # just a warning issuing for possibly confused configuration
         if 'all' in self.config.archi:
             logging.warn('the "all" keyword can be confusing about the '
                         'targeted architectures. Consider using the "any" keyword '
                         'to force the build on all architectures or let lgp finds '
                         'the value in debian/changelog by itself in doubt.')
-            archi = ['current']
             logging.warn('lgp replaces "all" with "current" architecture value for this command')
+
+        if archi is None:
+            archi = self.get_debian_architecture()
+            logging.debug('retrieve architecture field value from debian/control: %s'
+                          % ','.join(archi))
+        if 'all' in archi:
+            archi = ['current']
         if 'current' in archi:
             archi = Popen(["dpkg", "--print-architecture"], stdout=PIPE).communicate()[0].split()
         else:
@@ -452,6 +455,8 @@ class SetupInfo(Configuration):
             for a in archi:
                 if a not in known_archi:
                     raise ArchitectureException(a)
+
+        #TODO self.architectures = archi
         return archi
 
     @cached
