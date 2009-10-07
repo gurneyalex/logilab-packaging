@@ -2,8 +2,7 @@
 
 [DEFAULT]
 # list of distributions (e.g. 'stable, unstable'). Use 'all' for automatic detection
-#distrib=unstable
-distrib=all
+#distrib=unstable,stable
 
 # specifies the location of base.tgz used by pbuilder
 basetgz=/var/cache/lgp/buildd
