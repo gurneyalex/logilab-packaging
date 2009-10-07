@@ -61,17 +61,19 @@ def run(args):
                 # we loop on different architectures of available base images if arch-independant
                 for arch in piuparts.architectures:
                     cmd = ['sudo', 'piuparts', '--no-symlinks',
-                           '--skip-minimize', 
+                           '--skip-minimize',
                            '--warn-on-others', '--keep-sources-list',
+                           '--list-installed-files',
                            # the development repository can be somewhat buggy...
                            '--no-upgrade-test',
                            '-b', piuparts.get_basetgz(distrib, arch),
                            # just violent but too many false positives otherwise
-                           '-I', '"/etc/shadow*"',
+                           '-I', '"/etc/shadow.*"',
                            '-I', '"/usr/share/pycentral-data.*"',
+                           '-I', '"/var/lib/dpkg/triggers/.*"',
                            '-I', '"/var/lib/dpkg/triggers/pysupport.*"',
                            '-I', '"/var/lib/dpkg/triggers/File"',
-                           '-I', '"/usr/local/lib/python*"',
+                           '-I', '"/usr/local/lib/python.*"',
                           ] + packages
 
                     if piuparts.config.use_apt:
