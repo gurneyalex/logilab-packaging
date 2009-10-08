@@ -20,6 +20,7 @@
 """
 __docformat__ = "restructuredtext en"
 
+import os
 import logging
 from subprocess import check_call, CalledProcessError
 
@@ -41,7 +42,8 @@ def run(args):
                 try:
                     cmd = cmd % (image, distrib, arch, CONFIG_FILE, HOOKS_DIR)
                     check_call(cmd.split(), env={'DIST': distrib, 'ARCH': arch,
-                                                 'IMAGE': image})
+                                                 'IMAGE': image,
+                                                 'DISPLAY': os.environ.get('DISPLAY')})
                 except CalledProcessError, err:
                     raise LGPCommandException('an error occured in login process', err)
 
