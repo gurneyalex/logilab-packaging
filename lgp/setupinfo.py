@@ -112,7 +112,7 @@ class SetupInfo(Configuration):
                  'dest': 'archi',
                  'short': 'a',
                  'metavar' : "<architecture>",
-                 'help': "build for the requested debian architectures only (no automatic detection)",
+                 'help': "build for the requested debian architectures only (automatic detection otherwise)",
                  'group': 'Default',
                 }),
                ('pkg_dir',
