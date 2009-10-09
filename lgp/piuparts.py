@@ -35,45 +35,45 @@ def run(args):
     try :
         piuparts = Piuparts(args)
 
-        for f in piuparts.arguments:
-            if os.path.isfile(f):
+        if len(piuparts.arguments)==0:
+            raise LGPException("need command line arguments: names of packages or package files")
+
+        for arg in piuparts.arguments:
+            if os.path.isfile(arg):
                 packages = list()
-                if f.endswith('.changes'):
-                    f        = deb822.Changes(file(f))
+                if arg.endswith('.changes'):
+                    f        = deb822.Changes(file(arg))
                     arch     = f['Architecture']
                     distrib  = f['Distribution']
                     packages = [deb['name'] for deb in f['Files'] if deb['name'].endswith('.deb')]
                     logging.debug("read information from .changes: %s/%s"
                                   % (distrib, arch))
-                elif f.endswith('.deb'):
-                    deb     = debfile.DebFile(f)
+                elif arg.endswith('.deb'):
+                    deb     = debfile.DebFile(arg)
                     arch    = deb.debcontrol()['Architecture']
                     distrib = deb.changelog().distributions
-                    packages.append(f)
+                    packages.append(arg)
                     logging.debug("read information from .deb: %s/%s"
                                   % (distrib, arch))
-                else:
-                    # FIXME
-                    arch = piuparts.config.archi
-                    distrib = "sid"
 
                 piuparts.architectures = piuparts.get_architectures([arch])
                 # we loop on different architectures of available base images if arch-independant
                 for arch in piuparts.architectures:
                     cmd = ['sudo', 'piuparts', '--no-symlinks',
-                           '--skip-minimize',
-                           '--warn-on-others', '--keep-sources-list',
-                           '--list-installed-files',
+                           '--warn-on-others',
+                           #'--skip-minimize',
+                           '--keep-sources-list',
+                           #'--list-installed-files',
                            # the development repository can be somewhat buggy...
                            '--no-upgrade-test',
                            '-b', piuparts.get_basetgz(distrib, arch),
                            # just violent but too many false positives otherwise
-                           '-I', '"/etc/shadow.*"',
-                           '-I', '"/usr/share/pycentral-data.*"',
-                           '-I', '"/var/lib/dpkg/triggers/.*"',
-                           '-I', '"/var/lib/dpkg/triggers/pysupport.*"',
-                           '-I', '"/var/lib/dpkg/triggers/File"',
-                           '-I', '"/usr/local/lib/python.*"',
+                           '-i', "/var/lib/dpkg/triggers/File",
+                           '-i', "/etc/shadow",
+                           '-i', "/etc/shadow-",
+                           '-i', "/var/lib/dpkg/triggers/pysupport",
+                           '-I', "'/usr/share/pycentral-data.*'",
+                           '-I', "'/usr/local/lib/python.*'",
                           ] + packages
 
                     if piuparts.config.use_apt:
@@ -99,7 +99,7 @@ class Piuparts(SetupInfo):
     name = "lgp-piuparts"
     options = (('use-apt',
                 {'action': 'store_true',
-                 #'default': False,
+                 'default': False,
                  'dest' : "use_apt",
                  'short': 'A',
                  'help': "be treated as package names and installed via apt-get instead of dpkg -i"
