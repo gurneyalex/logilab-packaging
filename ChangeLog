@@ -1,6 +1,20 @@
 ChangeLog for logilab.devtools
 ==============================
 
+2009-08-26 -- 0.16
+    * lgp: can now build any Debian project (debian/)
+
+    * lgp: new piuparts command (resurrected)
+
+    * lgp: the --orig-tarball can manage URI directly (by urllib)
+
+    * lgp: rudimentary multiprocess support for parallel build by architecture
+
+    * lgp: don't stop prematurely if one of the package build fails
+
+    * lgp: set a default distribution value by reading debian/changelog
+
+
 2009-06-03 -- 0.15
     * lgp: add project command to print useful information
 
