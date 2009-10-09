@@ -33,7 +33,7 @@ from subprocess import check_call, CalledProcessError
 
 from logilab.common.configuration import Configuration
 from logilab.common.logging_ext import ColorFormatter
-from logilab.common.shellutils import cp, mv
+from logilab.common.shellutils import cp
 from logilab.common.fileutils import export
 
 from logilab.devtools.lib.pkginfo import PackageInfo
@@ -41,8 +41,7 @@ from logilab.devtools.lib import TextReporter
 from logilab.devtools.lgp import LGP_CONFIG_FILE
 from logilab.devtools.lgp.exceptions import LGPException, LGPCommandException
 from logilab.devtools.lgp.exceptions import (ArchitectureException,
-                                             SetupException,
-                                             DistributionException)
+                                             SetupException)
 from logilab.devtools.lgp.utils import get_distributions, cached
 
 LOG_FORMAT='%(levelname)1.1s:%(name)s: %(message)s'
@@ -98,7 +97,6 @@ class SetupInfo(Configuration):
                ('arch',
                 {'type': 'csv',
                  'dest': 'archi',
-                 'default' : 'current',
                  'short': 'a',
                  'metavar' : "<architecture>",
                  'help': "build for the requested debian architectures only (no automatic detection)",
@@ -161,6 +159,10 @@ class SetupInfo(Configuration):
             print "Please visit: %s " % web
             sys.exit()
 
+        if self.config.dump_config:
+            self.generate_config()
+            sys.exit()
+
         # Instanciate the default logger configuration
         if not logging.getLogger().handlers:
             logging.getLogger().name = sys.argv[1]
@@ -180,10 +182,6 @@ class SetupInfo(Configuration):
                 sys.stdout = open(os.devnull,"w")
                 #sys.stderr = open(os.devnull,"w")
 
-        if self.config.dump_config:
-            self.generate_config()
-            sys.exit()
-
         # Go to package directory
         if self.config.pkg_dir is None:
             self.config.pkg_dir = osp.abspath(self.arguments
@@ -197,7 +195,7 @@ class SetupInfo(Configuration):
 
         # no default value for distribution. Try to retrieve it in changelog
         if self.config.distrib is None or 'changelog' in self.config.distrib:
-            self.config.distrib = self.get_debian_distribution()
+            self.config.distrib = self.guess_debian_distribution()
 
         # Define mandatory attributes for lgp commands
         self.architectures = self.get_architectures(self.config.archi,
@@ -227,10 +225,8 @@ class SetupInfo(Configuration):
             raise LGPException('no valid setup file (expected: %s)'
                                % self.config.setup_file)
 
-        # print chroot information
         logging.debug("running for distribution(s): %s" % ', '.join(self.distributions))
         logging.debug("running for architecture(s): %s" % ', '.join(self.architectures))
-
         logging.debug("guess the setup package class: %s" % self.package_format)
 
     @property
@@ -243,7 +239,7 @@ class SetupInfo(Configuration):
     def package_format(self):
         return self._package.__class__.__name__
 
-    def _run_command(self, cmd, output=False, **args):
+    def _run_command(self, cmd, **args):
         """run an internal declared command as new subprocess"""
         if isinstance(cmd, list):
             cmdline = ' '.join(cmd)
@@ -308,7 +304,7 @@ class SetupInfo(Configuration):
             raise LGPException('a Debian control file should exist in "%s"' % control)
 
     def get_debian_architecture(self):
-        """obtain the debian architecture(s)
+        """get debian architecture(s) to use in build
 
         The information is found in debian/control withe the 'Architecture:' field
         """
@@ -321,29 +317,42 @@ class SetupInfo(Configuration):
         except IOError, err:
             raise LGPException('a Debian control file should exist in "%s"' % control)
 
+    def guess_debian_architecture(self):
+        """guess debian architecture(s)
+        """
+        try:
+            archi = self.get_debian_architecture()
+            logging.debug('retrieve architecture field value from debian/control: %s'
+                          % ','.join(archi))
+        except LGPException:
+            logging.debug('no debian/changelog available. will use "current" architecture')
+            archi = ["current"]
+        return archi
+
     def is_architecture_independant(self):
         return 'all' in self.get_debian_architecture()
 
-    def get_debian_distribution(self):
-        """get the default debian distribution in debian/changelog
+    def guess_debian_distribution(self):
+        """guess the default debian distribution in debian/changelog
 
            Useful to determine a default distribution different from unstable if need
         """
         try:
             cmd = "dpkg-parsechangelog"
-            process = Popen(cmd.split(), stdout=PIPE)
+            process = Popen(cmd.split(), stdout=PIPE, stderr=file(os.devnull, "w"))
             pipe = process.communicate()[0]
             if process.returncode > 0:
-                msg = 'dpkg-parsechangelog exited with status %s' % process.returncode
+                msg = '%s exited with status %s' % (cmd, process.returncode)
                 process.cmd = cmd.split()
-                raise LGPCommandException(msg, process)
-
+                #raise LGPCommandException(msg, process)
+            if len(pipe)==0:
+                return None
             for line in pipe.split('\n'):
                 line = line.strip()
                 if line and line.startswith('Distribution:'):
                     distribution = line.split(' ', 1)[1].strip()
-                    logging.info('retrieve default debian distribution from debian/changelog: %s'
-                                 % distribution)
+                    logging.debug('retrieve default debian distribution from debian/changelog: %s'
+                                  % distribution)
                     return [distribution,]
             raise LGPException('Debian Distribution field not found in debian/changelog')
         except CalledProcessError, err:
@@ -423,17 +432,19 @@ class SetupInfo(Configuration):
         known_archi = Popen(["dpkg-architecture", "-L"], stdout=PIPE).communicate()[0].split()
 
         # just a warning issuing for possibly confused configuration
-        if 'all' in self.config.archi:
+        if self.config.archi and 'all' in self.config.archi:
             logging.warn('the "all" keyword can be confusing about the '
                         'targeted architectures. Consider using the "any" keyword '
                         'to force the build on all architectures or let lgp finds '
                         'the value in debian/changelog by itself in doubt.')
             logging.warn('lgp replaces "all" with "current" architecture value for this command')
 
+        # try to guess targeted architectures
         if archi is None:
-            archi = self.get_debian_architecture()
-            logging.debug('retrieve architecture field value from debian/control: %s'
-                          % ','.join(archi))
+            archi = self.guess_debian_architecture()
+
+        # "all" means architecture-independant. so we can replace by "current"
+        # architecture only
         if 'all' in archi:
             archi = ['current']
         if 'current' in archi:
@@ -510,12 +521,10 @@ class SetupInfo(Configuration):
         tarball = '%s_%s.orig.tar.gz' % fileparts
         upstream_tarball = '%s-%s.tar.gz' % fileparts
 
-        # warn if old archive file (it's surely a test package)
-        old_tarball = osp.join(self.get_distrib_dir(), tarball)
-        if osp.isfile(osp.join(self.get_distrib_dir(), tarball)):
-            logging.warn("a precedent Debian source archive detected in "
-                         "'%s' will be deleted by the current build"
-                         % self.get_distrib_dir())
+        #old_tarball = osp.join(self.get_distrib_dir(), tarball)
+        #if osp.isfile(old_tarball):
+        #    mv(old_tarball, old_tarball + '.old')
+        #    assert(old_tarball)
 
         if self.config.orig_tarball is None:
             try:
@@ -569,8 +578,7 @@ class SetupInfo(Configuration):
         try:
             cmd = 'tar --atime-preserve --preserve -xzf %s -C %s'\
                   % (self.config.orig_tarball, self._tmpdir)
-            check_call(cmd.split(), stdout=sys.stdout,
-                                    stderr=sys.stderr)
+            check_call(cmd.split(), stdout=sys.stdout)
         except CalledProcessError, err:
             raise LGPCommandException('an error occured while extracting the '
                                       'upstream tarball', err)
@@ -628,21 +636,23 @@ class SetupInfo(Configuration):
 
         # substitute distribution string in file only if line not starting by
         # spaces (simple heuristic to prevent other changes in content)
+        # FIXME use debian_bundle.changelog.Changelog instead
         cmd = ['sed', '-i', '/^[[:alpha:]]/s/\([[:alpha:]]\+\);/%s;/'
                % self.current_distrib, osp.join(self.origpath, 'debian', 'changelog')]
         try:
-            check_call(cmd, stdout=sys.stdout) #, stderr=sys.stderr)
+            check_call(cmd, stdout=sys.stdout)
         except CalledProcessError, err:
             raise LGPCommandException("bad substitution for distribution field", err)
 
         # substitute version string in appending timestamp and suffix
         # suffix should not be empty
+        # FIXME use debian_bundle.changelog.Changelog instead
         if self.config.suffix:
             timestamp = int(time.time())
             cmd = ['sed', '-i', '1s/(\(.*\))/(%s:\\1%s)/' % (timestamp, self.config.suffix),
                    osp.join(self.origpath, 'debian', 'changelog')]
             try:
-                check_call(cmd, stdout=sys.stdout) #, stderr=sys.stderr)
+                check_call(cmd, stdout=sys.stdout)
             except CalledProcessError, err:
                 raise LGPCommandException("bad substitution for version field", err)
 
