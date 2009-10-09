@@ -58,7 +58,7 @@ CHECKS = { 'default'    : ['debian_dir', 'debian_rules', 'debian_copying',
                            'debian_source_value',
                            'debian_changelog', 'package_info', 'readme',
                            'changelog', 'bin', 'tests_directory', 'setup_file',
-                           'repository', 'copying', 'documentation',
+                           'copying', 'documentation', #'repository'
                            'homepage', 'builder', 'keyrings', 'announce',
                            'release_number', 'manifest_in', 'include_dirs',
                            'scripts', 'pydistutils', 'debian_maintainer',
@@ -258,20 +258,21 @@ class Checker(SetupInfo):
 
     # TODO dump with --help and drop the command-line option
     def list_checks(self):
+        import sys
         all_checks = self.get_checklist(all=True)
         checks     = self.get_checklist()
         if len(checks)==0:
-            print "No available check."
+            print >>sys.stderr, "No available check."
         else:
-            print "You can use the --set, --exclude or --include options\n"
+            print >>sys.stderr, "You can use the --set, --exclude or --include options\n"
             msg = "Current active checks"
-            print msg; print len(msg) * '='
+            print >>sys.stderr, msg; print >>sys.stderr, len(msg) * '='
             for check in checks:
-                print "%-25s: %s" % (check.__name__[6:], check.__doc__)
+                print >>sys.stderr, "%-25s: %s" % (check.__name__[6:], check.__doc__)
             msg = "Other available checks"
-            print "\n" + msg; print len(msg) * '='
+            print >>sys.stderr, "\n" + msg; print >>sys.stderr, len(msg) * '='
             for check in (set(all_checks) - set(checks)):
-                print "%-25s: %s" % (check.__name__[6:], check.__doc__)
+                print >>sys.stderr, "%-25s: %s" % (check.__name__[6:], check.__doc__)
 
 
 
@@ -329,10 +330,9 @@ def check_debian_source_value(checker):
     debian_name   = checker.get_debian_name()
     if upstream_name != debian_name:
         checker.logger.warn("upstream project name (%s) is different from the "
-                            "Source filed value in your debian/control (%s)"
+                            "Source field value in your debian/control (%s)"
                             % (upstream_name, debian_name))
     return OK
-
 
 def check_debian_changelog(checker):
     """your debian changelog contains error(s)"""
@@ -348,7 +348,13 @@ def check_debian_changelog(checker):
         cmd = "sed -ne '/DISTRIBUTION/p' %s" % CHANGELOG
         _, output = commands.getstatusoutput(cmd)
         if output:
-            checker.logger.info("Default distribution should be a valid image name in '%s'" % CHANGELOG)
+            checker.logger.warn("some distributions are not valid images:\n%s" % output)
+        cmd = "dpkg-parsechangelog | head -n1 | cut -d' ' -f2"
+        _, output = commands.getstatusoutput(cmd)
+        if checker.get_debian_name() != output:
+            msg = 'source package names differs between debian/changelog and debian/control: %s, %s'
+            checker.logger.error(msg % (output, checker.get_debian_name()))
+            status = NOK
         cmd = "dpkg-parsechangelog >/dev/null"
         _, output = commands.getstatusoutput(cmd)
         if output:
@@ -381,13 +387,13 @@ def check_debian_uploader(checker):
     return status
 
 def check_readme(checker):
-    """the upstream README file is missing"""
+    """upstream README file is missing"""
     if not isfile('README'):
         checker.logger.warn(check_readme.__doc__)
     return OK
 
 def check_changelog(checker):
-    """the upstream ChangeLog file is missing"""
+    """upstream ChangeLog file is missing"""
     status = OK
     if not isfile(CHANGEFILE):
         checker.logger.warn(check_changelog.__doc__)
@@ -411,7 +417,7 @@ def check_tests_directory(checker):
     return OK
 
 def check_run_tests(checker):
-    """run the unit tests """
+    """run unit tests"""
     testdirs = ('test', 'tests')
     for testdir in testdirs:
         if isdir(testdir):
@@ -420,7 +426,7 @@ def check_run_tests(checker):
     return OK
 
 def check_setup_file(checker):
-    """check the setup.[py|mk] file """
+    """check optional setup.[py|mk] file """
     return isfile('setup.py') or isfile('setup.mk')
 
 def check_makefile(checker):
@@ -490,7 +496,7 @@ def check_documentation(checker):
     return status
 
 def check_repository(checker):
-    """check repository status (not up-to-date) """
+    """check repository status (if not up-to-date for example)"""
     try:
         from logilab.devtools.vcslib import get_vcs_agent
         vcs_agent = get_vcs_agent(checker.config.pkg_dir)
@@ -554,8 +560,8 @@ def check_include_dirs(checker):
     return OK
 
 def check_debsign(checker):
-    """Hint: you can add DEBSIGN_KEYID to your environment and use a gpg-agent to sign directly"""
-    if 'DEBSIGN_KEYID' not in os.environ:
+    """Hint: you can add DEBSIGN_KEYID to your environment and use gpg-agent to sign directly"""
+    if 'DEBSIGN_KEYID' not in os.environ and 'GPG_AGENT_INFO' in os.environ:
         logging.info(check_debsign.__doc__)
         return
     return OK
@@ -619,20 +625,20 @@ def check_package_info(checker):
 # ===============================
 
 def check_shebang(checker):
-    """check #! signature for shell and python script (not implemented)"""
+    """check #! signature for shell and python script (NOT IMPLEMENTED)"""
     # TODO make a test with file utility and check #!/bin/... or #!/usr/bin/env python
     raise NotImplementedError("use best practises")
 
 def check_deprecated(checker):
-    """check attributes in deprecation (not implemented)"""
+    """check attributes in deprecation (NOT IMPLEMENTED)"""
     raise NotImplementedError("check deprecations")
 
 def check_pylint(checker):
-    """check with pylint (not implemented) """
+    """check with pylint (NOT IMPLEMENTED) """
     raise NotImplementedError("use right pylint options")
 
 def check_dtd_and_catalogs(checkers):
-    """check dtd and catalogs (not implemented) """
+    """check dtd and catalogs (NOT IMPLEMENTED) """
     raise NotImplementedError("dtd_and_catalog needs to be fixed !")
 #    # DTDs and catalog
 #    detected_dtds = get_default_dtd_files(pi)
@@ -675,7 +681,7 @@ def check_dtd_and_catalogs(checkers):
 #    return status
 
 def check_copyright_header(checker):
-    """check copyright year (not implemented) """
+    """check copyright year (NOT IMPLEMENTED) """
     raise NotImplementedError("year could be updated automatically by templating")
 #    match = COPYRIGHT_RGX.search(copyright)
 #    if match:
@@ -689,7 +695,7 @@ def check_copyright_header(checker):
 #            reporter.warning(absfile, None, msg)
 
 def check_web_and_ftp(checker):
-    """check web and ftp external resources (not implemented)"""
+    """check web and ftp external resources (NOT IMPLEMENTED)"""
     raise NotImplementedError("unrelated if new package !")
 #   # check web site and ftp
 #   _check_url(reporter, absfile, 'web', pi.web)
