@@ -46,7 +46,6 @@ from logilab.devtools.lib.manifest import (get_manifest_files, read_manifest_in,
 
 from logilab.devtools import templates
 from logilab.devtools.lgp.setupinfo import SetupInfo
-from logilab.devtools.lgp.utils import cond_exec
 from logilab.devtools.lgp.exceptions import LGPException
 
 CHANGEFILE='ChangeLog'
@@ -57,8 +56,8 @@ OK, NOK = 1, 0
 CHECKS = { 'default'    : ['debian_dir', 'debian_rules', 'debian_copying',
                            'debian_source_value',
                            'debian_changelog', 'package_info', 'readme',
-                           'changelog', 'bin', 'tests_directory', 'setup_file',
-                           'copying', 'documentation', #'repository'
+                           'changelog', 'bin', 'tests_directory',
+                           'copying', #'repository'
                            'homepage', 'builder', 'keyrings', 'announce',
                            'release_number', 'manifest_in', 'include_dirs',
                            'scripts', 'pydistutils', 'debian_maintainer',
@@ -421,19 +420,14 @@ def check_run_tests(checker):
     testdirs = ('test', 'tests')
     for testdir in testdirs:
         if isdir(testdir):
-            cond_exec('pytest', confirm=True, retry=True)
-            break
+            os.system('pytest')
     return OK
-
-def check_setup_file(checker):
-    """check optional setup.[py|mk] file """
-    return isfile('setup.py') or isfile('setup.mk')
 
 def check_makefile(checker):
     """check makefile file and expected targets (project, version)"""
     status = OK
     setup_file = checker.config.setup_file
-    status = status and isfile(setup_file)
+    status = status and setup_file and isfile(setup_file)
     for cmd in ['%s project', '%s version']:
         cmd %= setup_file
         if not subprocess.call(cmd.split()):
@@ -484,13 +478,7 @@ def check_documentation(checker):
     """check project's documentation"""
     status = OK
     if isdir('doc'):
-        # FIXME
-        # should be a clean target in setup.mk for example
-        # and isfile('doc/Makefile') or isfile('doc/makefile'):
-        #if confirm('build documentation ?'):
-        #os.chdir('doc')
-        #status = cond_exec('make', retry=True)
-        pass
+        os.system('cd doc && make')
     else:
         checker.logger.warn("documentation directory not found")
     return status
