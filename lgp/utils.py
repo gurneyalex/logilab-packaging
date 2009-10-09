@@ -27,51 +27,6 @@ from logilab.devtools.lgp.exceptions import (ArchitectureException,
                                              DistributionException)
 
 
-def ask(msg, options): 
-    default = [opt for opt in options if opt.isupper()]
-    assert len(default) == 1, "should have one (and only one) default value"
-    default = default[0]
-    answer = None
-    while str(answer) not in options.lower():
-        try:
-            answer = raw_input('%s [%s] ' % (msg, '/'.join(options)))
-        except (EOFError, KeyboardInterrupt):
-            print
-            sys.exit(0)
-        answer = answer.strip().lower() or default.lower()
-    return answer
-
-def confirm(msg):
-    return ask(msg, 'Yn') == 'y'
-
-def cond_exec(cmd, confirm=False, retry=False, force=False):
-    """demande confirmation, retourne 0 si oui, 1 si non"""
-    # ask confirmation before execution
-    if confirm:
-        answer = ask("Execute %s ?" % cmd, 'Ynq')
-        if answer == 'q':
-            sys.exit(0)
-        if answer == 'n':
-            return False
-    while True:
-        # if execution failed ask wether to continue or retry
-        if os.system(cmd):
-            if not force:
-                if retry:
-                    answer = ask('Continue ?', 'yNr')
-                else:
-                    answer = ask('Continue ?', 'yN')
-            else:
-                answer = 'y'
-            if answer == 'y':
-                return True
-            elif retry and answer == 'r':
-                continue 
-            else:
-                sys.exit(0)
-        else:
-            return False
-
 def get_distributions(distrib=None, basetgz=None, suites='/usr/share/cdebootstrap/suites'):
     """ensure that the target distributions exist or return all the valid distributions
 
