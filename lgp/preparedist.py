@@ -10,7 +10,6 @@ import logilab.devtools
 from logilab.devtools.vcslib import get_vcs_agent
 from logilab.devtools.lib import TextReporter
 from logilab.devtools.lib.pkginfo import PackageInfo
-from logilab.devtools.lgp.utils import cond_exec, confirm
 from logilab.devtools.lib.changelog import ChangeLog
 
 
@@ -28,6 +27,51 @@ active member of the Python and Debian communities. Logilab's open
 source projects can be found on http://www.logilab.org/."""
 
 SEPARATOR = '+' * 72
+
+def ask(msg, options): 
+    default = [opt for opt in options if opt.isupper()]
+    assert len(default) == 1, "should have one (and only one) default value"
+    default = default[0]
+    answer = None
+    while str(answer) not in options.lower():
+        try:
+            answer = raw_input('%s [%s] ' % (msg, '/'.join(options)))
+        except (EOFError, KeyboardInterrupt):
+            print
+            sys.exit(0)
+        answer = answer.strip().lower() or default.lower()
+    return answer
+
+def confirm(msg):
+    return ask(msg, 'Yn') == 'y'
+
+def cond_exec(cmd, confirm=False, retry=False, force=False):
+    """demande confirmation, retourne 0 si oui, 1 si non"""
+    # ask confirmation before execution
+    if confirm:
+        answer = ask("Execute %s ?" % cmd, 'Ynq')
+        if answer == 'q':
+            sys.exit(0)
+        if answer == 'n':
+            return False
+    while True:
+        # if execution failed ask wether to continue or retry
+        if os.system(cmd):
+            if not force:
+                if retry:
+                    answer = ask('Continue ?', 'yNr')
+                else:
+                    answer = ask('Continue ?', 'yN')
+            else:
+                answer = 'y'
+            if answer == 'y':
+                return True
+            elif retry and answer == 'r':
+                continue 
+            else:
+                sys.exit(0)
+        else:
+            return False
 
 def install_copying(license):
     """ensure COPYING is up to date"""
