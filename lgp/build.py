@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2003-2008 LOGILAB S.A. (Paris, FRANCE).
+# Copyright (c) 2003-2009 LOGILAB S.A. (Paris, FRANCE).
 # http://www.logilab.fr/ -- mailto:contact@logilab.fr
 #
 # This program is free software; you can redistribute it and/or modify it under
@@ -25,7 +25,6 @@ import os
 import sys
 import shutil
 import logging
-import warnings
 import hashlib
 import os.path as osp
 from subprocess import check_call, CalledProcessError, Popen
@@ -36,10 +35,10 @@ from logilab.common.shellutils import mv
 
 from logilab.devtools.lgp import CONFIG_FILE, HOOKS_DIR
 from logilab.devtools.lgp.setupinfo import SetupInfo
-from logilab.devtools.lgp.utils import cond_exec, wait_jobs
+from logilab.devtools.lgp.utils import wait_jobs
 from logilab.devtools.lgp.exceptions import LGPException, LGPCommandException
 
-from logilab.devtools.lgp.check import Checker, check_debsign
+from logilab.devtools.lgp.check import check_debsign
 
 def run(args):
     """main function of lgp build command"""
@@ -58,8 +57,8 @@ def run(args):
             builder.make_debian_source_package()
 
             if builder.make_debian_binary_package():
-                # do post-treatment only for sucessful binary build
-                if not builder.config.no_treatment and builder.packages:
+                # do post-treatments only for a successful binary build
+                if builder.packages and builder.config.post_treatments:
                     run_post_treatments(builder, builder.current_distrib)
 
             # forget distribution
@@ -77,36 +76,18 @@ def run(args):
 def run_post_treatments(builder, distrib):
     """ Run actions after package compiling """
     distdir = builder.get_distrib_dir()
-    verbose = builder.config.verbose
-
-    # FIXME move code to debinstall
-    # Try Debian signing immediately if possible
-    if check_debsign(builder):
-        for package in builder.packages:
-            if package.endswith('.changes'):
-                logging.info('signing %s...' % package)
-                if cond_exec('debsign %s' % package, force=not verbose):
-                    logging.error("the changes file has not been signed. "
-                                  "Please run debsign manually")
-    else:
-        logging.warning("don't forget to debsign your Debian changes file")
-
-    # FIXME provide a useful utility outside of lgp and use post-build-hook
-    logging.info('updating Debian local repository in %s...' % distdir)
-    command = "dpkg-scanpackages -m %s /dev/null 2>/dev/null | gzip -9c > %s/Packages.gz"\
-              % (distrib, distrib)
-    logging.debug('run command: %s' % command)
-    if cond_exec('which dpkg-scanpackages >/dev/null && cd %s && %s'
-                 % (osp.dirname(distdir), command)):
-        logging.debug("Packages file was not updated automatically")
-    else:
-        # clean other possible Packages files
+    old = os.getcwd()
+    try:
+        os.chdir(osp.dirname(distdir))
         try:
-            os.unlink(osp.join(distdir, 'Packages'))
-            os.unlink(osp.join(distdir, 'Packages.bz2'))
-        except:
-            # not a problem to pass silently here
-            pass
+            cmd = "dpkg-scanpackages -m %s /dev/null 2>/dev/null | gzip -9c > %s/Packages.gz"
+            os.system(cmd % (distrib, distrib))
+            logging.debug("Debian trivial repository in '%s' updated." % distdir)
+        except Exception, err:
+            msg = "cannot update Debian trivial repository for '%s'" % distdir
+            raise LGPCommandException(msg, err)
+    finally:
+        os.chdir(old)
 
 
 class Builder(SetupInfo):
@@ -138,39 +119,43 @@ class Builder(SetupInfo):
                 }),
                ('keep-tmpdir',
                 {'action': 'store_true',
-                 #'default': False,
+                 'default': False,
                  'dest' : "keep_tmpdir",
                  'help': "keep the temporary build directory"
                 }),
+               # should be a store_true action here
                ('post-treatments',
-                {'action': 'store_false',
-                 #'default': True,
+                {'type': 'string',
+                 'default': '',
                  'dest' : "post_treatments",
-                 'help': "compile packages with post-treatments (deprecated)"
-                }),
-               ('no-treatment',
-                {'action': 'store_true',
-                 #'default': False,
-                 'dest' : "no_treatment",
-                 'help': "compile packages with no auxiliary treatment"
+                 'help': "run embedded post-treatments: add trivial repository"
                 }),
                ('deb-src',
                 {'action': 'store_true',
-                 #'default': False,
+                 'default': False,
                  'dest' : "deb_src_only",
                  'help': "obtain a debian source package without build"
                 }),
                ('get-orig-source',
                 {'action': 'store_true',
-                 #'default': False,
+                 'default': False,
                  'dest' : "get_orig_source",
                  'help': "create a reasonable upstream tarball"
                 }),
+               # should be a store_true action here
                ('hooks',
-                {'action': 'store_true',
-                 'default': False,
+                {'type': 'string',
+                 'default': '',
                  'dest' : "hooks",
-                 'help': "run hooks"
+                 'help': "run pbuilder hooks in '%s'" % HOOKS_DIR
+                }),
+               # should be a store_true action here
+               ('sign',
+                {'type': 'string',
+                 'default': '',
+                 'short': 's',
+                 'dest' : "sign",
+                 'help': "try to sign Debian package(s) just built"
                 }),
               ),
 
@@ -186,11 +171,6 @@ class Builder(SetupInfo):
 
         # hotlist of the recent generated package files
         self.packages = []
-
-        # TODO make a more readable logic in OptParser values
-        if not self.config.post_treatments:
-            warnings.warn("Option post-treatment is deprecated. Use no-treatment instead.", DeprecationWarning)
-            self.config.no_treatment = True
 
     def clean_tmpdirs(self):
         if not self.config.keep_tmpdir:
@@ -220,7 +200,7 @@ class Builder(SetupInfo):
 
         logging.info("creation of the Debian source package files (.dsc, .diff.gz)")
         try:
-            cmd = 'dpkg-source -b %s' % self.origpath
+            cmd = 'dpkg-source --no-copy -sp -b %s' % self.origpath
             check_call(cmd.split(), stdout=sys.stdout)
         except CalledProcessError, err:
             msg = "cannot build valid dsc file with command %s" % cmd
@@ -231,7 +211,7 @@ class Builder(SetupInfo):
 
         # exit if asked by command-line
         if self.config.deb_src_only:
-            sys.exit()
+            self.finalize()
 
         # restore directory context
         os.chdir(self.config.pkg_dir)
@@ -254,7 +234,7 @@ class Builder(SetupInfo):
                    '--clear-hooks', '-uc', '-us']
         elif debuilder == 'fakeroot':
             os.chdir(self.origpath)
-            cmd = ['fakeroot', 'debian/rules binary']
+            cmd = ['fakeroot', 'debian/rules', 'binary']
         else:
             cmd = debuilder.split()
         return cmd
@@ -281,7 +261,7 @@ class Builder(SetupInfo):
                                           'IMAGE': build['image']},
                                      stdout=file(os.devnull, "w")))
             except Exception, err:
-                self.keep_tmpdir = True
+                #self.keep_tmpdir = True
                 logging.crirical(err)
                 logging.critical("build failure (%s/%s) for %s (%s)"
                                  % (build['distrib'],
@@ -291,8 +271,12 @@ class Builder(SetupInfo):
                 return False
 
         build_status, timedelta = wait_jobs(joblist)
-        logging.info("binary builds for '%s' finished in %d seconds with global exit status %d"
-                     % (build['distrib'], timedelta, build_status))
+        if build_status:
+            logging.critical("binary build(s) failed for '%s' with exit status %d"
+                             % (build['distrib'], build_status))
+        else:
+            logging.info("binary build(s) for '%s' finished in %d seconds."
+                         % (build['distrib'], timedelta))
 
         # move Debian binary package files
         self.move_package_files()
@@ -311,7 +295,7 @@ class Builder(SetupInfo):
         """
         def _build_options(arch=None):
             optline = list()
-            optline.append('-b')
+            #optline.append('-b')
             if arch:
                 optline.append('-B')
                 optline.append('-a%s' % arch)
@@ -350,6 +334,12 @@ class Builder(SetupInfo):
         we define here the self.packages variable used by post-treatment
         some tests are performed before copying to result directory
         """
+        def sign_file(filename):
+            try:
+                check_call(["debsign", filename], stdout=sys.stdout)
+            except CalledProcessError, err:
+                logging.error("'%s' cannot be signed" % filename)
+
         def check_file(filename):
             if os.path.isfile(filename):
                 hash1 = hashlib.md5(open(fullpath).read()).hexdigest()
@@ -384,8 +374,10 @@ class Builder(SetupInfo):
                                       % self.dscfile)
                     #check_file(copied_filename)
                     if self.config.deb_src_only:
-                        logging.info("Debian source control file is: %s"
+                        logging.info("Debian source control file: %s"
                                      % copied_filename)
+                        if self.config.sign and check_debsign(self):
+                            sign_file(fullpath)
                 #if filename.endswith('.diff.gz'):
                 #    check_file(copied_filename)
                 if filename.endswith('.orig.tar.gz'):
@@ -399,7 +391,9 @@ class Builder(SetupInfo):
                 if filename.endswith('.lgp-build'):
                     logging.info("a build logfile is available: %s" % copied_filename)
                 if filename.endswith('.changes'):
-                    logging.info("Debian changes file is: %s" % copied_filename)
+                    if self.config.sign and check_debsign(self):
+                        sign_file(fullpath)
+                    logging.info("Debian changes file: %s" % copied_filename)
 
                 mv(fullpath, distdir)
                 assert osp.exists(copied_filename)
@@ -424,4 +418,4 @@ class Builder(SetupInfo):
 
     def finalize(self):
         self.clean_tmpdirs()
-        return self.build_status
+        sys.exit(self.build_status)

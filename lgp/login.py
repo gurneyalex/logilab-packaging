@@ -20,6 +20,7 @@
 """
 __docformat__ = "restructuredtext en"
 
+import os
 import logging
 from subprocess import check_call, CalledProcessError
 
@@ -34,12 +35,15 @@ def run(args):
         login = Login(args)
         for arch in login.architectures:
             for distrib in login.distributions:
-                logging.info("login into '%s' image" % distrib)
-                cmd = "sudo DIST=%s ARCH=%s pbuilder login --configfile %s --hookdir %s"
+                logging.info("login into '%s/%s' image" % (distrib, arch))
+                image = login.get_basetgz(distrib, arch)
+                cmd = "sudo IMAGE=%s DIST=%s ARCH=%s pbuilder login --configfile %s --hookdir %s"
                 # run login command
                 try:
-                    cmd = cmd % (distrib, arch, CONFIG_FILE, HOOKS_DIR)
-                    check_call(cmd.split(), env={'DIST': distrib, 'ARCH': arch})
+                    cmd = cmd % (image, distrib, arch, CONFIG_FILE, HOOKS_DIR)
+                    check_call(cmd.split(), env={'DIST': distrib, 'ARCH': arch,
+                                                 'IMAGE': image,
+                                                 'DISPLAY': os.environ.get('DISPLAY')})
                 except CalledProcessError, err:
                     raise LGPCommandException('an error occured in login process', err)
 

@@ -1,23 +1,34 @@
 # Lgp configuration file
 
 [DEFAULT]
-# list of distributions (e.g. 'stable, unstable'). Use 'all' for automatic detection
-#distrib=unstable
-distrib=all
+# list of Debian distributions (from images created by setup). Use 'all' for
+# automatic detection or 'changelog' for the value found in debian/changelog
+#distrib=unstable,stable
 
 # specifies the location of base.tgz used by pbuilder
 basetgz=/var/cache/lgp/buildd
 
-# list of setup files to use
-#setup-file=setup.mk
 
 
 # Lgp builder config
 # Specific options are added. See lgp build --help
 [LGP-BUILD]
 
+# use an alternate setup file with Lgp expected arguments (see documentation)
+#setup-file=setup.mk
+
 # where to put compilation results
 result=~/dists
+
+# try to sign Debian package(s) just built (uncomment to enable)
+#sign=True
+
+# run pbuilder hooks in '/etc/lgp/hooks' (uncomment to enable)
+#hooks=True
+
+# run embedded post-treatments: add trivial repository (uncomment to enable)
+#post-treatments=True
+
 
 
 # Lgp checker config
@@ -31,7 +42,8 @@ result=~/dists
 #exclude=
 
 # set a specific check functions list
-#set=debian_dir,debian_rules,debian_copying,debian_changelog,package_info,readme,changelog,bin,tests_directory,setup_file,repository,copying,documentation,homepage,builder,keyrings,announce,release_number,manifest_in,include_dirs,scripts,pydistutils,debian_maintainer,debian_uploader
+#set=debian_dir,debian_rules,debian_copying,debian_changelog,package_info,readme,changelog,bin,tests_directory,setup_file,copying,homepage,builder,keyrings,announce,release_number,manifest_in,include_dirs,scripts,pydistutils,debian_maintainer,debian_uploader
+
 
 
 # Lgp tagger class
