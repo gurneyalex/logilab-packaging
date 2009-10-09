@@ -24,6 +24,7 @@ import logging
 import time
 import urllib
 import glob
+import re
 import tempfile
 from string import Template
 from distutils.core import run_setup
@@ -44,27 +45,39 @@ from logilab.devtools.lgp.exceptions import (ArchitectureException,
                                              SetupException)
 from logilab.devtools.lgp.utils import get_distributions, cached
 
+
+def _parse_deb_version():
+    return re.search("\((.+)\)",open('debian/changelog').readline()).group(1)
+
+def _parse_deb_project():
+    return re.search("^(.+?) ",open('debian/changelog').readline()).group(1)
+
+
 LOG_FORMAT='%(levelname)1.1s:%(name)s: %(message)s'
 COMMANDS = {
         "sdist" : {
             "file": './$setup dist-gzip -e DIST_DIR=$dist_dir',
             "Distribution": 'python setup.py -q sdist -d $dist_dir',
             "PackageInfo": 'python setup.py -q sdist --force-manifest -d $dist_dir',
+            "debian": "fakeroot debian/rules get-orig-source",
         },
         "clean" : {
             "file": './$setup clean',
             "Distribution": 'python setup.py clean',
             "PackageInfo": 'python setup.py clean',
+            "debian": "fakeroot debian/rules clean",
         },
         "version" : {
             "file": './$setup version',
             "Distribution": 'python setup.py --version',
             "PackageInfo": 'python setup.py --version',
+            "debian": _parse_deb_version,
         },
         "project" : {
             "file": './$setup project',
             "Distribution": 'python setup.py --name',
             "PackageInfo": 'python setup.py --name',
+            "debian": _parse_deb_project,
         },
 }
 
@@ -130,14 +143,12 @@ class SetupInfo(Configuration):
                  'group': 'Default',
                 }),
                ('setup-file',
-                #{'type': 'csv',
                 {'type': 'string',
                  'dest': 'setup_file',
                  'hide': True,
-                 #'default' : ['setup.py', 'setup.mk'],
                  'default' : 'setup.mk',
                  'metavar': "<setup file names>",
-                 'help': "list of setup files to use"
+                 'help': "use an alternate setup file with Lgp expected arguments (see documentation)"
                 }),
                )
         if options:
@@ -187,11 +198,12 @@ class SetupInfo(Configuration):
             self.config.pkg_dir = osp.abspath(self.arguments
                                               and self.arguments[0]
                                               or os.getcwd())
-        if sys.argv[1] != "piuparts": #FIXME
-            try:
-                os.chdir(self.config.pkg_dir)
-            except OSError, err:
-                raise LGPException(err)
+        try:
+            if os.path.isfile(self.config.pkg_dir):
+                self.config.pkg_dir = os.path.dirname(self.config.pkg_dir)
+            os.chdir(self.config.pkg_dir)
+        except OSError, err:
+            raise LGPException(err)
 
         # no default value for distribution. Try to retrieve it in changelog
         if self.config.distrib is None or 'changelog' in self.config.distrib:
@@ -215,15 +227,15 @@ class SetupInfo(Configuration):
             # Logilab's specific format
             self._package = PackageInfo(reporter=TextReporter(sys.stderr, sys.stderr.isatty()),
                                         directory=self.config.pkg_dir)
-        # Other script can be used if compatible with the expected targets in COMMANDS
+        # other script can be used if compatible with the expected targets in COMMANDS
         elif osp.isfile(self.config.setup_file):
             self._package = file(self.config.setup_file)
             if not os.stat(self.config.setup_file).st_mode & stat.S_IEXEC:
                 raise LGPException('setup file %s has no execute permission'
                                    % self.config.setup_file)
         else:
-            raise LGPException('no valid setup file (expected: %s)'
-                               % self.config.setup_file)
+            class debian(object): pass
+            self._package = debian()
 
         logging.debug("running for distribution(s): %s" % ', '.join(self.distributions))
         logging.debug("running for architecture(s): %s" % ', '.join(self.architectures))
@@ -244,7 +256,13 @@ class SetupInfo(Configuration):
         if isinstance(cmd, list):
             cmdline = ' '.join(cmd)
         else:
-            cmdline = Template(COMMANDS[cmd][self.package_format])
+            cmd = COMMANDS[cmd][self.package_format]
+            if callable(cmd):
+                try:
+                    return cmd()
+                except IOError, err:
+                    raise LGPException(err)
+            cmdline = Template(cmd)
             cmdline = cmdline.substitute(setup=self.config.setup_file, **args)
         logging.debug('run subprocess command: %s' % cmdline)
         if args:
@@ -521,19 +539,16 @@ class SetupInfo(Configuration):
         tarball = '%s_%s.orig.tar.gz' % fileparts
         upstream_tarball = '%s-%s.tar.gz' % fileparts
 
-        #old_tarball = osp.join(self.get_distrib_dir(), tarball)
-        #if osp.isfile(old_tarball):
-        #    mv(old_tarball, old_tarball + '.old')
-        #    assert(old_tarball)
-
         if self.config.orig_tarball is None:
             try:
-                self._run_command(["fakeroot", "debian/rules", "get-orig-source"])
+                cmd = ["fakeroot", "debian/rules", "get-orig-source"]
+                check_call(cmd, stderr=file(os.devnull, "w"))
                 assert osp.isfile(tarball)
                 self.config.orig_tarball = osp.abspath(tarball)
-            except:
-                logging.warn("cannot fetch the Debian source archive (pristine tarball) "
-                             "with get-orig-source target from debian/rules")
+            except CalledProcessError, err:
+                logging.debug("run optional '%s' without success" % ' '.join(cmd))
+                logging.debug("you can use '--orig-tarball' option if a valid "
+                              "Debian source archive (pristine tarball) exists")
             logging.info("creation of a new Debian source archive (pristine tarball) from working directory")
             try:
                 self._run_command("sdist", dist_dir=self._tmpdir)
@@ -557,8 +572,7 @@ class SetupInfo(Configuration):
             urllib.urlretrieve(self.config.orig_tarball, tarball)
         except Exception, err:
             raise LGPCommandException("the provided original source archive "
-                                      "(tarball) can't be retrieved",
-                                     err)
+                                      "(tarball) can't be retrieved", err)
         assert osp.isfile(tarball), 'Debian source archive (pristine tarball) not found'
 
         # move pristine tarball
