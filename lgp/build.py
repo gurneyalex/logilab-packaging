@@ -261,8 +261,7 @@ class Builder(SetupInfo):
                                           'IMAGE': build['image']},
                                      stdout=file(os.devnull, "w")))
             except Exception, err:
-                #self.keep_tmpdir = True
-                logging.crirical(err)
+                logging.critical(err)
                 logging.critical("build failure (%s/%s) for %s (%s)"
                                  % (build['distrib'],
                                     build['arch'],
