@@ -64,6 +64,7 @@ def run(args):
                            #'--skip-minimize',
                            '--keep-sources-list',
                            #'--list-installed-files',
+                           '--skip-cronfiles-test',
                            # the development repository can be somewhat buggy...
                            '--no-upgrade-test',
                            '-b', piuparts.get_basetgz(distrib, arch),

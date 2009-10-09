@@ -237,8 +237,8 @@ class SetupInfo(Configuration):
             class debian(object): pass
             self._package = debian()
 
-        logging.debug("running for distribution(s): %s" % ', '.join(self.distributions))
-        logging.debug("running for architecture(s): %s" % ', '.join(self.architectures))
+        logging.debug("running for distribution(s): %s" % ','.join(self.distributions))
+        logging.debug("running for architecture(s): %s" % ','.join(self.architectures))
         logging.debug("guess the setup package class: %s" % self.package_format)
 
     @property
@@ -475,7 +475,7 @@ class SetupInfo(Configuration):
                                          % basetgz)
                 try:
                     archi = [os.path.basename(f).split('-', 1)[1].split('.')[0]
-                               for f in glob.glob(os.path.join(basetgz,'*.tgz'))]
+                             for f in glob.glob(os.path.join(basetgz,'*.tgz'))]
                 except IndexError:
                     raise SetupException("there is no available chroot images in default location '%s'"
                                          "\nPlease run 'lgp setup -c create'"
