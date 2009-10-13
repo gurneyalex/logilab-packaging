@@ -21,13 +21,13 @@ basetgz=/var/cache/lgp/buildd
 result=~/dists
 
 # try to sign Debian package(s) just built (uncomment to enable)
-#sign=True
+#sign=yes
 
 # run pbuilder hooks in '/etc/lgp/hooks' (uncomment to enable)
-#hooks=True
+#hooks=yes
 
 # run embedded post-treatments: add trivial repository (uncomment to enable)
-#post-treatments=True
+#post-treatments=yes
 
 
 
