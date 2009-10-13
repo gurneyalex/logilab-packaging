@@ -424,19 +424,9 @@ class SetupInfo(Configuration):
         if debian_revision == '0':
             logging.info("It is conventional to restart the debian_revision"
                          " at 1 each time the upstream_version is increased.")
-
         if debian_revision not in ['0', '1']:
-            initial = False
-            if not self.config.orig_tarball:
-                logging.error("--orig-tarball option is required when you don't "
-                              "build the first revision of a debian package")
-                logging.error("If you haven't the original tarball version, please do "
-                              "an 'apt-get source --tar-only %s' of the Debian source package"
-                             % self.get_debian_name())
-                raise LGPException('unable to build upstream tarball of %s package '
-                                   'for Debian revision "%s"'
-                                   % (self.get_debian_name(), debian_revision))
-        return initial
+            return False
+        return True
 
     def get_architectures(self, archi=None, basetgz=None):
         """ Ensure that the architectures exist
@@ -539,6 +529,7 @@ class SetupInfo(Configuration):
         tarball = '%s_%s.orig.tar.gz' % fileparts
         upstream_tarball = '%s-%s.tar.gz' % fileparts
 
+        # run possible debian/rules target to retrieve pristine tarball
         if self.config.orig_tarball is None:
             try:
                 cmd = ["fakeroot", "debian/rules", "get-orig-source"]
@@ -549,6 +540,19 @@ class SetupInfo(Configuration):
                 logging.debug("run optional '%s' without success" % ' '.join(cmd))
                 logging.debug("you can use '--orig-tarball' option if a valid "
                               "Debian source archive (pristine tarball) exists")
+
+        if self.config.orig_tarball is None:
+            # Make a coherence check about the pristine tarball
+            if not self.is_initial_debian_revision():
+                debian_revision = self.get_debian_version().rsplit('-', 1)[1]
+                logging.error("--orig-tarball option is required when you don't "
+                              "build the first revision of a debian package")
+                logging.error("If you haven't the original tarball version, please do "
+                              "an 'apt-get source --tar-only %s' of the Debian source package"
+                             % self.get_debian_name())
+                raise LGPException('unable to build upstream tarball of %s package '
+                                   'for Debian revision "%s"'
+                                   % (self.get_debian_name(), debian_revision))
             logging.info("creation of a new Debian source archive (pristine tarball) from working directory")
             try:
                 self._run_command("sdist", dist_dir=self._tmpdir)
