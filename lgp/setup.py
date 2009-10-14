@@ -21,14 +21,12 @@
 __docformat__ = "restructuredtext en"
 
 import os
+import sys
 import logging
-try:
-    from subprocess import check_call, CalledProcessError # only python2.5
-except ImportError:
-    from logilab.common.compat import check_call, CalledProcessError
+from subprocess import check_call, CalledProcessError
 
 from logilab.devtools.lgp.setupinfo import SetupInfo
-from logilab.devtools.lgp.exceptions import LGPException, LGPCommandException
+from logilab.devtools.lgp.exceptions import LGPException
 from logilab.devtools.lgp.check import check_keyrings
 from logilab.devtools.lgp import CONFIG_FILE, HOOKS_DIR
 
@@ -48,30 +46,33 @@ def run(args):
         for arch in setup.architectures:
             for distrib in setup.distributions:
                 if setup.config.command == "create":
-                    logging.info("creating '%s' image now... It will take a while." % distrib)
+                    logging.info("creating '%s' image now..." % distrib)
                     cmd = "sudo IMAGE=%s DIST=%s ARCH=%s pbuilder create --override-config --configfile %s"
                 elif setup.config.command == "update":
-                    logging.info("updating '%s' image now... It will take a while." % distrib)
+                    logging.info("updating '%s' image now..." % distrib)
                     cmd = "sudo IMAGE=%s DIST=%s ARCH=%s pbuilder update --override-config --configfile %s"
                 elif setup.config.command == "dumpconfig":
                     logging.info("dump '%s' image configuration" % distrib)
                     cmd = "sudo IMAGE=%s DIST=%s ARCH=%s pbuilder dumpconfig --configfile %s"
+                    sys.stdout = sys.__stdout__
+
+                image = setup.get_basetgz(distrib, arch, check=False)
+                # workaround: http://www.netfort.gr.jp/~dancer/software/pbuilder-doc/pbuilder-doc.html#amd64i386
+                if 'amd64' in setup.get_architectures(['current']) and arch == 'i386' and os.path.exists('/usr/bin/linux32'):
+                    cmd = 'linux32 ' + cmd
+                cmd = cmd + ' --hookdir %s'
+                cmd = cmd % (image, distrib, arch, CONFIG_FILE, HOOKS_DIR)
 
                 # run setup command
                 try:
-                    image = setup.get_basetgz(distrib, arch, check=False)
-                    # workaround: http://www.netfort.gr.jp/~dancer/software/pbuilder-doc/pbuilder-doc.html#amd64i386
-                    if 'amd64' in setup.get_architectures(['current']) and arch == 'i386' and os.path.exists('/usr/bin/linux32'):
-                        cmd = 'linux32 ' + cmd
-                    cmd = cmd + ' --hookdir %s'
-                    cmd = cmd % (image, distrib, arch, CONFIG_FILE, HOOKS_DIR)
-                    check_call(cmd.split(), env={'DIST': distrib, 'ARCH': arch,
-                                                 'IMAGE': image})
+                    check_call(cmd.split(), stdout=sys.stdout,
+                               env={'DIST': distrib, 'ARCH': arch, 'IMAGE': image})
                 except CalledProcessError, err:
-                    # FIXME command always returns exit code 1
+                    # pbuilder dumpconfig command always returns exit code 1.
+                    # Fix to normal exit status
                     if setup.config.command == "dumpconfig":
                         continue
-                    raise LGPCommandException('an error occured in setup process', err)
+                    logging.error('an error occured in setup process: %s' % cmd)
 
     except NotImplementedError, exc:
         logging.error(exc)
