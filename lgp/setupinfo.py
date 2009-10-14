@@ -214,32 +214,30 @@ class SetupInfo(Configuration):
                                                     self.config.basetgz)
         self.distributions = get_distributions(self.config.distrib,
                                                self.config.basetgz)
-
-        # Setup command can be run anywhere, so skip setup file retrieval
-        if sys.argv[1] in ["setup", "login", "script", "piuparts"]:
-            return
+        logging.debug("guessing distribution(s): %s" % ','.join(self.distributions))
+        logging.debug("guessing architecture(s): %s" % ','.join(self.architectures))
 
         # Guess the package format
-        if self.config.setup_file == 'setup.py':
-            # generic case for python project (distutils, setuptools)
-            self._package = run_setup('./setup.py', None, stop_after="init")
-        elif osp.isfile('__pkginfo__.py'):
+        if osp.isfile('__pkginfo__.py') and not osp.isfile(self.config.setup_file):
             # Logilab's specific format
             self._package = PackageInfo(reporter=TextReporter(sys.stderr, sys.stderr.isatty()),
                                         directory=self.config.pkg_dir)
         # other script can be used if compatible with the expected targets in COMMANDS
         elif osp.isfile(self.config.setup_file):
-            self._package = file(self.config.setup_file)
-            if not os.stat(self.config.setup_file).st_mode & stat.S_IEXEC:
-                raise LGPException('setup file %s has no execute permission'
-                                   % self.config.setup_file)
+            if self.config.setup_file == 'setup.py':
+                # case for python project (distutils, setuptools)
+                self._package = run_setup('./setup.py', None, stop_after="init")
+            else:
+                # generic case: the setup file should only honor targets as:
+                # sdist, project, version, clean (see COMMANDS)
+                self._package = file(self.config.setup_file)
+                if not os.stat(self.config.setup_file).st_mode & stat.S_IEXEC:
+                    raise LGPException('setup file %s has no execute permission'
+                                       % self.config.setup_file)
         else:
             class debian(object): pass
             self._package = debian()
-
-        logging.debug("running for distribution(s): %s" % ','.join(self.distributions))
-        logging.debug("running for architecture(s): %s" % ','.join(self.architectures))
-        logging.debug("guess the setup package class: %s" % self.package_format)
+        logging.debug("use setup package class format: %s" % self.package_format)
 
     @property
     def current_distrib(self):

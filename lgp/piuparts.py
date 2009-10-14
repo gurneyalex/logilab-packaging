@@ -46,14 +46,14 @@ def run(args):
                     arch     = f['Architecture']
                     distrib  = f['Distribution']
                     packages = [deb['name'] for deb in f['Files'] if deb['name'].endswith('.deb')]
-                    logging.debug("read information from .changes: %s/%s"
+                    logging.debug("overwrite image information from .changes: %s/%s"
                                   % (distrib, arch))
                 elif arg.endswith('.deb'):
                     deb     = debfile.DebFile(arg)
                     arch    = deb.debcontrol()['Architecture']
                     distrib = deb.changelog().distributions
                     packages.append(arg)
-                    logging.debug("read information from .deb: %s/%s"
+                    logging.debug("overwrite image information from .deb: %s/%s"
                                   % (distrib, arch))
 
                 piuparts.architectures = piuparts.get_architectures([arch])
