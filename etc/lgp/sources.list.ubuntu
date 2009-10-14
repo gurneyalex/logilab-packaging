@@ -1,3 +1,15 @@
+# Ubuntu sources.list
+#
+# You have to use the environment variable ${DIST} in this file instead of a
+# fixed codename
+#
+# The deb lines here are the ones that will appear at the top of the
+# sources.list inside the chroot, so this is the place to list your local
+# mirror sites; apt will then use them in preference to the ones listed in
+# MIRRORSITE.
+# OTHERMIRROR pbuilder variable will be populated by theses deb lines.
+
+deb http://ftp.logilab.org/dists ${DIST}/
+
 deb http://security.ubuntu.com/ubuntu ${DIST}-security main restricted
 deb http://fr.archive.ubuntu.com/ubuntu ${DIST}-updates main restricted
-
