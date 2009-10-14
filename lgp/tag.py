@@ -76,15 +76,15 @@ class Tagger(SetupInfo):
         self.debian_revision = self.get_debian_version().rsplit('-', 1)[1]
 
         # cleaning for unique entries
-        self.config.distrib = '+'.join(self.config.distrib)
-        self.config.archi   = '+'.join(self.config.archi)
+        self.distrib = '+'.join(self.distributions)
+        self.archi   = '+'.join(self.architectures)
 
     def apply(self, tag):
         tag = Template(tag)
         tag = tag.substitute(version=self.version,
                              debian_revision=self.debian_revision,
-                             distrib=self.config.distrib,
-                             arch=self.config.archi,
+                             distrib=self.distrib,
+                             arch=self.archi,
                              project=self.project
                             )
 
