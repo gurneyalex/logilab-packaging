@@ -11,15 +11,11 @@
 #     https://wiki.ubuntu.com/PbuilderHowto
 # Thanks a lot, guys !
 
-# List of Debian suites
+# List of allowed suites
 DEBIAN_SUITES=("unstable" "testing" "stable" "oldstable" "sid" "etch" "lenny" "squeeze")
-# List of Ubuntu suites. Update these when needed
 UBUNTU_SUITES=("jaunty" "intrepid" "hardy" "gutsy" "feisty" "dapper")
 
-# Mirrors to use. Update these to your preferred mirror or proxy.
-#export http_proxy=http://your-proxy:8080/
-#DEBIAN_PROXY="http://213.215.7.52:3142"
-#UBUNTU_PROXY="http://213.215.7.52:3142"
+# Mirrors to use in order to create chroot images
 DEBIAN_MIRROR="cdn.debian.net"
 UBUNTU_MIRROR="archive.ubuntu.com"
 
@@ -33,29 +29,31 @@ UBUNTU_SOURCESLIST="/etc/lgp/sources.list.ubuntu"
 DEBIAN_OTHERMIRROR=
 UBUNTU_OTHERMIRROR=
 
+# *** DEPRECATED ***
 # Set a default distribution if none is used.
 #: ${DIST:="$(lsb_release --short --codename)"}
 #: ${DIST:="unstable"}
+# Optionally use the changelog of a package to determine the suite to use if none set
+# Will use generic 'unstable' distribution name
+#if [ -z "${DIST}" ] && [ -r "debian/changelog" ]; then
+#	DIST=$(dpkg-parsechangelog | awk '/^Distribution: / {print $2}')
+#	# Use the unstable suite for Debian experimental packages.
+#	if [ "${DIST}" == "experimental" -o \
+#		 "${DIST}" == "UNRELEASED" -o \
+#		 "${DIST}" == "DISTRIBUTION" ]; then
+#		DIST="unstable"
+#	fi
+#	echo "Retrieve distribution from debian/changelog: $DIST"
+#fi
 
-# Source local configuration if any
+# Source extra local configuration if any
 if [[ -f "/etc/lgp/pbuilderrc.local" ]]; then
 	source /etc/lgp/pbuilderrc.local
 fi
 
-# Optionally use the changelog of a package to determine the suite to use if none set
-# Will use generic 'unstable' distribution name
-if [ -z "${DIST}" ] && [ -r "debian/changelog" ]; then
-	DIST=$(dpkg-parsechangelog | awk '/^Distribution: / {print $2}')
-	# Use the unstable suite for Debian experimental packages.
-	if [ "${DIST}" == "experimental" -o \
-		 "${DIST}" == "UNRELEASED" -o \
-		 "${DIST}" == "DISTRIBUTION" ]; then
-		DIST="unstable"
-	fi
-	echo "Retrieve distribution from debian/changelog: $DIST"
-fi
+##############################################################################
 
-# Cannot use DISTRIBUTION directly
+# Don't use DISTRIBUTION directly
 DISTRIBUTION="${DIST}"
 
 # Optionally set the architecture to the host architecture if none set. Note
@@ -78,7 +76,7 @@ if [ -n "${ARCH}" ]; then
     DEBOOTSTRAPOPTS=("--flavour=build" "${DEBOOTSTRAPOPTS[@]}")
 fi
 
-# Cannot use BASETGZ directly
+# Don't use BASETGZ directly
 # Set the BASETGZ using lgp IMAGE environment variable
 : ${IMAGE:="/var/cache/lgp/buildd/$NAME.tgz"}
 BASETGZ=${IMAGE}
@@ -91,7 +89,8 @@ if [ ! -r ${BASETGZ} -a "$PBCURRENTCOMMANDLINEOPERATION" != "create" ]; then
 	exit 2
 fi
 
-# FIXME Manage OTHER_MIRROR settings by hooks ?
+# FIXME Manage OTHER_MIRROR only by DEBIAN_SOURCESLIST settings
+# FIXME rename DEBIAN_MIRROR to DEBIAN_MIRRORSITE without change it
 if $(echo ${DEBIAN_SUITES[@]} | grep -q $DIST); then
     # Debian configuration
     MIRRORSITE="http://$DEBIAN_MIRROR/debian/"
@@ -99,7 +98,6 @@ if $(echo ${DEBIAN_SUITES[@]} | grep -q $DIST); then
     eval "OTHERMIRROR=\"$(grep -v '#' $DEBIAN_SOURCESLIST | tr '\n' '|')\""
     [[ -f $DEBIAN_SOURCESLIST.$DIST ]] && OTHERMIRROR=$(grep -v '#' $DEBIAN_SOURCESLIST.$DIST | tr '\n' '|')
     OTHERMIRROR=${OTHERMIRROR:-$DEBIAN_OTHERMIRROR}
-    export PROXY=${DEBIAN_PROXY}
 elif $(echo ${UBUNTU_SUITES[@]} | grep -q $DIST); then
     # Ubuntu configuration
     MIRRORSITE="http://$UBUNTU_MIRROR/ubuntu/"
@@ -108,7 +106,6 @@ elif $(echo ${UBUNTU_SUITES[@]} | grep -q $DIST); then
     [[ -f $UBUNTU_SOURCESLIST.$DIST ]] && OTHERMIRROR=$(grep -v '#' $UBUNTU_SOURCESLIST.$DIST | tr '\n' '|')
     OTHERMIRROR=${OTHERMIRROR:-$UBUNTU_OTHERMIRROR}
     #DEBOOTSTRAPOPTS=("--exclude" "ubuntu-keyring" "${DEBOOTSTRAPOPTS[@]}")
-    export PROXY=${UBUNTU_PROXY}
 else
     # FIXME Should be dead code now (managed in lgp)
     # Debian could be the default case
@@ -199,7 +196,7 @@ BUILDSOURCEROOTCMD="fakeroot"
 PBUILDERROOTCMD="sudo"
 
 #DEBEMAIL=""
-#TIMEOUT_TIME=20min
+TIMEOUT_TIME=20m
 export TERM=linux
 export IGNOREEOF=1
 export TMPDIR=/tmp
