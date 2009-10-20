@@ -5,16 +5,18 @@ Maintainer: Logilab S.A. <contact@logilab.fr>
 Uploaders: Alexandre Fayolle <afayolle@debian.org>,
            Adrien Di Mascio <adrien.dimascio@logilab.fr>,
            Julien Jehannet <julien.jehannet@logilab.fr>
-Build-Depends: debhelper (>= 7.0), python-dev (>=2.3.5-7), python-support
+Build-Depends: debhelper (>= 7.0), python-all-dev
+Build-Depends-Indep: python-support
 Standards-Version: 3.8.0
-Homepage: http://www.logilab.org/project/devtools
-XS-Python-Version: current
+XS-Python-Version: all
+Homepage: http://www.logilab.org/project/logilab-devtools
+Vcs-hg: http://hg.logilab.org/logilab/devtools
+Vcs-Browser: http://hg.logilab.org/logilab/devtools
 
 Package: python-vcslib
 Architecture: all
 Recommends: cvs, mercurial (>= 1), subversion
 Depends: ${python:Depends}, python-logilab-common (>= 0.32.0)
-XB-Python-Version: ${python:Versions}
 Conflicts: devtools
 Replaces: devtools
 Description: set of development tools used at Logilab for source management
@@ -29,7 +31,6 @@ Depends: ${python:Depends}, python-debian, lintian, pbuilder, devscripts, debhel
          python-vcslib, python-logilab-common, sudo, cdebootstrap
 Conflicts: devtools, simh
 Replaces: devtools
-XB-Python-Version: ${python:Versions}
 Description: set of development tools used at Logilab
  Set of tools which aims to help the developpement process, including :
   * tools to check and build source and/or Debian packages
@@ -39,7 +40,6 @@ Package: pycoverage
 Architecture: all
 Recommends: emacsen-common
 Depends: ${python:Depends}, logilab-packaging
-XB-Python-Version: ${python:Versions}
 Conflicts: devtools
 Replaces: devtools
 Description: Python code coverage tool
