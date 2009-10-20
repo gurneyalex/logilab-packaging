@@ -200,7 +200,7 @@ class Builder(SetupInfo):
 
         logging.info("creation of the Debian source package files (.dsc, .diff.gz)")
         try:
-            cmd = 'dpkg-source --no-copy -sp -b %s' % self.origpath
+            cmd = 'dpkg-source --no-copy -b %s' % self.origpath
             check_call(cmd.split(), stdout=sys.stdout)
         except CalledProcessError, err:
             msg = "cannot build valid dsc file with command %s" % cmd

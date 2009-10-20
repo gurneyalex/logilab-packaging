@@ -38,10 +38,10 @@ def run(args):
 
         if setup.config.command == "create":
             if not check_keyrings(setup):
-                logging.warn("you haven't installed archive keyring for ubuntu distributions")
-                logging.warn("you can download it from http://fr.archive.ubuntu.com/ubuntu/pool/main/u/ubuntu-keyring")
-                logging.warn("then copy keyring file into /usr/share/keyrings/ directory")
-                logging.debug("wget -O /usr/share/keyrings/ubuntu-archive-keyring.gpg ftp://ftp.archive.ubuntu.com/ubuntu/project/ubuntu-archive-keyring.gpg")
+                logging.info("you haven't installed archive keyring for ubuntu distributions")
+                logging.info("you can download it from http://fr.archive.ubuntu.com/ubuntu/pool/main/u/ubuntu-keyring")
+                logging.info("then copy keyring file into /usr/share/keyrings/ directory")
+                logging.info("example: wget -O /usr/share/keyrings/ubuntu-archive-keyring.gpg ftp://ftp.archive.ubuntu.com/ubuntu/project/ubuntu-archive-keyring.gpg")
 
         for arch in setup.architectures:
             for distrib in setup.distributions:
