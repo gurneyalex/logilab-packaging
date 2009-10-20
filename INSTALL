@@ -22,4 +22,6 @@ Lgp Installation Notes
 - you need to add sudo privileges for pbuilder command and DIST environment variable
   if you want that developpers use lgp (not necessary if only run as root)
 
+	ALL ALL= NOPASSWD:SETENV: /usr/sbin/pbuilder, /usr/sbin/piuparts
+
 Note: you can easily remove basetgz of any created pbuilder images.
