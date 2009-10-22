@@ -292,14 +292,13 @@ class Builder(SetupInfo):
         You have the possiblity to add some dpkg-buildpackage options with the
         DEBBUILDOPTS environment variable.
         """
-        def _build_options(arch=None):
+        def _build_options(arch=None, rank=0):
             optline = list()
             #optline.append('-b')
             if arch:
-                optline.append('-B')
+                if rank:
+                    optline.append('-B')
                 optline.append('-a%s' % arch)
-            else:
-                optline.append('-A')
             if os.environ.get('DEBBUILDOPTS'):
                 optline.append(os.environ.get('DEBBUILDOPTS'))
             return ' '.join(optline)
@@ -316,10 +315,10 @@ class Builder(SetupInfo):
             logging.info('this build is arch-independant. Lgp will only build on '
                          'current architecture (%s)' % options['arch'])
         else:
-            for arch in self.architectures:
+            for rank, arch in enumerate(self.architectures):
                 options = dict()
                 options['distrib'] = self.current_distrib
-                options['buildopts'] = _build_options(arch)
+                options['buildopts'] = _build_options(arch, rank)
                 options['arch'] = arch
                 options['image'] = self.get_basetgz(options['distrib'],
                                                     options['arch'])
