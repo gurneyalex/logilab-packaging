@@ -1,3 +1,9 @@
+logilab-devtools (0.16.3-1) unstable; urgency=low
+
+  * new upstream release
+
+ -- Alexandre Fayolle <afayolle@debian.org>  Thu, 22 Oct 2009 12:19:14 +0200
+
 logilab-devtools (0.16.2-2) unstable; urgency=low
 
   * debian/control: XS-Python-Version: all
