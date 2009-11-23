@@ -548,8 +548,8 @@ def check_include_dirs(checker):
     return OK
 
 def check_debsign(checker):
-    """Hint: you can add DEBSIGN_KEYID to your environment and use gpg-agent to sign directly"""
-    if 'DEBSIGN_KEYID' not in os.environ and 'GPG_AGENT_INFO' in os.environ:
+    """Hint: you can export DEBSIGN_KEYID to your environment and use gpg-agent to sign directly"""
+    if 'DEBSIGN_KEYID' not in os.environ or 'GPG_AGENT_INFO' not in os.environ:
         logging.info(check_debsign.__doc__)
         return
     return OK
