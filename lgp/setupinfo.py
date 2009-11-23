@@ -329,7 +329,9 @@ class SetupInfo(Configuration):
             for line in open(control):
                 line = line.split(' ', 1)
                 if line[0] == "Architecture:":
-                    return line[1].rstrip().split(',')
+                    archi = line[1].rstrip().split(' ')
+                    archi.remove('source')
+                    return archi
         except IOError, err:
             raise LGPException('a Debian control file should exist in "%s"' % control)
 
