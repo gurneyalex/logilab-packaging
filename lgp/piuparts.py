@@ -56,6 +56,12 @@ def run(args):
                     logging.debug("overwrite image information from .deb: %s/%s"
                                   % (distrib, arch))
 
+                # sanitize architecture accepted values
+                if arch:
+                    arch = arch.split(' ')
+                    arch.remove('source')
+                    arch = arch.pop()
+
                 piuparts.architectures = piuparts.get_architectures([arch])
                 # we loop on different architectures of available base images if arch-independant
                 for arch in piuparts.architectures:
