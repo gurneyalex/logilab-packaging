@@ -330,7 +330,8 @@ class SetupInfo(Configuration):
                 line = line.split(' ', 1)
                 if line[0] == "Architecture:":
                     archi = line[1].rstrip().split(' ')
-                    archi.remove('source')
+                    if "source" in archi:
+                        archi.pop('source')
                     return archi
         except IOError, err:
             raise LGPException('a Debian control file should exist in "%s"' % control)
@@ -667,6 +668,7 @@ class SetupInfo(Configuration):
         # FIXME use debian_bundle.changelog.Changelog instead
         if self.config.suffix:
             timestamp = int(time.time())
+            logging.debug("suffix '%s' added to package names" % self.config.suffix)
             cmd = ['sed', '-i', '1s/(\(.*\))/(%s:\\1%s)/' % (timestamp, self.config.suffix),
                    osp.join(self.origpath, 'debian', 'changelog')]
             try:

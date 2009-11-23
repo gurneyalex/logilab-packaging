@@ -80,6 +80,10 @@ def run_post_treatments(builder, distrib):
     try:
         os.chdir(osp.dirname(distdir))
         try:
+            # cd /srv/repository/
+            # dpkg-scanpackages i386 /dev/null | gzip -9c > 386/Packages.gz
+            # dpkg-scanpackages amd64 /dev/null | gzip -9c > amd64/Packages.gz
+            # dpkg-scansources source /dev/null | gzip -9c > source/Sources.gz
             cmd = "dpkg-scanpackages -m %s /dev/null 2>/dev/null | gzip -9c > %s/Packages.gz"
             os.system(cmd % (distrib, distrib))
             logging.debug("Debian trivial repository in '%s' updated." % distdir)
@@ -191,6 +195,10 @@ class Builder(SetupInfo):
         This function must be called inside an unpacked source
         package. The source package (dsc and diff.gz files) is created in
         the parent directory.
+
+        See:
+
+        - http://www.debian.org/doc/maint-guide/ch-build.en.html#s-option-sa
 
         :param:
             origpath: path to orig.tar.gz tarball
@@ -333,10 +341,11 @@ class Builder(SetupInfo):
         some tests are performed before copying to result directory
         """
         def sign_file(filename):
-            try:
-                check_call(["debsign", filename], stdout=sys.stdout)
-            except CalledProcessError, err:
-                logging.error("'%s' cannot be signed" % filename)
+            if check_debsign(self):
+                try:
+                    check_call(["debsign", filename], stdout=sys.stdout)
+                except CalledProcessError, err:
+                    logging.error("lgp cannot debsign '%s' automatically" % filename)
 
         def check_file(filename):
             if os.path.isfile(filename):
@@ -374,7 +383,7 @@ class Builder(SetupInfo):
                     if self.config.deb_src_only:
                         logging.info("Debian source control file: %s"
                                      % copied_filename)
-                        if self.config.sign and check_debsign(self):
+                        if self.config.sign:
                             sign_file(fullpath)
                 #if filename.endswith('.diff.gz'):
                 #    check_file(copied_filename)
@@ -389,7 +398,7 @@ class Builder(SetupInfo):
                 if filename.endswith('.lgp-build'):
                     logging.info("a build logfile is available: %s" % copied_filename)
                 if filename.endswith('.changes'):
-                    if self.config.sign and check_debsign(self):
+                    if self.config.sign:
                         sign_file(fullpath)
                     logging.info("Debian changes file: %s" % copied_filename)
 
