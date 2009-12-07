@@ -668,8 +668,9 @@ class SetupInfo(Configuration):
         # FIXME use debian_bundle.changelog.Changelog instead
         if self.config.suffix:
             timestamp = int(time.time())
-            logging.debug("suffix '%s' added to package names" % self.config.suffix)
-            cmd = ['sed', '-i', '1s/(\(.*\))/(%s:\\1%s)/' % (timestamp, self.config.suffix),
+            suffix = ''.join(self.config.suffix,timestamp)
+            logging.debug("suffix '%s' added to package names" % suffix)
+            cmd = ['sed', '-i', '1s/(\(.*\))/(\\1%s)/' % suffix,
                    osp.join(self.origpath, 'debian', 'changelog')]
             try:
                 check_call(cmd, stdout=sys.stdout)
