@@ -60,8 +60,7 @@ CHECKS = { 'default'    : ['debian_dir', 'debian_rules', 'debian_copying',
                            'copying', #'repository'
                            'homepage', 'builder', 'keyrings', 'announce',
                            'release_number', 'manifest_in', 'include_dirs',
-                           'scripts', 'pydistutils', 'debian_maintainer',
-                           'debian_uploader'],
+                           'scripts', 'pydistutils', 'debian_uploader'],
            'setuptools' : [],
            'pkginfo'    : [],
            'makefile'   : ['makefile'],
@@ -286,11 +285,15 @@ class Checker(SetupInfo):
 #
 # ========================================================
 def check_keyrings(checker):
-    """check the mandatory keyrings for debian and ubuntu in /usr/share/keyrings/"""
-    if isfile("/usr/share/keyrings/ubuntu-archive-keyring.gpg") and \
-       isfile("/usr/share/keyrings/debian-archive-keyring.gpg"):
-        return OK
-    return NOK
+    """check the mandatory keyrings for ubuntu in /usr/share/keyrings/"""
+    msg = ""
+    if not isfile("/usr/share/keyrings/debian-archive-keyring.gpg"):
+        msg = "no keyring for debian in /usr/share/keyrings/ (debian-archive-keyring)"
+    if not isfile("/usr/share/keyrings/ubuntu-archive-keyring.gpg"):
+        msg = "no keyring for ubuntu in /usr/share/keyrings/ (ubuntu-archive-keyring)"
+    if msg:
+        checker.logger.info(msg)
+    return OK
 
 def check_pydistutils(checker):
     """check a .pydistutils.cfg file in your home firectory"""
