@@ -234,8 +234,10 @@ class Builder(SetupInfo):
                    debuilder, 'build',
                    '--configfile', CONFIG_FILE,
                    '--buildresult', self._tmpdir,
-                   '--debbuildopts', "%(buildopts)s" % build_vars,
-                   '--hookdir', HOOKS_DIR, self.dscfile]
+                   '--debbuildopts', "%(buildopts)s" % build_vars]
+            if self.config.hooks is not None:
+                cmd.extend(['--hookdir', HOOKS_DIR])
+            cmd.append(self.dscfile)
         elif debuilder == 'debuild':
             os.chdir(self.origpath)
             cmd = ['debuild', '--no-tgz-check', '--no-lintian',
