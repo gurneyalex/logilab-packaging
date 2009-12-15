@@ -228,14 +228,18 @@ class Builder(SetupInfo):
         debuilder = os.environ.get('DEBUILDER', 'pbuilder')
         logging.debug("package builder flavour: '%s'" % debuilder)
         if debuilder == 'pbuilder':
+            assert osp.isfile(self.dscfile)
             cmd = ['sudo', 'IMAGE=%(image)s' % build_vars,
                    'DIST=%(distrib)s' % build_vars,
                    'ARCH=%(arch)s' % build_vars,
                    debuilder, 'build',
                    '--configfile', CONFIG_FILE,
-                   '--buildresult', self._tmpdir,
-                   '--debbuildopts', "%(buildopts)s" % build_vars]
-            if self.config.hooks is not None:
+                   '--buildresult', self._tmpdir]
+            if os.environ.get('DEBUG'):
+                cmd.append('--debug')
+            if build_vars["buildopts"]:
+                cmd.extend(['--debbuildopts', "%(buildopts)s" % build_vars])
+            if self.config.hooks != "no":
                 cmd.extend(['--hookdir', HOOKS_DIR])
             cmd.append(self.dscfile)
         elif debuilder == 'debuild':
@@ -408,7 +412,7 @@ class Builder(SetupInfo):
                 assert osp.exists(copied_filename)
 
         # lastly print changes file to the console
-        if verbose:
+        if verbose and self.packages:
             logging.info("recent generated files:\n* %s"
                          % '\n* '.join(sorted(self.packages)))
 
@@ -418,7 +422,7 @@ class Builder(SetupInfo):
                                    self.current_distrib)
         # check if distribution directory exists, create it if necessary
         try:
-            os.makedirs(distrib_dir)
+            os.makedirs(distrib_dir, 0755)
         except OSError:
             # it's not a problem here to pass silently # when the directory
             # already exists

@@ -202,6 +202,7 @@ class SetupInfo(Configuration):
             if os.path.isfile(self.config.pkg_dir):
                 self.config.pkg_dir = os.path.dirname(self.config.pkg_dir)
             os.chdir(self.config.pkg_dir)
+            logging.info('change current directory: %s' % self.config.pkg_dir)
         except OSError, err:
             raise LGPException(err)
 
@@ -485,7 +486,10 @@ class SetupInfo(Configuration):
 
     @cached
     def get_upstream_version(self):
-        return self._run_command('version')
+        version = self._run_command('version')
+        if '-' in version and self.package_format == 'debian':
+            version = version.split('-')[0]
+        return version
 
     def get_versions(self):
         versions = self.get_debian_version().rsplit('-', 1)
@@ -575,9 +579,12 @@ class SetupInfo(Configuration):
         tarball = osp.join(self._tmpdir, tarball)
         try:
             urllib.urlretrieve(self.config.orig_tarball, tarball)
-        except Exception, err:
-            raise LGPCommandException("the provided original source archive "
-                                      "(tarball) can't be retrieved", err)
+            self.config.orig_tarball = tarball
+        except IOError, err:
+            logging.critical("the provided original source archive (tarball) "
+                             "can't be retrieved in current directory %s"
+                             % self.config.pkg_dir)
+            raise LGPException(err)
         assert osp.isfile(tarball), 'Debian source archive (pristine tarball) not found'
 
         # move pristine tarball
@@ -595,7 +602,7 @@ class SetupInfo(Configuration):
         logging.debug("prepare for %s distribution" % self.current_distrib)
         logging.debug("extracting original source archive in %s" % self._tmpdir)
         try:
-            cmd = 'tar --atime-preserve --preserve -xzf %s -C %s'\
+            cmd = 'tar --atime-preserve --preserve-permissions --preserve-order -xzf %s -C %s'\
                   % (self.config.orig_tarball, self._tmpdir)
             check_call(cmd.split(), stdout=sys.stdout)
         except CalledProcessError, err:
