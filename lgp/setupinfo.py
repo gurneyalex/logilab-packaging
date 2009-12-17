@@ -201,6 +201,9 @@ class SetupInfo(Configuration):
         try:
             if os.path.isfile(self.config.pkg_dir):
                 self.config.pkg_dir = os.path.dirname(self.config.pkg_dir)
+            # Keep working relative pathnames provided in line arguments
+            if getattr(self.config, "orig_tarball") and self.config.orig_tarball:
+                self.config.orig_tarball = osp.abspath(osp.expanduser(self.config.orig_tarball))
             os.chdir(self.config.pkg_dir)
             logging.info('change current directory: %s' % self.config.pkg_dir)
         except OSError, err:
@@ -572,7 +575,6 @@ class SetupInfo(Configuration):
             if osp.basename(self.config.orig_tarball) not in expected:
                 logging.warn("the provided archive hasn't one of the expected formats (%s)"
                              % ', '.join(expected))
-            self.config.orig_tarball = osp.expanduser(self.config.orig_tarball)
             logging.info("reuse provided archive '%s' as original source archive (tarball)"
                          % self.config.orig_tarball)
 
