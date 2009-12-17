@@ -404,9 +404,9 @@ class Builder(SetupInfo):
                 if filename.endswith('.lgp-build'):
                     logging.info("a build logfile is available: %s" % copied_filename)
                 if filename.endswith('.changes'):
+                    logging.info("Debian changes file: %s" % copied_filename)
                     if self.config.sign:
                         sign_file(fullpath)
-                    logging.info("Debian changes file: %s" % copied_filename)
 
                 mv(fullpath, distdir)
                 assert osp.exists(copied_filename)
@@ -421,6 +421,7 @@ class Builder(SetupInfo):
         distrib_dir = os.path.join(os.path.expanduser(self.config.dist_dir),
                                    self.current_distrib)
         # check if distribution directory exists, create it if necessary
+        os.umask(0002)
         try:
             os.makedirs(distrib_dir, 0755)
         except OSError:
