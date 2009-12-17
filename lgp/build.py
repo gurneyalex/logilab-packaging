@@ -235,7 +235,7 @@ class Builder(SetupInfo):
                    debuilder, 'build',
                    '--configfile', CONFIG_FILE,
                    '--buildresult', self._tmpdir]
-            if os.environ.get('DEBUG'):
+            if os.environ.get('DEBUILDER_VERBOSE'):
                 cmd.append('--debug')
             if build_vars["buildopts"]:
                 cmd.extend(['--debbuildopts', "%(buildopts)s" % build_vars])
@@ -371,10 +371,12 @@ class Builder(SetupInfo):
             fullpath = os.path.join(self._tmpdir, filename)
             if os.path.isfile(fullpath):
                 copied_filename = os.path.join(distdir, filename)
+                mv(fullpath, distdir)
+                assert osp.exists(copied_filename)
                 self.packages.append(copied_filename)
                 if filename.endswith('.dsc'):
                     self.dscfile = copied_filename
-                    dsc = deb822.Dsc(file(fullpath))
+                    dsc = deb822.Dsc(file(copied_filename))
                     orig = None
                     for entry in dsc['Files']:
                         if entry['name'].endswith('orig.tar.gz'):
@@ -390,7 +392,7 @@ class Builder(SetupInfo):
                         logging.info("Debian source control file: %s"
                                      % copied_filename)
                         if self.config.sign:
-                            sign_file(fullpath)
+                            sign_file(copied_filename)
                 #if filename.endswith('.diff.gz'):
                 #    check_file(copied_filename)
                 if filename.endswith('.orig.tar.gz'):
@@ -406,10 +408,7 @@ class Builder(SetupInfo):
                 if filename.endswith('.changes'):
                     logging.info("Debian changes file: %s" % copied_filename)
                     if self.config.sign:
-                        sign_file(fullpath)
-
-                mv(fullpath, distdir)
-                assert osp.exists(copied_filename)
+                        sign_file(copied_filename)
 
         # lastly print changes file to the console
         if verbose and self.packages:
