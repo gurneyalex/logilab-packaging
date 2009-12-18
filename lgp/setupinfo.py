@@ -205,7 +205,7 @@ class SetupInfo(Configuration):
             if getattr(self.config, "orig_tarball") and self.config.orig_tarball:
                 self.config.orig_tarball = osp.abspath(osp.expanduser(self.config.orig_tarball))
             os.chdir(self.config.pkg_dir)
-            logging.info('change current directory: %s' % self.config.pkg_dir)
+            logging.debug('change the current working directory to: %s' % self.config.pkg_dir)
         except OSError, err:
             raise LGPException(err)
 
@@ -546,17 +546,16 @@ class SetupInfo(Configuration):
                 self.config.orig_tarball = osp.abspath(tarball)
             except CalledProcessError, err:
                 logging.debug("run optional '%s' without success" % ' '.join(cmd))
-                logging.debug("you can use '--orig-tarball' option if a valid "
-                              "Debian source archive (pristine tarball) exists")
 
         if self.config.orig_tarball is None:
             # Make a coherence check about the pristine tarball
             if not self.is_initial_debian_revision():
                 debian_revision = self.get_debian_version().rsplit('-', 1)[1]
-                logging.error("--orig-tarball option is required when you don't "
-                              "build the first revision of a debian package")
-                logging.error("If you haven't the original tarball version, please do "
-                              "an 'apt-get source --tar-only %s' of the Debian source package"
+                logging.error("Debian source archive (pristine tarball) is required when you "
+                              "don't build the first revision of a debian package "
+                              "(use '--orig-tarball' option)")
+                logging.info("If you haven't the original tarball version, you could run: "
+                             "'apt-get source --tar-only %s'"
                              % self.get_debian_name())
                 raise LGPException('unable to build upstream tarball of %s package '
                                    'for Debian revision "%s"'
