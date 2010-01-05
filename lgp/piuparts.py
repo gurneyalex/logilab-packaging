@@ -43,26 +43,25 @@ def run(args):
                 packages = list()
                 if arg.endswith('.changes'):
                     f        = deb822.Changes(file(arg))
-                    arch     = f['Architecture']
+                    arch     = f['Architecture'].split(' ')
+                    # sanitize architecture accepted values
+                    try:
+                        arch.remove('source')
+                    except ValueError:
+                        pass
                     distrib  = f['Distribution']
                     packages = [deb['name'] for deb in f['Files'] if deb['name'].endswith('.deb')]
                     logging.debug("overwrite image information from .changes: %s/%s"
                                   % (distrib, arch))
                 elif arg.endswith('.deb'):
                     deb     = debfile.DebFile(arg)
-                    arch    = deb.debcontrol()['Architecture']
+                    arch    = deb.debcontrol()['Architecture'].split(' ')
                     distrib = deb.changelog().distributions
                     packages.append(arg)
                     logging.debug("overwrite image information from .deb: %s/%s"
                                   % (distrib, arch))
 
-                # sanitize architecture accepted values
-                if arch:
-                    arch = arch.split(' ')
-                    arch.remove('source')
-                    arch = arch.pop()
-
-                piuparts.architectures = piuparts.get_architectures([arch])
+                piuparts.architectures = piuparts.get_architectures(arch)
                 # we loop on different architectures of available base images if arch-independant
                 for arch in piuparts.architectures:
                     cmd = ['sudo', 'piuparts', '--no-symlinks',
