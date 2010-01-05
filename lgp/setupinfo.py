@@ -89,7 +89,6 @@ class SetupInfo(Configuration):
         self.options = (
                ('version',
                 {'help': "output version information and exit",
-                 #'dest' : "version",
                 }),
                ('verbose',
                 {'action': 'store_true',
@@ -202,7 +201,7 @@ class SetupInfo(Configuration):
             if os.path.isfile(self.config.pkg_dir):
                 self.config.pkg_dir = os.path.dirname(self.config.pkg_dir)
             # Keep working relative pathnames provided in line arguments
-            if getattr(self.config, "orig_tarball") and self.config.orig_tarball:
+            if hasattr(self.config, "orig_tarball") and self.config.orig_tarball:
                 self.config.orig_tarball = osp.abspath(osp.expanduser(self.config.orig_tarball))
             os.chdir(self.config.pkg_dir)
             logging.debug('change the current working directory to: %s' % self.config.pkg_dir)
@@ -507,6 +506,8 @@ class SetupInfo(Configuration):
             logging.warn("version provided by upstream is '%s'" % upstream_version)
             logging.warn("upstream version read from Debian changelog is '%s'" % debian_upstream_version)
             logging.error('please check coherence of the previous version numbers')
+            return False
+        return True
 
     def clean_repository(self):
         """clean the project repository"""
@@ -528,7 +529,8 @@ class SetupInfo(Configuration):
         http://hg.logilab.org/<upstream_name>/archive/<upstream_version>.tar.gz
         """
         # compare versions here to alert developpers
-        self.compare_versions()
+        if not self.compare_versions():
+            raise LGPException('version mismatched.')
 
         self._tmpdir = tempfile.mkdtemp()
         self._tmpdirs.append(self._tmpdir)
@@ -569,13 +571,9 @@ class SetupInfo(Configuration):
                                   " your repository" % self.get_upstream_version())
                 raise LGPCommandException("source distribution wasn't properly built", err)
             self.config.orig_tarball = osp.join(self._tmpdir, upstream_tarball)
-        else:
-            expected = [upstream_tarball, tarball]
-            if osp.basename(self.config.orig_tarball) not in expected:
-                logging.warn("the provided archive hasn't one of the expected formats (%s)"
-                             % ', '.join(expected))
-            logging.info("reuse provided archive '%s' as original source archive (tarball)"
-                         % self.config.orig_tarball)
+
+        logging.info("reuse provided archive '%s' as original source archive (tarball)"
+                     % self.config.orig_tarball)
 
         tarball = osp.join(self._tmpdir, tarball)
         try:
@@ -583,8 +581,8 @@ class SetupInfo(Configuration):
             self.config.orig_tarball = tarball
         except IOError, err:
             logging.critical("the provided original source archive (tarball) "
-                             "can't be retrieved in current directory %s"
-                             % self.config.pkg_dir)
+                             "can't be retrieved from current directory %s"
+                             % os.getcwd())
             raise LGPException(err)
         assert osp.isfile(tarball), 'Debian source archive (pristine tarball) not found'
 
