@@ -33,6 +33,8 @@ def run(args):
     """ Main function of lgp login command """
     try :
         login = Login(args)
+        xauthority = os.path.abspath(os.environ.get('XAUTHORITY',
+                                     os.path.expanduser('~/.Xauthority')))
         for arch in login.architectures:
             for distrib in login.distributions:
                 logging.info("login into '%s/%s' image" % (distrib, arch))
@@ -40,6 +42,12 @@ def run(args):
                 cmd = "sudo IMAGE=%s DIST=%s ARCH=%s pbuilder login --configfile %s --hookdir %s"
                 # run login command
                 try:
+                    if login.config.x11 and os.path.isfile(xauthority):
+                        # file we be copied to $HOME in the chroot
+                        # FIXME only works with pbuilder >= 0.194
+                        #cmd += ' --inputfile %s' % xauthority
+                        #logging.info('copy XAUTHORITY file (x11 environment)')
+                        pass
                     cmd = cmd % (image, distrib, arch, CONFIG_FILE, HOOKS_DIR)
                     check_call(cmd.split(), env={'DIST': distrib, 'ARCH': arch,
                                                  'IMAGE': image,
@@ -61,6 +69,14 @@ class Login(SetupInfo):
     Specific options are added. See lgp login --help
     """
     name = "lgp-login"
+    options = (('x11',
+                {'action': 'store_true',
+                 'default': False,
+                 'dest' : "x11",
+                 'help': "import x11 environment in chroot"
+                }),
+              ),
+
     def __init__(self, args):
         # Retrieve upstream information
         super(Login, self).__init__(arguments=args, options=self.options, usage=__doc__)
