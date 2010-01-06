@@ -31,7 +31,7 @@ from subprocess import check_call, CalledProcessError, Popen
 
 from debian_bundle import deb822
 
-from logilab.common.shellutils import mv
+from logilab.common.shellutils import cp
 
 from logilab.devtools.lgp import CONFIG_FILE, HOOKS_DIR
 from logilab.devtools.lgp.setupinfo import SetupInfo
@@ -264,7 +264,7 @@ class Builder(SetupInfo):
         for build in self.use_build_series():
             cmd = self._builder_command(build)
             logging.info("building binary debian package for '%s/%s' "
-                         "using build options '%s' ..."
+                         "using build options: '%s'"
                          % (build['distrib'], build['arch'], build['buildopts']))
 
             logging.debug("running build command: %s ..." % ' '.join(cmd))
@@ -351,7 +351,7 @@ class Builder(SetupInfo):
                 try:
                     check_call(["debsign", filename], stdout=sys.stdout)
                 except CalledProcessError, err:
-                    logging.error("lgp cannot debsign '%s' automatically" % filename)
+                    logging.warn("lgp cannot debsign '%s' automatically" % filename)
 
         def check_file(filename):
             if os.path.isfile(filename):
@@ -371,7 +371,7 @@ class Builder(SetupInfo):
             fullpath = os.path.join(self._tmpdir, filename)
             if os.path.isfile(fullpath):
                 copied_filename = os.path.join(distdir, filename)
-                mv(fullpath, distdir)
+                cp(fullpath, copied_filename)
                 assert osp.exists(copied_filename)
                 self.packages.append(copied_filename)
                 if filename.endswith('.dsc'):
@@ -379,7 +379,7 @@ class Builder(SetupInfo):
                     dsc = deb822.Dsc(file(copied_filename))
                     orig = None
                     for entry in dsc['Files']:
-                        if entry['name'].endswith('orig.tar.gz'):
+                        if entry['name'].endswith('.orig.tar.gz'):
                             orig = entry
                             break
                     # there is no orig.tar.gz file in the dsc file
@@ -389,10 +389,10 @@ class Builder(SetupInfo):
                                       % self.dscfile)
                     #check_file(copied_filename)
                     if self.config.deb_src_only:
-                        logging.info("Debian source control file: %s"
-                                     % copied_filename)
                         if self.config.sign:
                             sign_file(copied_filename)
+                        logging.info("Debian source control file: %s"
+                                     % copied_filename)
                 #if filename.endswith('.diff.gz'):
                 #    check_file(copied_filename)
                 if filename.endswith('.orig.tar.gz'):
@@ -406,9 +406,9 @@ class Builder(SetupInfo):
                 if filename.endswith('.lgp-build'):
                     logging.info("a build logfile is available: %s" % copied_filename)
                 if filename.endswith('.changes'):
-                    logging.info("Debian changes file: %s" % copied_filename)
                     if self.config.sign:
                         sign_file(copied_filename)
+                    logging.info("Debian changes file: %s" % copied_filename)
 
         # lastly print changes file to the console
         if verbose and self.packages:
