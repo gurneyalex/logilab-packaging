@@ -34,7 +34,7 @@ import stat
 import re
 import commands
 import logging
-import subprocess
+from subprocess import call, check_call, CalledProcessError
 from os.path import basename, join, exists, isdir, isfile
 from pprint import pformat
 
@@ -433,7 +433,7 @@ def check_makefile(checker):
     status = status and setup_file and isfile(setup_file)
     for cmd in ['%s project', '%s version']:
         cmd %= setup_file
-        if not subprocess.call(cmd.split()):
+        if not call(cmd.split()):
             checker.logger.error("%s not a valid command" % cmd)
         status = NOK
     return status
@@ -573,6 +573,10 @@ def check_package_info(checker):
     status = OK
     if hasattr(checker, "_package") and checker.package_format == "PackageInfo":
         pi = checker._package
+        try:
+            check_call(['python', '__pkginfo__.py'])
+        except CalledProcessError, err:
+            checker.logger.warn('command "python __pkginfo__.py" returns errors')
     else:
         return status
 
