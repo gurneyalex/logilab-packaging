@@ -194,9 +194,10 @@ class SetupInfo(Configuration):
 
         # Go to package directory
         if self.config.pkg_dir is None:
-            self.config.pkg_dir = osp.abspath(self.arguments
-                                              and self.arguments[0]
-                                              or os.getcwd())
+            if self.arguments and os.path.exists(self.arguments[0]):
+                self.config.pkg_dir = osp.abspath(self.arguments[0])
+            else:
+                self.config.pkg_dir = os.getcwd()
         try:
             if os.path.isfile(self.config.pkg_dir):
                 self.config.pkg_dir = os.path.dirname(self.config.pkg_dir)
