@@ -27,7 +27,7 @@ from logilab.devtools.lgp.exceptions import (ArchitectureException,
                                              DistributionException)
 
 
-def get_distributions(distrib=None, basetgz=None, suites='/usr/share/cdebootstrap/suites'):
+def get_distributions(distrib=None, basetgz=None, suites='/etc/lgp/suites'):
     """ensure that the target distributions exist or return all the valid distributions
 
     param distrib: specified distrib
