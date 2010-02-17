@@ -39,7 +39,7 @@ def get_distributions(distrib=None, basetgz=None, suites='/etc/lgp/suites'):
         import email
         distrib = email.message_from_file(file(suites))
         distrib = [i.split()[1] for i in distrib.get_payload().split('\n\n') if i]
-    elif 'all' in distrib:
+    elif 'all' in distrib or len(distrib)==0:
         # this case fixes unittest_distributions.py when basetgz is None
         if basetgz is None:
             return get_distributions(basetgz=basetgz, suites=suites)
