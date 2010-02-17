@@ -20,9 +20,10 @@ import os, os.path as osp
 from logilab.common.optparser import OptionParser
 
 LGP_CONFIG_FILE = '/etc/lgp/lgprc'
+LGP_SUITES      = '/etc/lgp/suites'
 CONFIG_FILE     = '/etc/lgp/pbuilderrc'
-HOOKS_DIR       = '/etc/lgp/hooks'
-SCRIPTS_DIR     = '/etc/lgp/scripts'
+HOOKS_DIR       = '/var/lib/logilab-packaging/hooks'
+SCRIPTS_DIR     = '/var/lib/logilab-packaging/scripts'
 
 
 def run(args):

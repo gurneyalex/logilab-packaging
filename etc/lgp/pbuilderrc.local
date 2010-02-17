@@ -1,0 +1,14 @@
+# Logilab lgp configuration file for pbuilder.
+# Copyright (c) 2003-2009 LOGILAB S.A. (Paris, FRANCE).
+# http://www.logilab.fr/ -- mailto:contact@logilab.fr
+
+# The file in /usr/share/pbuilder/pbuilderrc is the default template.
+# /etc/pbuilderrc is the one meant for editing.
+#
+# Read pbuilderrc.5 document for notes on specific options.
+
+#DEBEMAIL=""
+#TIMEOUT_TIME=20m
+export TERM=linux
+export IGNOREEOF=1
+#export TMPDIR=/tmp
