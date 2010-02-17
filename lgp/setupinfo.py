@@ -453,7 +453,7 @@ class SetupInfo(Configuration):
             logging.warn('lgp replaces "all" with "current" architecture value for this command')
 
         # try to guess targeted architectures
-        if archi is None:
+        if archi is None or len(archi)==0:
             archi = self.guess_debian_architecture()
 
         # "all" means architecture-independant. so we can replace by "current"
