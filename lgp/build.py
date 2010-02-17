@@ -70,7 +70,7 @@ def run(args):
             import traceback
             logging.critical(traceback.format_exc())
         logging.critical(exc)
-        return 1
+        return exc.exitcode()
     return builder.finalize()
 
 def run_post_treatments(builder, distrib):
@@ -166,6 +166,8 @@ class Builder(SetupInfo):
     def __init__(self, args):
         # Retrieve upstream information
         super(Builder, self).__init__(arguments=args, options=self.options, usage=__doc__)
+        if self.package_format == 'debian' and not osp.isdir('debian'):
+            raise LGPException("You are not in a valid project root directory.  Lgp expects debian directory from here.")
 
         # global build status (for every build)
         self.build_status = os.EX_OK
@@ -388,9 +390,10 @@ class Builder(SetupInfo):
                                       "to be a real native package)"
                                       % self.dscfile)
                     #check_file(copied_filename)
+                    if self.config.sign:
+                        # check if dsc file can be signed as well
+                        sign_file(copied_filename)
                     if self.config.deb_src_only:
-                        if self.config.sign:
-                            sign_file(copied_filename)
                         logging.info("Debian source control file: %s"
                                      % copied_filename)
                 #if filename.endswith('.diff.gz'):
@@ -405,6 +408,7 @@ class Builder(SetupInfo):
                                      'is available: %s' % copied_filename)
                 if filename.endswith('.lgp-build'):
                     logging.info("a build logfile is available: %s" % copied_filename)
+                    os.unlink(fullpath)
                 if filename.endswith('.changes'):
                     if self.config.sign:
                         sign_file(copied_filename)

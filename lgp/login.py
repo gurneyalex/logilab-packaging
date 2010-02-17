@@ -49,6 +49,7 @@ def run(args):
                         #logging.info('copy XAUTHORITY file (x11 environment)')
                         pass
                     cmd = cmd % (image, distrib, arch, CONFIG_FILE, HOOKS_DIR)
+                    logging.debug(cmd)
                     check_call(cmd.split(), env={'DIST': distrib, 'ARCH': arch,
                                                  'IMAGE': image,
                                                  'DISPLAY': os.environ.get('DISPLAY')})
@@ -57,10 +58,10 @@ def run(args):
 
     except NotImplementedError, exc:
         logging.error(exc)
-        return 1
+        return 2
     except LGPException, exc:
         logging.critical(exc)
-        return 1
+        return exc.exitcode()
 
 
 class Login(SetupInfo):
