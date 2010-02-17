@@ -11,5 +11,7 @@ etc/lgp/pbuilderrc
 etc/lgp/suites
 etc/lgp/sources.list.debian
 etc/lgp/sources.list.ubuntu
-etc/lgp/scripts
-etc/lgp/hooks
+etc/lgp/scripts var/lib/logilab-packaging
+etc/lgp/hooks var/lib/logilab-packaging
+etc/lgp/pbuilderrc.sh var/lib/logilab-packaging
+etc/lgp/pbuilderrc.local usr/share/doc/logilab-packaging/examples
