@@ -15,17 +15,23 @@ class LGPException(Exception):
         self.value = value
     def __str__(self):
         return str(self.value)
+    def exitcode(self):
+        return 1
 
 class LGPCommandException(LGPException):
     """subprocess lgp exception"""
     def __init__(self, value, cmd=None):
         self.value = value
+        self.cmd = cmd
         if cmd:
             msg = "command '%s' returned non-zero exit status %s" \
                   % (' '.join(cmd.cmd), cmd.returncode)
             logging.warn(msg)
     def __str__(self):
         return self.value
+
+    def exitcode(self):
+        return self.cmd.returncode
 
 class ArchitectureException(LGPException):
     """architecture availability exception"""

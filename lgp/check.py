@@ -158,10 +158,10 @@ def run(args):
 
     except NotImplementedError, exc:
         logging.error(exc)
-        return 1
+        return 2
     except LGPException, exc:
         logging.critical(exc)
-        return 1
+        return exc.exitcode()
 
 
 class Checker(SetupInfo):

@@ -94,7 +94,7 @@ def run(args):
 
     except LGPException, exc:
         logging.critical(exc)
-        return 1
+        return exc.exitcode()
 
 
 class Piuparts(SetupInfo):

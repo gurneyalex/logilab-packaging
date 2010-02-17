@@ -42,7 +42,7 @@ def run(args):
             sys.__stdout__.write(project.get_upstream_version() + linesep)
     except LGPException, exc:
         logging.critical(exc)
-        return 1
+        return exc.exitcode()
 
 
 class Project(SetupInfo):

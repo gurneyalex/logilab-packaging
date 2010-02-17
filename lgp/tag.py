@@ -44,7 +44,7 @@ def run(args):
                 raise LGPException('an error occured in tag process')
     except LGPException, exc:
         logging.critical(exc)
-        return 1
+        return exc.exitcode()
 
 class Tagger(SetupInfo):
     """Lgp tagger class

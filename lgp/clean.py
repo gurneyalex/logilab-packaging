@@ -36,4 +36,4 @@ def run(args):
         #if hasattr(cleaner, "config") and cleaner.config.verbose:
         #    logging.debug("printing traceback...")
         #    raise
-        return 1
+        return exc.exitcode()
