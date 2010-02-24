@@ -23,11 +23,12 @@ import os.path
 from subprocess import Popen, PIPE
 import logging
 
+from logilab.devtools.lgp import LGP_SUITES
 from logilab.devtools.lgp.exceptions import (ArchitectureException,
                                              DistributionException)
 
 
-def get_distributions(distrib=None, basetgz=None, suites='/etc/lgp/suites'):
+def get_distributions(distrib=None, basetgz=None, suites=LGP_SUITES):
     """ensure that the target distributions exist or return all the valid distributions
 
     param distrib: specified distrib
@@ -56,12 +57,12 @@ def get_distributions(distrib=None, basetgz=None, suites='/etc/lgp/suites'):
         # check input distrib parameter and filter if really known
         for t in distrib:
             if t not in distributions:
-                # Allow lgp check to be run without valid images
+                # Allow some lgp commands to be run outside a project repository
                 if (len(sys.argv)>1 and sys.argv[1] in ["check", "tag", "project"]):
                     logging.debug("'%s' image not found in '%s'" % (t, basetgz))
                     logging.debug("act as if 'unstable' image was existing in filesystem")
                     return ('unstable',)
-                logging.warn("'%s' image not found in '%s'. just skipped." % (t, basetgz))
+                logging.warn("expected image '%s' not found in '%s'. just skipped for now." % (t, basetgz))
             else:
                 mapped += (t,)
         distrib = mapped

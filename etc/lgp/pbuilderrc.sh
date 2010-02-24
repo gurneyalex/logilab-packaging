@@ -11,13 +11,48 @@
 #     https://wiki.ubuntu.com/PbuilderHowto
 # Thanks a lot, guys !
 
+
+# Declaration of lgp suites file location
+LGP_SUITES=${LGP_SUITES:-'/etc/lgp/suites'}
+
+DEBIAN_SUITES=${DEBIAN_SUITES:-$(grep -B2 '^Keyring: debian' $LGP_SUITES | sed -n 's/\(Suite: \)//p')}
+UBUNTU_SUITES=${UBUNTU_SUITES:-$(grep -B2 '^Keyring: ubuntu' $LGP_SUITES | sed -n 's/\(Suite: \)//p')}
+
+# *** NEEDS REFACTORING ***
+# FIXME Use same format with MIRRORSITE and DEBIAN_MIRRORSITE + UBUNTU_MIRRORSITE
+# FIXME support of old DEBIAN_MIRROR and UBUNTU_MIRROR ?
+# FIXME Manage OTHERMIRROR only by DEBIAN_SOURCESLIST settings
+# FIXME rename DEBIAN_MIRROR to DEBIAN_MIRRORSITE without change it
+# FIXME make a function here instead of multiple greps
+# FIXME check repo availability before adding it ?
+if echo "$DEBIAN_SUITES" | grep -q "^$DIST$"; then
+    DEBIAN_MIRRORSITE="http://$DEBIAN_MIRROR/debian/"
+    MIRRORSITE=${DEBIAN_MIRRORSITE}
+    COMPONENTS=${DEBIAN_COMPONENTS}
+    eval "OTHERMIRROR=\"$(grep -v '#' $DEBIAN_SOURCESLIST | tr '\n' '|')\""
+    [[ -f $DEBIAN_SOURCESLIST.$DIST ]] && OTHERMIRROR=$(grep -v '#' $DEBIAN_SOURCESLIST.$DIST | tr '\n' '|')
+    OTHERMIRROR=${OTHERMIRROR:-$DEBIAN_OTHERMIRROR}
+elif echo "$UBUNTU_SUITES" | grep -q "^$DIST$"; then
+    UBUNTU_MIRRORSITE="http://$UBUNTU_MIRROR/ubuntu/"
+    MIRRORSITE=${UBUNTU_MIRRORSITE}
+    COMPONENTS=${UBUNTU_COMPONENTS}
+    eval "OTHERMIRROR=\"$(grep -v '#' $UBUNTU_SOURCESLIST | tr '\n' '|')\""
+    [[ -f $UBUNTU_SOURCESLIST.$DIST ]] && OTHERMIRROR=$(grep -v '#' $UBUNTU_SOURCESLIST.$DIST | tr '\n' '|')
+    OTHERMIRROR=${OTHERMIRROR:-$UBUNTU_OTHERMIRROR}
+else
+    echo "Distribution '$DIST' cannot be found in \"/etc/lgp/suites\""
+    echo "Edit this file if you want create a new unlisted distribution"
+    echo "This error occured in pbuilder set up"
+    exit 3
+fi
+
 # *** DEPRECATED ***
 # Note: files matching *_SOURCESLIST.${DIST} in the same directory can be used
 #       to override generic values
 # ... or set theses variables in a sources.list format (see pbuilder man page)
 # They will be used in the distribution image to fetch developped packages
-DEBIAN_OTHERMIRROR=
-UBUNTU_OTHERMIRROR=
+#DEBIAN_OTHERMIRROR=
+#UBUNTU_OTHERMIRROR=
 
 # Set a default distribution if none is used.
 #: ${DIST:="$(lsb_release --short --codename)"}
@@ -35,31 +70,41 @@ UBUNTU_OTHERMIRROR=
 #	echo "Retrieve distribution from debian/changelog: $DIST"
 #fi
 
+#export DEBIAN_BUILDARCH=athlon
 ##############################################################################
 
 # Don't use DISTRIBUTION directly
 DISTRIBUTION="${DIST}"
 
-# Optionally set the architecture to the host architecture if none set. Note
-# that you can set your own default (i.e. ${ARCH:="i386"}).
+# We always define an architecture to the host architecture if none set.
+# Note that you can set your own default in /etc/lgp/pbuilderrc.local
+# (i.e. ${ARCH:="i386"}).
 : ${ARCH:="$(dpkg --print-architecture)"}
-#export DEBIAN_BUILDARCH=athlon
-
 NAME="${DIST}"
+
+DEBOOTSTRAP=${DEBOOTSTRAP:-"cdebootstrap"}
+
+DEBOOTSTRAPOPTS=()
+DEBOOTSTRAPOPTS=("--include" "sysv-rc" "${DEBOOTSTRAPOPTS[@]}")
+DEBOOTSTRAPOPTS=("--include" "libc6" "${DEBOOTSTRAPOPTS[@]}")
+case "${DEBOOTSTRAP}" in
+	"debootstrap")
+		DEBOOTSTRAPOPTS=("--variant=buildd" "${DEBOOTSTRAPOPTS[@]}")
+		DEBOOTSTRAPOPTS=("--verbose" "${DEBOOTSTRAPOPTS[@]}")
+		;;
+	"cdebootstrap")
+		DEBOOTSTRAPOPTS=("--flavour=build" "${DEBOOTSTRAPOPTS[@]}")
+		DEBOOTSTRAPOPTS=("--debug" "-v" "${DEBOOTSTRAPOPTS[@]}")
+		DEBOOTSTRAPOPTS=("--allow-unauthenticated" "${DEBOOTSTRAPOPTS[@]}")
+		DEBOOTSTRAPOPTS=("--suite-config=${LGP_SUITES}")
+		;;
+esac
+
 if [ -n "${ARCH}" ]; then
-    NAME="$NAME-$ARCH"
-
-    # The name of debootstrap command. Only cdebootstrap is supported
-    DEBOOTSTRAP="cdebootstrap"
-
-    DEBOOTSTRAPOPTS=()
-    DEBOOTSTRAPOPTS=("--suite-config=/etc/lgp/suites")
-    DEBOOTSTRAPOPTS=("--include" "sysv-rc" "${DEBOOTSTRAPOPTS[@]}")
-    DEBOOTSTRAPOPTS=("--debug" "-v" "${DEBOOTSTRAPOPTS[@]}")
-    DEBOOTSTRAPOPTS=("--arch" "$ARCH" "${DEBOOTSTRAPOPTS[@]}")
-    DEBOOTSTRAPOPTS=("--allow-unauthenticated" "${DEBOOTSTRAPOPTS[@]}")
-    DEBOOTSTRAPOPTS=("--flavour=build" "${DEBOOTSTRAPOPTS[@]}")
+	NAME="$NAME-$ARCH"
+	DEBOOTSTRAPOPTS=("--arch" "$ARCH" "${DEBOOTSTRAPOPTS[@]}")
 fi
+#echo "D: $DEBOOTSTRAP ${DEBOOTSTRAPOPTS[@]}"
 
 # Don't use BASETGZ directly
 # Set the BASETGZ using lgp IMAGE environment variable
@@ -145,7 +190,7 @@ BUILDRESULTUID=$SUDO_UID
 #export PATH="/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/X11R6/bin"
 
 # SHELL variable is used inside pbuilder by commands like 'su'; and they need sane values
-export SHELL=/bin/sh
+export SHELL="/bin/sh"
 
 # enable pkgname-logfile
 #PBUILDER_BUILD_LOGFILE="${BUILDRESULT}/"$(basename "${PACKAGENAME}" .dsc)"${PKGNAME_LOGFILE_EXTENTION}"
@@ -156,5 +201,5 @@ PKGNAME_LOGFILE=yes
 BUILDSOURCEROOTCMD="fakeroot"
 PBUILDERROOTCMD="sudo"
 
-# Make debconf not interact with user
-export DEBIAN_FRONTEND="noninteractive"
+# No debconf interaction with user by default
+export DEBIAN_FRONTEND=${DEBIAN_FRONTEND:="noninteractive"}

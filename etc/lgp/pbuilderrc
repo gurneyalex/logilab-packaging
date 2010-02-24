@@ -1,50 +1,30 @@
 # Logilab lgp configuration file for pbuilder.
-# Copyright (c) 2003-2009 LOGILAB S.A. (Paris, FRANCE).
+# Copyright (c) 2003-2010 LOGILAB S.A. (Paris, FRANCE).
 # http://www.logilab.fr/ -- mailto:contact@logilab.fr
 
-# The file in /usr/share/pbuilder/pbuilderrc is the default template.
-# /etc/pbuilderrc is the one meant for editing.
+# The file in /usr/share/logilab-packaging/pbuilderrc is the default template.
+# /etc/lgp/pbuilderrc.local is the one meant for editing NOT this one.
+
+# The name of debootstrap command
+DEBOOTSTRAP="cdebootstrap"
 
 # Mirrors to use in order to create chroot images
 DEBIAN_MIRROR="cdn.debian.net"
 UBUNTU_MIRROR="archive.ubuntu.com"
 
+DEBIAN_COMPONENTS="main contrib non-free"
+UBUNTU_COMPONENTS="main restricted universe multiverse"
+
 # You can use valid sources.list files to add your personal repositories
 DEBIAN_SOURCESLIST="/etc/lgp/sources.list.debian"
 UBUNTU_SOURCESLIST="/etc/lgp/sources.list.ubuntu"
+
 
 # Source extra local configuration if any
 if [[ -f "/etc/lgp/pbuilderrc.local" ]]; then
 	source /etc/lgp/pbuilderrc.local
 fi
 
-# Definition of valid distributions to used by pbuilder (based on lgp suites file)
-DEBIAN_SUITES=$(grep -B2 '^Keyring: debian' /etc/lgp/suites | sed -n 's/\(Suite: \)//p')
-UBUNTU_SUITES=$(grep -B2 '^Keyring: ubuntu' /etc/lgp/suites | sed -n 's/\(Suite: \)//p')
 
-# FIXME Manage OTHER_MIRROR only by DEBIAN_SOURCESLIST settings
-# FIXME rename DEBIAN_MIRROR to DEBIAN_MIRRORSITE without change it
-if echo "$DEBIAN_SUITES" | grep -q "^$DIST$"; then
-    # Debian configuration
-    MIRRORSITE="http://$DEBIAN_MIRROR/debian/"
-    COMPONENTS="main contrib non-free"
-    eval "OTHERMIRROR=\"$(grep -v '#' $DEBIAN_SOURCESLIST | tr '\n' '|')\""
-    [[ -f $DEBIAN_SOURCESLIST.$DIST ]] && OTHERMIRROR=$(grep -v '#' $DEBIAN_SOURCESLIST.$DIST | tr '\n' '|')
-    OTHERMIRROR=${OTHERMIRROR:-$DEBIAN_OTHERMIRROR}
-elif echo "$UBUNTU_SUITES" | grep -q "^$DIST$"; then
-    # Ubuntu configuration
-    MIRRORSITE="http://$UBUNTU_MIRROR/ubuntu/"
-    COMPONENTS="main restricted universe multiverse"
-    eval "OTHERMIRROR=\"$(grep -v '#' $UBUNTU_SOURCESLIST | tr '\n' '|')\""
-    [[ -f $UBUNTU_SOURCESLIST.$DIST ]] && OTHERMIRROR=$(grep -v '#' $UBUNTU_SOURCESLIST.$DIST | tr '\n' '|')
-    OTHERMIRROR=${OTHERMIRROR:-$UBUNTU_OTHERMIRROR}
-    #DEBOOTSTRAPOPTS=("--exclude" "ubuntu-keyring" "${DEBOOTSTRAPOPTS[@]}")
-else
-    echo "Distribution '$DIST' cannot be found in \"/etc/lgp/suites\""
-    echo "Edit this file if you want create a new unlisted distribution"
-    echo "This error occured in pbuilder set up"
-    exit 3
-fi
-
-# Run pbuilder logic from external file (avoid config merges)
+# Run pbuilder logic from external file (avoid configuration merges)
 source /var/lib/logilab-packaging/pbuilderrc.sh
