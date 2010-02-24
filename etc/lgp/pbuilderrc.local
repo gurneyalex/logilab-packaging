@@ -1,10 +1,11 @@
 # Logilab lgp configuration file for pbuilder.
-# Copyright (c) 2003-2009 LOGILAB S.A. (Paris, FRANCE).
+# Copyright (c) 2003-2010 LOGILAB S.A. (Paris, FRANCE).
 # http://www.logilab.fr/ -- mailto:contact@logilab.fr
 
-# The file in /usr/share/pbuilder/pbuilderrc is the default template.
-# /etc/pbuilderrc is the one meant for editing.
+# The file is a pre-configuration script for /etc/lgp/pbuilderrc
+# These settings are all optional. Lgp can run without configuration
 #
+# Read top of /etc/lgp/pbuilderrc file to customize useful options
 # Read pbuilderrc.5 document for notes on specific options.
 
 #DEBEMAIL=""
@@ -12,3 +13,11 @@
 export TERM=linux
 export IGNOREEOF=1
 #export TMPDIR=/tmp
+
+# You can use a proxy for local repositories (apt-cacher)
+#DEBIAN_MIRROR="xxx.xxx.xxx.xxx:3142/ftp.debian.org/"
+#UBUNTU_MIRROR="xxx.xxx.xxx.xxx:3142/fr.archive.ubuntu.com"
+
+# You can restrict here the list of valid images
+#DEBIAN_SUITES=("sid" "testing" "stable")
+#UBUNTU_SUITES=("karmic" "jaunty" "intrepid" "hardy" "gutsy" "feisty" "dapper" "lucid")
