@@ -61,9 +61,9 @@ def get_distributions(distrib=None, basetgz=None, suites='/etc/lgp/suites'):
                     logging.debug("'%s' image not found in '%s'" % (t, basetgz))
                     logging.debug("act as if 'unstable' image was existing in filesystem")
                     return ('unstable',)
-                logging.critical("'%s' image not found in '%s'" % (t, basetgz))
-                raise DistributionException(t)
-            mapped += (t,)
+                logging.warn("'%s' image not found in '%s'. just skipped." % (t, basetgz))
+            else:
+                mapped += (t,)
         distrib = mapped
 
     return tuple(set(distrib))
