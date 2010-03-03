@@ -94,7 +94,7 @@ class SetupInfo(Configuration):
                 {'action': 'store_true',
                  'dest' : "verbose",
                  'short': 'v',
-                 'help': "run silently without confirmation",
+                 'help': "run in verbose mode",
                 }),
                ('distrib',
                 {'type': 'csv',
