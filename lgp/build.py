@@ -161,12 +161,6 @@ class Builder(SetupInfo):
                  'dest' : "sign",
                  'help': "try to sign Debian package(s) just built"
                 }),
-               ('more_verbose',
-                {'action': 'store_true',
-                 'dest' : "verbose",
-                 'short': 'vv',
-                 'help': "run with maximum verbose",
-                }),
               ),
 
     def __init__(self, args):
