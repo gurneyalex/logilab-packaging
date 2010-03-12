@@ -102,7 +102,7 @@ class SetupInfo(Configuration):
                   'short': 'd',
                   'metavar': "<distribution>",
                   'help': "list of Debian distributions (from images created by setup). "
-                          "Use 'all' for automatic detection or 'changelog' "
+                          "Use 'all' for running all images or 'changelog' "
                           "for the value found in debian/changelog",
                  'group': 'Default',
                 }),

@@ -73,7 +73,12 @@ class Tagger(SetupInfo):
         self.vcs_agent = get_vcs_agent(self.config.pkg_dir)
         self.version = self.get_upstream_version()
         self.project = self.get_upstream_name()
-        self.debian_revision = self.get_debian_version().rsplit('-', 1)[1]
+        try:
+            self.debian_revision = self.get_debian_version()
+            self.debian_revision = self.debian_revision.rsplit('-', 1)[-1]
+        except IndexError:
+            # can be a false positive due to native package
+            logging.warn('Debian revision cannot be retrieved. Really a native package ?')
 
         # cleaning for unique entries
         self.distrib = '+'.join(self.distributions)
