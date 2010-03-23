@@ -53,6 +53,7 @@ if [ -n "${ARCH}" ]; then
     DEBOOTSTRAP="cdebootstrap"
 
     DEBOOTSTRAPOPTS=()
+    DEBOOTSTRAPOPTS=("--suite-config=/etc/lgp/suites")
     DEBOOTSTRAPOPTS=("--include" "sysv-rc" "${DEBOOTSTRAPOPTS[@]}")
     DEBOOTSTRAPOPTS=("--debug" "-v" "${DEBOOTSTRAPOPTS[@]}")
     DEBOOTSTRAPOPTS=("--arch" "$ARCH" "${DEBOOTSTRAPOPTS[@]}")
