@@ -285,7 +285,16 @@ class Builder(SetupInfo):
                                     self.get_debian_version()))
                 return False
 
-        build_status, timedelta = wait_jobs(joblist)
+        # just ugly code as I like to print build log in verbose mode
+        # we can't easily communicate with background processes owned by root
+        if self.config.verbose:
+            import time
+            import glob
+            time.sleep(5) # wait for first output by pbuilder
+            buildlog = glob.glob(osp.join(self._tmpdir, "*.lgp-build"))[0]
+            Popen(['/usr/bin/tail', '--sleep-interval=0.1', '--pid=%s' % os.getpid(), '-F', buildlog])
+
+        build_status, timedelta = wait_jobs(joblist, not self.config.verbose)
         if build_status:
             logging.critical("binary build(s) failed for '%s' with exit status %d"
                              % (build['distrib'], build_status))

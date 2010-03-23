@@ -81,7 +81,7 @@ def cached(func):
             return decorated._once_result
     return decorated
 
-def wait_jobs(joblist):
+def wait_jobs(joblist, print_dots=True):
     t0 = time.time()
     status = 0
     while joblist:
@@ -90,7 +90,8 @@ def wait_jobs(joblist):
             if j.returncode is not None:
                 status += j.returncode
                 joblist.remove(j)
-        time.sleep(1)
-        sys.stderr.write('.')
+        if print_dots:
+            time.sleep(1)
+            sys.stderr.write('.')
     sys.stderr.write('\n')
     return status, time.time() - t0
