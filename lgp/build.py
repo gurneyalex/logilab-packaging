@@ -292,7 +292,11 @@ class Builder(SetupInfo):
             import glob
             time.sleep(5) # wait for first output by pbuilder
             buildlog = glob.glob(osp.join(self._tmpdir, "*.lgp-build"))[0]
-            Popen(['/usr/bin/tail', '--sleep-interval=0.1', '--pid=%s' % os.getpid(), '-F', buildlog])
+            Popen(['/usr/bin/tail',
+                   '--sleep-interval=0.1',
+                   '--pid=%s' % os.getpid(),
+                   '-F', buildlog],
+                  stderr=file(os.devnull, "w"))
 
         build_status, timedelta = wait_jobs(joblist, not self.config.verbose)
         if build_status:
