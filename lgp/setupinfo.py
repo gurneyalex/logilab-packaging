@@ -58,7 +58,7 @@ COMMANDS = {
         "sdist" : {
             "file": './$setup dist-gzip -e DIST_DIR=$dist_dir',
             "Distribution": 'python setup.py -q sdist -d $dist_dir',
-            "PackageInfo": 'python setup.py -q sdist --force-manifest -d $dist_dir',
+            "PackageInfo": 'python setup.py -q sdist -d $dist_dir',
             "debian": "fakeroot debian/rules get-orig-source",
         },
         "clean" : {
