@@ -324,6 +324,9 @@ class Builder(SetupInfo):
         def _build_options(arch=None, rank=0):
             optline = list()
             #optline.append('-b')
+            #if self.config.sign and check_debsign(self):
+            #    optline.append('-pgpg')
+            #    optline.append('-k%s' % os.environ.get('DEBSIGN_KEYID', ''))
             if arch:
                 if rank:
                     optline.append('-B')
@@ -362,7 +365,7 @@ class Builder(SetupInfo):
         some tests are performed before copying to result directory
         """
         def sign_file(filename):
-            if check_debsign(self):
+            if self.config.sign and check_debsign(self):
                 try:
                     check_call(["debsign", filename], stdout=sys.stdout)
                 except CalledProcessError, err:
@@ -382,7 +385,8 @@ class Builder(SetupInfo):
 
         self.packages = []
         distdir = self.get_distrib_dir()
-        for filename in os.listdir(self._tmpdir):
+        # reverse listing for debsign to have '*.dsc' before '*_ARCH.changes'
+        for filename in reversed(os.listdir(self._tmpdir)):
             fullpath = os.path.join(self._tmpdir, filename)
             if os.path.isfile(fullpath):
                 copied_filename = os.path.join(distdir, filename)
@@ -391,7 +395,7 @@ class Builder(SetupInfo):
                 self.packages.append(copied_filename)
                 if filename.endswith('.dsc'):
                     self.dscfile = copied_filename
-                    dsc = deb822.Dsc(file(copied_filename))
+                    dsc = deb822.Dsc(file(self.dscfile))
                     orig = None
                     for entry in dsc['Files']:
                         if entry['name'].endswith('.orig.tar.gz'):
@@ -403,12 +407,10 @@ class Builder(SetupInfo):
                                       "to be a real native package)"
                                       % self.dscfile)
                     #check_file(copied_filename)
-                    if self.config.sign:
-                        # check if dsc file can be signed as well
-                        sign_file(copied_filename)
                     if self.config.deb_src_only:
+                        sign_file(self.dscfile)
                         logging.info("Debian source control file: %s"
-                                     % copied_filename)
+                                     % self.dscfile)
                 #if filename.endswith('.diff.gz'):
                 #    check_file(copied_filename)
                 if filename.endswith('.orig.tar.gz'):
@@ -423,8 +425,7 @@ class Builder(SetupInfo):
                     logging.info("a build logfile is available: %s" % copied_filename)
                     os.unlink(fullpath)
                 if filename.endswith('.changes'):
-                    if self.config.sign:
-                        sign_file(copied_filename)
+                    sign_file(copied_filename)
                     logging.info("Debian changes file: %s" % copied_filename)
 
         # lastly print changes file to the console
