@@ -52,7 +52,7 @@ def run(args):
                     logging.debug(cmd)
                     check_call(cmd.split(), env={'DIST': distrib, 'ARCH': arch,
                                                  'IMAGE': image,
-                                                 'DISPLAY': os.environ.get('DISPLAY')})
+                                                 'DISPLAY': os.environ.get('DISPLAY',"")})
                 except CalledProcessError, err:
                     raise LGPCommandException('an error occured in login process', err)
 
