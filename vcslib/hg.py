@@ -241,13 +241,16 @@ class HGAgent(object):
         """
         return 'hg rm -f %s' % filepath
 
-    def tag(self, filepath, tagname):
+    def tag(self, filepath, tagname, force=True):
         """
         :type filepath: str
         :param filepath: the file or directory to commit
 
         :type tagname: str
         :param tagname: the name of the tag to add to the file
+
+        :type force: boolean
+        :param force: force rewrite on existing tag
 
         :rtype: str
         :return:
@@ -259,9 +262,13 @@ class HGAgent(object):
         #print os.getcwd()
         #print '**'
         #print osp.abspath(filepath)
+        if force:
+            force = "-f"
+        else:
+            force = ""
         assert osp.abspath(filepath).startswith(os.getcwd()), \
                "I don't know how to deal with filepath and <hg tag>"
-        return "hg tag -f %s" % tagname
+        return "hg tag %s %s" % (force, tagname)
 
     def checkout(self, repository, path=None, tag=None, quiet=True):
         """
