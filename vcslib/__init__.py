@@ -328,7 +328,7 @@ parent is not under version control' % self.abspath)
         self._ensure_version_controlled()
         return self._vcs_agent.remove(self.abspath)
 
-    def tag(self, tagname):
+    def tag(self, tagname, **kwargs):
         """return a shell command string to tag this file using the
         given tag
 
@@ -339,7 +339,7 @@ parent is not under version control' % self.abspath)
         version control
         """
         self._ensure_version_controlled()
-        return self._vcs_agent.tag(self.abspath, tagname)
+        return self._vcs_agent.tag(self.abspath, tagname, **kwargs)
 
 
     # file system synchronization methods #####################################
