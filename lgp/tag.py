@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License along with
 # this program; if not, write to the Free Software Foundation, Inc.,
 # 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-""" lgp tag [options]
+""" lgp tag [-f | --force] [-t | --template <tag template>]
 
     Tag the source repository
 """
@@ -34,14 +34,18 @@ def run(args):
     """ Main function of lgp tag command """
     try :
         tagger = Tagger(args)
-        for tag in tagger.config.format:
+        if tagger.config.format:
+            import warnings
+            msg = '"format" field key definitions must be renamed to "template" in lgprc'
+            warnings.warn(msg, DeprecationWarning)
+            tagger.config.template = tagger.config.format
+        for tag in tagger.config.template:
             try:
                 tagger.apply(tag)
             except (AttributeError, KeyError), err:
-                raise LGPException('cannot substitute format %s' % err)
+                raise LGPException('cannot substitute tag template %s' % err)
             except Exception, err:
-                raise
-                raise LGPException('an error occured in tag process')
+                raise LGPException('an error occured in tag process: %s' % err)
     except LGPException, exc:
         logging.critical(exc)
         return exc.exitcode()
@@ -52,14 +56,24 @@ class Tagger(SetupInfo):
     Specific options are added. See lgp tag --help
     """
     name = "lgp-tag"
-    options = (('format',
+    options = (('template',
                 {'type': 'csv',
                  'default' : ['$version'],
-                 'dest' : "format",
-                 'short': 'f',
-                 'metavar': "<comma separated of tag formats>",
-                 'help': "list of tag formats to apply"
+                 'dest' : "template",
+                 'short': 't',
+                 'metavar': "<comma separated of tag template>",
+                 'help': "list of tag templates to apply"
                 }),
+               ('force',
+                {'action': 'store_true',
+                 'default' : False,
+                 'dest' : "force",
+                 'short': 'f',
+                 'help': "replace existing tag"
+                }),
+               ('format',
+                {'type': 'csv',
+                })
               ),
 
     def __init__(self, args):
@@ -94,5 +108,7 @@ class Tagger(SetupInfo):
                             )
 
         logging.info("add tag to repository: %s" % tag)
-        logging.debug('run command: %s' % self.vcs_agent.tag(self.config.pkg_dir, tag))
-        os.system(self.vcs_agent.tag(self.config.pkg_dir, tag))
+        command = self.vcs_agent.tag(self.config.pkg_dir, tag,
+                                     force=bool(self.config.force))
+        logging.debug('run command: %s' % command)
+        os.system(command)

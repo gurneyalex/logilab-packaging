@@ -167,7 +167,7 @@ class Builder(SetupInfo):
         # Retrieve upstream information
         super(Builder, self).__init__(arguments=args, options=self.options, usage=__doc__)
         if self.package_format == 'debian' and not osp.isdir('debian'):
-            raise LGPException("You are not in a valid project root directory.  Lgp expects debian directory from here.")
+            raise LGPException("You are not in a valid project root directory. Lgp expects debian directory from here.")
 
         # global build status (for every build)
         self.build_status = os.EX_OK

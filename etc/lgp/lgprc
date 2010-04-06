@@ -50,5 +50,5 @@ result=~/dists
 # Specific options are added. See lgp tag --help
 [LGP-TAG]
 
-# list of tag formats to apply (Logilab policy. Feel free to change!)
-format=$project-version-$version, $project-debian-version-$version-$debian_revision
+# list of tag templates to apply (Logilab policy. Feel free to change!)
+template=$project-version-$version, $project-debian-version-$version-$debian_revision
