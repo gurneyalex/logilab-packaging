@@ -36,7 +36,10 @@ def run(args):
     try :
         setup = Setup(args)
         if os.geteuid()!=0:
-            raise LGPException('lgp setup have to be run as root.')
+            logging.warn('lgp setup should be run as root. Try to use sudo here.')
+            sudo_cmd = "sudo "
+        else:
+            sudo_cmd = ""
 
         if setup.config.command == "create":
             if not check_keyrings(setup):
@@ -49,13 +52,13 @@ def run(args):
             for distrib in setup.distributions:
                 if setup.config.command == "create":
                     logging.info("creating '%s' image now..." % distrib)
-                    cmd = "IMAGE=%s DIST=%s ARCH=%s pbuilder create --override-config --configfile %s"
+                    cmd = sudo_cmd + "IMAGE=%s DIST=%s ARCH=%s pbuilder create --override-config --configfile %s"
                 elif setup.config.command == "update":
                     logging.info("updating '%s' image now..." % distrib)
-                    cmd = "IMAGE=%s DIST=%s ARCH=%s pbuilder update --override-config --configfile %s"
+                    cmd = sudo_cmd + "IMAGE=%s DIST=%s ARCH=%s pbuilder update --override-config --configfile %s"
                 elif setup.config.command == "dumpconfig":
                     logging.info("dump '%s' image configuration" % distrib)
-                    cmd = "IMAGE=%s DIST=%s ARCH=%s pbuilder dumpconfig --configfile %s"
+                    cmd = sudo_cmd + "IMAGE=%s DIST=%s ARCH=%s pbuilder dumpconfig --configfile %s"
                     sys.stdout = sys.__stdout__
 
                 image = setup.get_basetgz(distrib, arch, check=False)
