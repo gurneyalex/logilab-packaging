@@ -42,6 +42,7 @@ from logilab.devtools.lib import TextReporter
 from logilab.devtools.lgp import LGP_CONFIG_FILE
 from logilab.devtools.lgp.exceptions import LGPException, LGPCommandException
 from logilab.devtools.lgp.exceptions import (ArchitectureException,
+                                             DistributionException,
                                              SetupException)
 from logilab.devtools.lgp.utils import get_distributions, cached
 
@@ -247,7 +248,10 @@ class SetupInfo(Configuration):
     def current_distrib(self):
         # workaround: we set current distrib immediately to be able to copy
         # pristine tarball in a valid location
-        return self.distributions[0]
+        try:
+            return self.distributions[0]
+        except IndexError:
+            return ""
 
     @property
     def package_format(self):
@@ -290,23 +294,22 @@ class SetupInfo(Configuration):
         # TODO Check the X-Vcs-* to fetch remote Debian configuration files
         debiandir = 'debian' # default debian config location
 
-        if not self.current_distrib:
-            return debiandir
+        if self.current_distrib:
+            override_dir = osp.join(debiandir, self.current_distrib)
 
-        override_dir = osp.join(debiandir, self.current_distrib)
+            # Use new directory scheme with separate Debian repository in head
+            # developper can create an overlay for the debian directory
+            old_override_dir = '%s.%s' % (debiandir, self.current_distrib)
+            if osp.isdir(osp.join(self.config.pkg_dir, old_override_dir)):
+                #logging.warn("new distribution overlay system available: you "
+                #             "can use '%s' subdirectory instead of '%s' and "
+                #             "merge the files"
+                #             % (override_dir, old_override_dir))
+                debiandir = old_override_dir
 
-        # Use new directory scheme with separate Debian repository in head
-        # developper can create an overlay for the debian directory
-        old_override_dir = '%s.%s' % (debiandir, self.current_distrib)
-        if osp.isdir(osp.join(self.config.pkg_dir, old_override_dir)):
-            #logging.warn("new distribution overlay system available: you "
-            #             "can use '%s' subdirectory instead of '%s' and "
-            #             "merge the files"
-            #             % (override_dir, old_override_dir))
-            debiandir = old_override_dir
+            if osp.isdir(osp.join(self.config.pkg_dir, override_dir)):
+                debiandir = override_dir
 
-        if osp.isdir(osp.join(self.config.pkg_dir, override_dir)):
-            debiandir = override_dir
         return debiandir
 
     def get_debian_name(self):
@@ -599,7 +602,7 @@ class SetupInfo(Configuration):
 
         FIXME replace by TarFile Object
         """
-        logging.debug("prepare for %s distribution" % self.current_distrib)
+        logging.debug("prepare for %s distribution" % self.current_distrib or "default")
         logging.debug("extracting original source archive in %s" % self._tmpdir)
         try:
             cmd = 'tar --atime-preserve --preserve-permissions --preserve-order -xzf %s -C %s'\
@@ -663,12 +666,13 @@ class SetupInfo(Configuration):
         # substitute distribution string in file only if line not starting by
         # spaces (simple heuristic to prevent other changes in content)
         # FIXME use debian_bundle.changelog.Changelog instead
-        cmd = ['sed', '-i', '/^[[:alpha:]]/s/\([[:alpha:]]\+\);/%s;/'
-               % self.current_distrib, osp.join(self.origpath, 'debian', 'changelog')]
-        try:
-            check_call(cmd, stdout=sys.stdout)
-        except CalledProcessError, err:
-            raise LGPCommandException("bad substitution for distribution field", err)
+        if self.current_distrib:
+            cmd = ['sed', '-i', '/^[[:alpha:]]/s/\([[:alpha:]]\+\);/%s;/'
+                   % self.current_distrib, osp.join(self.origpath, 'debian', 'changelog')]
+            try:
+                check_call(cmd, stdout=sys.stdout)
+            except CalledProcessError, err:
+                raise LGPCommandException("bad substitution for distribution field", err)
 
         # substitute version string in appending timestamp and suffix
         # suffix should not be empty
