@@ -47,6 +47,11 @@ def run(args):
         builder = Builder(args)
         builder.clean_repository()
 
+        # Stop to original pristine tarball creation if no distribution can be used
+        if not len(builder.distributions):
+            logging.warn("only original pristine tarball creation will be done")
+            builder.config.get_orig_source = True
+
         # create the upstream tarball if necessary and move it to result directory
         builder.make_orig_tarball()
 
