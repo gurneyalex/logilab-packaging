@@ -295,13 +295,19 @@ class Builder(SetupInfo):
         if self.config.verbose:
             import time
             import glob
-            time.sleep(5) # wait for first output by pbuilder
-            buildlog = glob.glob(osp.join(self._tmpdir, "*.lgp-build"))[0]
-            Popen(['/usr/bin/tail',
-                   '--sleep-interval=0.1',
-                   '--pid=%s' % os.getpid(),
-                   '-F', buildlog],
-                  stderr=file(os.devnull, "w"))
+            logging.debug('waiting for the build log...')
+            time.sleep(10) # wait for first output by pbuilder
+            try:
+                buildlog = glob.glob(osp.join(self._tmpdir, "*.lgp-build"))
+                logging.debug('find: %s' % str(buildlog))
+                buildlog = buildlog.pop()
+                Popen(['/usr/bin/tail',
+                       '--sleep-interval=0.1',
+                       '--pid=%s' % os.getpid(),
+                       '-F', buildlog],
+                      stderr=file(os.devnull, "w"))
+            except IndexError, exc:
+                logging.warn('cannot retrieve and display current build log')
 
         build_status, timedelta = wait_jobs(joblist, not self.config.verbose)
         if build_status:
