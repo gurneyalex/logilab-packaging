@@ -332,6 +332,8 @@ class Builder(SetupInfo):
         You have the possiblity to add some dpkg-buildpackage options with the
         DEBBUILDOPTS environment variable.
         """
+        assert self.current_distrib
+
         def _build_options(arch=None, rank=0):
             optline = list()
             #optline.append('-b')
