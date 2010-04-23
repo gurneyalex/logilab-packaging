@@ -134,13 +134,8 @@ if [ -d "${BUILDRESULT}" ]; then
 	BINDMOUNTS="${BINDMOUNTS} $BUILDRESULT"
 fi
 
-# Specify a cache for APT
-APTCACHE="/var/cache/pbuilder/$NAME/aptcache/"
-
-# 26. Using tmpfs for buildplace ($BUILDPLACE)
-# To improve speed of operation, it is possible to use tmpfs for pbuilder build
-# location. Mount tmpfs for $BUILDPLACE, and set:
-#APTCACHEHARDLINK=no
+# FIXME pbuilder.local has not $NAME defined
+#APTCACHE="/var/cache/pbuilder/$NAME/aptcache/"
 
 #REMOVEPACKAGES="lilo bash"
 REMOVEPACKAGES="lilo"

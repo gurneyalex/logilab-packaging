@@ -51,13 +51,13 @@ def run(args):
         for arch in setup.architectures:
             for distrib in setup.distributions:
                 if setup.config.command == "create":
-                    logging.info("creating '%s' image now..." % distrib)
                     cmd = sudo_cmd + "IMAGE=%s DIST=%s ARCH=%s pbuilder create --override-config --configfile %s"
                 elif setup.config.command == "update":
-                    logging.info("updating '%s' image now..." % distrib)
                     cmd = sudo_cmd + "IMAGE=%s DIST=%s ARCH=%s pbuilder update --override-config --configfile %s"
+                elif setup.config.command == "clean":
+                    logging.debug("cleans up directory specified by configuration BUILDPLACE and APTCACHE")
+                    cmd = sudo_cmd + "IMAGE=%s DIST=%s ARCH=%s pbuilder clean --configfile %s"
                 elif setup.config.command == "dumpconfig":
-                    logging.info("dump '%s' image configuration" % distrib)
                     cmd = sudo_cmd + "IMAGE=%s DIST=%s ARCH=%s pbuilder dumpconfig --configfile %s"
                     sys.stdout = sys.__stdout__
 
@@ -69,6 +69,8 @@ def run(args):
                 cmd = cmd % (image, distrib, arch, CONFIG_FILE, HOOKS_DIR)
 
                 # run setup command
+                logging.info(setup.config.command + " image '%s' for '%s'"
+                             % (image, "/".join(distrib,arch)))
                 try:
                     check_call(cmd.split(), stdout=sys.stdout,
                                env={'DIST': distrib, 'ARCH': arch, 'IMAGE': image})
@@ -96,7 +98,7 @@ class Setup(SetupInfo):
 
     options = (('command',
                 {'type': 'choice',
-                 'choices': ('create', 'update', 'dumpconfig', 'login'), # 'clean', 
+                 'choices': ('create', 'update', 'dumpconfig', 'login', 'clean',),
                  'dest': 'command',
                  'default' : 'dumpconfig',
                  'short': 'c',

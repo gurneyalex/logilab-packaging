@@ -21,3 +21,13 @@ export IGNOREEOF=1
 # You can restrict here the list of valid images
 #DEBIAN_SUITES=("sid" "testing" "stable")
 #UBUNTU_SUITES=("karmic" "jaunty" "intrepid" "hardy" "gutsy" "feisty" "dapper" "lucid")
+
+# Provide a cache for APT (beware of diskspace)...
+#APTCACHE="/var/cache/pbuilder/aptcache/"
+#APTCACHEHARDLINK="yes"
+#
+# Another solution is to use tmpfs for buildplace ($BUILDPLACE)
+# http://www.netfort.gr.jp/~dancer/software/pbuilder-doc/pbuilder-doc.html#tmpfsforpbuilder
+# «To improve speed of operation, it is possible to use tmpfs for pbuilder build
+# location. Mount tmpfs for $BUILDPLACE, and set:»
+#APTCACHEHARDLINK=no
