@@ -92,7 +92,7 @@ class SetupInfo(Configuration):
                 {'help': "output version information and exit",
                 }),
                ('verbose',
-                {'action': 'store_true',
+                {'action': 'count',
                  'dest' : "verbose",
                  'short': 'v',
                  'help': "run in verbose mode",

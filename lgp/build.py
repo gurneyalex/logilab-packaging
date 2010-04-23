@@ -292,7 +292,7 @@ class Builder(SetupInfo):
 
         # just ugly code as I like to print build log in verbose mode
         # we can't easily communicate with background processes owned by root
-        if self.config.verbose:
+        if self.config.verbose == 2: # i.e. -vv in command line
             import time
             import glob
             logging.debug('waiting for the build log...')
@@ -309,7 +309,8 @@ class Builder(SetupInfo):
             except IndexError, exc:
                 logging.warn('cannot retrieve and display current build log')
 
-        build_status, timedelta = wait_jobs(joblist, not self.config.verbose)
+        # only print dots in verbose mode
+        build_status, timedelta = wait_jobs(joblist, self.config.verbose == 1)
         if build_status:
             logging.critical("binary build(s) failed for '%s' with exit status %d"
                              % (build['distrib'], build_status))
