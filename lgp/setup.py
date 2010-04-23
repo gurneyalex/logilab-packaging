@@ -36,7 +36,7 @@ def run(args):
     try :
         setup = Setup(args)
         if os.geteuid()!=0:
-            logging.warn('lgp setup should be run as root. Try to use sudo here.')
+            logging.debug('lgp setup should be run as root. sudo is used internally.')
             sudo_cmd = "sudo "
         else:
             sudo_cmd = ""
@@ -69,8 +69,8 @@ def run(args):
                 cmd = cmd % (image, distrib, arch, CONFIG_FILE, HOOKS_DIR)
 
                 # run setup command
-                logging.info(setup.config.command + " image '%s' for '%s'"
-                             % (image, "/".join(distrib,arch)))
+                logging.info(setup.config.command + " image '%s' for '%s/%s'"
+                             % (image, distrib, arch))
                 try:
                     check_call(cmd.split(), stdout=sys.stdout,
                                env={'DIST': distrib, 'ARCH': arch, 'IMAGE': image})
@@ -98,7 +98,7 @@ class Setup(SetupInfo):
 
     options = (('command',
                 {'type': 'choice',
-                 'choices': ('create', 'update', 'dumpconfig', 'login', 'clean',),
+                 'choices': ('create', 'update', 'dumpconfig', 'clean',),
                  'dest': 'command',
                  'default' : 'dumpconfig',
                  'short': 'c',
