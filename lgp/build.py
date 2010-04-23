@@ -242,7 +242,7 @@ class Builder(SetupInfo):
                    debuilder, 'build',
                    '--configfile', CONFIG_FILE,
                    '--buildresult', self._tmpdir]
-            if os.environ.get('DEBUILDER_VERBOSE'):
+            if self.config.verbose == 3: # i.e. -vvv in command line
                 cmd.append('--debug')
             if build_vars["buildopts"]:
                 cmd.extend(['--debbuildopts', "%(buildopts)s" % build_vars])
@@ -292,14 +292,14 @@ class Builder(SetupInfo):
 
         # just ugly code as I like to print build log in verbose mode
         # we can't easily communicate with background processes owned by root
-        if self.config.verbose == 2: # i.e. -vv in command line
+        if self.config.verbose >= 2: # i.e. -vv* in command line
             import time
             import glob
             logging.debug('waiting for the build log...')
             time.sleep(10) # wait for first output by pbuilder
             try:
                 buildlog = glob.glob(osp.join(self._tmpdir, "*.lgp-build"))
-                logging.debug('find: %s' % str(buildlog))
+                logging.debug('find buildlog: %s' % str(buildlog))
                 buildlog = buildlog.pop()
                 Popen(['/usr/bin/tail',
                        '--sleep-interval=0.1',
