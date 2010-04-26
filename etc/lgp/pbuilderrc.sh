@@ -15,24 +15,37 @@
 # Declaration of lgp suites file location
 LGP_SUITES=${LGP_SUITES:-'/etc/lgp/suites'}
 
-DEBIAN_SUITES=${DEBIAN_SUITES:-$(grep -B2 '^Keyring: debian' $LGP_SUITES | sed -n 's/\(Suite: \)//p')}
-UBUNTU_SUITES=${UBUNTU_SUITES:-$(grep -B2 '^Keyring: ubuntu' $LGP_SUITES | sed -n 's/\(Suite: \)//p')}
+# Find default distributions based on LGP_SUITES file if not already specified
+: ${DEBIAN_SUITES:=$(grep -B2 '^Keyring: debian' $LGP_SUITES | sed -n 's/\(Suite: \)//p')}
+: ${UBUNTU_SUITES:=$(grep -B2 '^Keyring: ubuntu' $LGP_SUITES | sed -n 's/\(Suite: \)//p')}
 
 # *** NEEDS REFACTORING ***
 # FIXME Use same format with MIRRORSITE and DEBIAN_MIRRORSITE + UBUNTU_MIRRORSITE
 # FIXME support of old DEBIAN_MIRROR and UBUNTU_MIRROR ?
 # FIXME Manage OTHERMIRROR only by DEBIAN_SOURCESLIST settings
 # FIXME rename DEBIAN_MIRROR to DEBIAN_MIRRORSITE without change it
-# FIXME make a function here instead of multiple greps
+# FIXME make functions instead of multiple greps
 # FIXME check repo availability before adding it ?
-if echo "$DEBIAN_SUITES" | grep -q "^$DIST$"; then
+# FIXME manage error code 3 directly in lgp with error message
+
+find_lgp_distrib() {
+	DIST=$1
+	shift
+	SUITES=$*
+	RESULT=$(echo ${SUITES[@]} | sed -n "s/ /\n/gp" | grep "^$DIST$")
+	if [ -n "$RESULT" ]; then
+		return 0
+	fi
+	return 1
+}
+if $(find_lgp_distrib $DIST "${DEBIAN_SUITES[@]}"); then
     DEBIAN_MIRRORSITE="http://$DEBIAN_MIRROR/debian/"
     MIRRORSITE=${DEBIAN_MIRRORSITE}
     COMPONENTS=${DEBIAN_COMPONENTS}
     eval "OTHERMIRROR=\"$(grep -v '#' $DEBIAN_SOURCESLIST | tr '\n' '|')\""
     [[ -f $DEBIAN_SOURCESLIST.$DIST ]] && OTHERMIRROR=$(grep -v '#' $DEBIAN_SOURCESLIST.$DIST | tr '\n' '|')
     OTHERMIRROR=${OTHERMIRROR:-$DEBIAN_OTHERMIRROR}
-elif echo "$UBUNTU_SUITES" | grep -q "^$DIST$"; then
+elif $(find_lgp_distrib $DIST "${UBUNTU_SUITES[@]}"); then
     UBUNTU_MIRRORSITE="http://$UBUNTU_MIRROR/ubuntu/"
     MIRRORSITE=${UBUNTU_MIRRORSITE}
     COMPONENTS=${UBUNTU_COMPONENTS}
@@ -40,7 +53,7 @@ elif echo "$UBUNTU_SUITES" | grep -q "^$DIST$"; then
     [[ -f $UBUNTU_SOURCESLIST.$DIST ]] && OTHERMIRROR=$(grep -v '#' $UBUNTU_SOURCESLIST.$DIST | tr '\n' '|')
     OTHERMIRROR=${OTHERMIRROR:-$UBUNTU_OTHERMIRROR}
 else
-    echo "Distribution '$DIST' cannot be found in \"/etc/lgp/suites\""
+    echo "Distribution '$DIST' cannot be found in \"${LGP_SUITES}\""
     echo "Edit this file if you want create a new unlisted distribution"
     echo "This error occured in pbuilder set up"
     exit 3
@@ -186,6 +199,8 @@ BUILDRESULTUID=$SUDO_UID
 
 # SHELL variable is used inside pbuilder by commands like 'su'; and they need sane values
 export SHELL="/bin/sh"
+# Set informative prompt
+export PS1="(lgp) ${DIST}/${ARCH} \$ "
 
 # enable pkgname-logfile
 #PBUILDER_BUILD_LOGFILE="${BUILDRESULT}/"$(basename "${PACKAGENAME}" .dsc)"${PKGNAME_LOGFILE_EXTENTION}"
