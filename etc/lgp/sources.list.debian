@@ -8,5 +8,7 @@
 # mirror sites; apt will then use them in preference to the ones listed in
 # MIRRORSITE.
 # OTHERMIRROR pbuilder variable will be populated by theses deb lines.
+#
+# CAUTION! Be sure the repository exists before creating pbuilder images
 
 deb http://ftp.logilab.org/dists ${DIST}/
