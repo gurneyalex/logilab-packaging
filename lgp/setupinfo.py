@@ -64,8 +64,8 @@ COMMANDS = {
         },
         "clean" : {
             "file": './$setup clean',
-            "Distribution": 'python setup.py clean',
-            "PackageInfo": 'python setup.py clean',
+            "Distribution": 'python setup.py clean --all',
+            "PackageInfo": 'python setup.py clean --all',
             "debian": "fakeroot debian/rules clean",
         },
         "version" : {
@@ -243,6 +243,10 @@ class SetupInfo(Configuration):
             class debian(object): pass
             self._package = debian()
         logging.debug("use setup package class format: %s" % self.package_format)
+        if os.path.exists('MANIFEST') and self.package_format in ('PackageInfo',
+                                                                  'Distribution'):
+            logging.warn("remove spurious MANIFEST file in project directory (not used by Lgp)")
+            os.unlink('MANIFEST')
 
     @property
     def current_distrib(self):
