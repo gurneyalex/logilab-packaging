@@ -1,3 +1,5 @@
+Comment: Follow format of /usr/share/cdebootstrap/suites
+
 Suite: etch
 Config: generic
 Keyring: debian-archive-keyring.gpg
