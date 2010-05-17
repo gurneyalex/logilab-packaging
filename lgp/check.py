@@ -277,7 +277,11 @@ def check_keyrings(checker):
     if not isfile("/usr/share/keyrings/ubuntu-archive-keyring.gpg"):
         msg = "no keyring for ubuntu in /usr/share/keyrings/ (ubuntu-archive-keyring)"
     if msg:
-        checker.logger.info(msg)
+        checker.logger.warn(msg)
+        checker.logger.info("you haven't installed archive keyring for ubuntu distributions")
+        checker.logger.info("you can download it from http://fr.archive.ubuntu.com/ubuntu/pool/main/u/ubuntu-keyring")
+        checker.logger.info("then copy keyring file into /usr/share/keyrings/ directory")
+        checker.logger.info("example: wget -O /usr/share/keyrings/ubuntu-archive-keyring.gpg ftp://ftp.archive.ubuntu.com/ubuntu/project/ubuntu-archive-keyring.gpg")
     return OK
 
 def check_debian_env(checker):

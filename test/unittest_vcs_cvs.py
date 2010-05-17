@@ -86,13 +86,13 @@ class CVSAgentTC(testlib.TestCase):
                    +' cvs ci -m "add readme file") >/dev/null 2>/dev/null')
                     % self.tmp2
                  )
-        sleep(0.001) # added to avoid misterious missing ci
+        sleep(0.5) # added to avoid mysterious missing ci
         stream = file(f,'w')
         stream.write('hop hop')
         stream.close()
         os.system(('(cd %s && cvs ci -m "update readme file")'
                   +' >/dev/null 2>/dev/null') % self.tmp2)
-        #os.system('cd %s && cvs log' % self.tmp2)
+
 
     def tearDown(self):
         """deletes temp files"""
