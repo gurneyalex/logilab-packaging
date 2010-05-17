@@ -20,17 +20,17 @@ logilab.devtools packaging information
 
 modname = 'devtools'
 distname = 'logilab-devtools'
-numversion = (0, 16, 3)
+numversion = (0, 17, 0)
 version = '.'.join([str(num) for num in numversion])
 
 license = 'GPL'
-copyright = '''Copyright (c) 2003-2008 LOGILAB S.A. (Paris, FRANCE).
+copyright = '''Copyright (c) 2003-2010 LOGILAB S.A. (Paris, FRANCE).
 http://www.logilab.fr/ -- mailto:contact@logilab.fr'''
 
 author = "Logilab"
 author_email = "contact@logilab.fr"
 
-short_desc = "set of development tools used at Logilab"
+description = "set of development tools used at Logilab"
 long_desc = """Set of tools which aims to help the developpement process, including :
 
 * standard for zope and python packages

@@ -289,7 +289,7 @@ def check_debian_env(checker):
 def check_pydistutils(checker):
     """check a .pydistutils.cfg file in home firectory"""
     if isfile(os.path.join(os.environ['HOME'], '.pydistutils.cfg')):
-        checker.logger.error('your ~/.pydistutils.cfg can conflict with distutils commands')
+        checker.logger.warn('your ~/.pydistutils.cfg can conflict with distutils commands')
     return OK
 
 def check_builder(checker):
