@@ -38,7 +38,6 @@ from logilab.common.shellutils import cp
 from logilab.common.fileutils import export
 
 from logilab.devtools.lib.pkginfo import PackageInfo
-from logilab.devtools.lib import TextReporter
 from logilab.devtools.lgp import LGP_CONFIG_FILE
 from logilab.devtools.lgp import utils
 from logilab.devtools.lgp.exceptions import (ArchitectureException,
@@ -234,6 +233,7 @@ class SetupInfo(Configuration):
         # Guess the package format
         if osp.isfile('__pkginfo__.py') and not osp.isfile(self.config.setup_file):
             # Logilab's specific format
+            from logilab.devtools.lib import TextReporter
             self._package = PackageInfo(reporter=TextReporter(sys.stderr, sys.stderr.isatty()),
                                         directory=self.config.pkg_dir)
         # other script can be used if compatible with the expected targets in COMMANDS

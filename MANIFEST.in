@@ -1,6 +1,7 @@
 exclude .hgignore
 recursive-exclude debian *
 recursive-exclude debian.hardy *
+recursive-exclude logilab_devtools.egg-info *
 
 include bin/lgp
 include bin/changelog
