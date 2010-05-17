@@ -40,11 +40,12 @@ from logilab.common.fileutils import export
 from logilab.devtools.lib.pkginfo import PackageInfo
 from logilab.devtools.lib import TextReporter
 from logilab.devtools.lgp import LGP_CONFIG_FILE
-from logilab.devtools.lgp.exceptions import LGPException, LGPCommandException
+from logilab.devtools.lgp import utils
 from logilab.devtools.lgp.exceptions import (ArchitectureException,
                                              DistributionException,
+                                             LGPException,
+                                             LGPCommandException,
                                              SetupException)
-from logilab.devtools.lgp.utils import get_distributions, cached
 
 
 def _parse_deb_version():
@@ -212,13 +213,21 @@ class SetupInfo(Configuration):
 
         # no default value for distribution. Try to retrieve it in changelog
         if self.config.distrib is None or 'changelog' in self.config.distrib:
-            self.config.distrib = self.guess_debian_distribution()
+            self.config.distrib = utils.guess_debian_distribution()
+
+        # just a warning issuing for possibly confused configuration
+        if self.config.archi and 'all' in self.config.archi:
+            logging.warn('the "all" keyword can be confusing about the '
+                         'targeted architectures. Consider using the "any" keyword '
+                         'to force the build on all architectures or let lgp finds '
+                         'the value in debian/changelog by itself in doubt.')
+            logging.warn('lgp replaces "all" with "current" architecture value for this command')
 
         # Define mandatory attributes for lgp commands
-        self.architectures = self.get_architectures(self.config.archi,
-                                                    self.config.basetgz)
-        self.distributions = get_distributions(self.config.distrib,
-                                               self.config.basetgz)
+        self.architectures = utils.get_architectures(self.config.archi,
+                                                     self.config.basetgz)
+        self.distributions = utils.get_distributions(self.config.distrib,
+                                                     self.config.basetgz)
         logging.debug("guessing distribution(s): %s" % ','.join(self.distributions))
         logging.debug("guessing architecture(s): %s" % ','.join(self.architectures))
 
@@ -316,77 +325,8 @@ class SetupInfo(Configuration):
 
         return debiandir
 
-    def get_debian_name(self):
-        """obtain the debian package name
-
-        The information is found in debian/control withe the 'Source:' field
-        """
-        try:
-            control = osp.join(self.config.pkg_dir, 'debian', 'control')
-            for line in open(control):
-                line = line.split(' ', 1)
-                if line[0] == "Source:":
-                    return line[1].rstrip()
-        except IOError, err:
-            raise LGPException('a Debian control file should exist in "%s"' % control)
-
-    def get_debian_architecture(self):
-        """get debian architecture(s) to use in build
-
-        The information is found in debian/control withe the 'Architecture:' field
-        """
-        try:
-            control = osp.join('debian', 'control')
-            for line in open(control):
-                line = line.split(' ', 1)
-                if line[0] == "Architecture:":
-                    archi = line[1].rstrip().split(' ')
-                    if "source" in archi:
-                        archi.pop('source')
-                    return archi
-        except IOError, err:
-            raise LGPException('a Debian control file should exist in "%s"' % control)
-
-    def guess_debian_architecture(self):
-        """guess debian architecture(s)
-        """
-        try:
-            archi = self.get_debian_architecture()
-            logging.debug('retrieve architecture field value from debian/control: %s'
-                          % ','.join(archi))
-        except LGPException:
-            logging.debug('no debian/changelog available. will use "current" architecture')
-            archi = ["current"]
-        return archi
-
-    def is_architecture_independant(self):
-        return 'all' in self.get_debian_architecture()
-
-    def guess_debian_distribution(self):
-        """guess the default debian distribution in debian/changelog
-
-           Useful to determine a default distribution different from unstable if need
-        """
-        try:
-            cmd = "dpkg-parsechangelog"
-            process = Popen(cmd.split(), stdout=PIPE, stderr=file(os.devnull, "w"))
-            pipe = process.communicate()[0]
-            if process.returncode > 0:
-                msg = '%s exited with status %s' % (cmd, process.returncode)
-                process.cmd = cmd.split()
-                #raise LGPCommandException(msg, process)
-            if len(pipe)==0:
-                return None
-            for line in pipe.split('\n'):
-                line = line.strip()
-                if line and line.startswith('Distribution:'):
-                    distribution = line.split(' ', 1)[1].strip()
-                    logging.debug('retrieve default debian distribution from debian/changelog: %s'
-                                  % distribution)
-                    return [distribution,]
-            raise LGPException('Debian Distribution field not found in debian/changelog')
-        except CalledProcessError, err:
-            raise LGPCommandException(msg, err)
+    get_architectures = staticmethod(utils.get_architectures)
+    get_debian_name = staticmethod(utils.get_debian_name)
 
     def get_debian_version(self):
         """get upstream and debian versions depending of the last changelog entry found in Debian changelog
@@ -440,61 +380,11 @@ class SetupInfo(Configuration):
             return False
         return True
 
-    def get_architectures(self, archi=None, basetgz=None):
-        """ Ensure that the architectures exist
-
-            :param:
-                archi: str or list
-                    name of a architecture
-            :return:
-                list of architecture
-        """
-        known_archi = Popen(["dpkg-architecture", "-L"], stdout=PIPE).communicate()[0].split()
-
-        # just a warning issuing for possibly confused configuration
-        if self.config.archi and 'all' in self.config.archi:
-            logging.warn('the "all" keyword can be confusing about the '
-                        'targeted architectures. Consider using the "any" keyword '
-                        'to force the build on all architectures or let lgp finds '
-                        'the value in debian/changelog by itself in doubt.')
-            logging.warn('lgp replaces "all" with "current" architecture value for this command')
-
-        # try to guess targeted architectures
-        if archi is None or len(archi)==0:
-            archi = self.guess_debian_architecture()
-
-        # "all" means architecture-independant. so we can replace by "current"
-        # architecture only
-        if 'all' in archi:
-            archi = ['current']
-        if 'current' in archi:
-            archi = Popen(["dpkg", "--print-architecture"], stdout=PIPE).communicate()[0].split()
-        else:
-            if 'any' in archi:
-                if not osp.isdir(basetgz):
-                    raise SetupException("default location '%s' for the archived "
-                                         "chroot images was not found"
-                                         % basetgz)
-                try:
-                    archi = [os.path.basename(f).split('-', 1)[1].split('.')[0]
-                             for f in glob.glob(os.path.join(basetgz,'*.tgz'))]
-                except IndexError:
-                    raise SetupException("there is no available chroot images in default location '%s'"
-                                         "\nPlease run 'lgp setup -c create'"
-                                         % basetgz)
-                archi = set(known_archi) & set(archi)
-            for a in archi:
-                if a not in known_archi:
-                    raise ArchitectureException(a)
-
-        #TODO self.architectures = archi
-        return archi
-
-    @cached
+    @utils.cached
     def get_upstream_name(self):
         return self._run_command('project')
 
-    @cached
+    @utils.cached
     def get_upstream_version(self):
         version = self._run_command('version')
         if '-' in version and self.package_format == 'debian':

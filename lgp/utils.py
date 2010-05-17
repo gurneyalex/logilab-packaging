@@ -19,14 +19,137 @@
 import glob
 import sys
 import time
-import os.path
-from subprocess import Popen, PIPE
+import os
+import os.path as osp
+from subprocess import Popen, PIPE, CalledProcessError
 import logging
 
 from logilab.devtools.lgp import LGP_SUITES
 from logilab.devtools.lgp.exceptions import (ArchitectureException,
-                                             DistributionException)
+                                             DistributionException,
+                                             SetupException,
+                                             LGPCommandException,
+                                             LGPException)
 
+
+def get_debian_name():
+    """obtain the debian package name
+
+    The information is found in debian/control withe the 'Source:' field
+    """
+    try:
+        control = osp.join('debian', 'control')
+        for line in open(control):
+            line = line.split(' ', 1)
+            if line[0] == "Source:":
+                return line[1].rstrip()
+    except IOError, err:
+        raise LGPException('a Debian control file should exist in "%s"' % control)
+
+def guess_debian_distribution():
+    """guess the default debian distribution in debian/changelog
+
+       Useful to determine a default distribution different from unstable if need
+    """
+    try:
+        cmd = "dpkg-parsechangelog"
+        process = Popen(cmd.split(), stdout=PIPE, stderr=file(os.devnull, "w"))
+        pipe = process.communicate()[0]
+        if process.returncode > 0:
+            msg = '%s exited with status %s' % (cmd, process.returncode)
+            process.cmd = cmd.split()
+            #raise LGPCommandException(msg, process)
+        if len(pipe)==0:
+            return None
+        for line in pipe.split('\n'):
+            line = line.strip()
+            if line and line.startswith('Distribution:'):
+                distribution = line.split(' ', 1)[1].strip()
+                logging.debug('retrieve default debian distribution from debian/changelog: %s'
+                              % distribution)
+                return [distribution,]
+        raise LGPException('Debian Distribution field not found in debian/changelog')
+    except CalledProcessError, err:
+        raise LGPCommandException(msg, err)
+
+def is_architecture_independant():
+    return 'all' in get_debian_architecture()
+
+def guess_debian_architecture():
+    """guess debian architecture(s)
+    """
+    try:
+        archi = get_debian_architecture()
+        logging.debug('retrieve architecture field value from debian/control: %s'
+                      % ','.join(archi))
+    except LGPException:
+        logging.debug('no debian/changelog available. will use "current" architecture')
+        archi = ["current"]
+    return archi
+
+def get_architectures(archi=None, basetgz=None):
+    """ Ensure that the architectures exist
+
+        "all" keyword can be confusing about the targeted architectures.
+        Consider using the "any" keyword to force the build on all
+        architectures or let lgp finds the value in debian/changelog by
+        itself in doubt.
+
+        lgp replaces "all" with "current" architecture value
+
+        :param:
+            archi: str or list
+                name of a architecture
+        :return:
+            list of architecture
+    """
+    known_archi = Popen(["dpkg-architecture", "-L"], stdout=PIPE).communicate()[0].split()
+
+    # try to guess targeted architectures
+    if archi is None or len(archi)==0:
+        archi = guess_debian_architecture()
+
+    # "all" means architecture-independant. so we can replace by "current"
+    # architecture only
+    if 'all' in archi:
+        archi = ['current']
+    if 'current' in archi:
+        archi = Popen(["dpkg", "--print-architecture"], stdout=PIPE).communicate()[0].split()
+    else:
+        if 'any' in archi:
+            if not osp.isdir(basetgz):
+                raise SetupException("default location '%s' for the archived "
+                                     "chroot images was not found"
+                                     % basetgz)
+            try:
+                archi = [osp.basename(f).split('-', 1)[1].split('.')[0]
+                         for f in glob.glob(osp.join(basetgz,'*.tgz'))]
+            except IndexError:
+                raise SetupException("there is no available chroot images in default location '%s'"
+                                     "\nPlease run 'lgp setup -c create'"
+                                     % basetgz)
+            archi = set(known_archi) & set(archi)
+        for a in archi:
+            if a not in known_archi:
+                raise ArchitectureException(a)
+    return archi
+
+def get_debian_architecture():
+    """get debian architecture(s) to use in build
+
+    The information is found in debian/control withe the 'Architecture:' field
+    """
+    try:
+        control = osp.join('debian', 'control')
+        for line in open(control):
+            line = line.split(' ', 1)
+            if line[0] == "Architecture:":
+                archi = line[1].rstrip().split(' ')
+                if "source" in archi:
+                    archi.pop('source')
+                return archi
+    except IOError, err:
+        raise LGPException('a Debian control file should exist in "%s"' % control)
 
 def get_distributions(distrib=None, basetgz=None, suites=LGP_SUITES):
     """ensure that the target distributions exist or return all the valid distributions
@@ -44,8 +167,8 @@ def get_distributions(distrib=None, basetgz=None, suites=LGP_SUITES):
         # this case fixes unittest_distributions.py when basetgz is None
         if basetgz is None:
             return get_distributions(basetgz=basetgz, suites=suites)
-        distrib = [os.path.basename(f).split('-', 1)[0]
-                   for f in glob.glob(os.path.join(basetgz,'*.tgz'))]
+        distrib = [osp.basename(f).split('-', 1)[0]
+                   for f in glob.glob(osp.join(basetgz,'*.tgz'))]
     elif distrib:
         mapped = ()
         # special setup case (all distribution names are available)
@@ -62,11 +185,11 @@ def get_distributions(distrib=None, basetgz=None, suites=LGP_SUITES):
                     logging.debug("'%s' image not found in '%s'" % (t, basetgz))
                     logging.debug("act as if 'unstable' image was existing in filesystem")
                     return ('unstable',)
-                logging.warn("expected image '%s' not found in '%s'. just skipped for now." % (t, basetgz))
+                msg = "expected image '%s' not found in '%s': create it or unreference it" % (t, basetgz)
+                raise DistributionException(msg)
             else:
                 mapped += (t,)
         distrib = mapped
-
     return tuple(set(distrib))
 
 def cached(func):
