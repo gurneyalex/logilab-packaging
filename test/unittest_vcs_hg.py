@@ -71,11 +71,10 @@ class HGAgentTC(testlib.TestCase):
         # add 1 minute since it seems to be svn log resolution
         to_date = localtime(time())
         # .split(':', 1)[1] to remove user 'name'
+        self.skip('vcslib: invalid call to walkchangerevs (#29148)')
         self.assertEquals([str(cii).split(':', 1)[1] for cii in self.agent.log_info(self.tmp2, from_date, to_date)],
                           [' update readme file (1)',
                            ' add readme file (0)'])
-
-
 
 
 if __name__ == '__main__':

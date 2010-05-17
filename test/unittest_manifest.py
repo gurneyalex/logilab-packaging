@@ -41,6 +41,8 @@ class ReadManifestInFunctionTest(unittest.TestCase):
 class GetManifestFilesFunctionTest(unittest.TestCase):
     
     def test_known_values(self):
+        self.skip('manifest "prune" command ignored (#2888)')
+        # https://www.logilab.net/elo/ticket/2888
         detected = get_manifest_files(dirname=join(dirname(__file__),'data/'))
         detected.sort()
         self.assertEqual(detected,

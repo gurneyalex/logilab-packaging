@@ -23,7 +23,7 @@ numversion = (0, 17, 0)
 version = '.'.join([str(num) for num in numversion])
 
 license = 'GPL'
-copyright = '''Copyright (c) 2003-2010 LOGILAB S.A. (Paris, FRANCE).
+copyright = '''Copyright (c) 2003-2010 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 http://www.logilab.fr/ -- mailto:contact@logilab.fr'''
 
 author = "Logilab"
