@@ -27,7 +27,7 @@ import distutils
 
 from logilab.devtools.vcslib import BASE_EXCLUDE
 
-JUNK_EXTENSIONS = ('~', '.pyc', '.pyo', '.fo', '.o', '.so', '.swp')
+JUNK_EXTENSIONS = ('~', '.pyc', '.pyo', '.fo', '.o', '.so', '.swp', '.orig')
 
 def match_extensions(filename, extensions):
     """return true if the given file match one of the given extensions"""
@@ -55,7 +55,7 @@ def read_manifest_in(reporter,
             try:
                 msg%=args
             except TypeError,e:
-                raise TypeError(str((first,msg,args)))
+                raise TypeError(str((e,msg,args)))
         #reporter.warning(absfile,None,msg)
     filelist.warn = warn
     __warn = distutils.log.warn
@@ -116,6 +116,7 @@ def get_manifest_files(dirname=os.getcwd(), junk_extensions=JUNK_EXTENSIONS,
         ignore_py = 1
     else:
         ignore_py = 0
+
     for filename in os.listdir(dirname):
         absfile = join(dirname, filename)
         if absfile in ignored or filename in ignored or filename.endswith(',cover'):

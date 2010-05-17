@@ -34,7 +34,7 @@ import stat
 import re
 import commands
 import logging
-from subprocess import call, check_call, CalledProcessError
+from subprocess import call, CalledProcessError
 from os.path import basename, join, exists, isdir, isfile
 from pprint import pformat
 
@@ -51,11 +51,11 @@ from logilab.devtools.lgp.exceptions import LGPException
 
 OK, NOK = 1, 0
 CHECKS = { 'debian'    : set(['debian_dir', 'debian_rules', 'debian_copying',
-                          'debian_source_value', 'debian_env', 'debian_uploader',
-                          'debian_changelog', 'debian_homepage']),
+                              'debian_source_value', 'debian_env', 'debian_uploader',
+                              'debian_changelog', 'debian_homepage']),
            'default'   : set(['builder', 'readme', 'changelog', 'bin', 'tests_directory',
-                          'repository', 'release_number', 'manifest_in', 'pydistutils']),
-           'setuptools' : set(),
+                              'repository', 'release_number']),
+           'setuptools' : set(['manifest_in', 'pydistutils']),
            'pkginfo'    : set(['package_info', 'announce']),
            'makefile'   : set(['makefile']),
            'cubicweb'   : set(), # XXX test presence of a ['migration_file'], for the current version
@@ -424,7 +424,7 @@ def check_makefile(checker):
     if status:
         for cmd in ['%s project', '%s version']:
             cmd %= setup_file
-            if not call(cmd.split()):
+            if call(cmd.split()):
                 checker.logger.error("%s not a valid command" % cmd)
             status = NOK
     return status
@@ -478,16 +478,21 @@ def check_documentation(checker):
     return status
 
 def check_repository(checker):
-    """check repository status (if not up-to-date)"""
+    """check your repository file status"""
     try:
         from logilab.devtools.vcslib import get_vcs_agent
         vcs_agent = get_vcs_agent(checker.config.pkg_dir)
         if vcs_agent:
             result = vcs_agent.not_up_to_date(checker.config.pkg_dir)
-            # filter outgoing changesets since we're testing them currently
-            result = [(k,v) for (k,v) in result if k not in ('outgoing',)]
+            incoming = [(k,v) for (k,v) in result if k in ('incoming',)]
+            if incoming:
+                checker.logger.info("%d incoming(s) changesets detected" %
+                                    len(incoming))
+            # filter changesets
+            result = [(k,v) for (k,v) in result if k not in ('outgoing',
+                                                             'incoming')]
             if result:
-                checker.logger.warn("vcs_agent returns:\n%s" % pformat(result))
+                checker.logger.warn("modified files have been detected:\n%s" % pformat(result))
                 return NOK
     except ImportError:
         checker.logger.warn("you need to install logilab vcslib package for this check")
@@ -545,9 +550,7 @@ def check_package_info(checker):
     status = OK
     if hasattr(checker, "_package") and checker.package_format == "PackageInfo":
         pi = checker._package
-        try:
-            check_call(['python', '__pkginfo__.py'])
-        except CalledProcessError, err:
+        if call(['python', '__pkginfo__.py']):
             checker.logger.warn('command "python __pkginfo__.py" returns errors')
     else:
         return status

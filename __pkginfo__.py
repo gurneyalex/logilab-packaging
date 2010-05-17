@@ -17,7 +17,6 @@
 logilab.devtools packaging information
 """
 
-
 modname = 'devtools'
 distname = 'logilab-devtools'
 numversion = (0, 17, 0)

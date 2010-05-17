@@ -234,7 +234,7 @@ class SetupInfo(Configuration):
         if osp.isfile('__pkginfo__.py') and not osp.isfile(self.config.setup_file):
             # Logilab's specific format
             from logilab.devtools.lib import TextReporter
-            self._package = PackageInfo(reporter=TextReporter(sys.stderr, sys.stderr.isatty()),
+            self._package = PackageInfo(reporter=TextReporter(os.devnull),
                                         directory=self.config.pkg_dir)
         # other script can be used if compatible with the expected targets in COMMANDS
         elif osp.isfile(self.config.setup_file):
