@@ -277,18 +277,21 @@ PKGINFO = (
          'required': True,
          'default': None},
         {'name': 'numversion' ,
-         'required': True,
          'help' : 'version number as a tuple or list (usually a 3-uple).'},
         {'name': 'version' ,
+         'required': True,
          'help' : 'version number, as a string.'},
         {'name': 'copyright' ,
          'help' : 'copyright notice.'},
-        {'name': 'short_desc',},
+        {'name': 'short_desc',
+         'help': "'short_desc' must be renamed to new pkginfo 'description' attribute",
+         'deprecated': True},
         {'name': 'long_desc',
          'help' : 'a long description.',
          'default': None},
         {'name': 'description',
-         'required': True,
+         # FIXME disabled during package transition
+         #'required': True,
          'help' : 'a one line description. It should : be less than 80 '
                   'characters, not contain the package name, start with '
                   'a minus letter and not end with a full stop.'},
@@ -344,6 +347,9 @@ PKGINFO = (
          'help' : 'distribution license terms. You should not set it if you '
                   'have specified a known license with the "license" attribute.'
                   'Otherwise, you must set this variable.'},
+        {'name': 'licence',
+         'help': "'licence' must be renamed to 'license'",
+         'deprecated': True},
         {'name': 'pyversions',
          'default' : ('2.5'),
          'help' : 'list of supported Python versions'},
@@ -506,6 +512,11 @@ class PackageInfo:
                 try:
                     value = getattr(info_module, opt_name)
                     self.setattr(opt_name, value)
+                    if opt_def.has_key('deprecated') and opt_def.has_key('help'):
+                        msg = "deprecated attribute '%s' (%s: %s)"
+                        msg = msg  % (opt_name, cat, opt_def['help'])
+                        config_module = imod + '.py'
+                        self.reporter.warning(config_module, None, msg)
                 except AttributeError:
                     if opt_def.has_key('default'):
                         value = opt_def.get('default')
@@ -513,7 +524,7 @@ class PackageInfo:
                             value = value(self)
                         self.setattr(opt_name, value)
                     if opt_def.has_key('required') and opt_def['required']:
-                        msg = 'missing required attribute %s (%s: %s)'
+                        msg = "missing required attribute '%s' (%s: %s)"
                         msg = msg  % (opt_name, cat, opt_def['help'])
                         config_module = imod + '.py'
                         self.reporter.error(config_module, None, msg)
@@ -583,8 +594,8 @@ class PackageInfo:
 
 # check package info field values #############################################
 
-COPYRIGHT_RGX = "copyright[^\d]+(?P<from>\d{4})(?:\s*-\s*(?P<to>\d{4}))?"
-COPYRIGHT_RGX = re.compile(COPYRIGHT_RGX, re.I)
+COPYRIGHT_RGX = "Copyright \(c\) (?P<from>\d{4})(?:\s*-\s*(?P<to>\d+))? LOGILAB S\.A\. \(Paris, FRANCE\), all rights reserved\."
+COPYRIGHT_RGX = re.compile(COPYRIGHT_RGX)
 
 def check_url(reporter, file, var, url):
     """Check that the given url exists by trying to open it
@@ -632,13 +643,13 @@ def check_info_module(reporter, dirname=os.getcwd(), info_module='__pkginfo__'):
         status = 0
 
     # check copyright (no more mandatory)
-    copyright = getattr(module, 'copyright', '') 
+    copyright = getattr(module, 'copyright', '')
     if copyright:
         match = COPYRIGHT_RGX.search(copyright)
         if match:
             end = match.group('to') or match.group('from')
             thisyear = localtime(time())[0]
-            if int(end) < thisyear:
+            if int(end) < thisyear or int(end) > thisyear+1:
                 msg = 'copyright is outdated (%s)' % end
                 reporter.warning(absfile, None, msg)
         else:
@@ -649,7 +660,7 @@ def check_info_module(reporter, dirname=os.getcwd(), info_module='__pkginfo__'):
     if getattr(module, 'include_dirs', None):
         for directory in module.include_dirs:
             if not exists(join(dirname, directory)):
-                msg = 'Include inexistant directory %r' % directory
+                msg = 'include inexistant directory %r' % directory
                 reporter.error(absfile, None, msg)
 
     # check external resources (web site and ftp)
@@ -663,24 +674,24 @@ def check_info_module(reporter, dirname=os.getcwd(), info_module='__pkginfo__'):
     else:
         if len(pi.description) > 80:
             msg = 'short description longer than 80 characters'
-            reporter.error(absfile, None, msg)
+            reporter.warning(absfile, None, msg)
         desc = pi.description.lower().split()
         if pi.name.lower() in desc or pi.debian_name.lower() in desc:
             msg = 'short description contains the package name'
-            reporter.error(absfile, None, msg)
+            reporter.warning(absfile, None, msg)
         if pi.description[0].isupper():
             msg = 'short description starts with a capitalized letter'
-            reporter.error(absfile, None, msg)
+            reporter.warning(absfile, None, msg)
         if pi.description[-1] == '.':
             msg = 'short description ends with a period'
-            reporter.error(absfile, None, msg)
+            reporter.warning(absfile, None, msg)
         for word in spell_check(pi.description, ignore=(pi.name.lower(),)):
-            msg = 'possibly mispelled word %r' % word
+            msg = 'short description contains possibly mispelled word %r' % word
             reporter.warning(absfile, None, msg)
 
     if pi.long_desc:
         for word in spell_check(pi.long_desc, ignore=(pi.name.lower(),)):
-            msg = 'possibly mispelled word %r' % word
+            msg = 'long description contains possibly mispelled word %r' % word
             reporter.warning(absfile, None, msg)
         for line in pi.long_desc.splitlines():
             if len(line) > 79:

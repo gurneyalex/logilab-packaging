@@ -99,4 +99,3 @@ class TextReporter:
     def infos(self):
         return self.counts[INFO]
     infos = property(infos)
-    
