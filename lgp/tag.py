@@ -87,20 +87,22 @@ class Tagger(SetupInfo):
         self.vcs_agent = get_vcs_agent(self.config.pkg_dir)
         self.version = self.get_upstream_version()
         self.project = self.get_upstream_name()
+        self.debian_version = self.debian_revision = None
         try:
-            self.debian_revision = self.get_debian_version()
-            self.debian_revision = self.debian_revision.rsplit('-', 1)[-1]
+            self.debian_version = self.get_debian_version()
+            self.debian_revision = self.debian_version.rsplit('-', 1)[-1]
         except IndexError:
             # can be a false positive due to native package
-            logging.warn('Debian revision cannot be retrieved. Really a native package ?')
+            logging.warn('Debian version info cannot be retrieved')
 
-        # cleaning for unique entries
+        # poor cleaning for having unique string
         self.distrib = '+'.join(self.distributions)
         self.archi   = '+'.join(self.architectures)
 
     def apply(self, tag):
         tag = Template(tag)
         tag = tag.substitute(version=self.version,
+                             debian_version=self.debian_version,
                              debian_revision=self.debian_revision,
                              distrib=self.distrib,
                              arch=self.archi,

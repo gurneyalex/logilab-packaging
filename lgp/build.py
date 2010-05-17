@@ -35,7 +35,7 @@ from logilab.common.shellutils import cp
 
 from logilab.devtools.lgp import CONFIG_FILE, HOOKS_DIR
 from logilab.devtools.lgp.setupinfo import SetupInfo
-from logilab.devtools.lgp.utils import wait_jobs
+from logilab.devtools.lgp.utils import wait_jobs, is_architecture_independant
 from logilab.devtools.lgp.exceptions import LGPException, LGPCommandException
 
 from logilab.devtools.lgp.check import check_debsign
@@ -350,7 +350,7 @@ class Builder(SetupInfo):
             return ' '.join(optline)
 
         series = []
-        if self.is_architecture_independant():
+        if is_architecture_independant():
             options = dict()
             options['distrib'] = self.current_distrib
             options['buildopts'] = _build_options()
