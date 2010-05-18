@@ -96,10 +96,9 @@ DISTRIBUTION="${DIST}"
 NAME="${DIST}"
 
 DEBOOTSTRAP=${DEBOOTSTRAP:-"cdebootstrap"}
-
-DEBOOTSTRAPOPTS=()
-DEBOOTSTRAPOPTS=("--include" "sysv-rc" "${DEBOOTSTRAPOPTS[@]}")
-DEBOOTSTRAPOPTS=("--include" "libc6" "${DEBOOTSTRAPOPTS[@]}")
+: ${DEBOOTSTRAPOPTS:-()}
+#DEBOOTSTRAPOPTS=("--include" "sysv-rc" "${DEBOOTSTRAPOPTS[@]}")
+#DEBOOTSTRAPOPTS=("--include" "libc6" "${DEBOOTSTRAPOPTS[@]}")
 case "${DEBOOTSTRAP}" in
 	"debootstrap")
 		DEBOOTSTRAPOPTS=("--variant=buildd" "${DEBOOTSTRAPOPTS[@]}")
@@ -109,7 +108,8 @@ case "${DEBOOTSTRAP}" in
 		DEBOOTSTRAPOPTS=("--flavour=build" "${DEBOOTSTRAPOPTS[@]}")
 		DEBOOTSTRAPOPTS=("--debug" "-v" "${DEBOOTSTRAPOPTS[@]}")
 		DEBOOTSTRAPOPTS=("--allow-unauthenticated" "${DEBOOTSTRAPOPTS[@]}")
-		DEBOOTSTRAPOPTS=("--suite-config=${LGP_SUITES}")
+		# don't work as expected
+		#DEBOOTSTRAPOPTS=("--suite-config=${LGP_SUITES}")
 		;;
 esac
 
@@ -117,7 +117,10 @@ if [ -n "${ARCH}" ]; then
 	NAME="$NAME-$ARCH"
 	DEBOOTSTRAPOPTS=("--arch" "$ARCH" "${DEBOOTSTRAPOPTS[@]}")
 fi
-#echo "D: $DEBOOTSTRAP ${DEBOOTSTRAPOPTS[@]}"
+
+if [ "$PBCURRENTCOMMANDLINEOPERATION" == "create" -o "$PBCURRENTCOMMANDLINEOPERATION" == "update" ]; then
+	echo "D: $DEBOOTSTRAP ${DEBOOTSTRAPOPTS[@]} ${DIST}"
+fi
 
 # Don't use BASETGZ directly
 # Set the BASETGZ using lgp IMAGE environment variable
@@ -151,7 +154,6 @@ fi
 #APTCACHE="/var/cache/pbuilder/$NAME/aptcache/"
 
 #REMOVEPACKAGES="lilo bash"
-REMOVEPACKAGES="lilo"
 #EXTRAPACKAGES=gcc3.0-athlon-builder
 
 # Use DEBOOTSTRAPOPTS instead ?

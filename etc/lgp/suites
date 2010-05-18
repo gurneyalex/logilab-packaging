@@ -1,4 +1,4 @@
-Comment: Follow format of /usr/share/cdebootstrap/suites
+Comment: File (dpkg-)diverted by logilab-packaging
 
 Suite: etch
 Config: generic

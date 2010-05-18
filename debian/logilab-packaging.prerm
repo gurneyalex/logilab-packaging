@@ -1,0 +1,10 @@
+#!/bin/sh
+set -e
+PKG=logilab-packaging
+if [ "$1" = remove ] ; then
+	[ -L /usr/share/cdebootstrap/suites ] \
+	&& mv -f /usr/share/cdebootstrap/suites.distrib /usr/share/cdebootstrap/suites \
+	&& dpkg-divert --remove --rename --package ${PKG} /usr/share/cdebootstrap/suites
+fi
+#DEBHELPER#
+exit 0

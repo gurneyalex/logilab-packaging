@@ -69,7 +69,7 @@ def run(args):
                 logging.info(setup.config.command + " image '%s' for '%s/%s'"
                              % (image, distrib, arch))
                 try:
-                    check_call(cmd.split(), stdout=sys.stdout,
+                    check_call(cmd, stdout=sys.stdout, shell=True,
                                env={'DIST': distrib, 'ARCH': arch, 'IMAGE': image})
                 except CalledProcessError, err:
                     # pbuilder dumpconfig command always returns exit code 1.
