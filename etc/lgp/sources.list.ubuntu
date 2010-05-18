@@ -1,17 +1,18 @@
-# Ubuntu sources.list
+# Ubuntu sources.list template file
 #
 # You have to use the environment variable ${DIST} in this file instead of a
 # fixed codename
 #
+# CAUTION! Be sure the repository exists before creating pbuilder images
+#
 # The deb lines here are the ones that will appear at the top of the
 # sources.list inside the chroot, so this is the place to list your local
 # mirror sites; apt will then use them in preference to the ones listed in
-# MIRRORSITE.
-# OTHERMIRROR pbuilder variable will be populated by theses deb lines.
-#
-# CAUTION! Be sure the repository exists before creating pbuilder images
-
-deb http://ftp.logilab.org/dists ${DIST}/
+# MIRRORSITE
+# Internally, lgp set OTHERMIRROR pbuilder variable
 
 deb http://security.ubuntu.com/ubuntu ${DIST}-security main restricted
 deb http://fr.archive.ubuntu.com/ubuntu ${DIST}-updates main restricted
+
+# Logilab repository (http://www.logilab.org/card/LogilabDebianRepository)
+#deb http://ftp.logilab.org/dists ${DIST}/
