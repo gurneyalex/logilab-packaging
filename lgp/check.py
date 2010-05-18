@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Copyright (c) 2003-2008 LOGILAB S.A. (Paris, FRANCE).
+# Copyright (c) 2003-2010 LOGILAB S.A. (Paris, FRANCE).
 # http://www.logilab.fr/ -- mailto:contact@logilab.fr
 #
 # This program is free software; you can redistribute it and/or modify it under
@@ -19,12 +19,9 @@
     Provides functions to check a debian package for a python package
     depending of the setup format.
 
-    Examples for pkginfo: correctness of __pkginfo__.py, release number
-    consistency, MANIFEST.in matches what is int the directory, scripts in
-    bin have a --help option and .bat equivalent, execute tests, setup.py
-    matches devtools template, announce matches template too.
+    Just run: 'lgp check --list' for available checkers
 
-    You can use a setup.cfg file with the [LGP-CHECK] section
+    You can add the [LGP-CHECK] section in /etc/lgp/lgprc
 """
 __docformat__ = "restructuredtext en"
 
@@ -34,9 +31,10 @@ import stat
 import re
 import commands
 import logging
-from subprocess import call, CalledProcessError
+from subprocess import call
 from os.path import basename, join, exists, isdir, isfile
 from pprint import pformat
+import itertools
 
 from logilab.common.compat import set
 
@@ -188,7 +186,8 @@ class Checker(SetupInfo):
                  'dest': 'set_checks',
                  'short': 's',
                  'metavar' : "<comma separated names of check functions>",
-                 'help': "set a specific check functions list"
+                 'help': "set a specific check functions list",
+                 'default': [],
                 }),
                ('list',
                 {'action': 'store_true',
@@ -217,12 +216,22 @@ class Checker(SetupInfo):
             if os.path.exists('debian'):
                 checks.update(CHECKS['debian'])
             if self.config.set_checks:
-                checks = set(self.config.set_checks)
-            checks.update(self.config.include_checks)
-            checks -= set(self.config.exclude_checks)
+                checks = set()
+            for c in itertools.chain(self.config.set_checks,
+                                     self.config.include_checks):
+                if c in CHECKS:
+                    checks.update(CHECKS[c])
+                else:
+                    checks.add(c)
+            for c in self.config.exclude_checks:
+                if c in CHECKS:
+                    checks.difference_update(CHECKS[c])
+                else:
+                    checks.remove(c)
             self.checklist = [globals()["check_%s" % name] for name in checks]
+            logging.debug('checklist found: %s' % checks)
         except KeyError, err:
-            raise LGPException("The check %s was not found. Use lgp check --list" % str(err))
+            raise LGPException("check function '%s' was not found. Use lgp check --list" % str(err))
         return self.checklist
 
     def start_checks(self):
@@ -243,19 +252,22 @@ class Checker(SetupInfo):
 
     # TODO dump with --help and drop the command-line option
     def list_checks(self):
+        def title(msg):
+            print >>sys.stderr, "\n", msg, "\n", len(msg) * '='
         import sys
         all_checks = self.get_checklist(all=True)
         checks     = self.get_checklist()
         if len(checks)==0:
             print >>sys.stderr, "No available check."
         else:
-            print >>sys.stderr, "You can use the --set, --exclude or --include options\n"
-            msg = "Current active checks"
-            print >>sys.stderr, msg; print >>sys.stderr, len(msg) * '='
+            print >>sys.stderr, "You can use check function names or categories with --set, --exclude or --include options"
+            title("Current active checks")
             for check in checks:
                 print >>sys.stderr, "%-25s: %s" % (check.__name__[6:], check.__doc__)
-            msg = "Other available checks"
-            print >>sys.stderr, "\n" + msg; print >>sys.stderr, len(msg) * '='
+            title("Available categories")
+            for cat, values in CHECKS.items():
+                print >>sys.stderr, "%-10s: %s" % (cat, ", ".join(values))
+            title("Inactive checks")
             for check in (set(all_checks) - set(checks)):
                 print >>sys.stderr, "%-25s: %s" % (check.__name__[6:], check.__doc__)
 
