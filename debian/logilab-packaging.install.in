@@ -9,6 +9,7 @@ debian/tmp/usr/bin/lgp
 debian/tmp/usr/bin/update_gettext
 debian/tmp/usr/bin/changelog
 etc/lgp/pbuilderrc
+etc/lgp/lgprc
 etc/lgp/suites
 etc/lgp/sources.list.debian
 etc/lgp/sources.list.ubuntu
