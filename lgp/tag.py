@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License along with
 # this program; if not, write to the Free Software Foundation, Inc.,
 # 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-""" lgp tag [-f | --force] [-t | --template <tag template>]
+""" lgp tag [-f | --force] [-t | --template <tag template>] [project directory]
 
     Tag the source repository
 """
@@ -25,7 +25,9 @@ __docformat__ = "restructuredtext en"
 import os
 from string import Template
 import logging
+import ConfigParser
 
+from logilab.devtools.lgp import LGP_CONFIG_FILE
 from logilab.devtools.lgp.setupinfo import SetupInfo
 from logilab.devtools.lgp.exceptions import LGPException
 
@@ -34,14 +36,32 @@ def run(args):
     """ Main function of lgp tag command """
     try :
         tagger = Tagger(args)
-        if tagger.config.format:
+        if hasattr(tagger.config, "format"):
             import warnings
-            msg = '"format" field key definitions must be renamed to "template" in lgprc'
+            msg = '"format" field key definitions must be renamed to "default" in /etc/lgp/lgprc'
             warnings.warn(msg, DeprecationWarning)
-            tagger.config.template = tagger.config.format
-        for tag in tagger.config.template:
+            tagger.config.default = tagger.config.format
+
+        # FIXME tagger.config.default should not be None if defined in lgprc
+        config = ConfigParser.ConfigParser()
+        config.readfp(open(LGP_CONFIG_FILE))
+        tags = tagger.config.default
+        if tagger.config.default is None:
+            if config.has_option("LGP-TAG", "default"):
+                tags = config.get("LGP-TAG", "default").split(',')
+            else:
+                tags = ['$version']
+        while tags:
+            tag = tags.pop(0).strip()
             try:
-                tagger.apply(tag)
+                if tag == "default":
+                    raise Exception('"default" target not allowed')
+                if config.has_option("LGP-TAG", tag):
+                    new_tags = config.get("LGP-TAG", tag).split(',')
+                    if new_tags:
+                        tags.extend(new_tags)
+                else:
+                    tagger.apply(tag)
             except (AttributeError, KeyError), err:
                 raise LGPException('cannot substitute tag template %s' % err)
             except Exception, err:
@@ -58,10 +78,9 @@ class Tagger(SetupInfo):
     name = "lgp-tag"
     options = (('template',
                 {'type': 'csv',
-                 'default' : ['$version'],
-                 'dest' : "template",
+                 'dest' : "default",
                  'short': 't',
-                 'metavar': "<comma separated of tag template>",
+                 'metavar': "<comma separated of tag templates>",
                  'help': "list of tag templates to apply"
                 }),
                ('force',

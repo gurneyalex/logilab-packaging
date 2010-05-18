@@ -32,7 +32,8 @@ result=~/dists
 
 
 # Lgp checker config
-# Specific options are added. See lgp check --help
+# Specific options are added. See lgp check --help or lgp check --list for an
+# explanation of the available checkers
 [LGP-CHECK]
 
 # force the inclusion of other check functions
@@ -42,13 +43,23 @@ result=~/dists
 #exclude=
 
 # set a specific check functions list
-#set=debian_dir,debian_rules,debian_copying,debian_changelog,package_info,readme,changelog,bin,tests_directory,setup_file,copying,homepage,builder,keyrings,announce,release_number,manifest_in,include_dirs,scripts,pydistutils,debian_maintainer,debian_uploader
+#set=
 
 
 
 # Lgp tagger class
+# Substitution variables are: $project, $version, $debian_version, $debian_revision, $distrib and $arch
 # Specific options are added. See lgp tag --help
 [LGP-TAG]
 
-# list of tag templates to apply (Logilab policy. Feel free to change!)
-template=$project-version-$version, $project-debian-version-$version-$debian_revision
+# tag format examples
+upstream=$project-version-$version
+debian=$project-debian-version-$debian_version
+debian_revision=debrevision-$debian_revision
+
+# Logilab policy
+logilab=upstream, debian
+
+# list of tag templates to apply by default
+# '$version' is used by default if not defined
+default=logilab

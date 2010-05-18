@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License along with
 # this program; if not, write to the Free Software Foundation, Inc.,
 # 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-""" lgp check [options]
+""" lgp check [options] [project directory]
 
     Provides functions to check a debian package for a python package
     depending of the setup format.
@@ -50,15 +50,15 @@ from logilab.devtools.lgp.exceptions import LGPException
 
 
 OK, NOK = 1, 0
-CHECKS = { 'debian'    : set(['debian_dir', 'debian_rules', 'debian_copying',
-                              'debian_source_value', 'debian_env', 'debian_uploader',
-                              'debian_changelog', 'debian_homepage']),
-           'default'   : set(['builder', 'readme', 'changelog', 'bin', 'tests_directory',
-                              'repository', 'release_number']),
-           'setuptools' : set(['manifest_in', 'pydistutils']),
-           'pkginfo'    : set(['package_info', 'announce']),
-           'makefile'   : set(['makefile']),
-           'cubicweb'   : set(), # XXX test presence of a ['migration_file'], for the current version
+CHECKS = {'debian'    : set(['debian_dir', 'debian_rules', 'debian_copying',
+                             'debian_source_value', 'debian_env', 'debian_uploader',
+                             'debian_changelog', 'debian_homepage']),
+          'default'   : set(['builder', 'readme', 'changelog', 'bin', 'tests_directory',
+                             'repository', 'release_number']),
+          'distutils' : set(['manifest_in', 'pydistutils']),
+          'pkginfo'   : set(['package_info', 'announce']),
+          'makefile'  : set(['makefile']),
+          'cubicweb'  : set(), # XXX test presence of a ['migration_file'], for the current version
          }
 
 REV_LINE = re.compile('__revision__.*')
@@ -210,6 +210,8 @@ class Checker(SetupInfo):
             return [funct for (name, funct) in globals().items() if name.startswith('check_')]
         try:
             checks = CHECKS['default']
+            if os.path.exists('setup.py'):
+                checks.update(CHECKS['distutils'])
             if os.path.exists('__pkginfo__.py'):
                 checks.update(CHECKS['pkginfo'])
             if os.path.exists('debian'):
