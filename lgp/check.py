@@ -53,7 +53,7 @@ CHECKS = {'debian'    : set(['debian_dir', 'debian_rules', 'debian_copying',
                              'debian_changelog', 'debian_homepage']),
           'default'   : set(['builder', 'readme', 'changelog', 'bin', 'tests_directory',
                              'repository', 'release_number']),
-          'distutils' : set(['manifest_in', 'pydistutils']),
+          'distutils' : set(['manifest_in', 'pydistutils', 'pythonpath']),
           'pkginfo'   : set(['package_info', 'announce']),
           'makefile'  : set(['makefile']),
           'cubicweb'  : set(), # XXX test presence of a ['migration_file'], for the current version
@@ -300,7 +300,7 @@ def check_keyrings(checker):
 
 def check_debian_env(checker):
     """check usefull DEBFULLNAME and DEBEMAIL env variables"""
-    if 'DEBFULLNAME' not in os.environ or  'DEBEMAIL' not in os.environ:
+    if not os.environ.get('DEBFULLNAME') or not os.environ.get('DEBEMAIL'):
         checker.logger.warn('you should define DEBFULLNAME and DEBEMAIL in your shell rc file')
     return OK
 
@@ -310,11 +310,16 @@ def check_pydistutils(checker):
         checker.logger.warn('your ~/.pydistutils.cfg can conflict with distutils commands')
     return OK
 
+def check_pythonpath(checker):
+    """check PYTHONPATH existence"""
+    if os.environ.get('PYTHONPATH'):
+        checker.logger.warn('your PYTHONPATH is not empty and can conflict in some way')
+    return OK
+
 def check_builder(checker):
     """check if the builder has been changed"""
-    debuilder = os.environ.get('DEBUILDER') or False
-    if debuilder:
-        checker.logger.warn('you have set a different builder in DEBUILDER. Unset it if in doubt')
+    if os.environ.get('DEBUILDER'):
+        checker.logger.warn('you have manually set a builder in DEBUILDER. Unset it if in doubt')
     return OK
 
 def check_debian_dir(checker):
