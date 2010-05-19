@@ -525,13 +525,11 @@ def check_repository(checker):
 
 def check_release_number(checker):
     """check the versions coherence between upstream and debian/changelog"""
-    status = OK
-    try: 
-        checker.compare_versions()
+    try:
+        checker._check_version_mismatch()
     except LGPException, err:
         checker.logger.critical(err)
-        status = NOK
-    return status
+    return OK
 
 def check_manifest_in(checker):
     """to correct unmatched files, please include or exclude them in MANIFEST.in"""

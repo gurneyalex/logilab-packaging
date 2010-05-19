@@ -395,17 +395,15 @@ class SetupInfo(Configuration):
         versions = self.get_debian_version().rsplit('-', 1)
         return versions
 
-    def compare_versions(self):
+    def _check_version_mismatch(self):
         upstream_version = self.get_upstream_version()
         #debian_upstream_version = self.get_versions()[0]
         debian_upstream_version = self.get_debian_version().rsplit('-', 1)[0]
         assert debian_upstream_version == self.get_versions()[0], "get_versions() failed"
         if upstream_version != debian_upstream_version:
-            logging.warn("version provided by upstream is '%s'" % upstream_version)
-            logging.warn("upstream version read from Debian changelog is '%s'" % debian_upstream_version)
-            logging.error('please check coherence of the previous version numbers')
-            return False
-        return True
+            msg = 'version mismatch: upstream says %s and Debian changelog says %s'
+            msg %= (upstream_version, debian_upstream_version)
+            raise LGPException(msg)
 
     def clean_repository(self):
         """clean the project repository"""
@@ -426,9 +424,7 @@ class SetupInfo(Configuration):
         http://wiki.debian.org/SandroTosi/Svn_get-orig-source
         http://hg.logilab.org/<upstream_name>/archive/<upstream_version>.tar.gz
         """
-        # compare versions here to alert developpers
-        if not self.compare_versions():
-            raise LGPException('version mismatched.')
+        self._check_version_mismatch()
 
         self._tmpdir = tempfile.mkdtemp()
         self._tmpdirs.append(self._tmpdir)
