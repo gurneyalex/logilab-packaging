@@ -22,10 +22,10 @@
 """
 __docformat__ = "restructuredtext en"
 
-import os
 from string import Template
 import logging
 import ConfigParser
+from subprocess import check_call
 
 from logilab.devtools.lgp import LGP_CONFIG_FILE
 from logilab.devtools.lgp.setupinfo import SetupInfo
@@ -36,7 +36,7 @@ def run(args):
     """ Main function of lgp tag command """
     try :
         tagger = Tagger(args)
-        if hasattr(tagger.config, "format"):
+        if getattr(tagger.config, "format", None):
             import warnings
             msg = '"format" field key definitions must be renamed to "default" in /etc/lgp/lgprc'
             warnings.warn(msg, DeprecationWarning)
@@ -59,6 +59,7 @@ def run(args):
                 if config.has_option("LGP-TAG", tag):
                     new_tags = config.get("LGP-TAG", tag).split(',')
                     if new_tags:
+                        logging.debug("detected alias '%s' expanded to '%s'" % (tag, new_tags))
                         tags.extend(new_tags)
                 else:
                     tagger.apply(tag)
@@ -97,7 +98,8 @@ class Tagger(SetupInfo):
 
     def __init__(self, args):
         # Retrieve upstream information
-        super(Tagger, self).__init__(arguments=args, options=self.options, usage=__doc__)
+        super(Tagger, self).__init__(arguments=args, options=self.options,
+                                     usage=__doc__)
 
         try:
             from logilab.devtools.vcslib import get_vcs_agent
@@ -128,8 +130,8 @@ class Tagger(SetupInfo):
                              project=self.project
                             )
 
-        logging.info("add tag to repository: %s" % tag)
         command = self.vcs_agent.tag(self.config.pkg_dir, tag,
                                      force=bool(self.config.force))
         logging.debug('run command: %s' % command)
-        os.system(command)
+        check_call(command, shell=True)
+        logging.info("add tag to repository: %s" % tag)
