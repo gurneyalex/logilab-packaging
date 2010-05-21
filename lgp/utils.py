@@ -181,7 +181,7 @@ def get_distributions(distrib=None, basetgz=None, suites=LGP_SUITES):
         for t in distrib:
             if t not in distributions:
                 # Allow some lgp commands to be run outside a project repository
-                if (len(sys.argv)>1 and sys.argv[1] in ["check", "tag", "project"]):
+                if (len(sys.argv)>1 and sys.argv[1] in ["check", "project"]):
                     logging.debug("'%s' image not found in '%s'" % (t, basetgz))
                     logging.debug("act as if 'unstable' image was existing in filesystem")
                     return ('unstable',)
