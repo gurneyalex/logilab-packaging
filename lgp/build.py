@@ -340,7 +340,6 @@ class Builder(SetupInfo):
             #optline.append('-b')
             #if self.config.sign and check_debsign(self):
             #    optline.append('-pgpg')
-            #    optline.append('-k%s' % os.environ.get('DEBSIGN_KEYID', ''))
             if arch:
                 if rank:
                     optline.append('-B')
@@ -379,11 +378,12 @@ class Builder(SetupInfo):
         some tests are performed before copying to result directory
         """
         def sign_file(filename):
-            if self.config.sign and check_debsign(self):
+            if self.config.sign:
+                check_debsign(self)
                 try:
                     check_call(["debsign", filename], stdout=sys.stdout)
                 except CalledProcessError, err:
-                    logging.warn("lgp cannot debsign '%s' automatically" % filename)
+                    logging.error("lgp cannot debsign '%s' automatically" % filename)
 
         def check_file(filename):
             if os.path.isfile(filename):

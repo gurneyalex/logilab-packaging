@@ -54,7 +54,7 @@ CHECKS = {'debian'    : set(['debian_dir', 'debian_rules', 'debian_copying',
           'default'   : set(['builder', 'readme', 'changelog', 'bin', 'tests_directory',
                              'repository', 'release_number']),
           'distutils' : set(['manifest_in', 'pydistutils', 'pythonpath']),
-          'pkginfo'   : set(['package_info', 'announce', 'pkginfo_copyright']),
+          'pkginfo'   : set(['debsign', 'package_info', 'announce', 'pkginfo_copyright']),
           'makefile'  : set(['makefile']),
           'cubicweb'  : set(), # XXX test presence of a ['migration_file'], for the current version
          }
@@ -231,7 +231,8 @@ class Checker(SetupInfo):
             self.checklist = [globals()["check_%s" % name] for name in checks]
             logging.debug('checklist found: %s' % checks)
         except KeyError, err:
-            raise LGPException("check function '%s' was not found. Use lgp check --list" % str(err))
+            msg = "check function or category %s was not found. Use lgp check --list"
+            raise LGPException(msg % str(err))
         return self.checklist
 
     def start_checks(self):
@@ -559,10 +560,26 @@ def check_manifest_in(checker):
     return status
 
 def check_debsign(checker):
-    """Hint: you can export DEBSIGN_KEYID to your environment and use gpg-agent to sign directly"""
-    if 'DEBSIGN_KEYID' not in os.environ or 'GPG_AGENT_INFO' not in os.environ:
-        logging.info(check_debsign.__doc__)
-        return
+    """check requirements (~/.devscripts or gpg-agent) to sign packages"""
+    import ConfigParser
+    from logilab.devtools.lgp import LGP_CONFIG_FILE
+
+    config = ConfigParser.ConfigParser()
+    config.readfp(open(LGP_CONFIG_FILE))
+    enabled = ""
+
+    if config.has_option("LGP-BUILD", "sign"):
+        enabled = config.get("LGP-BUILD", "sign")
+        checker.logger.debug('retrieve sign option value from %s: "sign=%s"'
+                             % (LGP_CONFIG_FILE, enabled))
+
+    if enabled == "yes":
+        if not os.path.exists(os.path.expanduser("~/.devscripts")):
+            checker.logger.error("please, export your DEBSIGN_KEYID in ~/.devscripts")
+            return NOK
+        if 'GPG_AGENT_INFO' not in os.environ:
+            checker.logger.error('enable your gpg-agent to sign packages automatically')
+            return NOK
     return OK
 
 def check_package_info(checker):
