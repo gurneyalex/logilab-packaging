@@ -54,7 +54,7 @@ CHECKS = {'debian'    : set(['debian_dir', 'debian_rules', 'debian_copying',
           'default'   : set(['builder', 'readme', 'changelog', 'bin', 'tests_directory',
                              'repository', 'release_number']),
           'distutils' : set(['manifest_in', 'pydistutils', 'pythonpath']),
-          'pkginfo'   : set(['package_info', 'announce']),
+          'pkginfo'   : set(['package_info', 'announce', 'pkginfo_copyright']),
           'makefile'  : set(['makefile']),
           'cubicweb'  : set(), # XXX test presence of a ['migration_file'], for the current version
          }
@@ -588,3 +588,10 @@ def check_package_info(checker):
         def fatal(self, path, line, msg):
             checker.logger.fatal(msg)
     return check_info_module(Reporter())
+
+def check_pkginfo_copyright(checker):
+    """check copyright header"""
+    cmd = 'grep -EHnori "copyright.*[[:digit:]]{4}-.* LOGILAB S.A." * | grep -v $(date +%Y)'
+    if not call(cmd, shell=True):
+        checker.logger.warn('check copyright header of these previous files')
+    return OK
