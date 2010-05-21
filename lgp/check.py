@@ -327,7 +327,7 @@ def check_debian_dir(checker):
     return isdir('debian')
 
 def check_debian_rules(checker):
-    """check the debian*/rules file (filemode) """
+    """check the debian*/rules file (filemode should be "+x")"""
     debian_dir = checker.get_debian_dir()
     status = OK
     status = status and isfile(os.path.join(debian_dir, 'rules'))
@@ -336,8 +336,7 @@ def check_debian_rules(checker):
 
 def check_debian_copying(checker):
     """check debian*/copyright file"""
-    debian_dir = checker.get_debian_dir()
-    return isfile(os.path.join(debian_dir,'copyright'))
+    return isfile(os.path.join('debian', 'copyright'))
 
 def check_debian_source_value(checker):
     """check debian source field value"""
