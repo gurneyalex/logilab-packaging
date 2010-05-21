@@ -20,14 +20,15 @@ basetgz=/var/cache/lgp/buildd
 # where to put compilation results
 result=~/dists
 
-# try to sign Debian package(s) just built (uncomment to enable)
-#sign=yes
+# try to sign Debian package(s) just built by lgp
+#sign=no
 
-# run pbuilder hooks in '/etc/lgp/hooks' (uncomment to enable)
-#hooks=yes
+# run pbuilder hooks series from '/var/lib/logilab-packaging/hooks'
+#hooks=no
 
-# run embedded post-treatments: add trivial repository (uncomment to enable)
-#post-treatments=yes
+# run internal post-treatments:
+# - add trivial repository in `result` directory after build
+#post-treatments=no
 
 
 
