@@ -36,6 +36,8 @@ def run(args):
     """ Main function of lgp tag command """
     try :
         tagger = Tagger(args)
+
+        # deprecates the old 'format' attribute in config file
         if getattr(tagger.config, "format", None):
             import warnings
             msg = '"format" field key definitions must be renamed to "default" in /etc/lgp/lgprc'
@@ -119,6 +121,9 @@ class Tagger(SetupInfo):
         # poor cleaning for having unique string
         self.distrib = '+'.join(self.distributions)
         self.archi   = '+'.join(self.architectures)
+
+        # don't continue if version mismatch
+        self._check_version_mismatch()
 
     def apply(self, tag):
         tag = Template(tag)
