@@ -411,7 +411,7 @@ class SetupInfo(Configuration):
         self._run_command('clean')
 
     def make_orig_tarball(self):
-        """make upstream and debianized tarballs in a dedicated directory
+        """make upstream pristine tarballs (Debian way)
 
         Start by calling the optional get-orig-source from debian/rules
         If not possible, failback to a local creation
@@ -433,15 +433,16 @@ class SetupInfo(Configuration):
         tarball = '%s_%s.orig.tar.gz' % fileparts
         upstream_tarball = '%s-%s.tar.gz' % fileparts
 
-        # run possible debian/rules target to retrieve pristine tarball
-        if self.config.orig_tarball is None:
+        # run optional debian/rules get-orig-source target to retrieve pristine tarball
+        if self.config.orig_tarball is None and not self.is_initial_debian_revision():
+            logging.info('trying to retrieve pristine tarball remotely...')
             try:
                 cmd = ["fakeroot", "debian/rules", "get-orig-source"]
                 check_call(cmd, stderr=file(os.devnull, "w"))
                 assert osp.isfile(tarball)
                 self.config.orig_tarball = osp.abspath(tarball)
             except CalledProcessError, err:
-                logging.debug("run optional '%s' without success" % ' '.join(cmd))
+                logging.error("run '%s' without success" % ' '.join(cmd))
 
         if self.config.orig_tarball is None:
             # Make a coherence check about the pristine tarball
@@ -466,7 +467,7 @@ class SetupInfo(Configuration):
                 raise LGPCommandException("source distribution wasn't properly built", err)
             self.config.orig_tarball = osp.join(self._tmpdir, upstream_tarball)
 
-        logging.info("reuse provided archive '%s' as original source archive (tarball)"
+        logging.info("use archive '%s' as original source archive (pristine tarball)"
                      % self.config.orig_tarball)
 
         tarball = osp.join(self._tmpdir, tarball)
