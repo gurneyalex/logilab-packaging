@@ -67,6 +67,10 @@ def guess_debian_distribution():
                 distribution = line.split(' ', 1)[1].strip()
                 logging.debug('retrieve default debian distribution from debian/changelog: %s'
                               % distribution)
+                if distribution in ['experimental', 'UNRELEASED']:
+                    logging.warn("distribution '%s' should only be used for debugging purpose"
+                                % distribution)
+                    return ["unstable",]
                 return [distribution,]
         raise LGPException('Debian Distribution field not found in debian/changelog')
     except CalledProcessError, err:

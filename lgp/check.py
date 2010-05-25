@@ -336,7 +336,7 @@ def check_debian_rules(checker):
     return status
 
 def check_debian_copying(checker):
-    """check debian*/copyright file"""
+    """check debian/copyright file"""
     return isfile(os.path.join('debian', 'copyright'))
 
 def check_debian_source_value(checker):
@@ -355,7 +355,8 @@ def check_debian_changelog(checker):
     CHANGELOG = os.path.join(debian_dir, 'changelog')
     status = OK
     if isfile(CHANGELOG):
-        cmd = "sed -ne '/UNRELEASED/p' %s" % CHANGELOG
+        # consider UNRELEASED as problematic only if not on first line
+        cmd = "sed -ne '2,${/UNRELEASED/p}' %s" % CHANGELOG
         _, output = commands.getstatusoutput(cmd)
         if output:
             status = NOK
