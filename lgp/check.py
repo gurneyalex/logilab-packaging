@@ -45,11 +45,12 @@ from logilab.devtools.lib.manifest import (get_manifest_files, read_manifest_in,
 from logilab.devtools import templates
 from logilab.devtools.lgp.setupinfo import SetupInfo
 from logilab.devtools.lgp.exceptions import LGPException
+from logilab.devtools.lgp import utils
 
 
 OK, NOK = 1, 0
 CHECKS = {'debian'    : set(['debian_dir', 'debian_rules', 'debian_copying',
-                             'debian_source_value', 'debian_env', 'debian_uploader',
+                             'debian_source_value', 'debian_env',
                              'debian_changelog', 'debian_homepage']),
           'default'   : set(['builder', 'readme', 'changelog', 'bin', 'tests_directory',
                              'repository', 'release_number']),
@@ -229,14 +230,16 @@ class Checker(SetupInfo):
                 else:
                     checks.remove(c)
             self.checklist = [globals()["check_%s" % name] for name in checks]
-            logging.debug('checklist found: %s' % checks)
         except KeyError, err:
             msg = "check function or category %s was not found. Use lgp check --list"
             raise LGPException(msg % str(err))
         return self.checklist
 
     def start_checks(self):
-        for func in self.get_checklist():
+        checklist = self.get_checklist()
+        logging.debug('applied checklist chain: %s'
+                      % [f.__name__ for f in checklist])
+        for func in self.checklist:
             loggername = func.__name__
             loggername = loggername.replace('_',':', 1)
             self.logger = logging.getLogger(loggername)
@@ -245,10 +248,10 @@ class Checker(SetupInfo):
             # result possible values:
             #   negative -> error occured !
             #   NOK: use a generic report function
-            #   OK : add to counter
+            #   OK/None: add to counter
             if result == NOK :
                 self.logger.error(func.__doc__)
-            elif result>0:
+            elif result is None or result>0:
                 self.counter += 1
 
     # TODO dump with --help and drop the command-line option
@@ -350,33 +353,44 @@ def check_debian_source_value(checker):
     return OK
 
 def check_debian_changelog(checker):
-    """your debian changelog contains error(s)"""
+    """check debian changelog error cases"""
     debian_dir = checker.get_debian_dir()
     CHANGELOG = os.path.join(debian_dir, 'changelog')
-    status = OK
     if isfile(CHANGELOG):
+        # verify if changelog is closed
+        cmd = "sed -ne '/^ -- $/p' %s" % CHANGELOG
+        _, output = commands.getstatusoutput(cmd)
+        if output:
+            msg = "missing attribution trailer line. '%s' is not properly closed" % CHANGELOG
+            checker.logger.warn(msg)
+            return
         # consider UNRELEASED as problematic only if not on first line
         cmd = "sed -ne '2,${/UNRELEASED/p}' %s" % CHANGELOG
         _, output = commands.getstatusoutput(cmd)
         if output:
-            status = NOK
-            checker.logger.error('UNRELEASED keyword in debian changelog')
+            checker.logger.error('UNRELEASED keyword found in debian changelog')
         cmd = "sed -ne '/DISTRIBUTION/p' %s" % CHANGELOG
         _, output = commands.getstatusoutput(cmd)
         if output:
-            checker.logger.warn("some distributions are not valid images:\n%s" % output)
-        cmd = "dpkg-parsechangelog | head -n1 | cut -d' ' -f2"
+            checker.logger.error("some occurences of DISTRIBUTION found in %s" % CHANGELOG)
+        # check project name coherency
+        if checker.get_debian_name() != utils._parse_deb_project():
+            msg = "project name mismatch: debian/control says '%s' and debian/changelog says '%s'"
+            checker.logger.error(msg % (checker.get_debian_name(), utils._parse_deb_project()))
+        # check maintainer field
+        cmd = "dpkg-parsechangelog | grep '^Maintainer' | cut -d' ' -f2- | tr -d '\n'"
         _, output = commands.getstatusoutput(cmd)
-        if checker.get_debian_name() != output:
-            msg = 'source package names differs between debian/changelog and debian/control: %s, %s'
-            checker.logger.error(msg % (output, checker.get_debian_name()))
-            status = NOK
+        cmd = 'grep "%s" debian/control' % output
+        cmdstatus, _ = commands.getstatusoutput(cmd)
+        if cmdstatus:
+            checker.logger.warn("'%s' is not found in Uploaders field" % output)
+        # final check with Debian utility
         cmd = "dpkg-parsechangelog >/dev/null"
         _, output = commands.getstatusoutput(cmd)
         if output:
-            status = NOK
             checker.logger.error(output)
-    return status
+    else:
+        checker.logger.error("no debian/changelog file found")
 
 def check_debian_maintainer(checker):
     """check Maintainer field in debian/control file"""
@@ -385,21 +399,6 @@ def check_debian_maintainer(checker):
     cmdstatus, output = commands.getstatusoutput(cmd)
     if output.strip() != 'Logilab S.A. <contact@logilab.fr>':
         checker.logger.info("Maintainer value can be 'Logilab S.A. <contact@logilab.fr>'")
-    return status
-
-def check_debian_uploader(checker):
-    """check Uploaders field in debian/control file"""
-    status = OK
-    cmd = "dpkg-parsechangelog | grep '^Maintainer' | cut -d' ' -f2- | tr -d '\n'"
-    _, output = commands.getstatusoutput(cmd)
-    cmd = 'grep "%s" debian/control' % output
-    cmdstatus, _ = commands.getstatusoutput(cmd)
-    if cmdstatus:
-        # FIXME
-        #checker.logger.error("'%s' is not found in Uploaders field" % output)
-        #status = NOK
-        checker.logger.warn("'%s' is not found in Uploaders field" % output)
-        checker.logger.warn(check_debian_uploader.__doc__)
     return status
 
 def check_readme(checker):
@@ -571,6 +570,9 @@ def check_debsign(checker):
 
     if config.has_option("LGP-BUILD", "sign"):
         enabled = config.get("LGP-BUILD", "sign")
+        # workaround for build command
+        if not hasattr(checker, 'logger'):
+            checker.logger = logging
         checker.logger.debug('retrieve sign option value from %s: "sign=%s"'
                              % (LGP_CONFIG_FILE, enabled))
 
