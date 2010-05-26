@@ -384,6 +384,7 @@ class Builder(SetupInfo):
                     check_call(["debsign", filename], stdout=sys.stdout)
                 except CalledProcessError, err:
                     logging.error("lgp cannot debsign '%s' automatically" % filename)
+                    logging.error("You have to run debsign manually")
 
         def check_file(filename):
             if os.path.isfile(filename):
