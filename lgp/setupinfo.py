@@ -242,10 +242,17 @@ class SetupInfo(Configuration):
             class debian(object): pass
             self._package = debian()
         logging.debug("use setup package class format: %s" % self.package_format)
-        if os.path.exists('MANIFEST') and self.package_format in ('PackageInfo',
-                                                                  'Distribution'):
-            logging.warn("remove spurious MANIFEST file in project directory (not used by Lgp)")
-            os.unlink('MANIFEST')
+
+        if self.package_format in ('PackageInfo', 'Distribution'):
+            if os.path.exists('MANIFEST'):
+                # remove MANIFEST file at the beginning to avoid reusing it
+                # distutils can use '--force-manifest' but setuptools doens't have this option.
+                os.unlink('MANIFEST')
+            spurious = "%s-%s" % (self.get_upstream_name(), self.get_upstream_version())
+            if os.path.isdir(spurious):
+                import shutil
+                logging.warn("remove spurious temporarly directory '%s' built by distutils" % spurious)
+                shutil.rmtree(spurious)
 
     @property
     def current_distrib(self):
