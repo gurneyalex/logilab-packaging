@@ -42,14 +42,14 @@ if $(find_lgp_distrib $DIST "${DEBIAN_SUITES[@]}"); then
     DEBIAN_MIRRORSITE="http://$DEBIAN_MIRROR/debian/"
     MIRRORSITE=${DEBIAN_MIRRORSITE}
     COMPONENTS=${DEBIAN_COMPONENTS}
-    eval "OTHERMIRROR=\"$(grep -v '#' $DEBIAN_SOURCESLIST | tr '\n' '|')\""
+    [[ -f $DEBIAN_SOURCESLIST ]] && eval "OTHERMIRROR=\"$(grep -v '#' $DEBIAN_SOURCESLIST | tr '\n' '|')\""
     [[ -f $DEBIAN_SOURCESLIST.$DIST ]] && OTHERMIRROR=$(grep -v '#' $DEBIAN_SOURCESLIST.$DIST | tr '\n' '|')
     OTHERMIRROR=${OTHERMIRROR:-$DEBIAN_OTHERMIRROR}
 elif $(find_lgp_distrib $DIST "${UBUNTU_SUITES[@]}"); then
     UBUNTU_MIRRORSITE="http://$UBUNTU_MIRROR/ubuntu/"
     MIRRORSITE=${UBUNTU_MIRRORSITE}
     COMPONENTS=${UBUNTU_COMPONENTS}
-    eval "OTHERMIRROR=\"$(grep -v '#' $UBUNTU_SOURCESLIST | tr '\n' '|')\""
+    [[ -f $UBUNTU_SOURCESLIST ]] && eval "OTHERMIRROR=\"$(grep -v '#' $UBUNTU_SOURCESLIST | tr '\n' '|')\""
     [[ -f $UBUNTU_SOURCESLIST.$DIST ]] && OTHERMIRROR=$(grep -v '#' $UBUNTU_SOURCESLIST.$DIST | tr '\n' '|')
     OTHERMIRROR=${OTHERMIRROR:-$UBUNTU_OTHERMIRROR}
 else
