@@ -612,8 +612,10 @@ def check_url(reporter, file, var, url):
         msg = '%s on %s=%r' % (ex, var, url)
         reporter.error(file, None, msg)
 
-def check_info_module(reporter, dirname=os.getcwd(), info_module='__pkginfo__'):
+def check_info_module(reporter, dirname=None, info_module='__pkginfo__'):
     """ checking package information module and source tree structure """
+    if dirname is None:
+        dirname = os.getcwd()
     absfile = join(dirname, info_module + '.py')
     try:
         mp_file, mp_filename, mp_desc = find_module(info_module,
