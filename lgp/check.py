@@ -210,6 +210,8 @@ class Checker(SetupInfo):
             return [funct for (name, funct) in globals().items() if name.startswith('check_')]
         try:
             checks = CHECKS['default']
+
+            # we try to compile a coherent set of checks to apply
             if os.path.exists('setup.py'):
                 checks.update(CHECKS['distutils'])
             if os.path.exists('__pkginfo__.py'):
@@ -218,6 +220,10 @@ class Checker(SetupInfo):
                 checks.update(CHECKS['debian'])
             if self.config.set_checks:
                 checks = set()
+            # avoid warning from continuous integration report
+            if os.environ.get('APYCOT_ROOT'):
+                checks.remove("debian_env")
+
             for c in itertools.chain(self.config.set_checks,
                                      self.config.include_checks):
                 if c in CHECKS:
@@ -305,7 +311,7 @@ def check_keyrings(checker):
 def check_debian_env(checker):
     """check usefull DEBFULLNAME and DEBEMAIL env variables"""
     if not os.environ.get('DEBFULLNAME') or not os.environ.get('DEBEMAIL'):
-        checker.logger.warn('you should define DEBFULLNAME and DEBEMAIL in your shell rc file')
+        checker.logger.warn('you had better define DEBFULLNAME and DEBEMAIL in your shell rc file')
     return OK
 
 def check_pydistutils(checker):
