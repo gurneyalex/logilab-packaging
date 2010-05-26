@@ -23,8 +23,6 @@ import os.path as osp
 import logging
 import time
 import urllib
-import glob
-import re
 import tempfile
 from string import Template
 from distutils.core import run_setup
@@ -46,14 +44,6 @@ from logilab.devtools.lgp.exceptions import (ArchitectureException,
                                              LGPCommandException,
                                              SetupException)
 
-
-def _parse_deb_version():
-    return re.search("\((.+)\)",open('debian/changelog').readline()).group(1)
-
-def _parse_deb_project():
-    return re.search("^(.+?) ",open('debian/changelog').readline()).group(1)
-
-
 LOG_FORMAT='%(levelname)1.1s:%(name)s: %(message)s'
 COMMANDS = {
         "sdist" : {
@@ -72,13 +62,13 @@ COMMANDS = {
             "file": './$setup version',
             "Distribution": 'python setup.py --version',
             "PackageInfo": 'python setup.py --version',
-            "debian": _parse_deb_version,
+            "debian": utils._parse_deb_version,
         },
         "project" : {
             "file": './$setup project',
             "Distribution": 'python setup.py --name',
             "PackageInfo": 'python setup.py --name',
-            "debian": _parse_deb_project,
+            "debian": utils._parse_deb_project,
         },
 }
 
@@ -328,39 +318,18 @@ class SetupInfo(Configuration):
     get_architectures = staticmethod(utils.get_architectures)
     get_debian_name = staticmethod(utils.get_debian_name)
 
+    @utils.cached
     def get_debian_version(self):
         """get upstream and debian versions depending of the last changelog entry found in Debian changelog
-
-           We parse the dpkg-parsechangelog output instead of changelog file
-           Format of Debian package: <sourcepackage>_<upstreamversion>-<debian_version>
         """
         cwd = os.getcwd()
         os.chdir(self.config.pkg_dir)
         try:
             changelog = osp.join(self.get_debian_dir(), 'changelog')
-            try:
-                cmd = 'dpkg-parsechangelog'
-                if osp.isfile(changelog):
-                    cmd += ' -l%s' % changelog
-
-                process = Popen(cmd.split(), stdout=PIPE)
-                pipe = process.communicate()[0]
-                if process.returncode > 0:
-                    msg = 'dpkg-parsechangelog exited with status %s' % process.returncode
-                    process.cmd = cmd.split()
-                    raise LGPCommandException(msg, process)
-
-                for line in pipe.split('\n'):
-                    line = line.strip()
-                    if line and line.startswith('Version:'):
-                        debian_version = line.split(' ', 1)[1].strip()
-                        logging.debug('retrieve debian version from %s: %s' %
-                                      (changelog, debian_version))
-                        return debian_version
-                raise LGPException('Debian Version field not found in %s'
-                                   % changelog)
-            except CalledProcessError, err:
-                raise LGPCommandException(msg, err)
+            debian_version = utils._parse_deb_version(changelog)
+            logging.debug('retrieve debian version from %s: %s' %
+                          (changelog, debian_version))
+            return debian_version
         finally:
             os.chdir(cwd)
 
@@ -401,7 +370,7 @@ class SetupInfo(Configuration):
         debian_upstream_version = self.get_debian_version().rsplit('-', 1)[0]
         assert debian_upstream_version == self.get_versions()[0], "get_versions() failed"
         if upstream_version != debian_upstream_version:
-            msg = 'version mismatch: upstream says %s and Debian changelog says %s'
+            msg = "version mismatch: upstream says '%s' and debian/changelog says '%s'"
             msg %= (upstream_version, debian_upstream_version)
             raise LGPException(msg)
 
