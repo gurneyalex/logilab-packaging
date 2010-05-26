@@ -19,10 +19,12 @@
 import glob
 import sys
 import time
-import os
 import os.path as osp
-from subprocess import Popen, PIPE, CalledProcessError
+import re
+from subprocess import Popen, PIPE
 import logging
+
+from debian_bundle.deb822 import Deb822
 
 from logilab.devtools.lgp import LGP_SUITES
 from logilab.devtools.lgp.exceptions import (ArchitectureException,
@@ -51,30 +53,14 @@ def guess_debian_distribution():
 
        Useful to determine a default distribution different from unstable if need
     """
-    try:
-        cmd = "dpkg-parsechangelog"
-        process = Popen(cmd.split(), stdout=PIPE, stderr=file(os.devnull, "w"))
-        pipe = process.communicate()[0]
-        if process.returncode > 0:
-            msg = '%s exited with status %s' % (cmd, process.returncode)
-            process.cmd = cmd.split()
-            #raise LGPCommandException(msg, process)
-        if len(pipe)==0:
-            return None
-        for line in pipe.split('\n'):
-            line = line.strip()
-            if line and line.startswith('Distribution:'):
-                distribution = line.split(' ', 1)[1].strip()
-                logging.debug('retrieve default debian distribution from debian/changelog: %s'
-                              % distribution)
-                if distribution in ['experimental', 'UNRELEASED']:
-                    logging.warn("distribution '%s' should only be used for debugging purpose"
-                                % distribution)
-                    return ["unstable",]
-                return [distribution,]
-        raise LGPException('Debian Distribution field not found in debian/changelog')
-    except CalledProcessError, err:
-        raise LGPCommandException(msg, err)
+    distribution = _parse_deb_distrib()
+    logging.debug('retrieve default debian distribution from debian/changelog: %s'
+                  % distribution)
+    if distribution in ['experimental', 'UNRELEASED']:
+        logging.warn("distribution '%s' should only be used for debugging purpose"
+                     % distribution)
+        return ["unstable",]
+    return [distribution,]
 
 def is_architecture_independant():
     return 'all' in get_debian_architecture()
@@ -223,3 +209,28 @@ def wait_jobs(joblist, print_dots=True):
             sys.stderr.write('.')
     sys.stderr.write('\n')
     return status, time.time() - t0
+
+def _parse_deb_distrib(changelog='debian/changelog'):
+    try:
+        return re.search("\) (.+);", open(changelog).readline()).group(1).strip()
+    except IOError, err:
+        raise DistributionException("Debian changelog '%s' cannot be found" % changelog)
+    except AttributeError, err:
+        raise DistributionException("Debian distribution field not found in '%s'" % changelog)
+
+def _parse_deb_archi(control='debian/control'):
+    return filter(None, [p.get('Architecture').strip() for p
+                         in Deb822.iter_paragraphs(file(control))])
+
+def _parse_deb_version(changelog='debian/changelog'):
+    try:
+        return re.search("\((.+)\)", open(changelog).readline()).group(1).strip()
+    except IOError, err:
+        raise LGPException("Debian changelog '%s' cannot be found" % changelog)
+    except AttributeError, err:
+        raise LGPException("Debian version field not found in '%s'" % changelog)
+
+def _parse_deb_project(changelog='debian/changelog'):
+    return re.search("^(.+?) ", open(changelog).readline()).group(1).strip()
+
+
