@@ -446,14 +446,18 @@ class SetupInfo(Configuration):
         logging.info("use archive '%s' as original source archive (pristine tarball)"
                      % self.config.orig_tarball)
 
+        if not os.path.basename(self.config.orig_tarball).startswith(self.get_upstream_name()):
+            msg = "pristine tarball filename doesn't start with upstream name '%s'. really suspect..."
+            logging.error(msg % self.get_upstream_name())
+
         tarball = osp.join(self._tmpdir, tarball)
         try:
             urllib.urlretrieve(self.config.orig_tarball, tarball)
             self.config.orig_tarball = tarball
         except IOError, err:
             logging.critical("the provided original source archive (tarball) "
-                             "can't be retrieved from current directory %s"
-                             % os.getcwd())
+                             "can't be retrieved from given location: %s"
+                             % self.config.orig_tarball)
             raise LGPException(err)
         assert osp.isfile(tarball), 'Debian source archive (pristine tarball) not found'
 
