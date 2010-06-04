@@ -332,7 +332,7 @@ class SetupInfo(Configuration):
         cwd = os.getcwd()
         os.chdir(self.config.pkg_dir)
         try:
-            changelog = osp.join(self.get_debian_dir(), 'changelog')
+            changelog = osp.join('debian', 'changelog')
             debian_version = utils._parse_deb_version(changelog)
             logging.debug('retrieve debian version from %s: %s' %
                           (changelog, debian_version))
