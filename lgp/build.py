@@ -174,7 +174,7 @@ class Builder(SetupInfo):
         if self.package_format == 'debian' and not osp.isdir('debian'):
             raise LGPException("You are not in a valid project root directory. Lgp expects debian directory from here.")
 
-        # global build status (for every build)
+        # global build status
         self.build_status = os.EX_OK
 
         # list of all temporary directories
@@ -210,7 +210,7 @@ class Builder(SetupInfo):
         :param:
             origpath: path to orig.tar.gz tarball
         """
-        # change directory context
+        # change directory to build source package
         os.chdir(self._tmpdir)
 
         logging.info("creation of the Debian source package files (.dsc, .diff.gz)")
@@ -309,7 +309,7 @@ class Builder(SetupInfo):
             except IndexError, exc:
                 logging.warn('cannot retrieve and display current build log')
 
-        # only print dots in verbose mode
+        # only print dots in verbose mode (verbose: 1)
         build_status, timedelta = wait_jobs(joblist, self.config.verbose == 1)
         if build_status:
             logging.critical("binary build(s) failed for '%s' with exit status %d"
@@ -461,7 +461,3 @@ class Builder(SetupInfo):
             # already exists
             pass
         return distrib_dir
-
-    def finalize(self):
-        self.clean_tmpdirs()
-        sys.exit(self.build_status)
