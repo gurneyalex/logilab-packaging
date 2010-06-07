@@ -402,8 +402,8 @@ class SetupInfo(Configuration):
         """
         self._check_version_mismatch()
 
-        self._tmpdir = tempfile.mkdtemp()
-        self._tmpdirs.append(self._tmpdir)
+        # change directory context at pristine tarball generation
+        self.create_build_context()
 
         fileparts = (self.get_upstream_name(), self.get_upstream_version())
         tarball = '%s_%s.orig.tar.gz' % fileparts
@@ -442,9 +442,9 @@ class SetupInfo(Configuration):
                                   " your repository" % self.get_upstream_version())
                 raise LGPCommandException("source distribution wasn't properly built", err)
             self.config.orig_tarball = osp.join(self._tmpdir, upstream_tarball)
-
-        logging.info("use archive '%s' as original source archive (pristine tarball)"
-                     % self.config.orig_tarball)
+        else:
+            logging.info("reuse archive '%s' as original source archive (pristine tarball)"
+                         % self.config.orig_tarball)
 
         if not os.path.basename(self.config.orig_tarball).startswith(self.get_upstream_name()):
             msg = "pristine tarball filename doesn't start with upstream name '%s'. really suspect..."
@@ -452,7 +452,7 @@ class SetupInfo(Configuration):
 
         tarball = osp.join(self._tmpdir, tarball)
         try:
-            urllib.urlretrieve(self.config.orig_tarball, tarball)
+            urllib.urlretrieve(self.config.orig_tarball, tarball) # auto-renaming here
             self.config.orig_tarball = tarball
         except IOError, err:
             logging.critical("the provided original source archive (tarball) "
@@ -473,6 +473,9 @@ class SetupInfo(Configuration):
 
         FIXME replace by TarFile Object
         """
+        # change directory context at each build
+        self.create_build_context()
+
         logging.debug("prepare for %s distribution" % self.current_distrib or "default")
         logging.debug("extracting original source archive in %s" % self._tmpdir)
         try:
@@ -567,3 +570,16 @@ class SetupInfo(Configuration):
         if check and not osp.exists(basetgz):
             raise LGPException("lgp image '%s' not found. Please create it with lgp setup" % basetgz)
         return basetgz
+
+    def create_build_context(self):
+        """create new build temporary context
+
+        Each context (directory for now) will be cleaned at the end of the build
+        process by the finalize method"""
+        self._tmpdir = tempfile.mkdtemp()
+        self._tmpdirs.append(self._tmpdir)
+
+    def finalize(self):
+        """clean all temporary build context and exit"""
+        self.clean_tmpdirs()
+        sys.exit(self.build_status)
