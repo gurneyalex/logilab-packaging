@@ -206,7 +206,7 @@ export PS1="(lgp) ${DIST}/${ARCH} \$ "
 
 # enable pkgname-logfile
 #PBUILDER_BUILD_LOGFILE="${BUILDRESULT}/"$(basename "${PACKAGENAME}" .dsc)"${PKGNAME_LOGFILE_EXTENTION}"
-PKGNAME_LOGFILE_EXTENTION="_${ARCH}_${DIST}.lgp-build"
+PKGNAME_LOGFILE_EXTENTION="_${ARCH}_${DIST}$(python -c 'from logilab.devtools.lgp import BUILD_LOG_EXT; print BUILD_LOG_EXT')"
 PKGNAME_LOGFILE=yes
 
 # for pbuilder debuild

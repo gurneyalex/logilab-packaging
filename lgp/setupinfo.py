@@ -418,7 +418,7 @@ class SetupInfo(Configuration):
                 assert osp.isfile(tarball)
                 self.config.orig_tarball = osp.abspath(tarball)
             except CalledProcessError, err:
-                logging.error("run '%s' without success" % ' '.join(cmd))
+                logging.warn("run '%s' without success" % ' '.join(cmd))
 
         if self.config.orig_tarball is None:
             # Make a coherence check about the pristine tarball
@@ -461,11 +461,10 @@ class SetupInfo(Configuration):
             raise LGPException(err)
         assert osp.isfile(tarball), 'Debian source archive (pristine tarball) not found'
 
-        # move pristine tarball
-        self.move_package_files(verbose=self.config.get_orig_source)
-
-        # exit if asked by command-line
+        # move pristine tarball and exit if asked by command-line
         if self.config.get_orig_source:
+            self.move_package_files([self.config.get_orig_source],
+                                    verbose=self.config.get_orig_source)
             self.finalize()
 
     def prepare_source_archive(self):
@@ -485,12 +484,6 @@ class SetupInfo(Configuration):
         except CalledProcessError, err:
             raise LGPCommandException('an error occured while extracting the '
                                       'upstream tarball', err)
-
-        # only provide a pristine tarball when it's an initial revision
-        if self.is_initial_debian_revision():
-            cp(self.config.orig_tarball, self._tmpdir)
-            logging.debug("copy original source archive (pristine tarball) to "
-                          "Debian source manifest (first revision of package)")
 
         # Find the right orig path in tarball
         # It can be different of the standard <upstream-name>-<upstream-version>
@@ -564,20 +557,21 @@ class SetupInfo(Configuration):
 
         return self.origpath
 
-
     def get_basetgz(self, distrib, arch, check=True):
         basetgz = osp.join(self.config.basetgz, "%s-%s.tgz" % (distrib, arch))
         if check and not osp.exists(basetgz):
             raise LGPException("lgp image '%s' not found. Please create it with lgp setup" % basetgz)
         return basetgz
 
-    def create_build_context(self):
+    def create_build_context(self, suffix=""):
         """create new build temporary context
 
         Each context (directory for now) will be cleaned at the end of the build
         process by the finalize method"""
-        self._tmpdir = tempfile.mkdtemp()
+        self._tmpdir = tempfile.mkdtemp(suffix)
+        logging.debug('changing build context... (%s)' % self._tmpdir )
         self._tmpdirs.append(self._tmpdir)
+        return self._tmpdir
 
     def finalize(self):
         """clean all temporary build context and exit"""
