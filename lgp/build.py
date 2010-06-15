@@ -26,6 +26,7 @@ import sys
 import shutil
 import logging
 import hashlib
+from glob import glob
 import os.path as osp
 from subprocess import check_call, CalledProcessError, Popen
 
@@ -33,7 +34,7 @@ from debian_bundle import deb822
 
 from logilab.common.shellutils import cp
 
-from logilab.devtools.lgp import CONFIG_FILE, HOOKS_DIR
+from logilab.devtools.lgp import CONFIG_FILE, HOOKS_DIR, BUILD_LOG_EXT
 from logilab.devtools.lgp.setupinfo import SetupInfo
 from logilab.devtools.lgp.utils import wait_jobs, is_architecture_independant
 from logilab.devtools.lgp.exceptions import LGPException, LGPCommandException
@@ -68,6 +69,11 @@ def run(args):
 
             # forget distribution
             builder.distributions = builder.distributions[1:]
+
+        # report files to the console
+        if builder.packages:
+            logging.debug("recent generated files:\n* %s"
+                         % '\n* '.join(sorted(builder.packages)))
     except KeyboardInterrupt:
         logging.warning('lgp aborted by keyboard interrupt')
     except LGPException, exc:
@@ -221,11 +227,13 @@ class Builder(SetupInfo):
             msg = "cannot build valid dsc file with command %s" % cmd
             raise LGPCommandException(msg, err)
 
-        # move Debian source package files
-        self.move_package_files(verbose=self.config.deb_src_only)
+        # define dscfile ressource
+        self.dscfile = glob(os.path.join(self._tmpdir, '*.dsc')).pop()
+        assert osp.isfile(self.dscfile)
 
-        # exit if asked by command-line
+        # move Debian source package files and exit if asked by command-line
         if self.config.deb_src_only:
+            self.move_package_files([self.dscfile], verbose=self.config.deb_src_only)
             self.finalize()
 
         # restore directory context
@@ -268,7 +276,11 @@ class Builder(SetupInfo):
         Just waiting standard multiprocess module in python 2.6
         """
         joblist = []
+        tmplist = []
         for build in self.use_build_series():
+            # change directory context at each binary build
+            tmplist.append(self.create_build_context())
+
             cmd = self._builder_command(build)
             logging.info("building binary debian package for '%s/%s' "
                          "using build options: '%s'"
@@ -294,11 +306,10 @@ class Builder(SetupInfo):
         # we can't easily communicate with background processes owned by root
         if self.config.verbose >= 2: # i.e. -vv* in command line
             import time
-            import glob
             logging.debug('waiting for the build log...')
             time.sleep(10) # wait for first output by pbuilder
             try:
-                buildlog = glob.glob(osp.join(self._tmpdir, "*.lgp-build"))
+                buildlog = glob(osp.join(self._tmpdir, "*" + BUILD_LOG_EXT))
                 logging.debug('find buildlog: %s' % str(buildlog))
                 buildlog = buildlog.pop()
                 Popen(['/usr/bin/tail',
@@ -318,8 +329,11 @@ class Builder(SetupInfo):
             logging.info("binary build(s) for '%s' finished in %d seconds."
                          % (build['distrib'], timedelta))
 
-        # move Debian binary package files
-        self.move_package_files()
+        # move Debian binary package(s) files
+        for tmp in tmplist:
+            changes = glob(osp.join(tmp, '*.changes'))
+            buildlog = glob(osp.join(tmp, '*' + BUILD_LOG_EXT))
+            self.move_package_files(changes + buildlog)
 
         self.build_status += build_status
         return build_status == os.EX_OK
@@ -370,23 +384,25 @@ class Builder(SetupInfo):
                 series.append(options)
         return series
 
-
-    def move_package_files(self, verbose=True):
+    def move_package_files(self, filelist=None, verbose=True):
         """move package files from the temporary build area to the result directory
 
         we define here the self.packages variable used by post-treatment
         some tests are performed before copying to result directory
+
+        :see: dcmd command
         """
-        def sign_file(filename):
+        def _sign_file(filename):
             if self.config.sign:
                 check_debsign(self)
                 try:
                     check_call(["debsign", filename], stdout=sys.stdout)
                 except CalledProcessError, err:
                     logging.error("lgp cannot debsign '%s' automatically" % filename)
-                    logging.error("You have to run debsign manually")
+                    logging.error("You have to run manually: debsign %s"
+                                  % copied_filename)
 
-        def check_file(filename):
+        def _check_file(filename):
             if os.path.isfile(filename):
                 hash1 = hashlib.md5(open(fullpath).read()).hexdigest()
                 hash2 = hashlib.md5(open(filename).read()).hexdigest()
@@ -396,57 +412,70 @@ class Builder(SetupInfo):
                     logging.warn("theses files shouldn't be different:\n- %s (%s)\n- %s (%s)"
                                  % (fullpath, hash1, filename, hash2))
                     os.system('diff -u %s %s' % (fullpath, filename))
-                    #raise LGPException("bad md5 sums of source archives (tarball)")
+                    raise LGPException("bad md5 sums of source archives (tarball)")
 
-        self.packages = []
+        def _check_pristine():
+            # only Format: 1.0 is supported for now
+            orig = None
+            for entry in self.packages:
+                # XXX support all allowed pristine tarball compression
+                if entry.endswith('.orig.tar.gz'):
+                    orig = entry
+                    break
+            # there is no orig.tar.gz file in the dsc file
+            if orig is None and self.is_initial_debian_revision():
+                logging.error("no orig.tar.gz file found in %s (few chances "
+                              "to be a real native package)"
+                              % entry)
+
+        self.packages = list()
         distdir = self.get_distrib_dir()
-        # reverse listing for debsign to have '*.dsc' before '*_ARCH.changes'
-        for filename in reversed(os.listdir(self._tmpdir)):
-            fullpath = os.path.join(self._tmpdir, filename)
-            if os.path.isfile(fullpath):
-                copied_filename = os.path.join(distdir, filename)
-                cp(fullpath, copied_filename)
-                assert osp.exists(copied_filename)
-                self.packages.append(copied_filename)
-                if filename.endswith('.dsc'):
-                    self.dscfile = copied_filename
-                    dsc = deb822.Dsc(file(self.dscfile))
-                    orig = None
-                    for entry in dsc['Files']:
-                        if entry['name'].endswith('.orig.tar.gz'):
-                            orig = entry
-                            break
-                    # there is no orig.tar.gz file in the dsc file
-                    if orig is None and self.is_initial_debian_revision():
-                        logging.error("no orig.tar.gz file found in %s (few chances "
-                                      "to be a real native package)"
-                                      % self.dscfile)
-                    #check_file(copied_filename)
-                    if self.config.deb_src_only:
-                        sign_file(self.dscfile)
-                        logging.info("Debian source control file: %s"
-                                     % self.dscfile)
-                #if filename.endswith('.diff.gz'):
-                #    check_file(copied_filename)
-                if filename.endswith('.orig.tar.gz'):
-                    # always reuse previous copied tarball as pointer
-                    # thus we are sure to have a local file at the end
-                    self.config.orig_tarball = copied_filename
-                    #check_file(copied_filename)
-                    if self.config.get_orig_source:
-                        logging.info('a new original source archive (tarball) '
-                                     'is available: %s' % copied_filename)
-                if filename.endswith('.lgp-build'):
-                    logging.info("a build logfile is available: %s" % copied_filename)
-                    os.unlink(fullpath)
-                if filename.endswith('.changes'):
-                    sign_file(copied_filename)
-                    logging.info("Debian changes file: %s" % copied_filename)
 
-        # lastly print changes file to the console
-        if verbose and self.packages:
-            logging.info("recent generated files:\n* %s"
-                         % '\n* '.join(sorted(self.packages)))
+        # must be a list to be able to extend filelist
+        assert filelist is None or isinstance(filelist, list)
+
+        while filelist:
+            fullpath = filelist.pop()
+            path, filename = osp.split(fullpath)
+            assert os.path.isfile(fullpath), "%s not found!" % fullpath
+            copied_filename = os.path.join(distdir, osp.basename(filename))
+
+            if filename.endswith(('.changes', '.dsc')):
+                contents = deb822.Deb822(file(fullpath))
+                filelist.extend([osp.join(path, f.split()[-1])
+                                 for f in contents['Files'].split('\n')
+                                 if f and f not in self.packages])
+            logging.debug('copying: %s -> %s ... \npending: %s'
+                          % (filename, copied_filename, filelist))
+
+            if filename.endswith('.dsc'):
+                #_check_file(copied_filename)
+                if self.config.deb_src_only:
+                    logging.info("Debian source control file: %s"
+                                 % copied_filename)
+                    _sign_file(fullpath)
+            if filename.endswith('.orig.tar.gz'):
+                # always reuse previous copied tarball as pointer
+                # thus we are sure to have a local file at the end
+                self.config.orig_tarball = copied_filename
+                #_check_file(copied_filename)
+                if self.config.get_orig_source:
+                    logging.info('a new original source archive (tarball) '
+                                 'is available: %s' % copied_filename)
+            if filename.endswith(BUILD_LOG_EXT):
+                logging.info("a build logfile is available: %s" % copied_filename)
+            if filename.endswith('.changes'):
+                logging.info("Debian changes file: %s" % copied_filename)
+                _sign_file(fullpath)
+            #if filename.endswith('.diff.gz'):
+            #    _check_file(copied_filename)
+
+            cp(fullpath, copied_filename)
+            assert osp.exists(copied_filename)
+            self.packages.append(copied_filename)
+
+        # TODO add more checks: sizes, checksums, etc...
+        _check_pristine()
 
     def get_distrib_dir(self):
         """get the dynamic target release directory"""

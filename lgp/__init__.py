@@ -24,7 +24,7 @@ LGP_SUITES      = '/etc/lgp/suites'
 CONFIG_FILE     = '/etc/lgp/pbuilderrc'
 HOOKS_DIR       = '/var/lib/logilab-packaging/hooks'
 SCRIPTS_DIR     = '/var/lib/logilab-packaging/scripts'
-
+BUILD_LOG_EXT   = '.lgp-build'
 
 def run(args):
     parser = OptionParser()
