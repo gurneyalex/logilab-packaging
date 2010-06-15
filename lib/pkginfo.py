@@ -351,7 +351,7 @@ PKGINFO = (
          'help': "'licence' must be renamed to 'license'",
          'deprecated': True},
         {'name': 'pyversions',
-         'default' : ('2.5'),
+         'default' : ('2.5', '2.6'),
          'help' : 'list of supported Python versions'},
     )),
     ('Debian packaging', (
