@@ -193,12 +193,10 @@ class SetupInfo(Configuration):
             if os.path.isfile(self.config.pkg_dir):
                 self.config.pkg_dir = os.path.dirname(self.config.pkg_dir)
             # Keep working relative pathnames provided in line arguments after chdir
-            if hasattr(self.config, "orig_tarball") and self.config.orig_tarball:
-                self.config.orig_tarball = self.config.orig_tarball.split('file://')[-1]
+            if getattr(self.config, "orig_tarball", None) and osp.exists(self.config.orig_tarball):
                 # we use osp.exists to rewrite only with valid path name
                 # (since this option accept url path name as well)
-                if osp.exists(self.config.orig_tarball):
-                    self.config.orig_tarball = osp.abspath(osp.expanduser(self.config.orig_tarball))
+                self.config.orig_tarball = osp.abspath(osp.expanduser(self.config.orig_tarball))
             os.chdir(self.config.pkg_dir)
             logging.debug('change the current working directory to: %s' % self.config.pkg_dir)
         except OSError, err:
