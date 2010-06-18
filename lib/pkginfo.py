@@ -700,6 +700,12 @@ def check_info_module(reporter, dirname=None, info_module='__pkginfo__'):
                 msg = 'long description contains lines longer than 80 characters'
                 reporter.warning(absfile, None, msg)
 
+    # check python versions format
+    if not hasattr(pi.pyversions, '__iter__'):
+        msg = 'pyversions attribute must be iterable (found: %s)' % pi.pyversions
+        reporter.error(absfile, None, msg)
+        status = 0
+
     # standard source tree ####################################################
 
     # DTDs and catalog
