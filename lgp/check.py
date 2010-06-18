@@ -571,8 +571,10 @@ def check_debsign(checker):
     from logilab.devtools.lgp import LGP_CONFIG_FILE
 
     config = ConfigParser.ConfigParser()
-    config.readfp(open(LGP_CONFIG_FILE))
-    enabled = ""
+    try:
+        config.readfp(open(LGP_CONFIG_FILE))
+    except IOError:
+        return OK # no config file
 
     if config.has_option("LGP-BUILD", "sign"):
         enabled = config.get("LGP-BUILD", "sign")
@@ -582,13 +584,13 @@ def check_debsign(checker):
         checker.logger.debug('retrieve sign option value from %s: "sign=%s"'
                              % (LGP_CONFIG_FILE, enabled))
 
-    if enabled == "yes":
-        if not os.path.exists(os.path.expanduser("~/.devscripts")):
-            checker.logger.error("please, export your DEBSIGN_KEYID in ~/.devscripts")
-            return NOK
-        if 'GPG_AGENT_INFO' not in os.environ:
-            checker.logger.error('enable your gpg-agent to sign packages automatically')
-            return NOK
+        if enabled == "yes":
+            if not os.path.exists(os.path.expanduser("~/.devscripts")):
+                checker.logger.error("please, export your DEBSIGN_KEYID in ~/.devscripts")
+                return NOK
+            if 'GPG_AGENT_INFO' not in os.environ:
+                checker.logger.error('enable your gpg-agent to sign packages automatically')
+                return NOK
     return OK
 
 def check_package_info(checker):
