@@ -47,25 +47,25 @@ def run(args):
 
         for arch in setup.architectures:
             for distrib in setup.distributions:
-                if setup.config.command == "create":
-                    cmd = sudo_cmd + "IMAGE=%s DIST=%s ARCH=%s pbuilder create --override-config --configfile %s"
-                elif setup.config.command == "update":
-                    cmd = sudo_cmd + "IMAGE=%s DIST=%s ARCH=%s pbuilder update --override-config --configfile %s"
-                elif setup.config.command == "clean":
-                    logging.debug("cleans up directory specified by configuration BUILDPLACE and APTCACHE")
-                    cmd = sudo_cmd + "IMAGE=%s DIST=%s ARCH=%s pbuilder clean --configfile %s"
-                elif setup.config.command == "dumpconfig":
-                    cmd = sudo_cmd + "IMAGE=%s DIST=%s ARCH=%s pbuilder dumpconfig --configfile %s"
-                    sys.stdout = sys.__stdout__
-
                 image = setup.get_basetgz(distrib, arch, check=False)
+
+                # TODO encapsulate builder logic into specific InternalBuilder class
+                builder_cmd = "pbuilder %s" % setup.config.command
                 # workaround: http://www.netfort.gr.jp/~dancer/software/pbuilder-doc/pbuilder-doc.html#amd64i386
                 if 'amd64' in setup.get_architectures(['current']) and arch == 'i386' and os.path.exists('/usr/bin/linux32'):
-                    cmd = 'linux32 ' + cmd
-                cmd = cmd + ' --hookdir %s'
-                cmd = cmd % (image, distrib, arch, CONFIG_FILE, HOOKS_DIR)
+                    logging.info('using linux32 command to build i386 image from amd64 compatible architecture')
+                    builder_cmd = 'linux32 ' + builder_cmd
+                cmd = "%sIMAGE=%s DIST=%s ARCH=%s %s --configfile %s --hookdir %s"
+                if setup.config.command in ("create", "update"):
+                    cmd += " --override-config"
+                elif setup.config.command == "clean":
+                    logging.debug("cleans up directory specified by configuration BUILDPLACE and APTCACHE")
+                elif setup.config.command == "dumpconfig":
+                    sys.stdout = sys.__stdout__
+                cmd %= (sudo_cmd, image, distrib, arch, builder_cmd, CONFIG_FILE, HOOKS_DIR)
 
                 # run setup command
+                logging.debug("run setup command: %s" % cmd)
                 logging.info(setup.config.command + " image '%s' for '%s/%s'"
                              % (image, distrib, arch))
                 try:
