@@ -49,6 +49,12 @@ def run(args):
             for distrib in setup.distributions:
                 image = setup.get_basetgz(distrib, arch, check=False)
 
+                # don't manage symbolic file in create and update command
+                if os.path.islink(image) and setup.config.command in ("create", "update"):
+                    logging.warning("skip symbolic link used for image: %s (-> %s)"
+                                    % (image, os.path.realpath(image)))
+                    continue
+
                 # TODO encapsulate builder logic into specific InternalBuilder class
                 builder_cmd = "pbuilder %s" % setup.config.command
                 # workaround: http://www.netfort.gr.jp/~dancer/software/pbuilder-doc/pbuilder-doc.html#amd64i386

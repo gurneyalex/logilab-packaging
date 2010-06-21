@@ -113,12 +113,12 @@ case "${DEBOOTSTRAP}" in
 		;;
 esac
 
-if [ -n "${ARCH}" ]; then
+if [ "$PBCURRENTCOMMANDLINEOPERATION" = "create" -a -n "${ARCH}" ]; then
 	NAME="$NAME-$ARCH"
 	DEBOOTSTRAPOPTS=("--arch" "$ARCH" "${DEBOOTSTRAPOPTS[@]}")
 fi
 
-if [ "$PBCURRENTCOMMANDLINEOPERATION" == "create" -o "$PBCURRENTCOMMANDLINEOPERATION" == "update" ]; then
+if [ "$PBCURRENTCOMMANDLINEOPERATION" = "create" -o "$PBCURRENTCOMMANDLINEOPERATION" = "update" ]; then
 	echo "D: $DEBOOTSTRAP ${DEBOOTSTRAPOPTS[@]} ${DIST}"
 fi
 
@@ -142,7 +142,7 @@ USEDEVFS=no
 # BINDMOUNTS is a space separated list of things to mount inside the chroot.
 # Don't use array aggregation here
 BINDMOUNTS="/sys"
-if [ "$PBCURRENTCOMMANDLINEOPERATION" == "login" -o "$PBCURRENTCOMMANDLINEOPERATION" == "scripts" ]; then
+if [ "$PBCURRENTCOMMANDLINEOPERATION" = "login" -o "$PBCURRENTCOMMANDLINEOPERATION" = "scripts" ]; then
 	# Default value set to be used by hooks
 	export BUILDRESULT="${HOME}/dists/${DIST}"
 fi
