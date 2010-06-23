@@ -47,20 +47,20 @@ SEVERITIES_COLORS = {
 class TextReporter:
     """ report messages and layouts in plain text
     """
-    
+
     def __init__(self, output=sys.stdout, color=False):
         self.out = output
         self.reset()
         self.term_color = color
-        
+
     def reset(self):
         self.counts = {}
         for sev in (INFO, WARNING, ERROR, FATAL):
             self.counts[sev] = 0
-        
+
     def log(self, severity, path, line, msg):
         """log a message of a given severity
-        
+
         line may be None if unknown
         """
         self.counts[severity] += 1
@@ -87,7 +87,7 @@ class TextReporter:
     def errors(self):
         return self.counts[ERROR]
     errors = property(errors)
-    
+
     def warnings(self):
         return self.counts[WARNING]
     warnings = property(warnings)
