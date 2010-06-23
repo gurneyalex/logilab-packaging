@@ -36,6 +36,8 @@ from os.path import basename, join, exists, isdir, isfile
 from pprint import pformat
 import itertools
 
+import mercurial.error
+
 from logilab.common.compat import set
 
 from logilab.devtools.lib.changelog import CHANGEFILE
@@ -523,6 +525,8 @@ def check_repository(checker):
             if result:
                 checker.logger.warn("modified files have been detected:\n%s" % pformat(result))
                 return NOK
+    except mercurial.error.RepoError:
+        checker.logger.debug("no remote repository found in .hg/hgrc")
     except ImportError:
         checker.logger.warn("you need to install logilab vcslib package for this check")
     except NotImplementedError:
