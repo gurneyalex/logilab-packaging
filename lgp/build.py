@@ -72,8 +72,8 @@ def run(args):
 
         # report files to the console
         if builder.packages:
-            logging.debug("recent generated files:\n* %s"
-                         % '\n* '.join(sorted(builder.packages)))
+            logging.info("recent files from build:\n* %s"
+                         % '\n* '.join(sorted(set(builder.packages))))
     except KeyboardInterrupt:
         logging.warning('lgp aborted by keyboard interrupt')
     except LGPException, exc:
@@ -274,6 +274,8 @@ class Builder(SetupInfo):
         virtualize/parallelize the binary package build process
         This is a rudimentary multiprocess support for parallel build by architecture
         Just waiting standard multiprocess module in python 2.6
+
+        :todo: use multiprocessing module here
         """
         joblist = []
         tmplist = []
@@ -384,14 +386,18 @@ class Builder(SetupInfo):
                 series.append(options)
         return series
 
-    def move_package_files(self, filelist=None, verbose=True):
+    def move_package_files(self, filelist, verbose=True):
         """move package files from the temporary build area to the result directory
 
         we define here the self.packages variable used by post-treatment
         some tests are performed before copying to result directory
 
         :see: dcmd command
+        :todo: add more checks: sizes, checksums, etc... (ex: _check_file)
+        :todo: support other source package formats
         """
+        assert isinstance(filelist, list), "must be a list to be able to extend"
+
         def _sign_file(filename):
             if self.config.sign:
                 check_debsign(self)
@@ -415,50 +421,54 @@ class Builder(SetupInfo):
                     raise LGPException("bad md5 sums of source archives (tarball)")
 
         def _check_pristine():
-            # only Format: 1.0 is supported for now
-            orig = None
-            for entry in self.packages:
-                # XXX support all allowed pristine tarball compression
-                if entry.endswith('.orig.tar.gz'):
-                    orig = entry
-                    break
-            # there is no orig.tar.gz file in the dsc file
-            if orig is None and self.is_initial_debian_revision():
-                logging.error("no orig.tar.gz file found in %s (few chances "
-                              "to be a real native package)"
-                              % entry)
+            """basic check about presence of pristine tarball in source package
 
-        self.packages = list()
-        distdir = self.get_distrib_dir()
+            Format: 1.0
+            A source package in this format consists either of a .orig.tar.gz
+            associated to a .diff.gz or a single .tar.gz (in that case the pack-
+            age is said to be native).
 
-        # must be a list to be able to extend filelist
-        assert filelist is None or isinstance(filelist, list)
+            A source package contains at least an original tarball
+            (.orig.tar.ext where ext can be gz, bz2 and lzma)
+            """
+            ext = tuple([".tar" + e for e in ('.gz', '.bz2', '.lzma')])
+            pristine = diff = None
+            for entry in filelist:
+                if not diff and entry.endswith('.diff.gz'):
+                    diff = entry
+                if not pristine and entry.endswith(tuple(ext)):
+                    pristine = entry
+            if pristine is None and self.is_initial_debian_revision():
+                logging.error("no pristine tarball found for initial Debian revision (searched: %s)"
+                              % (entry, ext))
+            orig = pristine.rsplit('.', 2)[0].endswith(".orig")
+            if not diff and not orig:
+                msg = ("native package detected. Read `man dpkg-source` "
+                       "carefully if not sure")
+                logging.warn(msg)
 
         while filelist:
             fullpath = filelist.pop()
             path, filename = osp.split(fullpath)
             assert os.path.isfile(fullpath), "%s not found!" % fullpath
-            copied_filename = os.path.join(distdir, osp.basename(filename))
+            copied_filename = os.path.join(self.get_distrib_dir(),
+                                           osp.basename(filename))
 
             if filename.endswith(('.changes', '.dsc')):
                 contents = deb822.Deb822(file(fullpath))
                 filelist.extend([osp.join(path, f.split()[-1])
                                  for f in contents['Files'].split('\n')
-                                 if f and f not in self.packages])
-            logging.debug('copying: %s -> %s ... \npending: %s'
-                          % (filename, copied_filename, filelist))
+                                 if f])
+            #logging.debug('copying: %s -> %s ... \npending: %s' % (filename, copied_filename, filelist))
 
             if filename.endswith('.dsc'):
                 #_check_file(copied_filename)
+                _check_pristine()
                 if self.config.deb_src_only:
                     logging.info("Debian source control file: %s"
                                  % copied_filename)
                     _sign_file(fullpath)
             if filename.endswith('.orig.tar.gz'):
-                # always reuse previous copied tarball as pointer
-                # thus we are sure to have a local file at the end
-                self.config.orig_tarball = copied_filename
-                #_check_file(copied_filename)
                 if self.config.get_orig_source:
                     logging.info('a new original source archive (tarball) '
                                  'is available: %s' % copied_filename)
@@ -466,6 +476,7 @@ class Builder(SetupInfo):
                 logging.info("a build logfile is available: %s" % copied_filename)
             if filename.endswith('.changes'):
                 logging.info("Debian changes file: %s" % copied_filename)
+                #_check_file(copied_filename)
                 _sign_file(fullpath)
             #if filename.endswith('.diff.gz'):
             #    _check_file(copied_filename)
@@ -473,9 +484,6 @@ class Builder(SetupInfo):
             cp(fullpath, copied_filename)
             assert osp.exists(copied_filename)
             self.packages.append(copied_filename)
-
-        # TODO add more checks: sizes, checksums, etc...
-        _check_pristine()
 
     def get_distrib_dir(self):
         """get the dynamic target release directory"""
