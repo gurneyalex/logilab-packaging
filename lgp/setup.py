@@ -35,15 +35,16 @@ def run(args):
     """ Main function of lgp setup command """
     try :
         setup = Setup(args)
-        if os.geteuid()!=0:
-            logging.debug('lgp setup should be run as root. sudo is used internally.')
-            sudo_cmd = "sudo "
-        else:
-            sudo_cmd = ""
 
         if setup.config.command == "create":
             setup.logger = logging
             check_keyrings(setup)
+        if setup.config.command in ("create", "update"):
+            setup.cmd += " --override-config"
+        elif setup.config.command == "clean":
+            logging.debug("cleans up directory specified by configuration BUILDPLACE and APTCACHE")
+        elif setup.config.command == "dumpconfig":
+            sys.stdout = sys.__stdout__
 
         for arch in setup.architectures:
             for distrib in setup.distributions:
@@ -55,23 +56,12 @@ def run(args):
                                     % (image, os.path.realpath(image)))
                     continue
 
-                # TODO encapsulate builder logic into specific InternalBuilder class
-                builder_cmd = "pbuilder %s" % setup.config.command
-                # workaround: http://www.netfort.gr.jp/~dancer/software/pbuilder-doc/pbuilder-doc.html#amd64i386
-                if 'amd64' in setup.get_architectures(['current']) and arch == 'i386' and os.path.exists('/usr/bin/linux32'):
-                    logging.info('using linux32 command to build i386 image from amd64 compatible architecture')
-                    builder_cmd = 'linux32 ' + builder_cmd
-                cmd = "%sIMAGE=%s DIST=%s ARCH=%s %s --configfile %s --hookdir %s"
-                if setup.config.command in ("create", "update"):
-                    cmd += " --override-config"
-                elif setup.config.command == "clean":
-                    logging.debug("cleans up directory specified by configuration BUILDPLACE and APTCACHE")
-                elif setup.config.command == "dumpconfig":
-                    sys.stdout = sys.__stdout__
-                cmd %= (sudo_cmd, image, distrib, arch, builder_cmd, CONFIG_FILE, HOOKS_DIR)
+                cmd = setup.cmd % (setup.setarch_cmd, setup.sudo_cmd, image,
+                                   distrib, arch, setup.builder_cmd,
+                                   CONFIG_FILE, HOOKS_DIR)
 
                 # run setup command
-                logging.debug("run setup command: %s" % cmd)
+                logging.debug("run command: %s" % cmd)
                 logging.info(setup.config.command + " image '%s' for '%s/%s'"
                              % (image, distrib, arch))
                 try:
@@ -113,3 +103,34 @@ class Setup(SetupInfo):
     def __init__(self, args):
         # Retrieve upstream information
         super(Setup, self).__init__(arguments=args, options=self.options, usage=__doc__)
+
+        # TODO encapsulate builder logic into specific InternalBuilder class
+        self._pbuilder_cmd = "pbuilder %s" % self.config.command
+        self.cmd = "%s%sIMAGE=%s DIST=%s ARCH=%s %s --configfile %s --hookdir %s"
+
+    def get_basetgz(self, *args, **kwargs):
+        self.arch = args[1] # used in build_cmd property later
+        return super(Setup, self).get_basetgz(*args, **kwargs)
+
+    @property
+    def builder_cmd(self):
+        return self._pbuilder_cmd
+
+    @property
+    def setarch_cmd(self):
+        setarch_cmd = ""
+        # workaround: http://www.netfort.gr.jp/~dancer/software/pbuilder-doc/pbuilder-doc.html#amd64i386
+        # FIXME use `setarch` command for much more supported platforms
+        if 'amd64' in self.get_architectures(['current']) and self.arch == 'i386' and os.path.exists('/usr/bin/linux32'):
+            logging.info('using linux32 command to build i386 image from amd64 compatible architecture')
+            setarch_cmd = 'linux32 '
+        return setarch_cmd
+
+    @property
+    def sudo_cmd(self):
+        sudo_cmd = ""
+        if os.geteuid() != 0:
+            logging.debug('lgp setup should be run as root. sudo is used internally.')
+            sudo_cmd = "sudo "
+        return sudo_cmd
+
