@@ -18,6 +18,7 @@ from os.path import join, isfile, dirname, exists
 import subprocess
 from commands import getstatusoutput
 
+from logilab.common.deprecation import deprecated
 from logilab.common.changelog import ChangeLog as BaseChangeLog, ChangeLogEntry
 
 CHANGEFILE = 'ChangeLog'
@@ -120,6 +121,7 @@ class ChangeLog(BaseChangeLog):
 
 # debian change log ###########################################################
 
+@deprecated
 def debian_version(self):
     """return current debian version
     """
@@ -177,7 +179,7 @@ class DebianVersion(Version):
         else:
             self.epoch = ''
         self.upstream_version, self.debian_version = versionstr.split('-')
-        
+
 
 class DebianChangeLogEntry(ChangeLogEntry):
     """object representation of a debian/changelog entry

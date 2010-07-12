@@ -21,7 +21,7 @@ import os
 import re
 import tempfile
 import shutil
-from urllib2 import urlopen
+from urllib2 import urlopen, HTTPError
 from os.path import join, split, exists
 from imp import find_module, load_module
 from commands import getstatusoutput
@@ -30,6 +30,7 @@ from stat import S_IWRITE
 
 from logilab.common.fileutils import lines, ensure_fs_mode
 from logilab.common.shellutils import find
+from logilab.common.deprecation import deprecated
 
 import logilab.devtools
 from logilab.devtools.lib import TextReporter
@@ -555,6 +556,7 @@ class PackageInfo:
             if exists(join(self.base_directory, doc)):
                 self.std_docs.append(doc)
 
+    @deprecated
     def release_tag(self, version=None, branch=0):
         """return the release tag for the given or current version
         """
@@ -566,6 +568,7 @@ class PackageInfo:
         else:
             return '%s-version-%s' % (self.name, version)
 
+    @deprecated
     def debian_release_tag(self, version=None):
         """return the release tag for the given or current version
         """
@@ -574,6 +577,7 @@ class PackageInfo:
         version = version.replace('.', '_')
         return '%s-debian-version-%s' % (self.name, version)
 
+    @deprecated
     def debian_version(self):
         """return current debian version
         """
@@ -608,6 +612,9 @@ def check_url(reporter, file, var, url):
         return
     try:
         urlopen(url)
+    except HTTPError, ex:
+        msg = '%s on %s=%r' % (ex, var, url)
+        reporter.warning(file, None, msg)
     except Exception, ex:
         msg = '%s on %s=%r' % (ex, var, url)
         reporter.error(file, None, msg)
