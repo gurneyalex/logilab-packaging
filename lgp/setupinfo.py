@@ -155,9 +155,12 @@ class SetupInfo(Configuration):
 
         # Version information
         if self.config.version:
-            from logilab.devtools.__pkginfo__ import version, distname, copyright, web
+            from logilab.devtools.__pkginfo__ import version, distname, copyright, web, __file__ as location
             print "lgp (%s) %s\n%s" % (distname, version, copyright)
-            print "Please visit: %s " % web
+            if not location.startswith(sys.prefix):
+                msg = "\nNote: installed in a non-standard location (%s)"
+                print(msg % os.path.dirname(location))
+            print "\nPlease visit: %s " % web
             sys.exit()
 
         if self.config.dump_config:
