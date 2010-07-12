@@ -56,7 +56,7 @@ CHECKS = {'debian'    : set(['debian_dir', 'debian_rules', 'debian_copying',
                              'debian_changelog', 'debian_homepage']),
           'default'   : set(['builder', 'readme', 'changelog', 'bin', 'tests_directory',
                              'repository', 'release_number']),
-          'distutils' : set(['manifest_in', 'pydistutils', 'pythonpath']),
+          'distutils' : set(['manifest_in', 'pydistutils',]),
           'pkginfo'   : set(['debsign', 'package_info', 'announce', 'pkginfo_copyright']),
           'makefile'  : set(['makefile']),
           'cubicweb'  : set(), # XXX test presence of a ['migration_file'], for the current version
@@ -322,12 +322,6 @@ def check_pydistutils(checker):
         checker.logger.warn('your ~/.pydistutils.cfg can conflict with distutils commands')
     return OK
 
-def check_pythonpath(checker):
-    """check PYTHONPATH existence"""
-    if os.environ.get('PYTHONPATH'):
-        checker.logger.warn('your PYTHONPATH is not empty and can conflict in some way')
-    return OK
-
 def check_builder(checker):
     """check if the builder has been changed"""
     if os.environ.get('DEBUILDER'):
@@ -376,11 +370,11 @@ def check_debian_changelog(checker):
         cmd = "sed -ne '2,${/UNRELEASED/p}' %s" % CHANGELOG
         _, output = commands.getstatusoutput(cmd)
         if output:
-            checker.logger.error('UNRELEASED keyword found in debian changelog')
+            checker.logger.warn('UNRELEASED keyword found in debian changelog')
         cmd = "sed -ne '/DISTRIBUTION/p' %s" % CHANGELOG
         _, output = commands.getstatusoutput(cmd)
         if output:
-            checker.logger.error("some occurences of DISTRIBUTION found in %s" % CHANGELOG)
+            checker.logger.warn("some occurences of DISTRIBUTION found in %s" % CHANGELOG)
         # check project name coherency
         if checker.get_debian_name() != utils._parse_deb_project():
             msg = "project name mismatch: debian/control says '%s' and debian/changelog says '%s'"
