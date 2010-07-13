@@ -547,11 +547,10 @@ class SetupInfo(Configuration):
                 raise LGPCommandException("bad substitution for distribution field", err)
 
         # substitute version string in appending timestamp and suffix
-        # suffix should not be empty
+        # append suffix string (or timestamp if suffix is empty) to debian revision
         # FIXME use debian_bundle.changelog.Changelog instead
-        if self.config.suffix:
-            timestamp = int(time.time())
-            suffix = ''.join(self.config.suffix,timestamp)
+        if self.config.suffix is not None:
+            suffix = self.config.suffix or '+%s' % int(time.time())
             logging.debug("suffix '%s' added to package names" % suffix)
             cmd = ['sed', '-i', '1s/(\(.*\))/(\\1%s)/' % suffix,
                    osp.join(self.origpath, 'debian', 'changelog')]
