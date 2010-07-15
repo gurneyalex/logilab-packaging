@@ -468,7 +468,7 @@ class SetupInfo(Configuration):
 
         # move pristine tarball and exit if asked by command-line
         if self.config.get_orig_source:
-            self.move_package_files([self.config.get_orig_source],
+            self.move_package_files([self.config.orig_tarball],
                                     verbose=self.config.get_orig_source)
             self.finalize()
 
