@@ -200,8 +200,10 @@ class Builder(SetupInfo):
                         logging.error("cannot remove '%s' (%s)"
                                       % (tmpdir, exc))
         else:
-            logging.warn("keep temporary directory '%s' for further investigation"
-                         % ",".join(self._tmpdirs))
+            contents = [(t, os.listdir(t)) for t in self._tmpdirs]
+            for t, c in contents:
+                logging.warn("temporary directory not deleted: %s (%s)"
+                             % (t, ", ".join(c)))
 
     def make_debian_source_package(self):
         """create a debian source package
@@ -223,6 +225,7 @@ class Builder(SetupInfo):
         logging.info("creation of the Debian source package files (.dsc, .diff.gz)")
         try:
             cmd = 'dpkg-source --no-copy -b %s' % self.origpath
+            logging.debug("running dpkg-source command: %s ..." % cmd)
             check_call(cmd.split(), stdout=sys.stdout)
         except CalledProcessError, err:
             msg = "cannot build valid dsc file with command %s" % cmd
