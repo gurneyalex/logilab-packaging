@@ -480,8 +480,14 @@ class SetupInfo(Configuration):
         # change directory context at each build
         self.create_build_context()
 
-        logging.debug("prepare for %s distribution" % self.current_distrib or "default")
-        logging.debug("extracting original source archive in %s" % self._tmpdir)
+        # Mandatory to be compatible with format 1.0
+        logging.debug("copy pristine tarball to prepare Debian source package diff")
+        cp(self.config.orig_tarball, self._tmpdir)
+        # TODO obtain current format version
+        # os.exists(osp.join(self.origpath, "debian/source/format")
+
+        logging.debug("extracting original source archive for %s distribution in %s"
+                      % (self.current_distrib or "default", self._tmpdir))
         try:
             cmd = 'tar --atime-preserve --preserve-permissions --preserve-order -xzf %s -C %s'\
                   % (self.config.orig_tarball, self._tmpdir)
@@ -524,7 +530,8 @@ class SetupInfo(Configuration):
         """
         try:
             # don't forget the final slash!
-            export(osp.join(self.config.pkg_dir, 'debian'), osp.join(self.origpath, 'debian/'))
+            export(osp.join(self.config.pkg_dir, 'debian'), osp.join(self.origpath, 'debian/'),
+                   verbose=self.config.verbose == 2)
         except IOError, err:
             raise LGPException(err)
 
