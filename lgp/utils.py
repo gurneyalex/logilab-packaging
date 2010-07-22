@@ -207,7 +207,8 @@ def wait_jobs(joblist, print_dots=True):
         if print_dots:
             time.sleep(1)
             sys.stderr.write('.')
-    sys.stderr.write('\n')
+    if print_dots:
+        sys.stderr.write('\n')
     return status, time.time() - t0
 
 def _parse_deb_distrib(changelog='debian/changelog'):

@@ -222,7 +222,6 @@ class Builder(SetupInfo):
         # change directory to build source package
         os.chdir(self._tmpdir)
 
-        logging.info("creation of the Debian source package files (.dsc, .diff.gz)")
         try:
             cmd = 'dpkg-source --no-copy -b %s' % self.origpath
             logging.debug("running dpkg-source command: %s ..." % cmd)
@@ -234,6 +233,8 @@ class Builder(SetupInfo):
         # define dscfile ressource
         self.dscfile = glob(os.path.join(self._tmpdir, '*.dsc')).pop()
         assert osp.isfile(self.dscfile)
+        msg = "create Debian source package files (.dsc, .diff.gz): %s"
+        logging.info(msg % osp.basename(self.dscfile))
 
         # move Debian source package files and exit if asked by command-line
         if self.config.deb_src_only:
@@ -277,10 +278,13 @@ class Builder(SetupInfo):
 
         virtualize/parallelize the binary package build process
         This is a rudimentary multiprocess support for parallel build by architecture
-        Just waiting standard multiprocess module in python 2.6
 
-        :todo: use multiprocessing module here
+        Display build log when verbose mode is greater or equal to 2 (-vv*)
+
+        :todo: use multiprocessing module here (python 2.6)
         """
+        stdout = {False: file(os.devnull, "w"), True: sys.stdout}
+        stdout = stdout[self.config.verbose >= 2] # i.e. -vv* in command line
         joblist = []
         tmplist = []
         for build in self.use_build_series():
@@ -289,7 +293,7 @@ class Builder(SetupInfo):
 
             cmd = self._builder_command(build)
             logging.info("building binary debian package for '%s/%s' "
-                         "using build options: '%s'"
+                         "using DEBBUILDOPTS options: '%s' ..."
                          % (build['distrib'], build['arch'], build['buildopts']))
 
             logging.debug("running build command: %s ..." % ' '.join(cmd))
@@ -298,7 +302,7 @@ class Builder(SetupInfo):
                                      env={'DIST':  build['distrib'],
                                           'ARCH':  build['arch'],
                                           'IMAGE': build['image']},
-                                     stdout=file(os.devnull, "w")))
+                                     stdout=stdout))
             except Exception, err:
                 logging.critical(err)
                 logging.critical("build failure (%s/%s) for %s (%s)"
@@ -307,24 +311,6 @@ class Builder(SetupInfo):
                                     self.get_debian_name(),
                                     self.get_debian_version()))
                 return False
-
-        # just ugly code as I like to print build log in verbose mode
-        # we can't easily communicate with background processes owned by root
-        if self.config.verbose >= 2: # i.e. -vv* in command line
-            import time
-            logging.debug('waiting for the build log...')
-            time.sleep(10) # wait for first output by pbuilder
-            try:
-                buildlog = glob(osp.join(self._tmpdir, "*" + BUILD_LOG_EXT))
-                logging.debug('find buildlog: %s' % str(buildlog))
-                buildlog = buildlog.pop()
-                Popen(['/usr/bin/tail',
-                       '--sleep-interval=0.1',
-                       '--pid=%s' % os.getpid(),
-                       '-F', buildlog],
-                      stderr=file(os.devnull, "w"))
-            except IndexError, exc:
-                logging.warn('cannot retrieve and display current build log')
 
         # only print dots in verbose mode (verbose: 1)
         build_status, timedelta = wait_jobs(joblist, self.config.verbose == 1)
@@ -399,6 +385,7 @@ class Builder(SetupInfo):
         :see: dcmd command
         :todo: add more checks: sizes, checksums, etc... (ex: _check_file)
         :todo: support other source package formats
+        :todo: define API and/or integrate software (dput, curl, scp) ?
         """
         assert isinstance(filelist, list), "must be a list to be able to extend"
 

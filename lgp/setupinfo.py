@@ -438,7 +438,6 @@ class SetupInfo(Configuration):
                 raise LGPException('unable to build upstream tarball of %s package '
                                    'for Debian revision "%s"'
                                    % (self.get_debian_name(), debian_revision))
-            logging.info("creation of a new Debian source archive (pristine tarball) from working directory")
             try:
                 self._run_command("sdist", dist_dir=self._tmpdir)
             except CalledProcessError, err:
@@ -447,9 +446,10 @@ class SetupInfo(Configuration):
                                   " your repository" % self.get_upstream_version())
                 raise LGPCommandException("source distribution wasn't properly built", err)
             self.config.orig_tarball = osp.join(self._tmpdir, upstream_tarball)
+            msg = "create new Debian source archive (pristine tarball) from working directory: %s"
         else:
-            logging.info("reuse archive '%s' as original source archive (pristine tarball)"
-                         % self.config.orig_tarball)
+            msg = "retrieve original Debian source archive (pristine tarball): %s"
+        logging.info(msg % osp.basename(self.config.orig_tarball))
 
         if not os.path.basename(self.config.orig_tarball).startswith(self.get_upstream_name()):
             msg = "pristine tarball filename doesn't start with upstream name '%s'. really suspect..."
