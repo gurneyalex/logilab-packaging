@@ -24,10 +24,18 @@ LGP_SUITES=${LGP_SUITES:-'/etc/lgp/suites'}
 # FIXME support of old DEBIAN_MIRROR and UBUNTU_MIRROR ?
 # FIXME Manage OTHERMIRROR only by DEBIAN_SOURCESLIST settings
 # FIXME rename DEBIAN_MIRROR to DEBIAN_MIRRORSITE without change it
-# FIXME make functions instead of multiple greps
+# FIXME make functions/scripts instead of multiple greps
 # FIXME check repo availability before adding it ?
 # FIXME manage error code 3 directly in lgp with error message
 
+check_repository() {
+	http_status=$(curl --write-out %{http_code} --silent --output /dev/null $1)
+	if [ $http_status = "200" ]; then
+		echo $1
+		return 0
+	fi
+	return 1
+}
 find_lgp_distrib() {
 	DIST=$1
 	shift
@@ -38,19 +46,26 @@ find_lgp_distrib() {
 	fi
 	return 1
 }
+
+# Ugly and buggy when repository don't exist
+# TODO replace by a dedicated hook
 if $(find_lgp_distrib $DIST "${DEBIAN_SUITES[@]}"); then
-    DEBIAN_MIRRORSITE="http://$DEBIAN_MIRROR/debian/"
-    MIRRORSITE=${DEBIAN_MIRRORSITE}
+    MIRRORSITE=${DEBIAN_MIRRORSITE:-"http://$DEBIAN_MIRROR/debian/"}
     COMPONENTS=${DEBIAN_COMPONENTS}
-    [[ -f $DEBIAN_SOURCESLIST ]] && eval "OTHERMIRROR=\"$(grep -v '#' $DEBIAN_SOURCESLIST | tr '\n' '|')\""
-    [[ -f $DEBIAN_SOURCESLIST.$DIST ]] && OTHERMIRROR=$(grep -v '#' $DEBIAN_SOURCESLIST.$DIST | tr '\n' '|')
+    if [ -f $DEBIAN_SOURCESLIST.$DIST ]; then
+        eval "OTHERMIRROR=\"$(grep -v '^#\|^$' $DEBIAN_SOURCESLIST.$DIST | tr '\n' '|')\""
+    elif [ -f $DEBIAN_SOURCESLIST ]; then
+        eval "OTHERMIRROR=\"$(grep -v '^#\|^$' $DEBIAN_SOURCESLIST | tr '\n' '|')\""
+    fi
     OTHERMIRROR=${OTHERMIRROR:-$DEBIAN_OTHERMIRROR}
 elif $(find_lgp_distrib $DIST "${UBUNTU_SUITES[@]}"); then
-    UBUNTU_MIRRORSITE="http://$UBUNTU_MIRROR/ubuntu/"
-    MIRRORSITE=${UBUNTU_MIRRORSITE}
+    MIRRORSITE=${UBUNTU_MIRRORSITE:-"http://$UBUNTU_MIRROR/ubuntu/"}
     COMPONENTS=${UBUNTU_COMPONENTS}
-    [[ -f $UBUNTU_SOURCESLIST ]] && eval "OTHERMIRROR=\"$(grep -v '#' $UBUNTU_SOURCESLIST | tr '\n' '|')\""
-    [[ -f $UBUNTU_SOURCESLIST.$DIST ]] && OTHERMIRROR=$(grep -v '#' $UBUNTU_SOURCESLIST.$DIST | tr '\n' '|')
+    if [ -f $UBUNTU_SOURCESLIST.$DIST ]; then
+        eval "OTHERMIRROR=\"$(grep -v '^#\|^$' $UBUNTU_SOURCESLIST.$DIST | tr '\n' '|')\""
+    elif [ -f $UBUNTU_SOURCESLIST ]; then
+        eval "OTHERMIRROR=\"$(grep -v '^#\|^$' $UBUNTU_SOURCESLIST | tr '\n' '|')\""
+    fi
     OTHERMIRROR=${OTHERMIRROR:-$UBUNTU_OTHERMIRROR}
 else
     echo "Distribution '$DIST' cannot be found in \"${LGP_SUITES}\""
@@ -58,6 +73,10 @@ else
     echo "This error occured in pbuilder set up"
     exit 3
 fi
+echo "D: MIRRORSITE=$MIRRORSITE"
+echo "D: OTHERMIRROR=$OTHERMIRROR"
+[ -n "$UBUNTU_MIRROR" ] && echo "E: UBUNTU_MIRROR is deprecated. Please, use UBUNTU_MIRRORSITE instead."
+[ -n "$DEBIAN_MIRROR" ] && echo "E: DEBIAN_MIRROR is deprecated. Please, use DEBIAN_MIRRORSITE instead."
 
 # *** DEPRECATED ***
 # Note: files matching *_SOURCESLIST.${DIST} in the same directory can be used
