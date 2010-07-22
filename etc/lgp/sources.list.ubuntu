@@ -12,7 +12,7 @@
 # Internally, lgp set OTHERMIRROR pbuilder variable
 
 deb http://security.ubuntu.com/ubuntu ${DIST}-security main restricted
-deb http://fr.archive.ubuntu.com/ubuntu ${DIST}-updates main restricted
+deb http://archive.ubuntu.com/ubuntu ${DIST}-updates main restricted
 
 # Logilab repository (http://www.logilab.org/card/LogilabDebianRepository)
 #deb http://ftp.logilab.org/dists ${DIST}/
