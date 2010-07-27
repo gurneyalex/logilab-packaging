@@ -20,10 +20,6 @@ LGP_SUITES=${LGP_SUITES:-'/etc/lgp/suites'}
 : ${UBUNTU_SUITES:=$(grep -B2 '^Keyring: ubuntu' $LGP_SUITES | sed -n 's/\(Suite: \)//p')}
 
 # *** NEEDS REFACTORING ***
-# FIXME Use same format with MIRRORSITE and DEBIAN_MIRRORSITE + UBUNTU_MIRRORSITE
-# FIXME support of old DEBIAN_MIRROR and UBUNTU_MIRROR ?
-# FIXME Manage OTHERMIRROR only by DEBIAN_SOURCESLIST settings
-# FIXME rename DEBIAN_MIRROR to DEBIAN_MIRRORSITE without change it
 # FIXME make functions/scripts instead of multiple greps
 # FIXME check repo availability before adding it ?
 # FIXME manage error code 3 directly in lgp with error message
@@ -169,8 +165,9 @@ if [ -d "${BUILDRESULT}" ]; then
 	BINDMOUNTS="${BINDMOUNTS} $BUILDRESULT"
 fi
 
-# FIXME pbuilder.local has not $NAME defined
-#APTCACHE="/var/cache/pbuilder/$NAME/aptcache/"
+# Using environmental variables for running pbuilder for specific distribution
+# http://www.netfort.gr.jp/~dancer/software/pbuilder-doc/pbuilder-doc.html#ENVVARDISTRIBUTIONSWITCH
+APTCACHE="/var/cache/pbuilder/${DIST}/aptcache/"
 
 #REMOVEPACKAGES="lilo bash"
 #EXTRAPACKAGES=gcc3.0-athlon-builder
