@@ -37,7 +37,7 @@ def run(args):
         setup = Setup(args)
 
         if os.geteuid() != 0:
-            raise LGPException('lgp setup should be run as root.')
+            logging.warn('lgp setup should be run as root')
         if setup.config.command == "create":
             setup.logger = logging
             check_keyrings(setup)
@@ -58,7 +58,7 @@ def run(args):
                                     % (image, os.path.realpath(image)))
                     continue
 
-                cmd = setup.cmd % (image, distrib, arch, setup.setarch_cmd,
+                cmd = setup.cmd % (image, distrib, arch, setup.setarch_cmd, setup.sudo_cmd,
                                    setup.builder_cmd, CONFIG_FILE, HOOKS_DIR)
 
                 # run setup command
@@ -104,10 +104,9 @@ class Setup(SetupInfo):
     def __init__(self, args):
         # Retrieve upstream information
         super(Setup, self).__init__(arguments=args, options=self.options, usage=__doc__)
-
         # TODO encapsulate builder logic into specific InternalBuilder class
-        self._pbuilder_cmd = "pbuilder %s" % self.config.command
-        self.cmd = "IMAGE=%s DIST=%s ARCH=%s %s %s --configfile %s --hookdir %s"
+        self._pbuilder_cmd = "/usr/sbin/pbuilder %s" % self.config.command
+        self.cmd = "IMAGE=%s DIST=%s ARCH=%s %s %s %s --configfile %s --hookdir %s"
 
     def get_basetgz(self, *args, **kwargs):
         self.arch = args[1] # used in build_cmd property later
@@ -127,3 +126,10 @@ class Setup(SetupInfo):
             setarch_cmd = 'linux32'
         return setarch_cmd
 
+    @property
+    def sudo_cmd(self):
+        sudo_cmd = ""
+        if os.geteuid() != 0:
+            logging.debug('lgp setup should be run as root. sudo is used internally.')
+            sudo_cmd = "/usr/bin/sudo -E"
+        return sudo_cmd

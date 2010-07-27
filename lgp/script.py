@@ -27,9 +27,9 @@ import logging
 import glob
 from subprocess import check_call, CalledProcessError
 
-from logilab.devtools.lgp.setupinfo import Setup
-from logilab.devtools.lgp.exceptions import LGPException, LGPCommandException
-from logilab.devtools.lgp import CONFIG_FILE, SCRIPTS_DIR
+from logilab.devtools.lgp.setup import Setup
+from logilab.devtools.lgp.exceptions import LGPException
+from logilab.devtools.lgp import CONFIG_FILE, SCRIPTS_DIR, HOOKS_DIR
 
 
 def run(args):
@@ -38,8 +38,9 @@ def run(args):
         script = Script(args)
 
         #  command, = glob.glob(os.path.join(SCRIPTS_DIR, script.config.command))
-        if len(script.arguments)==0 or script.config.list_commands:
+        if len(script.arguments)==0:
             commands = dict(script.options)['command']['choices']
+            logging.info('available command(s): %s' % commands)
         else:
             commands = [c for c in glob.glob(os.path.join(SCRIPTS_DIR, script.config.command))
                         if os.path.basename(c)==script.config.command]
@@ -47,21 +48,22 @@ def run(args):
         if not commands:
             raise LGPException("command '%s' not found. Please check commands in %s"
                                % (script.config.command, SCRIPTS_DIR))
-        logging.debug('available command(s): %s' % commands)
+        if len(script.arguments)==0:
+            sys.exit()
 
         for arch in script.architectures:
             for distrib in script.distributions:
                 for command in commands:
                     image = script.get_basetgz(distrib, arch)
 
-                    cmd = script.cmd % (script.setarch_cmd, script.sudo_cmd,
-                                        image, distrib, arch,
+                    cmd = script.cmd % (image, distrib, arch, script.setarch_cmd, script.sudo_cmd,
                                         script.builder_cmd, CONFIG_FILE,
                                         HOOKS_DIR, command, ' '.join(script.arguments))
 
                     # run script command
-                    logging.info("execute script '%s' with parameters: %s"
+                    logging.info("execute script '%s' with arguments: %s"
                                  % (command, ' '.join(script.arguments)))
+                    logging.debug("run command: %s" % cmd)
                     try:
                         check_call(cmd, stdout=sys.stdout, shell=True,
                                    env={'DIST': distrib, 'ARCH': arch, 'IMAGE': image})
@@ -97,6 +99,7 @@ class Script(Setup):
 
     def __init__(self, args):
         # Retrieve upstream information
-        super(Script, self).__init__(arguments=args, options=self.options, usage=__doc__)
-        self._pbuilder_cmd = "pbuilder script"
-        self.cmd += ' -- %s %s'
+        super(Setup, self).__init__(args, options=self.options, usage=__doc__)
+        # TODO encapsulate builder logic into specific InternalBuilder class
+        self._pbuilder_cmd = "/usr/sbin/pbuilder execute"
+        self.cmd = "IMAGE=%s DIST=%s ARCH=%s %s %s %s --configfile %s --hookdir %s -- %s %s"

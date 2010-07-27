@@ -249,6 +249,7 @@ class Builder(SetupInfo):
         logging.debug("package builder flavour: '%s'" % debuilder)
         if debuilder == 'pbuilder':
             assert osp.isfile(self.dscfile)
+            # TODO encapsulate builder logic into specific InternalBuilder class
             cmd = ['sudo', 'IMAGE=%(image)s' % build_vars,
                    'DIST=%(distrib)s' % build_vars,
                    'ARCH=%(arch)s' % build_vars,
@@ -294,7 +295,8 @@ class Builder(SetupInfo):
             cmd = self._builder_command(build)
             logging.info("building binary debian package for '%s/%s' "
                          "using DEBBUILDOPTS options: '%s' ..."
-                         % (build['distrib'], build['arch'], build['buildopts']))
+                         % (build['distrib'], build['arch'],
+                            build['buildopts'] or '(none)'))
 
             logging.debug("running build command: %s ..." % ' '.join(cmd))
             try:
