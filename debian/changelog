@@ -1,3 +1,9 @@
+logilab-devtools (0.17.3-1) unstable; urgency=low
+
+  * new upstream release
+
+ -- Julien Jehannet <julien.jehannet@logilab.fr>  Tue, 27 Jul 2010 13:58:47 +0200
+
 logilab-devtools (0.17.2-1) unstable; urgency=low
 
   * new upstream release

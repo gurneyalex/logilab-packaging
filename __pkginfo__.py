@@ -19,7 +19,7 @@ logilab.devtools packaging information
 
 modname = 'devtools'
 distname = 'logilab-devtools'
-numversion = (0, 17, 2)
+numversion = (0, 17, 3)
 version = '.'.join([str(num) for num in numversion])
 
 license = 'GPL'
