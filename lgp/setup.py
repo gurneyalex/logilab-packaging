@@ -36,6 +36,8 @@ def run(args):
     try :
         setup = Setup(args)
 
+        if os.geteuid() != 0:
+            raise LGPException('lgp setup should be run as root.')
         if setup.config.command == "create":
             setup.logger = logging
             check_keyrings(setup)
@@ -56,9 +58,8 @@ def run(args):
                                     % (image, os.path.realpath(image)))
                     continue
 
-                cmd = setup.cmd % (setup.setarch_cmd, setup.sudo_cmd, image,
-                                   distrib, arch, setup.builder_cmd,
-                                   CONFIG_FILE, HOOKS_DIR)
+                cmd = setup.cmd % (image, distrib, arch, setup.setarch_cmd,
+                                   setup.builder_cmd, CONFIG_FILE, HOOKS_DIR)
 
                 # run setup command
                 logging.debug("run command: %s" % cmd)
@@ -106,7 +107,7 @@ class Setup(SetupInfo):
 
         # TODO encapsulate builder logic into specific InternalBuilder class
         self._pbuilder_cmd = "pbuilder %s" % self.config.command
-        self.cmd = "%s%sIMAGE=%s DIST=%s ARCH=%s %s --configfile %s --hookdir %s"
+        self.cmd = "IMAGE=%s DIST=%s ARCH=%s %s %s --configfile %s --hookdir %s"
 
     def get_basetgz(self, *args, **kwargs):
         self.arch = args[1] # used in build_cmd property later
@@ -123,14 +124,6 @@ class Setup(SetupInfo):
         # FIXME use `setarch` command for much more supported platforms
         if 'amd64' in self.get_architectures(['current']) and self.arch == 'i386' and os.path.exists('/usr/bin/linux32'):
             logging.info('using linux32 command to build i386 image from amd64 compatible architecture')
-            setarch_cmd = 'linux32 '
+            setarch_cmd = 'linux32'
         return setarch_cmd
-
-    @property
-    def sudo_cmd(self):
-        sudo_cmd = ""
-        if os.geteuid() != 0:
-            logging.debug('lgp setup should be run as root. sudo is used internally.')
-            sudo_cmd = "sudo "
-        return sudo_cmd
 
