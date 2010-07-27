@@ -46,7 +46,11 @@ find_lgp_distrib() {
 # Ugly and buggy when repository don't exist
 # TODO replace by a dedicated hook
 if $(find_lgp_distrib $DIST "${DEBIAN_SUITES[@]}"); then
-    MIRRORSITE=${DEBIAN_MIRRORSITE:-"http://$DEBIAN_MIRROR/debian/"}
+    MIRRORSITE=${DEBIAN_MIRRORSITE}
+    if [ -n "$DEBIAN_MIRROR" ]; then
+        echo "W: DEBIAN_MIRROR is deprecated. Please, use DEBIAN_MIRRORSITE instead."
+        MIRRORSITE="http://$DEBIAN_MIRROR/debian/"
+    fi
     COMPONENTS=${DEBIAN_COMPONENTS}
     if [ -f $DEBIAN_SOURCESLIST.$DIST ]; then
         eval "OTHERMIRROR=\"$(grep -v '^#\|^$' $DEBIAN_SOURCESLIST.$DIST | tr '\n' '|')\""
@@ -55,7 +59,11 @@ if $(find_lgp_distrib $DIST "${DEBIAN_SUITES[@]}"); then
     fi
     OTHERMIRROR=${OTHERMIRROR:-$DEBIAN_OTHERMIRROR}
 elif $(find_lgp_distrib $DIST "${UBUNTU_SUITES[@]}"); then
-    MIRRORSITE=${UBUNTU_MIRRORSITE:-"http://$UBUNTU_MIRROR/ubuntu/"}
+    MIRRORSITE=${UBUNTU_MIRRORSITE}
+    if [ -n "$UBUNTU_MIRROR" ]; then
+        echo "W: UBUNTU_MIRROR is deprecated. Please, use UBUNTU_MIRRORSITE instead."
+        MIRRORSITE="http://$UBUNTU_MIRROR/ubuntu/"
+    fi
     COMPONENTS=${UBUNTU_COMPONENTS}
     if [ -f $UBUNTU_SOURCESLIST.$DIST ]; then
         eval "OTHERMIRROR=\"$(grep -v '^#\|^$' $UBUNTU_SOURCESLIST.$DIST | tr '\n' '|')\""
@@ -71,8 +79,6 @@ else
 fi
 echo "D: MIRRORSITE=$MIRRORSITE"
 echo "D: OTHERMIRROR=$OTHERMIRROR"
-[ -n "$UBUNTU_MIRROR" ] && echo "E: UBUNTU_MIRROR is deprecated. Please, use UBUNTU_MIRRORSITE instead."
-[ -n "$DEBIAN_MIRROR" ] && echo "E: DEBIAN_MIRROR is deprecated. Please, use DEBIAN_MIRRORSITE instead."
 
 # *** DEPRECATED ***
 # Note: files matching *_SOURCESLIST.${DIST} in the same directory can be used
