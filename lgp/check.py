@@ -62,6 +62,10 @@ CHECKS = {'debian'    : set(['debian_dir', 'debian_rules', 'debian_copying',
           'cubicweb'  : set(), # XXX test presence of a ['migration_file'], for the current version
          }
 
+# avoid warning from continuous integration report
+if os.environ.get('APYCOT_ROOT'):
+    CHECKS['debian'].remove("debian_env")
+
 REV_LINE = re.compile('__revision__.*')
 
 
@@ -222,9 +226,6 @@ class Checker(SetupInfo):
                 checks.update(CHECKS['debian'])
             if self.config.set_checks:
                 checks = set()
-            # avoid warning from continuous integration report
-            if os.environ.get('APYCOT_ROOT'):
-                checks.remove("debian_env")
 
             for c in itertools.chain(self.config.set_checks,
                                      self.config.include_checks):
