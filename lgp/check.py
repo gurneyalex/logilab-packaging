@@ -331,15 +331,17 @@ def check_builder(checker):
 
 def check_debian_dir(checker):
     """check the debian directory"""
-    return isdir('debian')
+    debian_dir = checker.get_debian_dir()
+    return isdir(debian_dir)
 
 def check_debian_rules(checker):
     """check the debian*/rules file (filemode should be "+x")"""
     debian_dir = checker.get_debian_dir()
-    status = OK
-    status = status and isfile(os.path.join(debian_dir, 'rules'))
-    status = status and is_executable(os.path.join(debian_dir, 'rules'))
-    return status
+    if not isfile(os.path.join(debian_dir, 'rules')):
+        checker.logger.warn('check the debian*/rules file')
+    if not is_executable(os.path.join(debian_dir, 'rules')):
+        checker.logger.warn('check the debian*/rules file (filemode should be "+x")')
+    return OK
 
 def check_debian_copying(checker):
     """check debian/copyright file"""
