@@ -168,7 +168,7 @@ class Builder(SetupInfo):
                # should be a store_true action here
                ('sign',
                 {'type': 'string',
-                 'default': '',
+                 'default': 'no',
                  'short': 's',
                  'dest' : "sign",
                  'help': "try to sign Debian package(s) just built"
@@ -392,7 +392,7 @@ class Builder(SetupInfo):
         assert isinstance(filelist, list), "must be a list to be able to extend"
 
         def _sign_file(filename):
-            if self.config.sign:
+            if self.config.sign and self.config.sign.lower() == "yes":
                 check_debsign(self)
                 try:
                     check_call(["debsign", filename], stdout=sys.stdout)
