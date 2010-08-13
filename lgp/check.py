@@ -54,10 +54,11 @@ OK, NOK = 1, 0
 CHECKS = {'debian'    : set(['debian_dir', 'debian_rules', 'debian_copying',
                              'debian_source_value', 'debian_env',
                              'debian_changelog', 'debian_homepage']),
-          'default'   : set(['builder', 'readme', 'changelog', 'bin', 'tests_directory',
-                             'repository', 'release_number']),
+          'default'   : set(['builder',  'bin', 'repository', 'release_number']),
           'distutils' : set(['manifest_in', 'pydistutils',]),
-          'pkginfo'   : set(['debsign', 'package_info', 'announce', 'pkginfo_copyright']),
+          'pkginfo'   : set(['debsign', 'package_info', 'announce',
+                             'pkginfo_copyright', 'tests_directory',
+                             'readme', 'changelog']),
           'makefile'  : set(['makefile']),
           'cubicweb'  : set(), # XXX test presence of a ['migration_file'], for the current version
          }
@@ -433,7 +434,7 @@ def check_copying(checker):
 def check_tests_directory(checker):
     """check your tests? directory """
     if not (isdir('test') or isdir('tests')):
-        checker.logger.warn(check_copying.__doc__)
+        checker.logger.warn(check_tests_directory.__doc__)
     return OK
 
 def check_run_tests(checker):
