@@ -62,3 +62,5 @@ scripts = [
     'bin/lsprofcalltree',
     ]
 
+install_requires = ['logilab-common']
+
