@@ -1,10 +1,10 @@
-import unittest
 from os.path import join, dirname
 from cStringIO import StringIO
 
-from logilab.common.testlib import TestCase
+from logilab.common.testlib import TestCase, unittest_main
 
 from logilab.devtools.lib.changelog import *
+
 
 class ChangeLogTC(TestCase):
     cl_class = ChangeLog
@@ -16,7 +16,8 @@ class ChangeLogTC(TestCase):
         cl.write(out)
         self.assertStreamEquals(open(self.cl_file),
                                out)
-                          
+
+
 class DebianChangeLogTC(ChangeLogTC):
     cl_class = DebianChangeLog
     cl_file = join(dirname(__file__), 'data', 'debian', 'changelog')
@@ -37,8 +38,6 @@ class DebianVersionTC(TestCase):
 
         self.assertEquals(str(v), '1.2.3-2.2')
 
-
-
     def test_epoch(self):
         v = DebianVersion('1:1.2.3-2')
         self.assertEquals(v.upstream_version, '1.2.3')
@@ -56,5 +55,6 @@ class DebianVersionTC(TestCase):
         v4 = DebianVersion('1.2.3~rc1-1')
         self.failUnless(v4 < v1)
 
+
 if __name__  == '__main__':
-    unittest.main()
+    unittest_main()
