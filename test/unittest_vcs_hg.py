@@ -46,23 +46,23 @@ class HGAgentTC(testlib.TestCase):
 
     def test_status(self):
         """check that hg status correctly reports changes"""
-        self.assertEquals(self.agent.not_up_to_date(self.tmp2), [])
+        self.assertEqual(self.agent.not_up_to_date(self.tmp2), [])
         filename = os.path.join(self.tmp2, 'toto')
         stream = file(filename, 'w')
         stream.write('hello')
         stream.close()
         os.system('hg add -q -R %s %s' % (self.tmp2, filename))
-        self.assertEquals(self.agent.not_up_to_date(self.tmp2),
+        self.assertEqual(self.agent.not_up_to_date(self.tmp2),
             [('added', 'toto')])
-        self.assertEquals(len(self.agent.not_up_to_date(self.tmp2)), 1)
+        self.assertEqual(len(self.agent.not_up_to_date(self.tmp2)), 1)
         os.system('hg commit -R %s -m "." %s' % (self.tmp2, filename))
-        self.assertEquals(self.agent.not_up_to_date(self.tmp2),
+        self.assertEqual(self.agent.not_up_to_date(self.tmp2),
             [('outgoing', 'toto')])
         os.system('hg status -R %s' % self.tmp2)
-        self.assertEquals(self.agent.not_up_to_date(self.tmp2),
+        self.assertEqual(self.agent.not_up_to_date(self.tmp2),
             [('outgoing', 'toto')])
         os.system('echo "modif" >> %s' % filename)
-        self.assertEquals(self.agent.not_up_to_date(self.tmp2),
+        self.assertEqual(self.agent.not_up_to_date(self.tmp2),
             [('outgoing', 'toto'), ('modified', 'toto')])
 
     def test_log_info(self):
@@ -72,7 +72,7 @@ class HGAgentTC(testlib.TestCase):
         to_date = localtime(time())
         # .split(':', 1)[1] to remove user 'name'
         self.skip('vcslib: invalid call to walkchangerevs (#29148)')
-        self.assertEquals([str(cii).split(':', 1)[1] for cii in self.agent.log_info(self.tmp2, from_date, to_date)],
+        self.assertEqual([str(cii).split(':', 1)[1] for cii in self.agent.log_info(self.tmp2, from_date, to_date)],
                           [' update readme file (1)',
                            ' add readme file (0)'])
 

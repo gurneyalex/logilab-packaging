@@ -43,7 +43,7 @@ class GetInfoTC(testlib.TestCase):
 
     def test_get_info(self):
         d = cvs.get_info('generated')
-        self.assertEquals(d,
+        self.assertEqual(d,
                           {'MANIFEST.in': (4, '1.1', '', ''),
  'TODO': (4, '1.15', '', ''),
  '__init__.py': (4, '1.11', '', ''),
@@ -101,12 +101,12 @@ class CVSAgentTC(testlib.TestCase):
 
     def test_status(self):
         """check that cvs status correctly reports changes"""
-        self.assertEquals(cvs.CVSAgent.not_up_to_date(self.tmp2), [])
+        self.assertEqual(cvs.CVSAgent.not_up_to_date(self.tmp2), [])
         f = os.path.join(self.tmp2, 'README')
         stream = file(f,'w')
         stream.write('hoooooooo')
         stream.close()
-        self.assertEquals(len(cvs.CVSAgent.not_up_to_date(self.tmp2)), 1)
+        self.assertEqual(len(cvs.CVSAgent.not_up_to_date(self.tmp2)), 1)
 
     def test_log_info(self):
         try:
@@ -122,7 +122,7 @@ class CVSAgentTC(testlib.TestCase):
 
         expected_result = ['%s: update readme file (1.2)' % login,
                            '%s: add readme file (1.1)' % login]
-        self.assertEquals(log_info, expected_result)
+        self.assertEqual(log_info, expected_result)
 
 
 if __name__ == '__main__':
