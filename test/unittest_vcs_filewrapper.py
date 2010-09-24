@@ -18,9 +18,9 @@
 """unittests for FileWrapper
 """
 
-import unittest
 import os, shutil
 
+from logilab.common.testlib import TestCase, unittest_main
 from logilab.devtools.vcslib import FileWrapper
 
 from utest_utils import make_test_fs, delete_test_fs
@@ -32,7 +32,7 @@ ARCH = [(os.path.join(basedir, 'data/dir1'), ('file1.py', 'file2.py')),
         ]
 
 
-class FileWrapperTC(unittest.TestCase):
+class FileWrapperTC(TestCase):
     """test case for file wrappers"""
 
     def setUp(self):
@@ -47,61 +47,61 @@ class FileWrapperTC(unittest.TestCase):
 
     def test_dirname(self):
         """test filewrapper directories basenames / abspath"""
-        self.assertEquals(self.root_dir.abspath, os.path.join(self.cwd, 'data'))
-        self.assertEquals(self.root_dir.get_name(), 'data')
+        self.assertEqual(self.root_dir.abspath, os.path.join(self.cwd, 'data'))
+        self.assertEqual(self.root_dir.get_name(), 'data')
 
     def test_children(self):
         """test child count"""
         dir1 = self.root_dir['dir1']
         dir1_files = dir1.get_children()
-        self.assertEquals(len(dir1_files), 2)
+        self.assertEqual(len(dir1_files), 2)
         file1_child, file2_child = dir1_files
-        self.assertEquals(file1_child.get_name(), 'file1.py')
-        self.assertEquals(id(file1_child.get_parent()), id(dir1))
-        self.assertEquals(id(file1_child.get_root()), id(self.root_dir))
-        self.assertEquals(file2_child.get_name(), 'file2.py')
-        self.assertEquals(id(file2_child.get_parent()), id(dir1))
-        self.assertEquals(id(file1_child.next_sibling()), id(file2_child))
-        self.assertEquals(file1_child.previous_sibling(), None)
-        self.assertEquals(id(file2_child.previous_sibling()), id(file1_child))
-        self.assertEquals(file2_child.next_sibling(), None)
+        self.assertEqual(file1_child.get_name(), 'file1.py')
+        self.assertEqual(id(file1_child.get_parent()), id(dir1))
+        self.assertEqual(id(file1_child.get_root()), id(self.root_dir))
+        self.assertEqual(file2_child.get_name(), 'file2.py')
+        self.assertEqual(id(file2_child.get_parent()), id(dir1))
+        self.assertEqual(id(file1_child.next_sibling()), id(file2_child))
+        self.assertEqual(file1_child.previous_sibling(), None)
+        self.assertEqual(id(file2_child.previous_sibling()), id(file1_child))
+        self.assertEqual(file2_child.next_sibling(), None)
     
     def test_getitem(self):
         """test FileWrapper __getitem__() method"""
         self.assertRaises(KeyError, self.root_dir.__getitem__, 'dir1/file3.py')
         self.assertRaises(KeyError, self.root_dir.__getitem__, 'dir4')
         file1 = self.root_dir['dir1/file1.py']
-        self.assertEquals(file1.get_name(), 'file1.py')
+        self.assertEqual(file1.get_name(), 'file1.py')
         dir1 = self.root_dir['dir1']
-        self.assertEquals(dir1.get_name(), 'dir1')
-        self.assertEquals(id(dir1.get_parent()), id(self.root_dir))
+        self.assertEqual(dir1.get_name(), 'dir1')
+        self.assertEqual(id(dir1.get_parent()), id(self.root_dir))
 
     def test_is_leaf(self):
         """test FileWrapper.is_leaf()"""
         file1 = self.root_dir['dir1/file1.py']
-        self.assertEquals(file1.is_leaf(), True)
+        self.assertEqual(file1.is_leaf(), True)
         dir1 = self.root_dir['dir1']
-        self.assertEquals(dir1.is_leaf(), False)
+        self.assertEqual(dir1.is_leaf(), False)
         dir2 = self.root_dir['dir2']
-        self.assertEquals(dir2.is_leaf(), True)
+        self.assertEqual(dir2.is_leaf(), True)
         
     def test_isfile(self):
         """test FileWrapper.is_file()"""
         file1 = self.root_dir['dir1/file1.py']
-        self.assertEquals(file1.is_file(), True)
+        self.assertEqual(file1.is_file(), True)
         dir1 = self.root_dir['dir1']
-        self.assertEquals(dir1.is_file(), False)
+        self.assertEqual(dir1.is_file(), False)
         dir2 = self.root_dir['dir2']
-        self.assertEquals(dir2.is_file(), False)
+        self.assertEqual(dir2.is_file(), False)
 
     def test_isdir(self):
         """test FileWrapper.is_directory()"""
         file1 = self.root_dir['dir1/file1.py']
-        self.assertEquals(file1.is_directory(), False)
+        self.assertEqual(file1.is_directory(), False)
         dir1 = self.root_dir['dir1']
-        self.assertEquals(dir1.is_directory(), True)
+        self.assertEqual(dir1.is_directory(), True)
         dir2 = self.root_dir['dir2']
-        self.assertEquals(dir2.is_directory(), True)
+        self.assertEqual(dir2.is_directory(), True)
 
     def test_force_update(self):
         """test FileWrapper.force_update()"""
@@ -134,7 +134,7 @@ class FileWrapperTC(unittest.TestCase):
                 child._children.append(child.create_child(subpath))
         trace = []
         root.walk(trace_walk, trace)
-        self.assertEquals(trace,
+        self.assertEqual(trace,
                           [os.path.join(self.cwd, d)
                            for d in
                            ('data/dir1',
@@ -152,6 +152,6 @@ def trace_walk(node, trace):
 
 
 if __name__ == '__main__': 
-    unittest.main()
+    unittest_main()
 
 

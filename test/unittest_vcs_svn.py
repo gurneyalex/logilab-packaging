@@ -35,12 +35,12 @@ class SVNAgentTC(testlib.TestCase):
 
     def test_status(self):
         """check that svn status correctly reports changes"""
-        self.assertEquals(svn.SVNAgent.not_up_to_date(self.tmp2), [])
+        self.assertEqual(svn.SVNAgent.not_up_to_date(self.tmp2), [])
         f = os.path.join(self.tmp2, 'README')
         stream = file(f,'w')
         stream.write('hoooooooo')
         stream.close()
-        self.assertEquals(len(svn.SVNAgent.not_up_to_date(self.tmp2)), 1)
+        self.assertEqual(len(svn.SVNAgent.not_up_to_date(self.tmp2)), 1)
 
     def test_log_info(self):
         try:
@@ -51,7 +51,7 @@ class SVNAgentTC(testlib.TestCase):
         from_date = localtime(time() - 60*60*24)
         # add 1 minute since it seems to be svn log resolution
         to_date = localtime(time() + 60)
-        self.assertEquals([str(cii) for cii in svn.SVNAgent.log_info('file://'+self.tmp1, from_date, to_date,
+        self.assertEqual([str(cii) for cii in svn.SVNAgent.log_info('file://'+self.tmp1, from_date, to_date,
                                                                      'README')],
                           ['%s: update readme file (r2)' % login,
                            '%s: add readme file (r1)' % login])
