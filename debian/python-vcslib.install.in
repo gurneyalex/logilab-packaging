@@ -1,9 +1,0 @@
-debian/tmp/usr/lib/PY_VERSION/site-packages/logilab/devtools/__init__.py
-debian/tmp/usr/lib/PY_VERSION/site-packages/logilab/devtools/__pkginfo__.py
-debian/tmp/usr/lib/PY_VERSION/site-packages/logilab/devtools/vcslib
-debian/tmp/usr/lib/PY_VERSION/site-packages/logilab/devtools/cvslog.py
-debian/tmp/usr/lib/PY_VERSION/site-packages/logilab/devtools/cvstatus.py
-debian/tmp/usr/bin/vcpull
-debian/tmp/usr/bin/cvslog
-debian/tmp/usr/bin/cvstatus
-debian/tmp/usr/bin/hgstatus

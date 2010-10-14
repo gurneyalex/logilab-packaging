@@ -10,17 +10,6 @@ Standards-Version: 3.8.0
 Homepage: http://www.logilab.org/project/devtools
 XS-Python-Version: current
 
-Package: python-vcslib
-Architecture: all
-Recommends: cvs, mercurial (>= 0.9.3), subversion
-Depends: ${python:Depends}, python-logilab-common (>= 0.32.0)
-XB-Python-Version: ${python:Versions}
-Conflicts: devtools
-Replaces: devtools
-Description: set of development tools used at Logilab for source management
- Set of tools which aims to help the developpement process, including :
-  * cvs/svn/mercurial utilities
-
 Package: logilab-packaging
 Architecture: all
 Suggests: logilab-doctools, pymacs, emacsen-common, cvs, debian-archive-keyring
@@ -34,16 +23,6 @@ Description: set of development tools used at Logilab
  Set of tools which aims to help the developpement process, including :
   * tools to check and build source and/or Debian packages
   * standard for zope and Python packages
-
-Package: pycoverage
-Architecture: all
-Recommends: emacsen-common
-Depends: ${python:Depends}, logilab-packaging
-XB-Python-Version: ${python:Versions}
-Conflicts: devtools
-Replaces: devtools
-Description: Python code coverage tool
- tool primary used to compute test coverage
 
 Package: logilab-elisp
 Architecture: all

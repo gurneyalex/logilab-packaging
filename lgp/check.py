@@ -25,29 +25,27 @@
 """
 __docformat__ = "restructuredtext en"
 
-
 import os
 import stat
 import re
 import commands
 import logging
+import itertools
 from subprocess import call
 from os.path import basename, join, exists, isdir, isfile
 from pprint import pformat
-import itertools
 
 import mercurial.error
 
 from logilab.common.compat import set
 
-from logilab.devtools.lib.changelog import CHANGEFILE
-from logilab.devtools.lib.manifest import (get_manifest_files, read_manifest_in,
-                                           match_extensions, JUNK_EXTENSIONS)
-
-from logilab.devtools import templates
+from logilab.devtools import BASE_EXCLUDE, templates
 from logilab.devtools.lgp.setupinfo import SetupInfo
 from logilab.devtools.lgp.exceptions import LGPException
 from logilab.devtools.lgp import utils
+from logilab.devtools.lib.changelog import CHANGEFILE
+from logilab.devtools.lib.manifest import (get_manifest_files, read_manifest_in,
+                                           match_extensions, JUNK_EXTENSIONS)
 
 
 OK, NOK = 1, 0
@@ -477,7 +475,6 @@ def check_announce(checker):
 
 def check_bin(checker):
     """check executable script files in bin/ """
-    BASE_EXCLUDE = ('CVS', '.svn', '.hg', 'bzr')
     status = OK
     if not exists('bin/'):
         return status
@@ -505,31 +502,6 @@ def check_documentation(checker):
     else:
         checker.logger.warn("documentation directory not found")
     return status
-
-def check_repository(checker):
-    """check your repository file status"""
-    try:
-        from logilab.devtools.vcslib import get_vcs_agent
-        vcs_agent = get_vcs_agent(checker.config.pkg_dir)
-        if vcs_agent:
-            result = vcs_agent.not_up_to_date(checker.config.pkg_dir)
-            incoming = [(k,v) for (k,v) in result if k in ('incoming',)]
-            if incoming:
-                checker.logger.info("%d incoming(s) changesets detected" %
-                                    len(incoming))
-            # filter changesets
-            result = [(k,v) for (k,v) in result if k not in ('outgoing',
-                                                             'incoming')]
-            if result:
-                checker.logger.warn("modified files have been detected:\n%s" % pformat(result))
-                return NOK
-    except mercurial.error.RepoError:
-        checker.logger.debug("no remote repository found in .hg/hgrc")
-    except ImportError:
-        checker.logger.warn("you need to install logilab vcslib package for this check")
-    except NotImplementedError:
-        checker.logger.warn("the current vcs agent isn't yet supported")
-    return OK
 
 def check_release_number(checker):
     """check the versions coherence between upstream and debian/changelog"""
