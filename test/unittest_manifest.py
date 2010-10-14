@@ -24,24 +24,24 @@ from logilab.devtools.lib import TextReporter
 reporter = TextReporter()
 
 class MatchExtensionsFunctionTest(TestCase):
-    
+
     def test_known_values_1(self):
         self.assertEqual(match_extensions('truc.py', ('.c', '.py',)), 1)
-        
+
     def test_known_values_2(self):
         self.assertEqual(match_extensions('truc.po', ('.c', '.py',)), 0)
 
 class ReadManifestInFunctionTest(TestCase):
-    
+
     def test_known_values(self):
         self.assertEqual(read_manifest_in(reporter,
                                           dirname=join(dirname(__file__),'data/')),
                          ['good_file.xml', 'bin/tool.bat'])
-        
+
 class GetManifestFilesFunctionTest(TestCase):
-    
+
     def test_known_values(self):
-        self.skip('manifest "prune" command ignored (#2888)')
+        self.skipTest('manifest "prune" command ignored (#2888)')
         # https://www.logilab.net/elo/ticket/2888
         detected = get_manifest_files(dirname=join(dirname(__file__),'data/'))
         detected.sort()
@@ -50,7 +50,7 @@ class GetManifestFilesFunctionTest(TestCase):
                           'bad_file.rst', 'bad_file.xml', 'bin/tool',
                           'bin/tool.bat', 'good_file.rst', 'good_file.xml',
                           'warning_rest.txt'])
-        
+
 if __name__ == '__main__':
     unittest_main()
 
