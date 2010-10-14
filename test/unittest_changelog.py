@@ -14,8 +14,8 @@ class ChangeLogTC(TestCase):
         cl = self.cl_class(self.cl_file)
         out = StringIO()
         cl.write(out)
-        self.assertStreamEquals(open(self.cl_file),
-                               out)
+        self.assertMultiLineEqual(open(self.cl_file).read(),
+                                  out.getvalue())
 
 
 class DebianChangeLogTC(ChangeLogTC):
