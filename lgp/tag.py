@@ -22,9 +22,10 @@
 """
 __docformat__ = "restructuredtext en"
 
-from string import Template
+import os, os.path as osp
 import logging
 import ConfigParser
+from string import Template
 from subprocess import check_call
 
 from logilab.devtools.lgp import LGP_CONFIG_FILE
@@ -102,11 +103,6 @@ class Tagger(SetupInfo):
         # Retrieve upstream information
         super(Tagger, self).__init__(arguments=args, options=self.options,
                                      usage=__doc__)
-
-        try:
-            from logilab.devtools.vcslib import get_vcs_agent
-        except ImportError:
-            raise LGPException('you have to install python-vcslib package to use this command')
         self.vcs_agent = get_vcs_agent(self.config.pkg_dir)
         self.version = self.get_upstream_version()
         self.project = self.get_upstream_name()
@@ -140,3 +136,100 @@ class Tagger(SetupInfo):
         logging.debug('run command: %s' % command)
         check_call(command, shell=True)
         logging.info("add tag to repository: %s" % tag)
+
+
+
+def get_vcs_agent(directory):
+    """returns the appropriate VCS agent according to the version control system
+    detected in the given directory
+    """
+    if osp.isfile(directory):
+        directory = osp.dirname(directory)
+    if osp.exists(osp.join(directory, '.svn')):
+        return SVNAgent()
+    elif find_hg_repository(directory):
+        return HGAgent()
+    return None
+
+class ElementURLNotFound(Exception): pass
+class ElementURLFound(Exception): pass
+
+def _get_svn_url(path):
+    from xml.sax import make_parser, ContentHandler
+
+    class SVNSAXHandler(ContentHandler):
+        def __init__(self, name):
+            self._look_for = name
+
+        def startElement(self, name, attrs):
+            if name == 'entry' and attrs['name'] == self._look_for:
+                raise ElementURLFound(attrs['url'])
+
+    if osp.isdir(path):
+        dirpath, filename = path, ''
+    else:
+        dirpath, filename = osp.split(path)
+    p = make_parser()
+    print 'looking for', filename, 'in', dirpath
+    p.setContentHandler(SVNSAXHandler(filename))
+    try:
+        p.parse(file(osp.join(dirpath, '.svn', 'entries')))
+    except ElementURLFound, ex:
+        return ex.args[0]
+    except KeyError:
+        assert filename
+        return '%s/%s' % (_get_svn_url(dirpath), filename)
+    raise ElementURLNotFound()
+
+class SVNAgent(object):
+    """A SVN specific agent"""
+
+    def tag(self, filepath, tagname):
+        """return a shell command string to tag the given file in the vc
+        repository using the given tag name
+        """
+        url = _get_svn_url(filepath)
+        tag_url = url.split('/')
+        for special in ('trunk', 'tags', 'branches'):
+            if special in tag_url:
+                special_index = tag_url.index(special)
+                tag_url = tag_url[:special_index]
+                tag_url.append('tags/%s' % tagname)
+                tag_url = '/'.join(tag_url)
+                break
+        else:
+            raise Exception('Unable to compute file path in the repository')
+        cmd = 'svn rm -m "moving tag" %s ; svn copy -m "tagging" %s %s' % (
+            tag_url, filepath, tag_url)
+        return cmd
+
+class HGAgent(object):
+    """A hg specific agent"""
+
+    def tag(self, filepath, tagname, force=True):
+        """return a shell command string to tag the given file in the vc
+        repository using the given tag name
+        """
+        if not isinstance(filepath, basestring):
+            filepath = filepath[0] #' '.join(filepath)
+        if force:
+            force = "-f"
+        else:
+            force = ""
+        assert osp.abspath(filepath).startswith(os.getcwd()), \
+               "I don't know how to deal with filepath and <hg tag>"
+        return "hg tag %s %s" % (force, tagname)
+
+def find_hg_repository(path):
+    """returns <path>'s mercurial repository
+
+    None if <path> is not under hg control
+    """
+    path = osp.realpath(osp.abspath(path))
+    while not osp.isdir(osp.join(path, ".hg")):
+        oldpath = path
+        path = osp.dirname(path)
+        if path == oldpath:
+            return None
+    return path
+
