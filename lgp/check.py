@@ -33,11 +33,6 @@ import logging
 import itertools
 from subprocess import call
 from os.path import basename, join, exists, isdir, isfile
-from pprint import pformat
-
-import mercurial.error
-
-from logilab.common.compat import set
 
 from logilab.devtools import BASE_EXCLUDE, templates
 from logilab.devtools.lgp.setupinfo import SetupInfo
@@ -249,7 +244,7 @@ class Checker(SetupInfo):
                       % [f.__name__ for f in checklist])
         for func in self.checklist:
             loggername = func.__name__
-            loggername = loggername.replace('_',':', 1)
+            loggername = loggername.replace('_', ':', 1)
             self.logger = logging.getLogger(loggername)
 
             result = func(self)
@@ -259,29 +254,29 @@ class Checker(SetupInfo):
             #   OK/None: add to counter
             if result == NOK :
                 self.logger.error(func.__doc__)
-            elif result is None or result>0:
+            elif result is None or result > 0:
                 self.counter += 1
 
     # TODO dump with --help and drop the command-line option
     def list_checks(self):
         def title(msg):
-            print >>sys.stderr, "\n", msg, "\n", len(msg) * '='
+            print >> sys.stderr, "\n", msg, "\n", len(msg) * '='
         import sys
         all_checks = self.get_checklist(all=True)
         checks     = self.get_checklist()
         if len(checks)==0:
-            print >>sys.stderr, "No available check."
+            print >> sys.stderr, "No available check."
         else:
-            print >>sys.stderr, "You can use check function names or categories with --set, --exclude or --include options"
+            print >> sys.stderr, "You can use check function names or categories with --set, --exclude or --include options"
             title("Current active checks")
             for check in checks:
-                print >>sys.stderr, "%-25s: %s" % (check.__name__[6:], check.__doc__)
+                print >> sys.stderr, "%-25s: %s" % (check.__name__[6:], check.__doc__)
             title("Available categories")
             for cat, values in CHECKS.items():
-                print >>sys.stderr, "%-10s: %s" % (cat, ", ".join(values))
+                print >> sys.stderr, "%-10s: %s" % (cat, ", ".join(values))
             title("Inactive checks")
             for check in (set(all_checks) - set(checks)):
-                print >>sys.stderr, "%-25s: %s" % (check.__name__[6:], check.__doc__)
+                print >> sys.stderr, "%-25s: %s" % (check.__name__[6:], check.__doc__)
 
 
 
@@ -571,7 +566,6 @@ def check_package_info(checker):
     """check package information"""
     status = OK
     if hasattr(checker, "_package") and checker.package_format == "PackageInfo":
-        pi = checker._package
         if call(['python', '__pkginfo__.py']):
             checker.logger.warn('command "python __pkginfo__.py" returns errors')
     else:

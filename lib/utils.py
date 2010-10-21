@@ -45,7 +45,7 @@ class SGMLCatalog:
     def check_dtds(self, dtds, reporter):
         """check given dtd files are registered"""
         for dtd in dtds:
-            dtddir, dtdname = split(dtd)
+            dtdname = split(dtd)[1]
             try:
                 self.dtd_infos(dtdname)
             except KeyError:
