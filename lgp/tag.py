@@ -137,7 +137,11 @@ class Tagger(SetupInfo):
         check_call(command, shell=True)
         logging.info("add tag to repository: %s" % tag)
 
-
+try:
+    from logilab.common.hg import find_repository as find_hg_repository
+except ImportError:
+    # hg not installed
+    find_hg_repository = lambda x: False
 
 def get_vcs_agent(directory):
     """returns the appropriate VCS agent according to the version control system
@@ -219,17 +223,4 @@ class HGAgent(object):
         assert osp.abspath(filepath).startswith(os.getcwd()), \
                "I don't know how to deal with filepath and <hg tag>"
         return "hg tag %s %s" % (force, tagname)
-
-def find_hg_repository(path):
-    """returns <path>'s mercurial repository
-
-    None if <path> is not under hg control
-    """
-    path = osp.realpath(osp.abspath(path))
-    while not osp.isdir(osp.join(path, ".hg")):
-        oldpath = path
-        path = osp.dirname(path)
-        if path == oldpath:
-            return None
-    return path
 
