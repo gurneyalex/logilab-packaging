@@ -36,15 +36,10 @@ from logilab.common.shellutils import cp
 from logilab.common.fileutils import export
 
 from logilab.devtools.lib.pkginfo import PackageInfo
-from logilab.devtools.lgp import LGP_CONFIG_FILE
-from logilab.devtools.lgp import utils
-from logilab.devtools.lgp.exceptions import (ArchitectureException,
-                                             DistributionException,
-                                             LGPException,
-                                             LGPCommandException,
-                                             SetupException)
+from logilab.devtools.lgp import LGP_CONFIG_FILE, utils
+from logilab.devtools.lgp.exceptions import LGPException, LGPCommandException
 
-LOG_FORMAT='%(levelname)1.1s:%(name)s: %(message)s'
+LOG_FORMAT = '%(levelname)1.1s:%(name)s: %(message)s'
 COMMANDS = {
         "sdist" : {
             "file": './$setup dist-gzip -e DIST_DIR=$dist_dir',

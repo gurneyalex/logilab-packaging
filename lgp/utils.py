@@ -30,7 +30,6 @@ from logilab.devtools.lgp import LGP_SUITES
 from logilab.devtools.lgp.exceptions import (ArchitectureException,
                                              DistributionException,
                                              SetupException,
-                                             LGPCommandException,
                                              LGPException)
 
 
@@ -214,9 +213,9 @@ def wait_jobs(joblist, print_dots=True):
 def _parse_deb_distrib(changelog='debian/changelog'):
     try:
         return re.search("\) (.+);", open(changelog).readline()).group(1).strip()
-    except IOError, err:
+    except IOError:
         raise DistributionException("Debian changelog '%s' cannot be found" % changelog)
-    except AttributeError, err:
+    except AttributeError:
         raise DistributionException("Debian distribution field not found in '%s'" % changelog)
 
 def _parse_deb_archi(control='debian/control'):
@@ -226,9 +225,9 @@ def _parse_deb_archi(control='debian/control'):
 def _parse_deb_version(changelog='debian/changelog'):
     try:
         return re.search("\((.+)\)", open(changelog).readline()).group(1).strip()
-    except IOError, err:
+    except IOError:
         raise LGPException("Debian changelog '%s' cannot be found" % changelog)
-    except AttributeError, err:
+    except AttributeError:
         raise LGPException("Debian version field not found in '%s'" % changelog)
 
 def _parse_deb_project(changelog='debian/changelog'):

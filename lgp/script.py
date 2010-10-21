@@ -40,7 +40,7 @@ def run(args):
         #  command, = glob.glob(os.path.join(SCRIPTS_DIR, script.config.command))
         if len(script.arguments)==0:
             commands = dict(script.options)['command']['choices']
-            logging.info('available command(s): %s' % commands)
+            logging.info('available command(s): %s', commands)
         else:
             commands = [c for c in glob.glob(os.path.join(SCRIPTS_DIR, script.config.command))
                         if os.path.basename(c)==script.config.command]
@@ -61,14 +61,14 @@ def run(args):
                                         HOOKS_DIR, command, ' '.join(script.arguments))
 
                     # run script command
-                    logging.info("execute script '%s' with arguments: %s"
-                                 % (command, ' '.join(script.arguments)))
-                    logging.debug("run command: %s" % cmd)
+                    logging.info("execute script '%s' with arguments: %s",
+                                 command, ' '.join(script.arguments))
+                    logging.debug("run command: %s", cmd)
                     try:
                         check_call(cmd, stdout=sys.stdout, shell=True,
                                    env={'DIST': distrib, 'ARCH': arch, 'IMAGE': image})
-                    except CalledProcessError, err:
-                        logging.error('an error occured in script process: %s' % cmd)
+                    except CalledProcessError:
+                        logging.error('an error occured in script process: %s', cmd)
 
     except NotImplementedError, exc:
         logging.error(exc)

@@ -194,7 +194,7 @@ class DebianChangeLogEntry(ChangeLogEntry):
         for msg, sub in self.messages:
             write('  * %s' % ''.join(msg))
             for sub_msg in sub:
-                write('     - %s' % join(msg))
+                write('     - %s' % join(sub_msg))
         write(' -- %s  %s\n\n' % (self.author, self.date))
 
 
@@ -221,9 +221,6 @@ class DebianChangeLog(ChangeLog):
                 debian_version = centry.version.upstream_version + 1
             else:
                 debian_version = 1
-            fullversion = '%s-%s' % (version, debian_version)
-        else:
-            fullversion = '%s-1' % version
         entry.date = today
         entry.version = DebianVersion(version)
 

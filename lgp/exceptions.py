@@ -21,7 +21,7 @@ class LGPException(Exception):
 class LGPCommandException(LGPException):
     """subprocess lgp exception"""
     def __init__(self, value, cmd=None):
-        self.value = value
+        LGPException.__init__(self, value)
         self.cmd = cmd
         if cmd:
             msg = "command '%s' returned non-zero exit status %s" \

@@ -49,18 +49,18 @@ def read_manifest_in(reporter,
     os.chdir(dirname)
     if filelist is None:
         filelist = FileList()
-    
-    def warn(msg,*args):
+
+    def warn(msg, *args):
         if args:
             try:
-                msg%=args
-            except TypeError,e:
-                raise TypeError(str((e,msg,args)))
+                msg %= args
+            except TypeError, ex:
+                raise TypeError(str((ex, msg, args)))
         #reporter.warning(absfile,None,msg)
     filelist.warn = warn
     __warn = distutils.log.warn
     distutils.log.warn = warn
-    
+
     try:
         template = TextFile(filename, strip_comments=1,
                             skip_blanks=1, join_lines=1,
@@ -72,7 +72,7 @@ def read_manifest_in(reporter,
                 break
             try:
                 filelist.process_template_line(line)
-            except DistutilsTemplateError, msg:
+            except DistutilsTemplateError:
                 #reporter.error(absfile, template.current_line, msg)
                 pass
         filelist.sort()
@@ -96,10 +96,10 @@ def get_manifest_files(dirname=os.getcwd(), junk_extensions=JUNK_EXTENSIONS,
             prefix += os.sep
         ignored += ('.coverage',
                     join(prefix, 'MANIFEST.in'), join(prefix, 'MANIFEST'),
-                    join(prefix, 'dist'), join(prefix, 'build'), 
-                    join(prefix, 'announce.txt'), join(prefix, 'announce_fr.txt'), 
+                    join(prefix, 'dist'), join(prefix, 'build'),
+                    join(prefix, 'announce.txt'), join(prefix, 'announce_fr.txt'),
                     join(prefix, 'setup.cfg'),
-                    join(prefix, 'doc/makefile'), 
+                    join(prefix, 'doc/makefile'),
                     # no need to match README, automagically included by distutils
                     join(prefix, 'README'), join(prefix, 'README.txt'),
                     # we _must not_ match the debian directory
