@@ -1,9 +1,29 @@
-#!/bin/sh
-# invoke shell if build fails.
+#!/bin/bash
+# Invoke shell if build fails and if AUTO_ENTER_SHELL is set in your ~/.pbuilderrc
 
-# DISABLED BY DEFAULT. NOT WELL TESTED
-exit 0
+printf "\a"
+echo
+echo "Sorry, the build process failed."
+echo
 
-apt-get install -y --force-yes vim less bash
-cd /tmp/buildd/*/debian/..
-/bin/bash < /dev/tty > /dev/tty 2> /dev/tty
+
+if [ -n "$AUTO_ENTER_SHELL" ]; then
+	export TERM=linux
+	export TMOUT=1200
+	apt-get install -y --force-yes vim less bash >/dev/null &
+	echo "You're entering into the image used to build the package,"
+	echo "because AUTO_ENTER_SHELL has been found in environment:"
+	echo
+	env | sort
+	echo
+	echo "TMOUT set to $TMOUT seconds."
+	echo "Type exit or Ctrl-D (i.e. EOF) to escape."
+
+	cd /tmp/buildd/*/debian/..
+	/bin/bash < /dev/tty > /dev/tty 2> /dev/tty
+else
+	echo "If you want to enter into the chroot image to debug, you have to edit your ~/.pbuilderrc with:"
+	echo
+	echo "    export AUTO_ENTER_SHELL=y"
+	echo
+fi
