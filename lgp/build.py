@@ -342,7 +342,7 @@ class Builder(SetupInfo):
         """create a series of binary build command
 
         Architecture is checked against the debian/control to detect
-        architecture-independant packages
+        architecture-independent packages
 
         You have the possiblity to add some dpkg-buildpackage options with the
         DEBBUILDOPTS environment variable.
@@ -363,7 +363,7 @@ class Builder(SetupInfo):
             return ' '.join(optline)
 
         series = []
-        if utils.is_architecture_independant():
+        if utils.is_architecture_independent():
             options = dict()
             options['distrib'] = self.current_distrib
             options['buildopts'] = _build_options()
@@ -371,7 +371,7 @@ class Builder(SetupInfo):
             options['image'] = self.get_basetgz(options['distrib'],
                                                 options['arch'])
             series.append(options)
-            logging.info('this build is arch-independant. Lgp will only build on '
+            logging.info('this build is arch-independent. Lgp will only build on '
                          'current architecture (%s)' % options['arch'])
         else:
             for rank, arch in enumerate(self.architectures):
