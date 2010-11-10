@@ -183,6 +183,15 @@ def get_distributions(distrib=None, basetgz=None, suites=LGP_SUITES):
         distrib = mapped
     return tuple(set(distrib))
 
+def guess_debian_source_format():
+    """guess debian source format
+
+    :see: man dpkg-source
+    """
+    if osp.isfile("debian/source/format"):
+        return open('format').readline().split(" ")[1]
+    return "1.0"
+
 def cached(func):
     """run a function only once and return always the same cache
 

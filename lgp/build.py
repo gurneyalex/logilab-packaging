@@ -36,7 +36,7 @@ from logilab.common.shellutils import cp
 
 from logilab.devtools.lgp import CONFIG_FILE, HOOKS_DIR, BUILD_LOG_EXT
 from logilab.devtools.lgp.setupinfo import SetupInfo
-from logilab.devtools.lgp.utils import wait_jobs, is_architecture_independant
+from logilab.devtools.lgp import utils
 from logilab.devtools.lgp.exceptions import LGPException, LGPCommandException
 
 from logilab.devtools.lgp.check import check_debsign
@@ -221,9 +221,13 @@ class Builder(SetupInfo):
         """
         # change directory to build source package
         os.chdir(self._tmpdir)
-
+        arguments = ""
+        format = utils.guess_debian_source_format()
+        logging.info("Debian source package format: %s" % format)
+        if format == "1.0":
+            arguments+='--no-copy'
         try:
-            cmd = 'dpkg-source --no-copy -b %s' % self.origpath
+            cmd = 'dpkg-source %s -b %s' % (arguments, self.origpath)
             logging.debug("running dpkg-source command: %s ..." % cmd)
             check_call(cmd.split(), stdout=sys.stdout)
         except CalledProcessError, err:
@@ -317,7 +321,7 @@ class Builder(SetupInfo):
                 return False
 
         # only print dots in verbose mode (verbose: 1)
-        build_status, timedelta = wait_jobs(joblist, self.config.verbose == 1)
+        build_status, timedelta = utils.wait_jobs(joblist, self.config.verbose == 1)
         if build_status:
             logging.critical("binary build(s) failed for '%s' with exit status %d"
                              % (build['distrib'], build_status))
@@ -359,7 +363,7 @@ class Builder(SetupInfo):
             return ' '.join(optline)
 
         series = []
-        if is_architecture_independant():
+        if utils.is_architecture_independant():
             options = dict()
             options['distrib'] = self.current_distrib
             options['buildopts'] = _build_options()
