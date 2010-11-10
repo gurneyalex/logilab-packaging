@@ -62,7 +62,7 @@ def guess_debian_distribution():
         return ["unstable",]
     return [distribution,]
 
-def is_architecture_independant():
+def is_architecture_independent():
     return 'all' in get_debian_architecture()
 
 def guess_debian_architecture():
@@ -99,7 +99,7 @@ def get_architectures(archi=None, basetgz=None):
     if archi is None or len(archi)==0:
         archi = guess_debian_architecture()
 
-    # "all" means architecture-independant. so we can replace by "current"
+    # "all" means architecture-independent. so we can replace by "current"
     # architecture only
     if 'all' in archi:
         archi = ['current']

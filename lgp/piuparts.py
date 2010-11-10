@@ -62,7 +62,7 @@ def run(args):
                                   % (distrib, arch))
 
                 piuparts.architectures = piuparts.get_architectures(arch)
-                # we loop on different architectures of available base images if arch-independant
+                # we loop on different architectures of available base images if arch-independent
                 for arch in piuparts.architectures:
                     cmd = ['sudo', 'piuparts', '--no-symlinks',
                            '--warn-on-others',
