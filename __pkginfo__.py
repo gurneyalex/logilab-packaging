@@ -25,11 +25,6 @@ author = "Logilab"
 author_email = "contact@logilab.fr"
 
 description = "set of development tools used at Logilab"
-long_desc = """Set of tools which aims to help the developpement process, including :
-
-* standard for zope and python packages
-* tools to check and build source and/or debian packages
-"""
 web = "http://www.logilab.org/project/logilab-devtools"
 ftp = "ftp://ftp.logilab.org/pub/devtools"
 mailinglist = "mailto://python-projects@lists.logilab.org"
