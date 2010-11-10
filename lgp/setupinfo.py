@@ -389,7 +389,10 @@ class SetupInfo(Configuration):
     def clean_repository(self):
         """clean the project repository"""
         logging.debug("clean the project repository")
-        self._run_command('clean')
+        try:
+            self._run_command('clean')
+        except Exception, err:
+            logging.warn(err)
 
     def make_orig_tarball(self):
         """make upstream pristine tarballs (Debian way)

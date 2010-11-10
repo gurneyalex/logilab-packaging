@@ -35,13 +35,9 @@ class LGPCommandException(LGPException):
 
 class ArchitectureException(LGPException):
     """architecture availability exception"""
-    def __str__(self):
-        return "unknown architecture '%s'" % self.value
 
 class DistributionException(LGPException):
     """distribution availability exception"""
-    def __str__(self):
-        return "unknown distribution '%s'" % self.value
 
 class SetupException(LGPException):
     pass
