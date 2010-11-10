@@ -293,6 +293,8 @@ class Builder(SetupInfo):
             tmplist.append(self.create_build_context())
 
             cmd = self._builder_command(build)
+            # TODO manage handy --othermirror to use local mirror
+            #cmd.append(['--othermirror', "deb file:///home/juj/dists %s/" % build['distrib']])
             logging.info("building binary debian package for '%s/%s' "
                          "using DEBBUILDOPTS options: '%s' ..."
                          % (build['distrib'], build['arch'],

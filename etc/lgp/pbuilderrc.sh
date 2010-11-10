@@ -49,6 +49,7 @@ if $(find_lgp_distrib $DIST "${DEBIAN_SUITES[@]}"); then
     MIRRORSITE=${DEBIAN_MIRRORSITE}
     if [ -n "$DEBIAN_MIRROR" ]; then
         echo "W: DEBIAN_MIRROR is deprecated. Please, use DEBIAN_MIRRORSITE instead."
+        echo "W: replace by 'DEBIAN_MIRRORSITE=$MIRRORSITE'"
         MIRRORSITE="http://$DEBIAN_MIRROR/debian/"
     fi
     COMPONENTS=${DEBIAN_COMPONENTS}
@@ -62,6 +63,7 @@ elif $(find_lgp_distrib $DIST "${UBUNTU_SUITES[@]}"); then
     MIRRORSITE=${UBUNTU_MIRRORSITE}
     if [ -n "$UBUNTU_MIRROR" ]; then
         echo "W: UBUNTU_MIRROR is deprecated. Please, use UBUNTU_MIRRORSITE instead."
+        echo "W: replace by 'DEBIAN_MIRRORSITE=$MIRRORSITE'"
         MIRRORSITE="http://$UBUNTU_MIRROR/ubuntu/"
     fi
     COMPONENTS=${UBUNTU_COMPONENTS}
