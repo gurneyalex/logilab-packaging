@@ -52,7 +52,7 @@ OK, NOK = 1, 0
 CHECKS = {'debian'    : set(['debian_dir', 'debian_rules', 'debian_copying',
                              'debian_source_value', 'debian_env',
                              'debian_changelog', 'debian_homepage']),
-          'default'   : set(['builder',  'bin', 'repository', 'release_number']),
+          'default'   : set(['builder',  'bin', 'release_number']),
           'distutils' : set(['manifest_in', 'pydistutils',]),
           'pkginfo'   : set(['debsign', 'package_info', 'announce',
                              'pkginfo_copyright', 'tests_directory',
