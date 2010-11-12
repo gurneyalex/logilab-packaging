@@ -1,23 +1,18 @@
 #!/bin/bash
 # Invoke shell if build fails and if AUTO_ENTER_SHELL is set in your ~/.pbuilderrc
 
-printf "\a"
-echo
-echo "Sorry, the build process failed."
-echo
-
-
 if [ -n "$AUTO_ENTER_SHELL" ]; then
 	export TERM=linux
 	export TMOUT=1200
+	export PS1="[$(basename "$SUDO_COMMAND" .dsc) / ${DIST}] \w\$ "
 	apt-get install -y --force-yes vim less bash >/dev/null &
-	echo "You're entering into the image used to build the package,"
-	echo "because AUTO_ENTER_SHELL has been found in environment:"
 	echo
-	env | sort
+	echo "You're entering into the image used to build the package,"
+	echo "because AUTO_ENTER_SHELL has been found in environment."
 	echo
 	echo "TMOUT set to $TMOUT seconds."
 	echo "Type exit or Ctrl-D (i.e. EOF) to escape."
+	echo
 
 	cd /tmp/buildd/*/debian/..
 	/bin/bash < /dev/tty > /dev/tty 2> /dev/tty
