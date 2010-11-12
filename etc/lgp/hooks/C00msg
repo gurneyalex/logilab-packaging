@@ -1,0 +1,10 @@
+#!/bin/bash
+
+export TERM=linux
+
+printf "\a"
+echo
+echo -e "\e[1;31mSorry, the build process failed for '$(basename "$SUDO_COMMAND" .dsc)' in '$DIST/$ARCH' image !\e[0;0m"
+echo
+#env | sort
+#echo
