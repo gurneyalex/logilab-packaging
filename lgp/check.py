@@ -28,14 +28,12 @@ __docformat__ = "restructuredtext en"
 import os
 import stat
 import re
+import sys
 import commands
 import logging
 import itertools
 from subprocess import call
 from os.path import basename, join, exists, isdir, isfile
-from pprint import pformat
-
-import mercurial.error
 
 from logilab.common.compat import set
 
@@ -236,7 +234,8 @@ class Checker(SetupInfo):
                 if c in CHECKS:
                     checks.difference_update(CHECKS[c])
                 else:
-                    checks.remove(c)
+                    if c in checks:
+                        checks.remove(c)
             self.checklist = [globals()["check_%s" % name] for name in checks]
         except KeyError, err:
             msg = "check function or category %s was not found. Use lgp check --list"
@@ -266,7 +265,6 @@ class Checker(SetupInfo):
     def list_checks(self):
         def title(msg):
             print >>sys.stderr, "\n", msg, "\n", len(msg) * '='
-        import sys
         all_checks = self.get_checklist(all=True)
         checks     = self.get_checklist()
         if len(checks)==0:
@@ -335,11 +333,16 @@ def check_debian_dir(checker):
 
 def check_debian_rules(checker):
     """check the debian*/rules file (filemode should be "+x")"""
-    debian_dir = checker.get_debian_dir()
-    if not isfile(os.path.join(debian_dir, 'rules')):
-        checker.logger.warn('check the debian*/rules file')
-    if not is_executable(os.path.join(debian_dir, 'rules')):
-        checker.logger.warn('check the debian*/rules file (filemode should be "+x")')
+    debian_dirs = [checker.get_debian_dir(), 'debian']
+    for debian_dir in debian_dirs:
+        rules = os.path.join(debian_dir, 'rules')
+        if isfile(rules):
+            if not is_executable(rules):
+                msg = "check the '%s' file (filemode should be '+x')"
+                checker.logger.warn(msg % rules)
+            break
+    else:
+        checker.logger.warn('check the debian/rules file')
     return OK
 
 def check_debian_copying(checker):
