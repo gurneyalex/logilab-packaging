@@ -165,9 +165,19 @@ USEDEVFS=no
 # BINDMOUNTS is a space separated list of things to mount inside the chroot.
 # Don't use array aggregation here
 BINDMOUNTS="/sys"
-if [ "$PBCURRENTCOMMANDLINEOPERATION" = "login" -o "$PBCURRENTCOMMANDLINEOPERATION" = "scripts" ]; then
-	# Default value set to be used by hooks
-	export BUILDRESULT="${HOME}/dists/${DIST}"
+if [ "$PBCURRENTCOMMANDLINEOPERATION" = "login"   -o \
+     "$PBCURRENTCOMMANDLINEOPERATION" = "scripts" -o \
+	 "$PBCURRENTCOMMANDLINEOPERATION" = "build" ]; then
+	BUILDRESULT="${HOME}/dists/${DIST}"
+	# use RESULTDIR instead of BUILDRESULT in hooks since the
+	# latter can be overwritten during pbuilder's B/D steps
+	export RESULTDIR="$BUILDRESULT"
+fi
+
+# XXX Move this test into Lgp code
+if [ -h "${BUILDRESULT}" ]; then
+	echo "E: Please use a directory as Lgp result dir to be mountable in chroot: "
+	ls -l "${BUILDRESULT}"
 fi
 if [ -d "${BUILDRESULT}" ]; then
 	BINDMOUNTS="${BINDMOUNTS} $BUILDRESULT"
