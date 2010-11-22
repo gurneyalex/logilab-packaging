@@ -249,6 +249,8 @@ class Builder(SetupInfo):
         os.chdir(self.config.pkg_dir)
 
     def _builder_command(self, build_vars):
+        # TODO Manage DEB_BUILD_OPTIONS
+        # http://www.debian.org/doc/debian-policy/ch-source.html
         debuilder = os.environ.get('DEBUILDER', 'pbuilder')
         logging.debug("package builder flavour: '%s'" % debuilder)
         if debuilder == 'pbuilder':

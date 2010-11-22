@@ -1,10 +1,8 @@
 #!/bin/bash
 
-export TERM=linux
+. /tmp/hooks/lgp.functions
 
 printf "\a"
 echo
-echo -e "\e[1;31mSorry, the build process failed for '$(basename "$SUDO_COMMAND" .dsc)' in '$DIST/$ARCH' image !\e[0;0m"
+eprint_hook "Sorry, the build process failed for '$(basename "$SUDO_COMMAND" .dsc)' in '$DIST/$ARCH' image !"
 echo
-#env | sort
-#echo
