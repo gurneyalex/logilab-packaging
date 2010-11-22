@@ -1,11 +1,13 @@
-#!/bin/sh
+#!/bin/bash
+
+. /tmp/hooks/lgp.functions
 
 echo >> /etc/apt/sources.list
 echo "# Uncomment the next line if you want to use your remote repository" >> /etc/apt/sources.list
 echo "#deb http://$SUDO_USER:$SUDO_USER@intranet.logilab.fr/~$SUDO_USER/dists $DIST/" >> /etc/apt/sources.list
 
 if [ -f "$RESULTDIR/Packages.gz" ]; then
-	echo "Adding a new sources.list entry for '$RESULTDIR'..."
+	print_hook "Adding a new /etc/apt/sources.list entry for '$RESULTDIR' (used in priority)..."
 	echo >> /etc/apt/sources.list.new
 	echo "deb file://$(dirname $RESULTDIR) $(basename $RESULTDIR)/" >> /etc/apt/sources.list.new
 	cat /etc/apt/sources.list >> /etc/apt/sources.list.new

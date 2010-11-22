@@ -1,0 +1,12 @@
+#!/bin/bash
+
+. /tmp/hooks/lgp.functions
+
+PYTHON=python3.2
+
+if [ "${DIST}" = "py3k" ]; then
+	print_hook "Installing ${PYTHON} for image '${DIST}'..."
+	apt-get -t experimental install -y --force-yes ${PYTHON}
+	print_hook "Overriding default python3 binary by '${PYTHON}'"
+	cp -vf /usr/bin/python3.2 /usr/bin/python3
+fi

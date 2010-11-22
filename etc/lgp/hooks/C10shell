@@ -1,14 +1,16 @@
 #!/bin/bash
-# Invoke shell if build fails and if AUTO_ENTER_SHELL is set in your ~/.pbuilderrc
+# Invoke shell if build fails and if LGP_AUTO_ENTER_SHELL is set in your ~/.pbuilderrc
 
-if [ -n "$AUTO_ENTER_SHELL" ]; then
+. /tmp/hooks/lgp.functions
+
+if [ -n "$LGP_AUTO_ENTER_SHELL" ]; then
 	export TERM=linux
 	export TMOUT=1200
 	export PS1="[$(basename "$SUDO_COMMAND" .dsc) / ${DIST}] \w\$ "
 	apt-get install -y --force-yes vim less bash >/dev/null &
 	echo
-	echo "You're entering into the image used to build the package,"
-	echo "because AUTO_ENTER_SHELL has been found in environment."
+	print_hook "You're entering into the image used to build the package,\n"\
+	           "         because LGP_AUTO_ENTER_SHELL has been found in environment."
 	echo
 	echo "TMOUT set to $TMOUT seconds."
 	echo "Type exit or Ctrl-D (i.e. EOF) to escape."
@@ -19,6 +21,6 @@ if [ -n "$AUTO_ENTER_SHELL" ]; then
 else
 	echo "If you want to enter into the chroot image to debug, you have to edit your ~/.pbuilderrc with:"
 	echo
-	echo "    export AUTO_ENTER_SHELL=y"
+	echo "    export LGP_AUTO_ENTER_SHELL=y"
 	echo
 fi
