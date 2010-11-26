@@ -12,7 +12,6 @@
 #TIMEOUT_TIME=20m
 export TERM=linux
 export IGNOREEOF=1
-#export TMPDIR=/tmp
 
 # You can use a proxy for local repositories (apt-cacher)
 #DEBIAN_MIRROR="xxx.xxx.xxx.xxx:3142/ftp.debian.org/"

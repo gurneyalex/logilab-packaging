@@ -1,16 +1,18 @@
 # Logilab lgp configuration file for pbuilder.
-# Copyright (c) 2003-2009 LOGILAB S.A. (Paris, FRANCE).
+# Copyright (c) 2003-2010 LOGILAB S.A. (Paris, FRANCE).
 # http://www.logilab.fr/ -- mailto:contact@logilab.fr
 
 # The file in /usr/share/pbuilder/pbuilderrc is the default template.
-# /etc/pbuilderrc is the one meant for editing.
+# /etc/pbuilderrc is related to lgp
+# /etc/pbuilderrc.local is the one meant for editing.
 #
-# Read pbuilderrc.5 document for notes on specific options.
-
 # This file is largely inspired by:
 #     https://wiki.ubuntu.com/PbuilderHowto
 # Thanks a lot, guys !
 
+# 6. Notes on usage of $TMPDIR
+# http://www.netfort.gr.jp/~dancer/software/pbuilder-doc/pbuilder-doc.html#tmpdir
+export TMPDIR=/tmp
 
 # Declaration of lgp suites file location
 LGP_SUITES=${LGP_SUITES:-'/etc/lgp/suites'}
@@ -192,7 +194,7 @@ APTCACHE="/var/cache/pbuilder/${DIST}/aptcache/"
 
 # Use DEBOOTSTRAPOPTS instead ?
 # "debconf: delaying package configuration, since apt-utils is not installed"
-EXTRAPACKAGES="apt-utils nvi"
+EXTRAPACKAGES="apt-utils"
 
 # command to satisfy build-dependencies; the default is an internal shell
 # implementation which is relatively slow; there are two alternate
