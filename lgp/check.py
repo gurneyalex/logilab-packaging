@@ -35,8 +35,6 @@ import itertools
 from subprocess import call
 from os.path import basename, join, exists, isdir, isfile
 
-from logilab.common.compat import set
-
 from logilab.devtools import BASE_EXCLUDE, templates
 from logilab.devtools.lgp.setupinfo import SetupInfo
 from logilab.devtools.lgp.exceptions import LGPException
