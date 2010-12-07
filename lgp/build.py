@@ -89,18 +89,17 @@ def run_post_treatments(builder, distrib):
     distdir = builder.get_distrib_dir()
     old = os.getcwd()
     try:
-        os.chdir(osp.dirname(distdir))
         try:
-            # cd /srv/repository/
+            os.chdir(osp.dirname(distdir))
             # dpkg-scanpackages i386 /dev/null | gzip -9c > 386/Packages.gz
             # dpkg-scanpackages amd64 /dev/null | gzip -9c > amd64/Packages.gz
             # dpkg-scansources source /dev/null | gzip -9c > source/Sources.gz
             cmd = "dpkg-scanpackages -m %s /dev/null 2>/dev/null | gzip -9c > %s/Packages.gz"
             os.system(cmd % (distrib, distrib))
-            logging.debug("Debian trivial repository in '%s' updated." % distdir)
         except Exception, err:
-            msg = "cannot update Debian trivial repository for '%s'" % distdir
-            raise LGPCommandException(msg, err)
+            logging.warning("cannot update Debian trivial repository for '%s'" % distdir)
+        else:
+            logging.debug("Debian trivial repository in '%s' updated." % distdir)
     finally:
         os.chdir(old)
 
@@ -488,8 +487,10 @@ class Builder(SetupInfo):
 
     def get_distrib_dir(self):
         """get the dynamic target release directory"""
-        distrib_dir = os.path.join(os.path.expanduser(self.config.dist_dir),
-                                   self.current_distrib)
+        distrib_dir = os.path.normpath(os.path.expanduser(self.config.dist_dir))
+        # special case when current directory is used to put result files ("-r .")
+        if distrib_dir not in ['.', '..']:
+            distrib_dir = os.path.join(distrib_dir, self.current_distrib)
         # check if distribution directory exists, create it if necessary
         os.umask(0002)
         try:
