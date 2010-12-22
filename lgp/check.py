@@ -523,12 +523,11 @@ def check_manifest_in(checker):
 
     # check matched files
     should_be_in = get_manifest_files(dirname=dirname)
-    matched = read_manifest_in(None, dirname=dirname)
+    matched = set(read_manifest_in(None, dirname=dirname))
     for path in should_be_in:
-        try:
-            i = matched.index(path)
-            matched.pop(i)
-        except ValueError:
+        if path in matched:
+            matched.remove(path)
+        else:
             checker.logger.warn('%s unmatched' % path)
             # FIXME keep valid status till ``#2888: lgp check ignore manifest # "prune"``
             # path command not resolved
