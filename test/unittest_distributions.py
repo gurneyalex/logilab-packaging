@@ -1,7 +1,6 @@
-import unittest
 import os.path
 
-from logilab.common.testlib import TestCase
+from logilab.common.testlib import TestCase, unittest_main
 from logilab.devtools.lgp.utils import get_distributions
 from logilab.devtools.lgp.exceptions import DistributionException
 
@@ -19,23 +18,23 @@ class DistributionTC(TestCase):
                           'dapper', 'lucid', 'karmic'])
 
     def test_default_distribution(self):
-        self.assertUnorderedIterableEquals(get_distributions(suites=self.suites),
-                                           self.known)
+        self.assertItemsEqual(get_distributions(suites=self.suites),
+                              self.known)
 
     def test_valid_distribution(self):
         for distrib in self.defined:
-            self.assertEquals(get_distributions([distrib,], self.basetgz, self.suites),
+            self.assertEqual(get_distributions([distrib,], self.basetgz, self.suites),
                               (distrib,))
 
     def test_several_valid_distributions(self):
-        self.assertUnorderedIterableEquals(get_distributions(self.defined,
-                                                             self.basetgz,
-                                                             self.suites),
-                                           self.defined)
+        self.assertItemsEqual(get_distributions(self.defined,
+                                               self.basetgz,
+                                               self.suites),
+                             self.defined)
 
     def test_all_distribution_keyword(self):
-        self.assertUnorderedIterableEquals(get_distributions("all", self.basetgz, self.suites),
-                                           self.defined)
+        self.assertItemsEqual(get_distributions("all", self.basetgz, self.suites),
+                              self.defined)
 
     def test_one_unvalid_distribution(self):
         distrib = ['unknown']
@@ -45,4 +44,4 @@ class DistributionTC(TestCase):
         self.assertRaises(DistributionException, get_distributions, distrib, self.basetgz)
 
 if __name__  == '__main__':
-    unittest.main()
+    unittest_main()

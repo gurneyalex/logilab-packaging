@@ -1,16 +1,18 @@
 # Logilab lgp configuration file for pbuilder.
-# Copyright (c) 2003-2009 LOGILAB S.A. (Paris, FRANCE).
+# Copyright (c) 2003-2010 LOGILAB S.A. (Paris, FRANCE).
 # http://www.logilab.fr/ -- mailto:contact@logilab.fr
 
 # The file in /usr/share/pbuilder/pbuilderrc is the default template.
-# /etc/pbuilderrc is the one meant for editing.
+# /etc/pbuilderrc is related to lgp
+# /etc/pbuilderrc.local is the one meant for editing.
 #
-# Read pbuilderrc.5 document for notes on specific options.
-
 # This file is largely inspired by:
 #     https://wiki.ubuntu.com/PbuilderHowto
 # Thanks a lot, guys !
 
+# 6. Notes on usage of $TMPDIR
+# http://www.netfort.gr.jp/~dancer/software/pbuilder-doc/pbuilder-doc.html#tmpdir
+export TMPDIR=/tmp
 
 # Declaration of lgp suites file location
 LGP_SUITES=${LGP_SUITES:-'/etc/lgp/suites'}
@@ -49,6 +51,7 @@ if $(find_lgp_distrib $DIST "${DEBIAN_SUITES[@]}"); then
     MIRRORSITE=${DEBIAN_MIRRORSITE}
     if [ -n "$DEBIAN_MIRROR" ]; then
         echo "W: DEBIAN_MIRROR is deprecated. Please, use DEBIAN_MIRRORSITE instead."
+        echo "W: replace by 'DEBIAN_MIRRORSITE=$MIRRORSITE'"
         MIRRORSITE="http://$DEBIAN_MIRROR/debian/"
     fi
     COMPONENTS=${DEBIAN_COMPONENTS}
@@ -62,6 +65,7 @@ elif $(find_lgp_distrib $DIST "${UBUNTU_SUITES[@]}"); then
     MIRRORSITE=${UBUNTU_MIRRORSITE}
     if [ -n "$UBUNTU_MIRROR" ]; then
         echo "W: UBUNTU_MIRROR is deprecated. Please, use UBUNTU_MIRRORSITE instead."
+        echo "W: replace by 'DEBIAN_MIRRORSITE=$MIRRORSITE'"
         MIRRORSITE="http://$UBUNTU_MIRROR/ubuntu/"
     fi
     COMPONENTS=${UBUNTU_COMPONENTS}
@@ -163,9 +167,19 @@ USEDEVFS=no
 # BINDMOUNTS is a space separated list of things to mount inside the chroot.
 # Don't use array aggregation here
 BINDMOUNTS="/sys"
-if [ "$PBCURRENTCOMMANDLINEOPERATION" = "login" -o "$PBCURRENTCOMMANDLINEOPERATION" = "scripts" ]; then
-	# Default value set to be used by hooks
-	export BUILDRESULT="${HOME}/dists/${DIST}"
+if [ "$PBCURRENTCOMMANDLINEOPERATION" = "login"   -o \
+     "$PBCURRENTCOMMANDLINEOPERATION" = "scripts" -o \
+	 "$PBCURRENTCOMMANDLINEOPERATION" = "build" ]; then
+	BUILDRESULT="${HOME}/dists/${DIST}"
+	# use RESULTDIR instead of BUILDRESULT in hooks since the
+	# latter can be overwritten during pbuilder's B/D steps
+	export RESULTDIR="$BUILDRESULT"
+fi
+
+# XXX Move this test into Lgp code
+if [ -h "${BUILDRESULT}" ]; then
+	echo "E: Please use a directory as Lgp result dir to be mountable in chroot: "
+	ls -l "${BUILDRESULT}"
 fi
 if [ -d "${BUILDRESULT}" ]; then
 	BINDMOUNTS="${BINDMOUNTS} $BUILDRESULT"
@@ -180,7 +194,7 @@ APTCACHE="/var/cache/pbuilder/${DIST}/aptcache/"
 
 # Use DEBOOTSTRAPOPTS instead ?
 # "debconf: delaying package configuration, since apt-utils is not installed"
-EXTRAPACKAGES="apt-utils nvi"
+EXTRAPACKAGES="apt-utils"
 
 # command to satisfy build-dependencies; the default is an internal shell
 # implementation which is relatively slow; there are two alternate

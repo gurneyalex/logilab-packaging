@@ -21,8 +21,7 @@ import os
 import glob
 from os.path import basename, join, split, exists
 
-#from logilab.devtools.vcslib import BASE_EXCLUDE
-BASE_EXCLUDE = ('CVS', '.svn', '.hg', 'bzr')
+from logilab.devtools import BASE_EXCLUDE
 
 PUBLIC_RGX = re.compile('PUBLIC\s+"-//(?P<group>.*)//DTD (?P<pubid>.*)//(?P<lang>\w\w)(//XML)?"\s*"(?P<dtd>.*)"')
 

@@ -1,4 +1,4 @@
-# Copyright (c) 2003-2008 LOGILAB S.A. (Paris, FRANCE).
+# Copyright (c) 2003-2010 LOGILAB S.A. (Paris, FRANCE).
 # http://www.logilab.fr/ -- mailto:contact@logilab.fr
 
 # This program is free software; you can redistribute it and/or modify it under
@@ -13,30 +13,18 @@
 # You should have received a copy of the GNU General Public License along with
 # this program; if not, write to the Free Software Foundation, Inc.,
 # 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-"""
-logilab.devtools packaging information
-"""
+"""logilab.devtools packaging information"""
 
 modname = 'devtools'
 distname = 'logilab-devtools'
-numversion = (0, 17, 3)
+numversion = (0, 17, 4)
 version = '.'.join([str(num) for num in numversion])
 
 license = 'GPL'
-copyright = '''Copyright (c) 2003-2010 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
-http://www.logilab.fr/ -- mailto:contact@logilab.fr'''
-
 author = "Logilab"
 author_email = "contact@logilab.fr"
 
 description = "set of development tools used at Logilab"
-long_desc = """Set of tools which aims to help the developpement process, including :
-
-* standard for zope and python packages
-* tools to check and build source and/or debian packages
-* python coverage tool
-* cvs/svn utilities
-"""
 web = "http://www.logilab.org/project/logilab-devtools"
 ftp = "ftp://ftp.logilab.org/pub/devtools"
 mailinglist = "mailto://python-projects@lists.logilab.org"
@@ -48,17 +36,12 @@ from os.path import join
 include_dirs = ['templates', join('test', 'data')]
 
 scripts = [
-    # vcslib
-    'bin/vcpull',
-    'bin/cvslog',
-    'bin/cvstatus',
-    'bin/hgstatus',
-    # pycovergae
-    'bin/pycoverage',
     # logilab-packaging
     'bin/changelog',
     'bin/update_gettext',
     'bin/lgp',
     'bin/lsprofcalltree',
     ]
+
+install_requires = ['logilab-common']
 

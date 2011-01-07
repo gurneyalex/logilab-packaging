@@ -222,8 +222,8 @@ class SetupInfo(Configuration):
                                                      self.config.basetgz)
         self.distributions = utils.get_distributions(self.config.distrib,
                                                      self.config.basetgz)
-        logging.debug("guessing distribution(s): %s" % ','.join(self.distributions))
-        logging.debug("guessing architecture(s): %s" % ','.join(self.architectures))
+        logging.debug("guessing distribution(s): %s" % ', '.join(self.distributions))
+        logging.debug("guessing architecture(s): %s" % ', '.join(self.architectures))
 
         # Guess the package format
         if osp.isfile('__pkginfo__.py') and not osp.isfile(self.config.setup_file):
@@ -347,7 +347,6 @@ class SetupInfo(Configuration):
 
     def is_initial_debian_revision(self):
         # http://www.debian.org/doc/debian-policy/ch-controlfields.html#s-f-Version
-        initial = True
         try:
             debian_revision = self.get_debian_version().rsplit('-', 1)[1]
         except IndexError:
@@ -357,9 +356,7 @@ class SetupInfo(Configuration):
         if debian_revision == '0':
             logging.info("It is conventional to restart the debian_revision"
                          " at 1 each time the upstream_version is increased.")
-        if debian_revision not in ['0', '1']:
-            return False
-        return True
+        return debian_revision in ['0', '1'] # or debian_revision.startswith(('0+', '1+')):
 
     @utils.cached
     def get_upstream_name(self):
@@ -389,7 +386,10 @@ class SetupInfo(Configuration):
     def clean_repository(self):
         """clean the project repository"""
         logging.debug("clean the project repository")
-        self._run_command('clean')
+        try:
+            self._run_command('clean')
+        except Exception, err:
+            logging.warn(err)
 
     def make_orig_tarball(self):
         """make upstream pristine tarballs (Debian way)
@@ -484,7 +484,7 @@ class SetupInfo(Configuration):
         logging.debug("copy pristine tarball to prepare Debian source package diff")
         cp(self.config.orig_tarball, self._tmpdir)
         # TODO obtain current format version
-        # os.exists(osp.join(self.origpath, "debian/source/format")
+        # os.path.exists(osp.join(self.origpath, "debian/source/format")
 
         logging.debug("extracting original source archive for %s distribution in %s"
                       % (self.current_distrib or "default", self._tmpdir))

@@ -25,42 +25,41 @@
 """
 __docformat__ = "restructuredtext en"
 
-
 import os
 import stat
 import re
+import sys
 import commands
 import logging
+import itertools
 from subprocess import call
 from os.path import basename, join, exists, isdir, isfile
-from pprint import pformat
-import itertools
 
-import mercurial.error
-
-from logilab.common.compat import set
-
-from logilab.devtools.lib.changelog import CHANGEFILE
-from logilab.devtools.lib.manifest import (get_manifest_files, read_manifest_in,
-                                           match_extensions, JUNK_EXTENSIONS)
-
-from logilab.devtools import templates
+from logilab.devtools import BASE_EXCLUDE, templates
 from logilab.devtools.lgp.setupinfo import SetupInfo
 from logilab.devtools.lgp.exceptions import LGPException
 from logilab.devtools.lgp import utils
+from logilab.devtools.lib.changelog import CHANGEFILE
+from logilab.devtools.lib.manifest import (get_manifest_files, read_manifest_in,
+                                           match_extensions, JUNK_EXTENSIONS)
 
 
 OK, NOK = 1, 0
 CHECKS = {'debian'    : set(['debian_dir', 'debian_rules', 'debian_copying',
                              'debian_source_value', 'debian_env',
                              'debian_changelog', 'debian_homepage']),
-          'default'   : set(['builder', 'readme', 'changelog', 'bin', 'tests_directory',
-                             'repository', 'release_number']),
+          'default'   : set(['builder',  'bin', 'release_number']),
           'distutils' : set(['manifest_in', 'pydistutils',]),
-          'pkginfo'   : set(['debsign', 'package_info', 'announce', 'pkginfo_copyright']),
+          'pkginfo'   : set(['debsign', 'package_info', 'announce',
+                             'pkginfo_copyright', 'tests_directory',
+                             'readme', 'changelog']),
           'makefile'  : set(['makefile']),
           'cubicweb'  : set(), # XXX test presence of a ['migration_file'], for the current version
          }
+
+# avoid warning from continuous integration report
+if os.environ.get('APYCOT_ROOT'):
+    CHECKS['debian'].remove("debian_env")
 
 REV_LINE = re.compile('__revision__.*')
 
@@ -222,9 +221,6 @@ class Checker(SetupInfo):
                 checks.update(CHECKS['debian'])
             if self.config.set_checks:
                 checks = set()
-            # avoid warning from continuous integration report
-            if os.environ.get('APYCOT_ROOT'):
-                checks.remove("debian_env")
 
             for c in itertools.chain(self.config.set_checks,
                                      self.config.include_checks):
@@ -236,7 +232,8 @@ class Checker(SetupInfo):
                 if c in CHECKS:
                     checks.difference_update(CHECKS[c])
                 else:
-                    checks.remove(c)
+                    if c in checks:
+                        checks.remove(c)
             self.checklist = [globals()["check_%s" % name] for name in checks]
         except KeyError, err:
             msg = "check function or category %s was not found. Use lgp check --list"
@@ -266,7 +263,6 @@ class Checker(SetupInfo):
     def list_checks(self):
         def title(msg):
             print >>sys.stderr, "\n", msg, "\n", len(msg) * '='
-        import sys
         all_checks = self.get_checklist(all=True)
         checks     = self.get_checklist()
         if len(checks)==0:
@@ -330,15 +326,22 @@ def check_builder(checker):
 
 def check_debian_dir(checker):
     """check the debian directory"""
-    return isdir('debian')
+    debian_dir = checker.get_debian_dir()
+    return isdir(debian_dir)
 
 def check_debian_rules(checker):
     """check the debian*/rules file (filemode should be "+x")"""
-    debian_dir = checker.get_debian_dir()
-    status = OK
-    status = status and isfile(os.path.join(debian_dir, 'rules'))
-    status = status and is_executable(os.path.join(debian_dir, 'rules'))
-    return status
+    debian_dirs = [checker.get_debian_dir(), 'debian']
+    for debian_dir in debian_dirs:
+        rules = os.path.join(debian_dir, 'rules')
+        if isfile(rules):
+            if not is_executable(rules):
+                msg = "check the '%s' file (filemode should be '+x')"
+                checker.logger.warn(msg % rules)
+            break
+    else:
+        checker.logger.warn('check the debian/rules file')
+    return OK
 
 def check_debian_copying(checker):
     """check debian/copyright file"""
@@ -430,7 +433,7 @@ def check_copying(checker):
 def check_tests_directory(checker):
     """check your tests? directory """
     if not (isdir('test') or isdir('tests')):
-        checker.logger.warn(check_copying.__doc__)
+        checker.logger.warn(check_tests_directory.__doc__)
     return OK
 
 def check_run_tests(checker):
@@ -473,7 +476,6 @@ def check_announce(checker):
 
 def check_bin(checker):
     """check executable script files in bin/ """
-    BASE_EXCLUDE = ('CVS', '.svn', '.hg', 'bzr')
     status = OK
     if not exists('bin/'):
         return status
@@ -502,31 +504,6 @@ def check_documentation(checker):
         checker.logger.warn("documentation directory not found")
     return status
 
-def check_repository(checker):
-    """check your repository file status"""
-    try:
-        from logilab.devtools.vcslib import get_vcs_agent
-        vcs_agent = get_vcs_agent(checker.config.pkg_dir)
-        if vcs_agent:
-            result = vcs_agent.not_up_to_date(checker.config.pkg_dir)
-            incoming = [(k,v) for (k,v) in result if k in ('incoming',)]
-            if incoming:
-                checker.logger.info("%d incoming(s) changesets detected" %
-                                    len(incoming))
-            # filter changesets
-            result = [(k,v) for (k,v) in result if k not in ('outgoing',
-                                                             'incoming')]
-            if result:
-                checker.logger.warn("modified files have been detected:\n%s" % pformat(result))
-                return NOK
-    except mercurial.error.RepoError:
-        checker.logger.debug("no remote repository found in .hg/hgrc")
-    except ImportError:
-        checker.logger.warn("you need to install logilab vcslib package for this check")
-    except NotImplementedError:
-        checker.logger.warn("the current vcs agent isn't yet supported")
-    return OK
-
 def check_release_number(checker):
     """check the versions coherence between upstream and debian/changelog"""
     try:
@@ -546,12 +523,11 @@ def check_manifest_in(checker):
 
     # check matched files
     should_be_in = get_manifest_files(dirname=dirname)
-    matched = read_manifest_in(None, dirname=dirname)
+    matched = set(read_manifest_in(None, dirname=dirname))
     for path in should_be_in:
-        try:
-            i = matched.index(path)
-            matched.pop(i)
-        except ValueError:
+        if path in matched:
+            matched.remove(path)
+        else:
             checker.logger.warn('%s unmatched' % path)
             # FIXME keep valid status till ``#2888: lgp check ignore manifest # "prune"``
             # path command not resolved
