@@ -3,4 +3,7 @@
 # run lintian on generated changes files
 apt-get install -y --force-yes lintian >/dev/null 2>&1
 
-su -c "lintian -vi --show-overrides $HOME/*.changes" nobody || true
+# hardcoded here since it's a current practise to build for different releases (as codenames)
+LINTIAN_DELETE_TAG="bad-distribution-in-changes-file"
+
+su -c "lintian -vi --suppress-tags ${LINTIAN_DELETE_TAG} --show-overrides $HOME/*.changes" nobody || true

@@ -7,7 +7,6 @@ from cStringIO import StringIO
 from logilab.common.shellutils import cp
 
 import logilab.devtools
-from logilab.devtools.vcslib import get_vcs_agent
 from logilab.devtools.lib import TextReporter
 from logilab.devtools.lib.pkginfo import PackageInfo
 from logilab.devtools.lib.changelog import ChangeLog
@@ -213,19 +212,6 @@ def run(pkgdir, options, args):
                 sys.exit(1)
             filename = '%s/%s.announce' % (options.distdir, pkginfo.name)
             make_announce(pkginfo, filename)
-    if 'uptodate' in actions:
-        # check vcs up to date
-        print SEPARATOR
-        if confirm("vérifier que l'entrepôt est à jour ?"):
-            try:
-                vcs_agent = get_vcs_agent(pkgdir)
-                result = vcs_agent.not_up_to_date(pkgdir)
-                if result:
-                    print '\n'.join(["%s: %s"%r for r in result])
-                    if not confirm('Continue ?'):
-                        return 0
-            except NotImplementedError:
-                print 'pas encore supporté par cet agent de controle'
     if 'clean' in actions:
         # clean
         print SEPARATOR

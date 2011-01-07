@@ -1,6 +1,0 @@
-#!/usr/bin/python
-
-from logilab.devtools import cvslog
-import sys
-cvslog.run(sys.argv[1:])
-
