@@ -1,0 +1,8 @@
+#!/bin/bash
+
+. /tmp/hooks/lgp.functions
+
+printf "\a"
+echo
+eprint_hook "Sorry, the build process failed for '$(basename "$SUDO_COMMAND" .dsc)' in '$DIST/$ARCH' image !"
+echo

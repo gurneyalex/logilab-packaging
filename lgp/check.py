@@ -28,6 +28,7 @@ __docformat__ = "restructuredtext en"
 import os
 import stat
 import re
+import sys
 import commands
 import logging
 import itertools
@@ -47,7 +48,7 @@ OK, NOK = 1, 0
 CHECKS = {'debian'    : set(['debian_dir', 'debian_rules', 'debian_copying',
                              'debian_source_value', 'debian_env',
                              'debian_changelog', 'debian_homepage']),
-          'default'   : set(['builder',  'bin', 'repository', 'release_number']),
+          'default'   : set(['builder',  'bin', 'release_number']),
           'distutils' : set(['manifest_in', 'pydistutils',]),
           'pkginfo'   : set(['debsign', 'package_info', 'announce',
                              'pkginfo_copyright', 'tests_directory',
@@ -231,7 +232,8 @@ class Checker(SetupInfo):
                 if c in CHECKS:
                     checks.difference_update(CHECKS[c])
                 else:
-                    checks.remove(c)
+                    if c in checks:
+                        checks.remove(c)
             self.checklist = [globals()["check_%s" % name] for name in checks]
         except KeyError, err:
             msg = "check function or category %s was not found. Use lgp check --list"
@@ -261,7 +263,6 @@ class Checker(SetupInfo):
     def list_checks(self):
         def title(msg):
             print >> sys.stderr, "\n", msg, "\n", len(msg) * '='
-        import sys
         all_checks = self.get_checklist(all=True)
         checks     = self.get_checklist()
         if len(checks)==0:
@@ -330,11 +331,16 @@ def check_debian_dir(checker):
 
 def check_debian_rules(checker):
     """check the debian*/rules file (filemode should be "+x")"""
-    debian_dir = checker.get_debian_dir()
-    if not isfile(os.path.join(debian_dir, 'rules')):
-        checker.logger.warn('check the debian*/rules file')
-    if not is_executable(os.path.join(debian_dir, 'rules')):
-        checker.logger.warn('check the debian*/rules file (filemode should be "+x")')
+    debian_dirs = [checker.get_debian_dir(), 'debian']
+    for debian_dir in debian_dirs:
+        rules = os.path.join(debian_dir, 'rules')
+        if isfile(rules):
+            if not is_executable(rules):
+                msg = "check the '%s' file (filemode should be '+x')"
+                checker.logger.warn(msg % rules)
+            break
+    else:
+        checker.logger.warn('check the debian/rules file')
     return OK
 
 def check_debian_copying(checker):
@@ -517,12 +523,11 @@ def check_manifest_in(checker):
 
     # check matched files
     should_be_in = get_manifest_files(dirname=dirname)
-    matched = read_manifest_in(None, dirname=dirname)
+    matched = set(read_manifest_in(None, dirname=dirname))
     for path in should_be_in:
-        try:
-            i = matched.index(path)
-            matched.pop(i)
-        except ValueError:
+        if path in matched:
+            matched.remove(path)
+        else:
             checker.logger.warn('%s unmatched' % path)
             # FIXME keep valid status till ``#2888: lgp check ignore manifest # "prune"``
             # path command not resolved

@@ -1,3 +1,16 @@
+logilab-devtools (0.17.4-2) unstable; urgency=low
+
+  * debian/control:
+    Add python-vcslib in Conflicts and Replaces fields
+
+ -- Julien Jehannet <julien.jehannet@logilab.fr>  Fri, 17 Dec 2010 11:04:07 +0100
+
+logilab-devtools (0.17.4-1) unstable; urgency=low
+
+  * new upstream release
+
+ -- Julien Jehannet <julien.jehannet@logilab.fr>  Tue, 27 Jul 2010 13:58:47 +0200
+
 logilab-devtools (0.17.3-1) unstable; urgency=low
 
   * new upstream release

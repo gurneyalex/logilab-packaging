@@ -61,7 +61,7 @@ def guess_debian_distribution():
         return ["unstable",]
     return [distribution,]
 
-def is_architecture_independant():
+def is_architecture_independent():
     return 'all' in get_debian_architecture()
 
 def guess_debian_architecture():
@@ -98,7 +98,7 @@ def get_architectures(archi=None, basetgz=None):
     if archi is None or len(archi)==0:
         archi = guess_debian_architecture()
 
-    # "all" means architecture-independant. so we can replace by "current"
+    # "all" means architecture-independent. so we can replace by "current"
     # architecture only
     if 'all' in archi:
         archi = ['current']
@@ -120,7 +120,8 @@ def get_architectures(archi=None, basetgz=None):
             archi = set(known_archi) & set(archi)
         for a in archi:
             if a not in known_archi:
-                raise ArchitectureException(a)
+                msg = "architecture '%s' not found in '%s' (create it or unreference it)" % archi
+                raise ArchitectureException("%s" % a)
     return archi
 
 def get_debian_architecture():
@@ -174,12 +175,21 @@ def get_distributions(distrib=None, basetgz=None, suites=LGP_SUITES):
                     logging.debug("'%s' image not found in '%s'" % (t, basetgz))
                     logging.debug("act as if 'unstable' image was existing in filesystem")
                     return ('unstable',)
-                msg = "expected image '%s' not found in '%s': create it or unreference it" % (t, basetgz)
+                msg = "distribution '%s' image not found in '%s' (create it or unreference it)" % (t, basetgz)
                 raise DistributionException(msg)
             else:
                 mapped += (t,)
         distrib = mapped
     return tuple(set(distrib))
+
+def guess_debian_source_format():
+    """guess debian source format
+
+    :see: man dpkg-source
+    """
+    if osp.isfile("debian/source/format"):
+        return open('format').readline().split(" ")[1]
+    return "1.0"
 
 def cached(func):
     """run a function only once and return always the same cache
