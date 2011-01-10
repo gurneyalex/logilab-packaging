@@ -36,7 +36,7 @@ from logilab.common.shellutils import cp
 
 from logilab.devtools.lgp import CONFIG_FILE, HOOKS_DIR, BUILD_LOG_EXT
 from logilab.devtools.lgp.setupinfo import SetupInfo
-from logilab.devtools.lgp.utils import wait_jobs, is_architecture_independant
+from logilab.devtools.lgp import utils
 from logilab.devtools.lgp.exceptions import LGPException, LGPCommandException
 
 from logilab.devtools.lgp.check import check_debsign
@@ -89,18 +89,17 @@ def run_post_treatments(builder, distrib):
     distdir = builder.get_distrib_dir()
     old = os.getcwd()
     try:
-        os.chdir(osp.dirname(distdir))
         try:
-            # cd /srv/repository/
+            os.chdir(osp.dirname(distdir))
             # dpkg-scanpackages i386 /dev/null | gzip -9c > 386/Packages.gz
             # dpkg-scanpackages amd64 /dev/null | gzip -9c > amd64/Packages.gz
             # dpkg-scansources source /dev/null | gzip -9c > source/Sources.gz
             cmd = "dpkg-scanpackages -m %s /dev/null 2>/dev/null | gzip -9c > %s/Packages.gz"
             os.system(cmd % (distrib, distrib))
-            logging.debug("Debian trivial repository in '%s' updated." % distdir)
         except Exception, err:
-            msg = "cannot update Debian trivial repository for '%s'" % distdir
-            raise LGPCommandException(msg, err)
+            logging.warning("cannot update Debian trivial repository for '%s'" % distdir)
+        else:
+            logging.debug("Debian trivial repository in '%s' updated." % distdir)
     finally:
         os.chdir(old)
 
@@ -221,9 +220,13 @@ class Builder(SetupInfo):
         """
         # change directory to build source package
         os.chdir(self._tmpdir)
-
+        arguments = ""
+        format = utils.guess_debian_source_format()
+        logging.info("Debian source package format: %s" % format)
+        if format == "1.0":
+            arguments+='--no-copy'
         try:
-            cmd = 'dpkg-source --no-copy -b %s' % self.origpath
+            cmd = 'dpkg-source %s -b %s' % (arguments, self.origpath)
             logging.debug("running dpkg-source command: %s ..." % cmd)
             check_call(cmd.split(), stdout=sys.stdout)
         except CalledProcessError, err:
@@ -245,6 +248,8 @@ class Builder(SetupInfo):
         os.chdir(self.config.pkg_dir)
 
     def _builder_command(self, build_vars):
+        # TODO Manage DEB_BUILD_OPTIONS
+        # http://www.debian.org/doc/debian-policy/ch-source.html
         debuilder = os.environ.get('DEBUILDER', 'pbuilder')
         logging.debug("package builder flavour: '%s'" % debuilder)
         if debuilder == 'pbuilder':
@@ -293,6 +298,8 @@ class Builder(SetupInfo):
             tmplist.append(self.create_build_context())
 
             cmd = self._builder_command(build)
+            # TODO manage handy --othermirror to use local mirror
+            #cmd.append(['--othermirror', "deb file:///home/juj/dists %s/" % build['distrib']])
             logging.info("building binary debian package for '%s/%s' "
                          "using DEBBUILDOPTS options: '%s' ..."
                          % (build['distrib'], build['arch'],
@@ -315,7 +322,7 @@ class Builder(SetupInfo):
                 return False
 
         # only print dots in verbose mode (verbose: 1)
-        build_status, timedelta = wait_jobs(joblist, self.config.verbose == 1)
+        build_status, timedelta = utils.wait_jobs(joblist, self.config.verbose == 1)
         if build_status:
             logging.critical("binary build(s) failed for '%s' with exit status %d"
                              % (build['distrib'], build_status))
@@ -336,7 +343,7 @@ class Builder(SetupInfo):
         """create a series of binary build command
 
         Architecture is checked against the debian/control to detect
-        architecture-independant packages
+        architecture-independent packages
 
         You have the possiblity to add some dpkg-buildpackage options with the
         DEBBUILDOPTS environment variable.
@@ -357,7 +364,7 @@ class Builder(SetupInfo):
             return ' '.join(optline)
 
         series = []
-        if is_architecture_independant():
+        if utils.is_architecture_independent():
             options = dict()
             options['distrib'] = self.current_distrib
             options['buildopts'] = _build_options()
@@ -365,7 +372,7 @@ class Builder(SetupInfo):
             options['image'] = self.get_basetgz(options['distrib'],
                                                 options['arch'])
             series.append(options)
-            logging.info('this build is arch-independant. Lgp will only build on '
+            logging.info('this build is arch-independent. Lgp will only build on '
                          'current architecture (%s)' % options['arch'])
         else:
             for rank, arch in enumerate(self.architectures):
@@ -480,8 +487,10 @@ class Builder(SetupInfo):
 
     def get_distrib_dir(self):
         """get the dynamic target release directory"""
-        distrib_dir = os.path.join(os.path.expanduser(self.config.dist_dir),
-                                   self.current_distrib)
+        distrib_dir = os.path.normpath(os.path.expanduser(self.config.dist_dir))
+        # special case when current directory is used to put result files ("-r .")
+        if distrib_dir not in ['.', '..']:
+            distrib_dir = os.path.join(distrib_dir, self.current_distrib)
         # check if distribution directory exists, create it if necessary
         os.umask(0002)
         try:

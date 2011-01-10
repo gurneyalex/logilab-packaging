@@ -19,8 +19,8 @@ Suggests: logilab-doctools, pymacs, emacsen-common, cvs, debian-archive-keyring
 Recommends: piuparts, mercurial (>= 0.9.3), subversion, debinstall, diffstat
 Depends: ${python:Depends}, python-debian, lintian, pbuilder, devscripts, debhelper,
          python-logilab-common, sudo, cdebootstrap, python-apt
-Conflicts: devtools, simh
-Replaces: devtools
+Conflicts: devtools, simh, python-vcslib
+Replaces: devtools, python-vcslib
 Description: set of development tools used at Logilab
  Set of tools which aims to help the developpement process, including :
   * tools to check and build source and/or Debian packages
