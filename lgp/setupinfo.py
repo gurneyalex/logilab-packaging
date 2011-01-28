@@ -344,13 +344,13 @@ class SetupInfo(Configuration):
         # http://www.debian.org/doc/debian-policy/ch-controlfields.html#s-f-Version
         try:
             debian_revision = self.get_debian_version().rsplit('-', 1)[1]
+            if debian_revision == '0':
+                logging.error("Debian version part (the part after the -) "
+                              "should start with one, not with zero")
         except IndexError:
-            logging.warn("The absence of a debian_revision is equivalent to a debian_revision of 0.")
+            logging.warn("The absence of a debian_revision is equivalent to "
+                         "a debian_revision of 0.")
             debian_revision = "0"
-
-        if debian_revision == '0':
-            logging.info("It is conventional to restart the debian_revision"
-                         " at 1 each time the upstream_version is increased.")
         return debian_revision in ['0', '1'] # or debian_revision.startswith(('0+', '1+')):
 
     @utils.cached
