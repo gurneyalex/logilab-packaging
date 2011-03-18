@@ -357,9 +357,9 @@ def check_debian_source_value(checker):
                             % (upstream_name, debian_name))
     return OK
 
-def check_debian_changelog(checker):
+def check_debian_changelog(checker, debian_dir=None):
     """check debian changelog error cases"""
-    debian_dir = checker.get_debian_dir()
+    debian_dir = debian_dir or checker.get_debian_dir()
     CHANGELOG = os.path.join(debian_dir, 'changelog')
     if isfile(CHANGELOG):
         # verify if changelog is closed
@@ -395,7 +395,11 @@ def check_debian_changelog(checker):
         if output:
             checker.logger.error(output)
     else:
-        checker.logger.error("no debian/changelog file found")
+        if debian_dir == "debian":
+            checker.logger.error("no debian*/changelog file found")
+        else: # failback to debian/changelog
+            check_debian_changelog(checker, 'debian')
+
 
 def check_debian_maintainer(checker):
     """check Maintainer field in debian/control file"""
