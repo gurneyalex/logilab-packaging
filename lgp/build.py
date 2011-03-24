@@ -218,11 +218,11 @@ class Builder(SetupInfo):
         :param:
             origpath: path to orig.tar.gz tarball
         """
-        # change directory to build source package
-        os.chdir(self._tmpdir)
         arguments = ""
         format = utils.guess_debian_source_format()
         logging.info("Debian source package format: %s" % format)
+        # change directory to build source package
+        os.chdir(self._tmpdir)
         if format == "1.0":
             arguments+='--no-copy'
         try:
