@@ -564,7 +564,8 @@ def check_debsign(checker):
 
         if enabled == "yes":
             if not os.path.exists(os.path.expanduser("~/.devscripts")):
-                checker.logger.error("please, export your DEBSIGN_KEYID in ~/.devscripts")
+                msg = "please, export your DEBSIGN_KEYID in ~/.devscripts (read `debsign` manual)"
+                checker.logger.error(msg)
                 return NOK
             if 'GPG_AGENT_INFO' not in os.environ:
                 checker.logger.error('enable your gpg-agent to sign packages automatically')
