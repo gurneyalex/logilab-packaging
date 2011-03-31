@@ -539,7 +539,7 @@ class SetupInfo(Configuration):
 
         # substitute distribution string in file only if line not starting by
         # spaces (simple heuristic to prevent other changes in content)
-        # FIXME use debian_bundle.changelog.Changelog instead
+        # FIXME use "from debian.changelog import Changelog" instead
         if self.current_distrib:
             cmd = ['sed', '-i', '/^[[:alpha:]]/s/\([[:alpha:]]\+\);/%s;/'
                    % self.current_distrib, osp.join(self.origpath, 'debian', 'changelog')]
@@ -550,7 +550,7 @@ class SetupInfo(Configuration):
 
         # substitute version string in appending timestamp and suffix
         # append suffix string (or timestamp if suffix is empty) to debian revision
-        # FIXME use debian_bundle.changelog.Changelog instead
+        # FIXME use "from debian.changelog import Changelog" instead
         if self.config.suffix is not None:
             suffix = self.config.suffix or '+%s' % int(time.time())
             logging.debug("suffix '%s' added to package names" % suffix)
