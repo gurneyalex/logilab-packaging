@@ -24,7 +24,7 @@ import re
 from subprocess import Popen, PIPE
 import logging
 
-from debian_bundle.deb822 import Deb822
+from debian.deb822 import Deb822
 
 from logilab.devtools.lgp import LGP_SUITES
 from logilab.devtools.lgp.exceptions import (ArchitectureException,
