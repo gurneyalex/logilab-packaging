@@ -1,7 +1,4 @@
 #!/bin/sh
 
-# Clean caches
-/usr/bin/lgp setup -c clean -d all -a any
-
 # Update image
-/usr/bin/lgp setup -c update -d all -a any
+/usr/bin/lgp setup -q -c update -d all -a any
