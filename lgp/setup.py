@@ -122,7 +122,7 @@ class Setup(SetupInfo):
         # workaround: http://www.netfort.gr.jp/~dancer/software/pbuilder-doc/pbuilder-doc.html#amd64i386
         # FIXME use `setarch` command for much more supported platforms
         if 'amd64' in self.get_architectures(['current']) and self.arch == 'i386' and os.path.exists('/usr/bin/linux32'):
-            logging.info('using linux32 command to build i386 image from amd64 compatible architecture')
+            logging.debug('using linux32 command to build i386 image from amd64 compatible architecture')
             setarch_cmd = 'linux32'
         return setarch_cmd
 

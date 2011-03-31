@@ -82,6 +82,12 @@ class SetupInfo(Configuration):
                  'short': 'v',
                  'help': "run in verbose mode",
                 }),
+               ('quiet',
+                {'action': 'count',
+                 'dest' : "quiet",
+                 'short': 'q',
+                 'help': "disable info message log level",
+                }),
                ('distrib',
                 {'type': 'csv',
                   'dest': 'distrib',
@@ -175,6 +181,8 @@ class SetupInfo(Configuration):
 
             if self.config.verbose:
                 logging.getLogger().setLevel(logging.DEBUG)
+            elif self.config.quiet:
+                logging.getLogger().setLevel(logging.WARN)
             else:
                 # Redirect subprocesses stdout output only in case of verbose mode
                 # We always allow subprocesses to print on the stderr (more convenient)
