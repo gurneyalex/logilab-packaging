@@ -1,4 +1,4 @@
-#!/bin/sh -x
+#!/bin/sh
 
 # repository is not always existing for all images
 # consider index files as optional and exit with error status
