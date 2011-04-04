@@ -56,6 +56,10 @@ Suite: lucid
 Config: generic-ubuntu
 Keyring: ubuntu-archive-keyring.gpg
 
+Suite: maverick
+Config: generic-ubuntu
+Keyring: ubuntu-archive-keyring.gpg
+
 Suite: oldstable
 Keyring: debian-archive-keyring.gpg
 

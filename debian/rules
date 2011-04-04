@@ -51,6 +51,7 @@ binary-indep: build install
 	dh_installdocs -i README changelog.gz
 	dh_installman -i
 	dh_installcron -i
+	-dh_lintian -i
 	dh_installemacsen -plogilab-elisp
 	dh_pysupport -i -Nlogilab-elisp
 	dh_link -i
