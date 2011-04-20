@@ -1,3 +1,16 @@
+logilab-devtools (0.17.5-1) unstable; urgency=low
+
+  * new upstream release
+
+ -- Julien Jehannet <julien.jehannet@logilab.fr>  Mon, 04 Apr 2011 14:53:53 +0200
+
+logilab-devtools (0.17.4-3) unstable; urgency=low
+
+  * debian/logilab-packaging.install.in:
+    Install __init__.py (was previously done by python-vcslib)
+
+ -- Julien Jehannet <julien.jehannet@logilab.fr>  Fri, 17 Dec 2010 11:04:07 +0100
+
 logilab-devtools (0.17.4-2) unstable; urgency=low
 
   * debian/control:

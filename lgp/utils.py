@@ -24,7 +24,7 @@ import re
 from subprocess import Popen, PIPE
 import logging
 
-from debian_bundle.deb822 import Deb822
+from debian.deb822 import Deb822
 
 from logilab.devtools.lgp import LGP_SUITES
 from logilab.devtools.lgp.exceptions import (ArchitectureException,
@@ -185,11 +185,14 @@ def get_distributions(distrib=None, basetgz=None, suites=LGP_SUITES):
 def guess_debian_source_format():
     """guess debian source format
 
+    Default is 1.0 except if specified in `debian/source/format`
+
     :see: man dpkg-source
     """
-    if osp.isfile("debian/source/format"):
-        return open('format').readline().split(" ")[1]
-    return "1.0"
+    try:
+        return open("debian/source/format").readline().strip()
+    except:
+        return "1.0"
 
 def cached(func):
     """run a function only once and return always the same cache
