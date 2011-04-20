@@ -82,6 +82,12 @@ class SetupInfo(Configuration):
                  'short': 'v',
                  'help': "run in verbose mode",
                 }),
+               ('quiet',
+                {'action': 'count',
+                 'dest' : "quiet",
+                 'short': 'q',
+                 'help': "disable info message log level",
+                }),
                ('distrib',
                 {'type': 'csv',
                   'dest': 'distrib',
@@ -175,6 +181,8 @@ class SetupInfo(Configuration):
 
             if self.config.verbose:
                 logging.getLogger().setLevel(logging.DEBUG)
+            elif self.config.quiet:
+                logging.getLogger().setLevel(logging.WARN)
             else:
                 # Redirect subprocesses stdout output only in case of verbose mode
                 # We always allow subprocesses to print on the stderr (more convenient)
@@ -344,13 +352,13 @@ class SetupInfo(Configuration):
         # http://www.debian.org/doc/debian-policy/ch-controlfields.html#s-f-Version
         try:
             debian_revision = self.get_debian_version().rsplit('-', 1)[1]
+            if debian_revision == '0':
+                logging.error("Debian version part (the part after the -) "
+                              "should start with one, not with zero")
         except IndexError:
-            logging.warn("The absence of a debian_revision is equivalent to a debian_revision of 0.")
+            logging.warn("The absence of a debian_revision is equivalent to "
+                         "a debian_revision of 0.")
             debian_revision = "0"
-
-        if debian_revision == '0':
-            logging.info("It is conventional to restart the debian_revision"
-                         " at 1 each time the upstream_version is increased.")
         return debian_revision in ['0', '1'] # or debian_revision.startswith(('0+', '1+')):
 
     @utils.cached
@@ -539,7 +547,7 @@ class SetupInfo(Configuration):
 
         # substitute distribution string in file only if line not starting by
         # spaces (simple heuristic to prevent other changes in content)
-        # FIXME use debian_bundle.changelog.Changelog instead
+        # FIXME use "from debian.changelog import Changelog" instead
         if self.current_distrib:
             cmd = ['sed', '-i', '/^[[:alpha:]]/s/\([[:alpha:]]\+\);/%s;/'
                    % self.current_distrib, osp.join(self.origpath, 'debian', 'changelog')]
@@ -550,7 +558,7 @@ class SetupInfo(Configuration):
 
         # substitute version string in appending timestamp and suffix
         # append suffix string (or timestamp if suffix is empty) to debian revision
-        # FIXME use debian_bundle.changelog.Changelog instead
+        # FIXME use "from debian.changelog import Changelog" instead
         if self.config.suffix is not None:
             suffix = self.config.suffix or '+%s' % int(time.time())
             logging.debug("suffix '%s' added to package names" % suffix)

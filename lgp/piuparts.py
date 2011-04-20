@@ -24,7 +24,7 @@ import os
 import sys
 import logging
 from subprocess import check_call, CalledProcessError
-from debian_bundle import (deb822, debfile)
+from debian import (deb822, debfile)
 
 from logilab.devtools.lgp.setupinfo import SetupInfo
 from logilab.devtools.lgp.exceptions import LGPException, LGPCommandException
