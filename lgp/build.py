@@ -423,14 +423,14 @@ class Builder(SetupInfo):
             age is said to be native).
 
             A source package contains at least an original tarball
-            (.orig.tar.ext where ext can be gz, bz2 and lzma)
+            (.orig.tar.ext where ext can be gz, bz2 and xz)
             """
-            ext = tuple([".tar" + e for e in ('.gz', '.bz2', '.lzma')])
+            ext = tuple([".tar" + e for e in ('.gz', '.bz2', '.xz')])
             pristine = diff = None
             for entry in filelist:
                 if not diff and entry.endswith('.diff.gz'):
                     diff = entry
-                if not pristine and entry.endswith(tuple(ext)):
+                if not pristine and entry.endswith(ext):
                     pristine = entry
             if pristine is None and self.is_initial_debian_revision():
                 logging.error("no pristine tarball found for initial Debian revision (searched: %s)"
