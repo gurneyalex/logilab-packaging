@@ -376,15 +376,15 @@ def check_debian_changelog(checker, debian_dir=None):
                 msg = "project name mismatch: debian/control says '%s' and debian/changelog says '%s'"
                 checker.logger.error(msg % (checker.get_debian_name(), utils._parse_deb_project()))
             # check maintainer field
-            cmd = "dpkg-parsechangelog -l%s | grep '^Maintainer' | cut -d' ' -f2- | tr -d '\n'"
+            cmd = "dpkg-parsechangelog -l%s | awk '/^Maintainer/ { $1 = \"\"; print }'"
             _, maintainer = commands.getstatusoutput(cmd % CHANGELOG)
             for d in [debian_dir, "debian"]:
-                cmd = 'grep "%s" %s' % (maintainer, join(d, "control"))
+                cmd = 'grep "%s" %s' % (maintainer.strip(), join(d, "control"))
                 cmdstatus, _ = commands.getstatusoutput(cmd)
                 if not cmdstatus: break
             else:
                 checker.logger.warn("'%s' not found in Uploaders field"
-                                    % maintainer)
+                                    % maintainer.strip())
             # final check with Debian utility
             cmd = "dpkg-parsechangelog -l%s >/dev/null" % CHANGELOG
             _, output = commands.getstatusoutput(cmd)
@@ -397,7 +397,7 @@ def check_debian_changelog(checker, debian_dir=None):
 def check_debian_maintainer(checker):
     """check Maintainer field in debian/control file"""
     status = OK
-    cmd = "grep '^Maintainer' debian/control | cut -d' ' -f2- | tr -d '\n'"
+    cmd = "awk '/^Maintainer/ { $1 = \"\"; print}' debian/control"
     cmdstatus, output = commands.getstatusoutput(cmd)
     if output.strip() != 'Logilab S.A. <contact@logilab.fr>':
         checker.logger.info("Maintainer value can be 'Logilab S.A. <contact@logilab.fr>'")
