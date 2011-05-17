@@ -210,7 +210,7 @@ class SetupInfo(clcommands.Command):
 
     def go_into_package_dir(self, arguments):
         """go into package directory
-        
+
         .. note::
             current directory wil be saved in `old_current_directory`
         """
@@ -245,24 +245,34 @@ class SetupInfo(clcommands.Command):
         logging.debug("guessing architecture(s): %s" % ', '.join(self.architectures))
 
     def _set_package_format(self):
-        """set the package format to be able to run COMMANDS"""
-        if osp.isfile('__pkginfo__.py') and not osp.isfile(self.config.setup_file):
+        """set the package format to be able to run COMMANDS
+
+        setup_file must not be redefine since we can call this
+        method several times
+        """
+        setup_file = self.config.setup_file = self._normpath(self.config.setup_file)
+        if setup_file:
+            self.logger.info('use specific setup file: %s', setup_file)
+
+        if osp.isfile('__pkginfo__.py') and not setup_file:
             # Logilab's specific format
+            # FIXME Format is buggy if setup_file was set to 'setup.py'
             from logilab.devtools.lib import TextReporter
             self._package = PackageInfo(reporter=TextReporter(file(os.devnull, "w+")),
                                         directory=self.config.pkg_dir)
+            assert osp.isfile('setup.py'), "setup.py is still mandatory"
         # other script can be used if compatible with the expected targets in COMMANDS
-        elif osp.isfile(self.config.setup_file):
-            if self.config.setup_file == 'setup.py':
+        elif osp.isfile(setup_file):
+            if osp.basename(setup_file) == 'setup.py':
                 # case for python project (distutils, setuptools)
-                self._package = run_setup('./setup.py', None, stop_after="init")
+                self._package = run_setup(setup_file, None, stop_after="init")
             else:
                 # generic case: the setup file should only honor targets as:
                 # sdist, project, version, clean (see COMMANDS)
-                self._package = file(self.config.setup_file)
-                if not os.stat(self.config.setup_file).st_mode & stat.S_IEXEC:
+                self._package = file(setup_file)
+                if not os.stat(setup_file).st_mode & stat.S_IEXEC:
                     raise LGPException('setup file %s has no execute permission'
-                                       % self.config.setup_file)
+                                       % setup_file)
         else:
             class debian(object): pass
             self._package = debian()
@@ -599,7 +609,7 @@ class SetupInfo(clcommands.Command):
     def _normpath(self, path):
         """helper method to normalize filepath arguments before
         changing current directorty (will return absolute paths)
-        
+
         XXX could be coded directly by option checker (optparse)
         """
         if path:
