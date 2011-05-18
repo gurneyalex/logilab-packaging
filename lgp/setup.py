@@ -19,7 +19,6 @@ from __future__ import print_function
 
 import os
 import sys
-import logging
 import glob
 from subprocess import check_call, CalledProcessError
 
@@ -67,7 +66,7 @@ class Setup(SetupInfo):
         # workaround: http://www.netfort.gr.jp/~dancer/software/pbuilder-doc/pbuilder-doc.html#amd64i386
         # FIXME use `setarch` command for much more supported platforms
         if 'amd64' in self.get_architectures(['current']) and self.arch == 'i386' and os.path.exists('/usr/bin/linux32'):
-            logging.debug('using linux32 command to build i386 image from amd64 compatible architecture')
+            self.logger.debug('using linux32 command to build i386 image from amd64 compatible architecture')
             setarch_cmd = 'linux32'
         return setarch_cmd
 
@@ -75,7 +74,7 @@ class Setup(SetupInfo):
     def sudo_cmd(self):
         sudo_cmd = ""
         if os.geteuid() != 0:
-            logging.debug('lgp setup should be run as root. sudo is used internally.')
+            self.logger.debug('lgp setup should be run as root. sudo is used internally.')
             sudo_cmd = "/usr/bin/sudo -E"
         return sudo_cmd
 
@@ -95,25 +94,24 @@ class Setup(SetupInfo):
         super(Setup, self).guess_environment()
 
     def print_images_list(self):
-        logging.info("Base image directory: %s", self.config.basetgz)
+        self.logger.info("Base image directory: %s", self.config.basetgz)
         images = sorted(os.path.basename(f) for f in
                         glob.glob(os.path.join(self.config.basetgz,'*.tgz')))
         if images:
             print(*images, file=sys.__stdout__)
         else:
-            logging.warn("No image found.")
+            self.logger.warn("No image found.")
 
     def run(self, args):
         if self.config.command == "list":
             self.print_images_list()
             return os.EX_OK
         if self.config.command == "create":
-            self.logger = logging
             check_keyrings(self)
         if self.config.command in ("create", "update"):
             self.cmd += " --override-config"
         elif self.config.command == "clean":
-            logging.debug("cleans up directory specified by configuration BUILDPLACE and APTCACHE")
+            self.logger.debug("cleans up directory specified by configuration BUILDPLACE and APTCACHE")
         elif self.config.command == "dumpconfig":
             sys.stdout = sys.__stdout__
 
@@ -125,16 +123,16 @@ class Setup(SetupInfo):
 
                 # don't manage symbolic file in create and update command
                 if os.path.islink(image) and self.config.command in ("create", "update"):
-                    logging.warning("skip symbolic link used for image: %s (-> %s)"
-                                    % (image, os.path.realpath(image)))
+                    self.logger.warning("skip symbolic link used for image: %s (-> %s)"
+                                        % (image, os.path.realpath(image)))
                     continue
 
                 cmd = self.cmd % (image, distrib, arch, self.setarch_cmd, self.sudo_cmd,
                                   self.pbuilder_cmd, CONFIG_FILE, HOOKS_DIR)
 
-                logging.info(self.config.command + " image '%s' for '%s/%s'"
-                             % (image, distrib, arch))
-                logging.debug("run command: %s" % cmd)
+                self.logger.info(self.config.command + " image '%s' for '%s/%s'"
+                                 % (image, distrib, arch))
+                self.logger.debug("run command: %s" % cmd)
                 try:
                     check_call(cmd, stdout=sys.stdout, shell=True,
                                env={'DIST': distrib, 'ARCH': arch, 'IMAGE': image})
@@ -142,5 +140,5 @@ class Setup(SetupInfo):
                     # Gotcha: pbuilder dumpconfig command always returns exit code 1.
                     # Catch and continue for this command without error
                     if self.config.command != "dumpconfig":
-                        logging.error('an error occured in setup process: %s' % cmd)
+                        self.logger.error('an error occured in setup process: %s' % cmd)
 

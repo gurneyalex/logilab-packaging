@@ -17,7 +17,6 @@
 # 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA.
 
 import os
-import logging
 from subprocess import check_call, CalledProcessError
 
 from logilab.devtools.lgp import LGP, CONFIG_FILE, HOOKS_DIR
@@ -73,14 +72,13 @@ class Login(SetupInfo):
                 cmd = self.cmd % (self.sudo_cmd, self.pbuilder_cmd, CONFIG_FILE,
                                   HOOKS_DIR, resultdir, other_mirror)
 
-                logging.info("login into '%s/%s' image" % (distrib, arch))
-                logging.debug("run command: %s", cmd)
+                self.logger.info("login into '%s/%s' image" % (distrib, arch))
+                self.logger.debug("run command: %s", cmd)
                 try:
                     check_call(cmd, shell=True,
                                env={'DIST': distrib, 'ARCH': arch, 'IMAGE': image,
                                     'DISPLAY': os.environ.get('DISPLAY', ""),
                                     'OTHERMIRROR': other_mirror})
                 except CalledProcessError, err:
-                    logging.warn("returned non-zero exit status %s",
-                                 err.returncode)
-
+                    self.logger.warn("returned non-zero exit status %s",
+                                     err.returncode)

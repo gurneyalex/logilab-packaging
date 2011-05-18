@@ -205,23 +205,23 @@ class SetupInfo(clcommands.Command):
             if os.path.isfile(self.config.pkg_dir):
                 self.config.pkg_dir = os.path.dirname(self.config.pkg_dir)
             os.chdir(self.config.pkg_dir)
-            logging.debug('change the current working directory to: %s' % self.config.pkg_dir)
+            self.logger.debug('change the current working directory to: %s' % self.config.pkg_dir)
         else:
             self.config.pkg_dir = self.old_current_directory
 
     def guess_environment(self):
         # just a warning issuing for possibly confused configuration
         if self.config.archi and 'all' in self.config.archi:
-            logging.warn('the "all" keyword can be confusing about the '
-                         'targeted architectures. Consider using the "any" keyword '
-                         'to force the build on all architectures or let lgp finds '
-                         'the value in debian/changelog by itself in doubt.')
-            logging.warn('lgp replaces "all" with "current" architecture value for this command')
+            self.logger.warn('the "all" keyword can be confusing about the '
+                             'targeted architectures. Consider using the "any" keyword '
+                             'to force the build on all architectures or let lgp finds '
+                             'the value in debian/changelog by itself in doubt.')
+            self.logger.warn('lgp replaces the "all" architecture value by "current" in the build')
 
         # Define mandatory attributes for lgp commands
         self.distributions = utils.get_distributions(self.config.distrib,
                                                      self.config.basetgz)
-        logging.debug("guessing distribution(s): %s" % ', '.join(self.distributions))
+        self.logger.debug("guessing distribution(s): %s" % ', '.join(self.distributions))
 
     def _set_package_format(self):
         """set the package format to be able to run COMMANDS
@@ -255,7 +255,7 @@ class SetupInfo(clcommands.Command):
         else:
             class debian(object): pass
             self.config._package = debian()
-        logging.debug("use setup package class format: %s" % self.package_format)
+        self.logger.debug("use setup package class format: %s" % self.package_format)
 
     def _prune_pkg_dir(self):
         if self.package_format in ('PackageInfo', 'Distribution'):
@@ -266,7 +266,7 @@ class SetupInfo(clcommands.Command):
             spurious = "%s-%s" % (self.get_upstream_name(), self.get_upstream_version())
             if os.path.isdir(spurious):
                 import shutil
-                logging.warn("remove spurious temporarly directory '%s' built by distutils" % spurious)
+                self.logger.warn("remove spurious temporarly directory '%s' built by distutils" % spurious)
                 shutil.rmtree(spurious)
 
     @property
@@ -286,9 +286,9 @@ class SetupInfo(clcommands.Command):
                     raise LGPException(err)
             cmdline = Template(cmd)
             cmdline = cmdline.substitute(setup=self.config.setup_file, **args)
-        logging.debug('run subprocess command: %s' % cmdline)
+        self.logger.debug('run subprocess command: %s' % cmdline)
         if args:
-            logging.debug('command substitutions: %s' % args)
+            self.logger.debug('command substitutions: %s' % args)
         process = Popen(cmdline.split(), stdout=PIPE)
         pipe = process.communicate()[0].strip()
         if process.returncode > 0:
@@ -315,10 +315,10 @@ class SetupInfo(clcommands.Command):
         # developper can create an overlay for the debian directory
         old_override_dir = '%s.%s' % (debiandir, distrib)
         if osp.isdir(osp.join(self.config.pkg_dir, old_override_dir)):
-            #logging.warn("new distribution overlay system available: you "
-            #             "can use '%s' subdirectory instead of '%s' and "
-            #             "merge the files"
-            #             % (override_dir, old_override_dir))
+            #self.logger.warn("new distribution overlay system available: you "
+            #                 "can use '%s' subdirectory instead of '%s' and "
+            #                 "merge the files"
+            #                 % (override_dir, old_override_dir))
             debiandir = old_override_dir
 
         if osp.isdir(osp.join(self.config.pkg_dir, override_dir)):
@@ -336,8 +336,8 @@ class SetupInfo(clcommands.Command):
         """
         changelog = osp.join('debian', 'changelog')
         debian_version = utils._parse_deb_version(changelog)
-        logging.debug('retrieve debian version from %s: %s' %
-                      (changelog, debian_version))
+        self.logger.debug('retrieve debian version from %s: %s' %
+                          (changelog, debian_version))
         return debian_version
 
     def is_initial_debian_revision(self):
@@ -345,11 +345,11 @@ class SetupInfo(clcommands.Command):
         try:
             debian_revision = self.get_debian_version().rsplit('-', 1)[1]
             if debian_revision == '0':
-                logging.error("Debian version part (the part after the -) "
-                              "should start with one, not with zero")
+                self.logger.error("Debian version part (the part after the -) "
+                                  "should start with one, not with zero")
         except IndexError:
-            logging.warn("The absence of a debian_revision is equivalent to "
-                         "a debian_revision of 0.")
+            self.logger.warn("The absence of a debian_revision is equivalent to "
+                             "a debian_revision of 0.")
             debian_revision = "0"
         return debian_revision in ['0', '1'] # or debian_revision.startswith(('0+', '1+')):
 
@@ -384,13 +384,13 @@ class SetupInfo(clcommands.Command):
         FIXME replace by TarFile Object
         """
         # Mandatory to be compatible with format 1.0
-        logging.debug("copy pristine tarball to prepare Debian source package diff")
+        self.logger.debug("copy pristine tarball to prepare Debian source package diff")
         cp(self.config.orig_tarball, tmpdir)
         # TODO obtain current format version
         # os.path.exists(osp.join(self.origpath, "debian/source/format")
 
-        logging.debug("extracting original source archive for %s distribution in %s"
-                      % (current_distrib or "default", tmpdir))
+        self.logger.debug("extracting original source archive for %s distribution in %s"
+                          % (current_distrib or "default", tmpdir))
         try:
             cmd = 'tar --atime-preserve --preserve-permissions --preserve-order -xzf %s -C %s'\
                   % (self.config.orig_tarball, tmpdir)
@@ -407,8 +407,8 @@ class SetupInfo(clcommands.Command):
 
         format = "%s-%s" % (self.get_upstream_name(), self.get_upstream_version())
         if self.origpath != format:
-            logging.warn("source directory of original source archive (pristine tarball) "
-                         "has not the expected format (%s): %s" % (format, self.origpath))
+            self.logger.warn("source directory of original source archive (pristine tarball) "
+                             "has not the expected format (%s): %s" % (format, self.origpath))
 
         # directory containing the debianized source tree
         # (i.e. with a debian sub-directory and maybe changes to the original files)
@@ -439,7 +439,7 @@ class SetupInfo(clcommands.Command):
 
         debian_dir = self.get_debian_dir(distrib)
         if debian_dir != "debian":
-            logging.info("overriding files from '%s' directory..." % debian_dir)
+            self.logger.info("overriding files from '%s' directory..." % debian_dir)
             # don't forget the final slash!
             export(osp.join(self.config.pkg_dir, debian_dir), osp.join(self.origpath, 'debian/'),
                    verbose=self.config.verbose)
@@ -460,7 +460,7 @@ class SetupInfo(clcommands.Command):
         # FIXME use "from debian.changelog import Changelog" instead
         if self.config.suffix is not None:
             suffix = self.config.suffix or '+%s' % int(time.time())
-            logging.debug("suffix '%s' added to package names" % suffix)
+            self.logger.debug("suffix '%s' added to package names" % suffix)
             cmd = ['sed', '-i', '1s/(\(.*\))/(\\1%s)/' % suffix,
                    osp.join(self.origpath, 'debian', 'changelog')]
             try:
@@ -482,7 +482,7 @@ class SetupInfo(clcommands.Command):
         Each context (directory for now) will be cleaned at the end of the build
         process by the destroy_tmp_context method"""
         self._tmpdir = tempfile.mkdtemp(suffix)
-        logging.debug('changing build context... (%s)' % self._tmpdir )
+        self.logger.debug('changing build context... (%s)' % self._tmpdir )
         self._tmpdirs.append(self._tmpdir)
         return self._tmpdir
 
