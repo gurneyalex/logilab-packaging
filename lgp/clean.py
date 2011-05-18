@@ -17,7 +17,6 @@
 # 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA.
 
 import os
-import logging
 
 from logilab.devtools.lgp import LGP
 from logilab.devtools.lgp.setupinfo import SetupInfo
@@ -30,15 +29,15 @@ class Cleaner(SetupInfo):
     name = "clean"
 
     def run(self, args):
-        logging.info("clean the project repository")
+        self.logger.info("clean the project repository")
         self.clean_repository()
 
     def clean_repository(self):
         """clean the project repository"""
         if os.environ.get('FAKEROOTKEY'):
-            logging.info("fakeroot: nested operation not yet supported")
+            self.logger.info("fakeroot: nested operation not yet supported")
             return
         try:
             self._run_command('clean')
         except Exception, err:
-            logging.warn(err)
+            self.logger.warn(err)

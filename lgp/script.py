@@ -18,7 +18,6 @@
 
 import os
 import sys
-import logging
 import glob
 from subprocess import check_call, CalledProcessError
 
@@ -61,7 +60,7 @@ class Script(SetupInfo):
 
         if not self.config.command and len(args)==0:
             commands = dict(self.options)['command']['choices']
-            logging.info('available command(s): %s', commands)
+            self.logger.info('available command(s): %s', commands)
             sys.exit()
 
         if not self.config.command:
@@ -84,9 +83,9 @@ class Script(SetupInfo):
                                       self.pbuilder_cmd, CONFIG_FILE, HOOKS_DIR, command,
                                       ' '.join(args))
 
-                    logging.info("execute script '%s' with arguments: %s",
-                                 command, ' '.join(args))
-                    logging.debug("run command: %s", cmd)
+                    self.logger.info("execute script '%s' with arguments: %s",
+                                     command, ' '.join(args))
+                    self.logger.debug("run command: %s", cmd)
                     try:
                         check_call(cmd, stdout=sys.stdout, shell=True,
                                    env={'DIST': distrib, 'ARCH': arch, 'IMAGE': image})

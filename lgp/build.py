@@ -19,7 +19,6 @@
 import os
 import sys
 import shutil
-import logging
 import hashlib
 import errno
 from glob import glob
@@ -141,13 +140,13 @@ class Builder(SetupInfo):
                     try:
                         shutil.rmtree(tmpdir)
                     except OSError, exc:
-                        logging.error("cannot remove '%s' (%s)"
-                                      % (tmpdir, exc))
+                        self.logger.error("cannot remove '%s' (%s)"
+                                          % (tmpdir, exc))
         else:
             contents = [(t, os.listdir(t)) for t in self._tmpdirs]
             for t, c in contents:
-                logging.warn("temporary directory not deleted: %s (%s)"
-                             % (t, ", ".join(c)))
+                self.logger.warn("temporary directory not deleted: %s (%s)"
+                                 % (t, ", ".join(c)))
 
     def run(self, args):
         Cleaner(config=self.config).run(args)
@@ -165,13 +164,13 @@ class Builder(SetupInfo):
                             self.run_post_treatments(distrib)
                 # report files to the console
                 if self.packages:
-                    logging.info("recent files from build:\n* %s"
-                                 % '\n* '.join(sorted(set(self.packages))))
+                    self.logger.info("recent files from build:\n* %s"
+                                     % '\n* '.join(sorted(set(self.packages))))
             except LGPException, exc:
                 # XXX refactor ? if getattr(self.config, "verbose"):
                 if hasattr(self, "config") and self.config.verbose:
                     import traceback
-                    logging.critical(traceback.format_exc())
+                    self.logger.critical(traceback.format_exc())
                 raise exc
             return self.build_status
 
@@ -196,51 +195,51 @@ class Builder(SetupInfo):
 
         # run uscan to download the source tarball by looking at debian/watch
         if self.config.orig_tarball is None and not self.is_initial_debian_revision():
-            logging.info('trying to retrieve pristine tarball remotely...')
+            self.logger.info('trying to retrieve pristine tarball remotely...')
             try:
                 cmd = ["uscan", "--noconf", "--download-current-version"]
                 check_call(cmd, stderr=file(os.devnull, "w"))
                 assert osp.isfile(tarball)
                 self.config.orig_tarball = osp.abspath(tarball)
             except CalledProcessError, err:
-                logging.warn("run '%s' without success" % ' '.join(cmd))
+                self.logger.warn("run '%s' without success" % ' '.join(cmd))
 
         if self.config.orig_tarball is None:
             # Make a coherence check about the pristine tarball
             if not self.is_initial_debian_revision():
                 debian_revision = self.get_debian_version().rsplit('-', 1)[1]
-                logging.error("Debian source archive (pristine tarball) is required when you "
-                              "don't build the first revision of a debian package "
-                              "(use '--orig-tarball' option)")
-                logging.info("If you haven't the original tarball version, you could run: "
-                             "'apt-get source --tar-only %s'"
-                             % self.get_debian_name())
+                self.logger.error("Debian source archive (pristine tarball) is required when you "
+                                  "don't build the first revision of a debian package "
+                                  "(use '--orig-tarball' option)")
+                self.logger.info("If you haven't the original tarball version, you could run: "
+                                 "'apt-get source --tar-only %s'"
+                                 % self.get_debian_name())
                 raise LGPException('unable to build upstream tarball of %s package '
                                    'for Debian revision "%s"'
                                    % (self.get_debian_name(), debian_revision))
             try:
                 self._run_command("sdist", dist_dir=tmpdir)
             except CalledProcessError, err:
-                logging.error("creation of the source archive failed")
-                logging.error("check if the version '%s' is really tagged in"\
+                self.logger.error("creation of the source archive failed")
+                self.logger.error("check if the version '%s' is really tagged in"\
                                   " your repository" % self.get_upstream_version())
                 raise LGPCommandException("source distribution wasn't properly built", err)
             self.config.orig_tarball = osp.join(tmpdir, upstream_tarball)
             msg = "create new Debian source archive (pristine tarball) from working directory: %s"
         else:
             msg = "retrieve original Debian source archive (pristine tarball): %s"
-        logging.info(msg % osp.basename(self.config.orig_tarball))
+        self.logger.info(msg % osp.basename(self.config.orig_tarball))
 
         if not os.path.basename(self.config.orig_tarball).startswith(self.get_upstream_name()):
             msg = "pristine tarball filename doesn't start with upstream name '%s'. really suspect..."
-            logging.error(msg % self.get_upstream_name())
+            self.logger.error(msg % self.get_upstream_name())
 
         tarball = osp.join(tmpdir, tarball)
         try:
             urllib.urlretrieve(self.config.orig_tarball, tarball) # auto-renaming here
             self.config.orig_tarball = tarball
         except IOError, err:
-            logging.critical("the provided original source archive (tarball) "
+            self.logger.critical("the provided original source archive (tarball) "
                              "can't be retrieved from given location: %s"
                              % self.config.orig_tarball)
             raise LGPException(err)
@@ -274,11 +273,11 @@ class Builder(SetupInfo):
         if format == "1.0":
             arguments+='--no-copy'
 
-        logging.info("Debian source package (format: %s) for '%s'" % (format, current_distrib))
+        self.logger.info("Debian source package (format: %s) for '%s'" % (format, current_distrib))
         # change directory to build source package
         try:
             cmd = 'dpkg-source %s -b %s' % (arguments, self.origpath)
-            logging.debug("running dpkg-source command: %s ..." % cmd)
+            self.logger.debug("running dpkg-source command: %s ..." % cmd)
             check_call(cmd.split(), stdout=sys.stdout)
         except CalledProcessError, err:
             msg = "cannot build valid dsc file with command %s" % cmd
@@ -287,7 +286,7 @@ class Builder(SetupInfo):
         assert osp.isfile(dscfile)
 
         msg = "create Debian source package files (.dsc, .diff.gz): %s"
-        logging.info(msg % osp.basename(dscfile))
+        self.logger.info(msg % osp.basename(dscfile))
 
         # move Debian source package files and exit if asked by command-line
         if self.config.deb_src_only:
@@ -302,7 +301,7 @@ class Builder(SetupInfo):
         # TODO Manage DEB_BUILD_OPTIONS
         # http://www.debian.org/doc/debian-policy/ch-source.html
         debuilder = os.environ.get('DEBUILDER', 'pbuilder')
-        logging.debug("package builder flavour: '%s'" % debuilder)
+        self.logger.debug("package builder flavour: '%s'" % debuilder)
         if debuilder == 'pbuilder':
             assert osp.isfile(self.dscfile)
             # TODO encapsulate builder logic into specific InternalBuilder class
@@ -353,12 +352,12 @@ class Builder(SetupInfo):
             cmd = self._builder_command(build)
             # TODO manage handy --othermirror to use local mirror
             #cmd.append(['--othermirror', "deb file:///home/juj/dists %s/" % build['distrib']])
-            logging.info("building binary debian package for '%s/%s' "
-                         "using DEBBUILDOPTS options: '%s' ..."
-                         % (build['distrib'], build['arch'],
-                            build['buildopts'] or '(none)'))
+            self.logger.info("building binary debian package for '%s/%s' "
+                             "using DEBBUILDOPTS options: '%s' ..."
+                             % (build['distrib'], build['arch'],
+                                build['buildopts'] or '(none)'))
 
-            logging.debug("running build command: %s ..." % ' '.join(cmd))
+            self.logger.debug("running build command: %s ..." % ' '.join(cmd))
             try:
                 joblist.append(Popen(cmd,
                                      env={'DIST':  build['distrib'],
@@ -366,22 +365,22 @@ class Builder(SetupInfo):
                                           'IMAGE': build['image']},
                                      stdout=stdout))
             except Exception, err:
-                logging.critical(err)
-                logging.critical("build failure (%s/%s) for %s (%s)"
-                                 % (build['distrib'],
-                                    build['arch'],
-                                    self.get_debian_name(),
-                                    self.get_debian_version()))
+                self.logger.critical(err)
+                self.logger.critical("build failure (%s/%s) for %s (%s)"
+                                     % (build['distrib'],
+                                        build['arch'],
+                                        self.get_debian_name(),
+                                        self.get_debian_version()))
                 return False
 
         # only print dots in verbose mode (verbose: 1)
         build_status, timedelta = utils.wait_jobs(joblist, self.config.verbose == 1)
         if build_status:
-            logging.critical("binary build(s) failed for '%s' with exit status %d"
-                             % (build['distrib'], build_status))
+            self.logger.critical("binary build(s) failed for '%s' with exit status %d"
+                                 % (build['distrib'], build_status))
         else:
-            logging.info("binary build(s) for '%s' finished in %d seconds."
-                         % (build['distrib'], timedelta))
+            self.logger.info("binary build(s) for '%s' finished in %d seconds."
+                             % (build['distrib'], timedelta))
 
         # move Debian binary package(s) files
         for tmp in tmplist:
@@ -423,8 +422,8 @@ class Builder(SetupInfo):
             options['image'] = self.get_basetgz(options['distrib'],
                                                 options['arch'])
             series.append(options)
-            logging.info('this build is arch-independent. Lgp will only build on '
-                         'current architecture (%s)' % options['arch'])
+            self.logger.info('this build is arch-independent. Lgp will only build on '
+                             'current architecture (%s)' % options['arch'])
         else:
             for rank, arch in enumerate(self.get_architectures()):
                 options = dict()
@@ -455,19 +454,19 @@ class Builder(SetupInfo):
                 try:
                     check_call(["debsign", filename], stdout=sys.stdout)
                 except CalledProcessError, err:
-                    logging.error("lgp cannot debsign '%s' automatically" % filename)
-                    logging.error("You have to run manually: debsign %s"
-                                  % copied_filename)
+                    self.logger.error("lgp cannot debsign '%s' automatically" % filename)
+                    self.logger.error("You have to run manually: debsign %s"
+                                      % copied_filename)
 
         def _check_file(filename):
             if os.path.isfile(filename):
                 hash1 = hashlib.md5(open(fullpath).read()).hexdigest()
                 hash2 = hashlib.md5(open(filename).read()).hexdigest()
                 if hash1 == hash2:
-                    logging.debug("overwrite same file file '%s'" % filename)
+                    self.logger.debug("overwrite same file file '%s'" % filename)
                 else:
-                    logging.warn("theses files shouldn't be different:\n- %s (%s)\n- %s (%s)"
-                                 % (fullpath, hash1, filename, hash2))
+                    self.logger.warn("theses files shouldn't be different:\n- %s (%s)\n- %s (%s)"
+                                     % (fullpath, hash1, filename, hash2))
                     os.system('diff -u %s %s' % (fullpath, filename))
                     raise LGPException("bad md5 sums of source archives (tarball)")
 
@@ -490,13 +489,13 @@ class Builder(SetupInfo):
                 if not pristine and entry.endswith(ext):
                     pristine = entry
             if pristine is None and self.is_initial_debian_revision():
-                logging.error("no pristine tarball found for initial Debian revision (searched: %s)"
-                              % (entry, ext))
+                self.logger.error("no pristine tarball found for initial Debian revision (searched: %s)"
+                                  % (entry, ext))
             orig = pristine.rsplit('.', 2)[0].endswith(".orig")
             if not diff and not orig:
                 msg = ("native package detected. Read `man dpkg-source` "
                        "carefully if not sure")
-                logging.warn(msg)
+                self.logger.warn(msg)
 
         while filelist:
             fullpath = filelist.pop()
@@ -515,17 +514,17 @@ class Builder(SetupInfo):
                 #_check_file(copied_filename)
                 _check_pristine()
                 if self.config.deb_src_only:
-                    logging.info("Debian source control file: %s"
-                                 % copied_filename)
+                    self.logger.info("Debian source control file: %s"
+                                     % copied_filename)
                     _sign_file(fullpath)
             if filename.endswith('.orig.tar.gz'):
                 if self.config.get_orig_source:
-                    logging.info('a new original source archive (tarball) '
-                                 'is available: %s' % copied_filename)
+                    self.logger.info('a new original source archive (tarball) '
+                                     'is available: %s' % copied_filename)
             if filename.endswith('.log'):
-                logging.info("a build logfile is available: %s" % copied_filename)
+                self.logger.info("a build logfile is available: %s" % copied_filename)
             if filename.endswith('.changes'):
-                logging.info("Debian changes file: %s" % copied_filename)
+                self.logger.info("Debian changes file: %s" % copied_filename)
                 #_check_file(copied_filename)
                 _sign_file(fullpath)
             #if filename.endswith('.diff.gz'):
@@ -550,7 +549,7 @@ class Builder(SetupInfo):
             # is really existing but fails otherwise
             if not os.path.isdir(distrib_dir):
                 msg = "not mountable location in chroot: %s"
-                logging.warn(msg, distrib_dir)
+                self.logger.warn(msg, distrib_dir)
             if exc.errno != errno.EEXIST:
                 raise
         return distrib_dir

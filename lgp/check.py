@@ -224,8 +224,8 @@ class Checker(SetupInfo):
 
     def start_checks(self):
         checklist = self.get_checklist()
-        logging.debug('applied checklist chain: %s'
-                      % [f.__name__ for f in checklist])
+        self.logger.debug('applied checklist chain: %s'
+                          % [f.__name__ for f in checklist])
         for func in self.checklist:
             loggername = func.__name__
             loggername = loggername.replace('_', ':', 1)
