@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-
 import sys
-from logilab.devtools.lgp import run
-sys.exit(run(sys.argv[1:]))
+# wildcard import for auto-registration of the public lgp commands
+from logilab.devtools.lgp import *
+LGP.run(sys.argv[1:])

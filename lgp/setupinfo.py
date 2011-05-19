@@ -30,16 +30,15 @@ from distutils.core import run_setup
 from subprocess import Popen, PIPE
 from subprocess import check_call, CalledProcessError
 
-from logilab.common.configuration import Configuration
+from logilab.common import clcommands
 from logilab.common.logging_ext import ColorFormatter
 from logilab.common.shellutils import cp
 from logilab.common.fileutils import export
 
 from logilab.devtools.lib.pkginfo import PackageInfo
-from logilab.devtools.lgp import LGP_CONFIG_FILE, utils
+from logilab.devtools.lgp import LOG_FORMAT, utils
 from logilab.devtools.lgp.exceptions import LGPException, LGPCommandException
 
-LOG_FORMAT = '%(levelname)1.1s:%(name)s: %(message)s'
 COMMANDS = {
         "sdist" : {
             "file": './$setup dist-gzip -e DIST_DIR=$dist_dir',
@@ -67,35 +66,18 @@ COMMANDS = {
         },
 }
 
-class SetupInfo(Configuration):
+class SetupInfo(clcommands.Command):
     """ a setup class to handle several package setup information """
-
-    def __init__(self, arguments, options=None, **args):
-        isatty = hasattr(sys.stdout, 'isatty') and sys.stdout.isatty()
-        self.options = (
-               ('version',
-                {'help': "output version information and exit",
-                }),
-               ('verbose',
-                {'action': 'count',
-                 'dest' : "verbose",
-                 'short': 'v',
-                 'help': "run in verbose mode",
-                }),
-               ('quiet',
-                {'action': 'count',
-                 'dest' : "quiet",
-                 'short': 'q',
-                 'help': "disable info message log level",
-                }),
-               ('distrib',
+    arguments = "[project directory]"
+    # theses options can be imported separately (not always used)
+    options = [('distrib',
                 {'type': 'csv',
-                  'dest': 'distrib',
-                  'short': 'd',
-                  'metavar': "<distribution>",
-                  'help': "list of Debian distributions (from images created by setup). "
-                          "Use 'all' for running all detected images or 'changelog' "
-                          "for the value found in debian/changelog",
+                 'dest': 'distrib',
+                 'short': 'd',
+                 'metavar': "<distribution>",
+                 'help': "list of Debian distributions (from images created by setup). "
+                 "Use 'all' for running all detected images or 'changelog' "
+                 "for the value found in debian/changelog",
                  'group': 'Default',
                 }),
                ('arch',
@@ -103,26 +85,9 @@ class SetupInfo(Configuration):
                  'dest': 'archi',
                  'short': 'a',
                  'metavar' : "<architecture>",
-                 'help': "build for the requested debian architectures only (automatic detection otherwise)",
+                 'help': ("build for the requested debian architectures only "
+                          "(automatic detection otherwise)"),
                  'group': 'Default',
-                }),
-               ('pkg_dir',
-                {'type': 'string',
-                 'hide': True,
-                 'dest': "pkg_dir",
-                 'short': 'p',
-                 'metavar' : "<root of the debian project directory>",
-                }),
-               ('no-color',
-                {'action': 'store_true',
-                 'default': not isatty,
-                 'dest': "no_color",
-                 'help': "print log messages without color",
-                }),
-               ('dump-config',
-                {'action': 'store_true',
-                 'dest': "dump_config",
-                 'help': "dump lgp configuration (debugging purpose)"
                 }),
                ('basetgz',
                 {'type': 'string',
@@ -131,87 +96,138 @@ class SetupInfo(Configuration):
                  'dest': "basetgz",
                  'metavar' : "<pbuilder basetgz location>",
                  'help': "specifies the location of base.tgz used by pbuilder",
-                 'group': 'Default',
+                 'group': 'Pbuilder',
                 }),
-               ('setup-file',
-                {'type': 'string',
-                 'dest': 'setup_file',
+               ('builder-flavour',
+                {'default': "pbuilder",
+                 'dest': "builder_flavour",
+                 'help': ("choose build method: pbuilder, debuild, fakeroot "
+                          "or user-defined (default: pbuilder)"),
+                 'group': 'Expert',
                  'hide': True,
-                 'default' : 'setup.mk',
-                 'metavar': "<setup file names>",
-                 'help': "use an alternate setup file with Lgp expected arguments (see documentation)"
                 }),
-               )
-        if options:
-            for opt in options:
-                self.options += opt
-        super(SetupInfo, self).__init__(options=self.options, **args)
+              ]
 
+    def __init__(self, logger=None, config=None):
+        self.isatty = hasattr(sys.stdout, 'isatty') and sys.stdout.isatty()
+        options = [('dump-config',
+                    {'action': 'store_true',
+                     'hide': True,
+                     'dest': "dump_config",
+                     'help': "dump lgp configuration (debugging purpose)",
+                     'group': 'Debug'
+                    }),
+                   ('version',
+                    {'help': "output version information and exit",
+                    }),
+                   # Internal lgp structures
+                   ('_package',
+                    {'hide': True,
+                    }),
+                   ('pkg_dir',
+                    {'type': 'string',
+                     'hide': True,
+                     'dest': "pkg_dir",
+                     'metavar' : "<root of the debian project directory>",
+                    }),
+                   ('setup-file',
+                    {'type': 'string',
+                     'dest': 'setup_file',
+                     'default': '',
+                     'metavar': "<setup file name>",
+                     'help': "use an alternate setup file with Lgp expected targets",
+                     'group': 'Expert',
+                    }),
+                   # Logging facilities
+                   ('verbose',
+                    {'action': 'count',
+                     'dest' : "verbose",
+                     'short': 'v',
+                     'help': "run in verbose mode",
+                     'group': 'Logging',
+                    }),
+                   ('no-color',
+                    {'action': 'store_true',
+                     'default': False,
+                     'dest': "no_color",
+                     'help': "print log messages without color",
+                     'group': 'Logging',
+                    }),
+                   ('quiet',
+                    {'action': 'count',
+                     'dest' : "quiet",
+                     'short': 'q',
+                     'help': "disable info message log level",
+                     'group': 'Logging',
+                    }),
+                  ]
+        self.options.extend(options) # merge parent options
+        logger = logging.getLogger(self.name)
+        super(SetupInfo, self).__init__(logger)
+        if config:
+            self.config._update(vars(config), mode="careful")
+        self._set_package_format()
+
+    def main_run(self, arguments, rcfile):
         # Load the global settings for lgp
-        if osp.isfile(LGP_CONFIG_FILE):
-            self.load_file_configuration(LGP_CONFIG_FILE)
+        if osp.isfile(rcfile):
+            self.load_file_configuration(rcfile)
 
         # Manage arguments (project path essentialy)
-        self.arguments = self.load_command_line_configuration(arguments)
-
-        # Version information
-        if self.config.version:
-            from logilab.devtools.__pkginfo__ import version, distname, copyright, web, __file__ as location
-            print "lgp (%s) %s\n%s" % (distname, version, copyright)
-            if not location.startswith(sys.prefix):
-                msg = "\nNote: installed in a non-standard location (%s)"
-                print(msg % os.path.dirname(location))
-            print "\nPlease visit: %s " % web
-            sys.exit()
+        arguments = self.load_command_line_configuration(arguments)
 
         if self.config.dump_config:
             self.generate_config()
-            sys.exit()
+            return os.EX_OK
 
-        # Instanciate the default logger configuration
-        if not logging.getLogger().handlers:
-            logging.getLogger().name = sys.argv[1]
-            console = logging.StreamHandler()
-            if self.config.no_color or not isatty:
-                console.setFormatter(logging.Formatter(LOG_FORMAT))
-            else:
-                console.setFormatter(ColorFormatter(LOG_FORMAT))
-            logging.getLogger().addHandler(console)
-            logging.getLogger().setLevel(logging.INFO)
+        # Set verbose level and output streams
+        if self.config.verbose:
+            logging.getLogger().setLevel(logging.DEBUG)
+        elif self.config.quiet:
+            logging.getLogger().setLevel(logging.WARN)
+        else:
+            # Redirect subprocesses stdout output only in case of verbose mode
+            # We always allow subprocesses to print on the stderr (more convenient)
+            sys.stdout = open(os.devnull,"w")
+            #sys.stderr = open(os.devnull,"w")
+        if self.isatty and not getattr(self.config, "no_color", None):
+            # FIXME when using logging.conf
+            handlers = logging.getLogger().handlers
+            assert len(handlers)==1, "Lgp cannot manage several handlers..."
+            console = logging.getLogger().handlers[0]
+            console.setFormatter(ColorFormatter(LOG_FORMAT))
 
-            if self.config.verbose:
-                logging.getLogger().setLevel(logging.DEBUG)
-            elif self.config.quiet:
-                logging.getLogger().setLevel(logging.WARN)
-            else:
-                # Redirect subprocesses stdout output only in case of verbose mode
-                # We always allow subprocesses to print on the stderr (more convenient)
-                sys.stdout = open(os.devnull,"w")
-                #sys.stderr = open(os.devnull,"w")
+        self.check_args(arguments)
+        self.go_into_package_dir(arguments)
+        # we set the package for the main object and in __init__
+        self._set_package_format()
+        self.guess_environment()
+        # Some package formats expect a clean state with no troubling file
+        # (ex: distutils)...
+        self._prune_pkg_dir()
+        self.run(arguments)
+        return os.EX_OK
 
-        # Go to package directory
-        if self.config.pkg_dir is None:
-            if self.arguments and os.path.exists(self.arguments[0]):
-                self.config.pkg_dir = osp.abspath(self.arguments[0])
+    def go_into_package_dir(self, arguments):
+        """go into package directory
+        
+        .. note::
+            current directory wil be saved in `old_current_directory`
+        """
+        self.old_current_directory = os.getcwd() # use for relative filename in parameters
+        if arguments:
+            if os.path.exists(arguments[0]):
+                self.config.pkg_dir = osp.abspath(arguments[0])
             else:
-                self.config.pkg_dir = os.getcwd()
-        try:
+                raise LGPException("project directory doesn't exist: %s" % arguments[0])
             if os.path.isfile(self.config.pkg_dir):
                 self.config.pkg_dir = os.path.dirname(self.config.pkg_dir)
-            # Keep working relative pathnames provided in line arguments after chdir
-            if getattr(self.config, "orig_tarball", None) and osp.exists(self.config.orig_tarball):
-                # we use osp.exists to rewrite only with valid path name
-                # (since this option accept url path name as well)
-                self.config.orig_tarball = osp.abspath(osp.expanduser(self.config.orig_tarball))
             os.chdir(self.config.pkg_dir)
             logging.debug('change the current working directory to: %s' % self.config.pkg_dir)
-        except OSError, err:
-            raise LGPException(err)
+        else:
+            self.config.pkg_dir = self.old_current_directory
 
-        # no default value for distribution. Try to retrieve it in changelog
-        if self.config.distrib is None or 'changelog' in self.config.distrib:
-            self.config.distrib = utils.guess_debian_distribution()
-
+    def guess_environment(self):
         # just a warning issuing for possibly confused configuration
         if self.config.archi and 'all' in self.config.archi:
             logging.warn('the "all" keyword can be confusing about the '
@@ -228,7 +244,8 @@ class SetupInfo(Configuration):
         logging.debug("guessing distribution(s): %s" % ', '.join(self.distributions))
         logging.debug("guessing architecture(s): %s" % ', '.join(self.architectures))
 
-        # Guess the package format
+    def _set_package_format(self):
+        """set the package format to be able to run COMMANDS"""
         if osp.isfile('__pkginfo__.py') and not osp.isfile(self.config.setup_file):
             # Logilab's specific format
             from logilab.devtools.lib import TextReporter
@@ -251,6 +268,7 @@ class SetupInfo(Configuration):
             self._package = debian()
         logging.debug("use setup package class format: %s" % self.package_format)
 
+    def _prune_pkg_dir(self):
         if self.package_format in ('PackageInfo', 'Distribution'):
             if os.path.exists('MANIFEST'):
                 # remove MANIFEST file at the beginning to avoid reusing it
@@ -337,16 +355,11 @@ class SetupInfo(Configuration):
     def get_debian_version(self):
         """get upstream and debian versions depending of the last changelog entry found in Debian changelog
         """
-        cwd = os.getcwd()
-        os.chdir(self.config.pkg_dir)
-        try:
-            changelog = osp.join('debian', 'changelog')
-            debian_version = utils._parse_deb_version(changelog)
-            logging.debug('retrieve debian version from %s: %s' %
-                          (changelog, debian_version))
-            return debian_version
-        finally:
-            os.chdir(cwd)
+        changelog = osp.join('debian', 'changelog')
+        debian_version = utils._parse_deb_version(changelog)
+        logging.debug('retrieve debian version from %s: %s' %
+                      (changelog, debian_version))
+        return debian_version
 
     def is_initial_debian_revision(self):
         # http://www.debian.org/doc/debian-policy/ch-controlfields.html#s-f-Version
@@ -386,14 +399,6 @@ class SetupInfo(Configuration):
             msg %= (upstream_version, debian_upstream_version)
             raise LGPException(msg)
 
-    def clean_repository(self):
-        """clean the project repository"""
-        logging.debug("clean the project repository")
-        try:
-            self._run_command('clean')
-        except Exception, err:
-            logging.warn(err)
-
     def make_orig_tarball(self):
         """make upstream pristine tarballs (Debian way)
 
@@ -411,7 +416,7 @@ class SetupInfo(Configuration):
         self._check_version_mismatch()
 
         # change directory context at pristine tarball generation
-        self.create_build_context()
+        self.create_tmp_context()
 
         fileparts = (self.get_upstream_name(), self.get_upstream_version())
         tarball = '%s_%s.orig.tar.gz' % fileparts
@@ -473,7 +478,7 @@ class SetupInfo(Configuration):
         if self.config.get_orig_source:
             self.move_package_files([self.config.orig_tarball],
                                     verbose=self.config.get_orig_source)
-            self.finalize()
+            return self.destroy_tmp_context()
 
     def prepare_source_archive(self):
         """prepare and extract the upstream tarball
@@ -481,7 +486,7 @@ class SetupInfo(Configuration):
         FIXME replace by TarFile Object
         """
         # change directory context at each build
-        self.create_build_context()
+        self.create_tmp_context()
 
         # Mandatory to be compatible with format 1.0
         logging.debug("copy pristine tarball to prepare Debian source package diff")
@@ -517,7 +522,6 @@ class SetupInfo(Configuration):
 
         # support of the multi-distribution
         return self.manage_current_distribution()
-
 
     def manage_current_distribution(self):
         """manage debian files depending of the current distrib from options
@@ -577,17 +581,33 @@ class SetupInfo(Configuration):
             raise LGPException("lgp image '%s' not found. Please create it with lgp setup" % basetgz)
         return basetgz
 
-    def create_build_context(self, suffix=""):
+    def create_tmp_context(self, suffix=""):
         """create new build temporary context
 
         Each context (directory for now) will be cleaned at the end of the build
-        process by the finalize method"""
+        process by the destroy_tmp_context method"""
         self._tmpdir = tempfile.mkdtemp(suffix)
         logging.debug('changing build context... (%s)' % self._tmpdir )
         self._tmpdirs.append(self._tmpdir)
         return self._tmpdir
 
-    def finalize(self):
-        """clean all temporary build context and exit"""
+    def destroy_tmp_context(self):
+        """clean all temporary build context and returns exit code"""
         self.clean_tmpdirs()
-        sys.exit(self.build_status)
+        return self.build_status
+
+    def _normpath(self, path):
+        """helper method to normalize filepath arguments before
+        changing current directorty (will return absolute paths)
+        
+        XXX could be coded directly by option checker (optparse)
+        """
+        if path:
+            assert self.old_current_directory
+            path = osp.abspath(osp.join(self.old_current_directory,
+                                          osp.expanduser(path)))
+            if not osp.exists(path):
+                msg = "file given in command line cannot be found:\n\t%s"
+                raise LGPException(msg % path)
+        return path
+

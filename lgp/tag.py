@@ -1,7 +1,6 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2004-2008 LOGILAB S.A. (Paris, FRANCE).
+# Copyright (c) 2004-2011 LOGILAB S.A. (Paris, FRANCE).
 # http://www.logilab.fr/ -- mailto:contact@logilab.fr
 #
 # This program is free software; you can redistribute it and/or modify it under
@@ -16,93 +15,67 @@
 # You should have received a copy of the GNU General Public License along with
 # this program; if not, write to the Free Software Foundation, Inc.,
 # 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-""" lgp tag [-f | --force] [-t | --template <tag template>] [project directory]
-
-    Tag the source repository
-"""
-__docformat__ = "restructuredtext en"
 
 import os, os.path as osp
-import logging
 import ConfigParser
 from string import Template
 from subprocess import check_call
 
-from logilab.devtools.lgp import LGP_CONFIG_FILE
+from logilab.devtools.lgp import LGP, LGP_CONFIG_FILE
 from logilab.devtools.lgp.setupinfo import SetupInfo
 from logilab.devtools.lgp.exceptions import LGPException
 
 
-def run(args):
-    """ Main function of lgp tag command """
-    try :
-        tagger = Tagger(args)
-
-        # deprecates the old 'format' attribute in config file
-        if getattr(tagger.config, "format", None):
-            import warnings
-            msg = '"format" field key definitions must be renamed to "default" in /etc/lgp/lgprc'
-            warnings.warn(msg, DeprecationWarning)
-            tagger.config.default = tagger.config.format
-
-        # FIXME tagger.config.default should not be None if defined in lgprc
-        config = ConfigParser.ConfigParser()
-        config.readfp(open(LGP_CONFIG_FILE))
-        tags = tagger.config.default
-        if tagger.config.default is None:
-            if config.has_option("LGP-TAG", "default"):
-                tags = config.get("LGP-TAG", "default").split(',')
-            else:
-                tags = ['$version']
-        while tags:
-            tag = tags.pop(0).strip()
-            try:
-                if tag == "default":
-                    raise Exception('"default" target not allowed')
-                if config.has_option("LGP-TAG", tag):
-                    new_tags = config.get("LGP-TAG", tag).split(',')
-                    if new_tags:
-                        logging.debug("detected alias '%s' expanded to '%s'" % (tag, new_tags))
-                        tags.extend(new_tags)
-                else:
-                    tagger.apply(tag)
-            except (AttributeError, KeyError), err:
-                raise LGPException('cannot substitute tag template %s' % err)
-            except Exception, err:
-                raise LGPException('an error occured in tag process: %s' % err)
-    except LGPException, exc:
-        logging.critical(exc)
-        return exc.exitcode()
-
+@LGP.register
 class Tagger(SetupInfo):
-    """Lgp tagger class
+    """Tag the project source repository.
 
-    Specific options are added. See lgp tag --help
+    A basic template system can be used in configuration
+    (please refer to the documentation for this usage)
+    Some tag templates are already provided by Lgp:
+
+      $project, $version, $debian_version, $debian_revision, $distrib, $arch
     """
-    name = "lgp-tag"
-    options = (('template',
+    name = "tag"
+    arguments = "[-f | --force] [-t | --template <tag template>] [project directory]"
+    options = SetupInfo.options + [
+               ('template',
                 {'type': 'csv',
-                 'dest' : "default",
+                 'default' : ['$version'],
                  'short': 't',
-                 'metavar': "<comma separated of tag templates>",
-                 'help': "list of tag templates to apply"
+                 'metavar': "<comma separated list of tag templates>",
+                 'help': "list of tag templates to apply",
+                 'group': 'tag'
                 }),
                ('force',
                 {'action': 'store_true',
                  'default' : False,
                  'dest' : "force",
                  'short': 'f',
-                 'help': "replace existing tag"
+                 'help': "force writing of the tag",
+                 'group': 'tag'
                 }),
-               ('format',
-                {'type': 'csv',
-                })
-              ),
+              ]
 
-    def __init__(self, args):
-        # Retrieve upstream information
-        super(Tagger, self).__init__(arguments=args, options=self.options,
-                                     usage=__doc__)
+    def apply(self, tag):
+        tag = Template(tag)
+        tag = tag.substitute(version=self.version,
+                             debian_version=self.debian_version,
+                             debian_revision=self.debian_revision,
+                             distrib=self.distrib,
+                             arch=self.archi,
+                             project=self.project)
+
+        command = self.vcs_agent.tag(self.config.pkg_dir, tag,
+                                     force=bool(self.config.force))
+        self.logger.debug('run command: %s' % command)
+        check_call(command, shell=True)
+        self.logger.info("add tag to repository: %s" % tag)
+
+    def run(self, args):
+        # Not even try to continue if version mismatch (dangerous command)
+        self._check_version_mismatch()
+
         self.vcs_agent = get_vcs_agent(self.config.pkg_dir)
         self.version = self.get_upstream_version()
         self.project = self.get_upstream_name()
@@ -112,30 +85,46 @@ class Tagger(SetupInfo):
             self.debian_revision = self.debian_version.rsplit('-', 1)[-1]
         except IndexError:
             # can be a false positive due to native package
-            logging.warn('Debian version info cannot be retrieved')
+            self.logger.warn('Debian version info cannot be retrieved')
 
         # poor cleaning for having unique string
         self.distrib = '+'.join(self.distributions)
         self.archi   = '+'.join(self.architectures)
 
-        # don't continue if version mismatch
-        self._check_version_mismatch()
+        config = ConfigParser.ConfigParser()
+        if osp.isfile(LGP_CONFIG_FILE):
+            config.readfp(open(LGP_CONFIG_FILE))
 
-    def apply(self, tag):
-        tag = Template(tag)
-        tag = tag.substitute(version=self.version,
-                             debian_version=self.debian_version,
-                             debian_revision=self.debian_revision,
-                             distrib=self.distrib,
-                             arch=self.archi,
-                             project=self.project
-                            )
+        tags = self.config.template
+        if not tags:
+            raise LGPException('template tag cannot be empty')
+        while tags:
+            tag = tags.pop(0).strip()
+            self.logger.debug("processing... '%s'", tag)
+            try:
+                if tag.startswith('$'):
+                    if config.has_option("TAG", tag.lstrip('$')):
+                        new_tags = config.get("TAG", tag.lstrip('$')).split(',')
+                        # XXX white-spaces are stripped later but will be printed here
+                        if new_tags:
+                            self.logger.info("template '%s' expanded to: '%s'"
+                                             % (tag, ", ".join(new_tags)))
+                            tags.extend(new_tags)
+                            self.logger.debug("pending templates:\n* %s" % "\n* ".join(tags))
+                            continue
+                # apply if string only or combined tags not found in lgprc
+                self.apply(tag)
+            except (AttributeError, KeyError), err:
+                raise LGPException("cannot substitute tag template '%s'" % err)
+            except Exception, err:
+                raise LGPException("an error occured in tag process: '%s'" % err)
 
-        command = self.vcs_agent.tag(self.config.pkg_dir, tag,
-                                     force=bool(self.config.force))
-        logging.debug('run command: %s' % command)
-        check_call(command, shell=True)
-        logging.info("add tag to repository: %s" % tag)
+    def guess_environment(self):
+        # if no default value for distribution, try to retrieve it from changelog
+        if self.config.distrib is None or 'changelog' in self.config.distrib:
+            self.config.distrib = 'changelog'
+        super(Tagger, self).guess_environment()
+
 
 try:
     from logilab.common.hg import find_repository as find_hg_repository
@@ -223,4 +212,3 @@ class HGAgent(object):
         assert osp.abspath(filepath).startswith(os.getcwd()), \
                "I don't know how to deal with filepath and <hg tag>"
         return "hg tag %s %s" % (force, tagname)
-

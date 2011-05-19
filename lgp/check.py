@@ -1,5 +1,6 @@
-#!/usr/bin/env python
-# Copyright (c) 2003-2010 LOGILAB S.A. (Paris, FRANCE).
+# -*- coding: utf-8 -*-
+#
+# Copyright (c) 2003-2011 LOGILAB S.A. (Paris, FRANCE).
 # http://www.logilab.fr/ -- mailto:contact@logilab.fr
 #
 # This program is free software; you can redistribute it and/or modify it under
@@ -14,16 +15,6 @@
 # You should have received a copy of the GNU General Public License along with
 # this program; if not, write to the Free Software Foundation, Inc.,
 # 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-""" lgp check [options] [project directory]
-
-    Provides functions to check a debian package for a python package
-    depending of the setup format.
-
-    Just run: 'lgp check --list' for available checkers
-
-    You can add the [LGP-CHECK] section in /etc/lgp/lgprc
-"""
-__docformat__ = "restructuredtext en"
 
 import os
 import stat
@@ -36,9 +27,9 @@ from subprocess import call
 from os.path import basename, join, exists, isdir, isfile
 
 from logilab.devtools import BASE_EXCLUDE, templates
+from logilab.devtools.lgp import LGP, utils
 from logilab.devtools.lgp.setupinfo import SetupInfo
 from logilab.devtools.lgp.exceptions import LGPException
-from logilab.devtools.lgp import utils
 from logilab.devtools.lib.changelog import CHANGEFILE
 from logilab.devtools.lib.manifest import (get_manifest_files, read_manifest_in,
                                            match_extensions, JUNK_EXTENSIONS)
@@ -47,7 +38,7 @@ from logilab.devtools.lib.manifest import (get_manifest_files, read_manifest_in,
 OK, NOK = 1, 0
 CHECKS = {'debian'    : set(['debian_dir', 'debian_rules', 'debian_copying',
                              'debian_source_value', 'debian_env',
-                             'debian_changelog', 'debian_homepage']),
+                             'debian_changelog', 'debian_homepage', 'debian_maintainer']),
           'default'   : set(['builder',  'bin', 'release_number']),
           'distutils' : set(['manifest_in', 'pydistutils',]),
           'pkginfo'   : set(['debsign', 'package_info',
@@ -59,6 +50,7 @@ CHECKS = {'debian'    : set(['debian_dir', 'debian_rules', 'debian_copying',
 
 # avoid warning from continuous integration report
 if os.environ.get('APYCOT_ROOT'):
+    # XXX check if a tty instead ?
     CHECKS['debian'].remove("debian_env")
 
 REV_LINE = re.compile('__revision__.*')
@@ -138,36 +130,17 @@ def _check_bat(checker, bat_file):
     return status
 
 
-def run(args):
-    """ Main function of lgp check command """
-    try :
-        checker = Checker(args)
-        if checker.config.list_checks:
-            checker.list_checks()
-            return 0
-
-        checker.start_checks()
-
-        # Return the number of invalid tests
-        return checker.errors()
-
-    except NotImplementedError, exc:
-        logging.error(exc)
-        return 2
-    except LGPException, exc:
-        logging.critical(exc)
-        return exc.exitcode()
-
-
+@LGP.register
 class Checker(SetupInfo):
-    """Lgp checker class
+    """Check project in the current working directory.
 
-    Specific options are added. See lgp check --help
+    Just run: 'lgp check --list' for available checkers
+
+    You can add the [CHECK] section in /etc/lgp/lgprc
     """
-    checklist = []
-    counter = 0
-    name = "lgp-check"
-    options = (('include',
+    name = "check"
+    options = SetupInfo.options + [
+               ('include',
                 {'type': 'csv',
                  'dest': 'include_checks',
                  'short': 'i',
@@ -197,11 +170,17 @@ class Checker(SetupInfo):
                  'short': 'l',
                  'help': "return a list of all available check functions"
                 }),
-              ),
+              ]
+    checklist = []
+    counter = 0
 
-    def __init__(self, args):
-        # Retrieve upstream information
-        super(Checker, self).__init__(arguments=args, options=self.options, usage=__doc__)
+    def run(self, args):
+        if self.config.list_checks:
+            self.list_checks()
+            return 0
+        self.start_checks()
+        # Return the number of invalid tests
+        return self.errors()
 
     def errors(self):
         return len(self.get_checklist())-self.counter
@@ -314,7 +293,7 @@ def check_debian_env(checker):
 
 def check_pydistutils(checker):
     """check a .pydistutils.cfg file in home firectory"""
-    if isfile(os.path.join(os.environ['HOME'], '.pydistutils.cfg')):
+    if isfile(join(os.environ['HOME'], '.pydistutils.cfg')):
         checker.logger.warn('your ~/.pydistutils.cfg can conflict with distutils commands')
     return OK
 
@@ -333,7 +312,7 @@ def check_debian_rules(checker):
     """check the debian*/rules file (filemode should be "+x")"""
     debian_dirs = [checker.get_debian_dir(), 'debian']
     for debian_dir in debian_dirs:
-        rules = os.path.join(debian_dir, 'rules')
+        rules = join(debian_dir, 'rules')
         if isfile(rules):
             if not is_executable(rules):
                 msg = "check the '%s' file (filemode should be '+x')"
@@ -345,7 +324,7 @@ def check_debian_rules(checker):
 
 def check_debian_copying(checker):
     """check debian/copyright file"""
-    return isfile(os.path.join('debian', 'copyright'))
+    return isfile(join('debian', 'copyright'))
 
 def check_debian_source_value(checker):
     """check debian source field value"""

@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2003-2009 LOGILAB S.A. (Paris, FRANCE).
+#
+# Copyright (c) 2003-2011 LOGILAB S.A. (Paris, FRANCE).
 # http://www.logilab.fr/ -- mailto:contact@logilab.fr
 #
 # This program is free software; you can redistribute it and/or modify it under
@@ -14,12 +15,6 @@
 # You should have received a copy of the GNU General Public License along with
 # this program; if not, write to the Free Software Foundation, Inc.,
 # 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-""" lgp build [options] [project directory]
-
-    Provides functions to build a debian package for a python package
-    You can change options in /etc/lgp/lgprc inside the [LGP-BUILD] section
-"""
-__docformat__ = "restructuredtext en"
 
 import os
 import sys
@@ -34,83 +29,39 @@ from debian import deb822
 
 from logilab.common.shellutils import cp
 
-from logilab.devtools.lgp import CONFIG_FILE, HOOKS_DIR, BUILD_LOG_EXT
-from logilab.devtools.lgp.setupinfo import SetupInfo
-from logilab.devtools.lgp import utils
-from logilab.devtools.lgp.exceptions import LGPException, LGPCommandException
+from logilab.devtools.lgp import (LGP, CONFIG_FILE, HOOKS_DIR,
+                                  BUILD_LOG_EXT, utils)
+from logilab.devtools.lgp.exceptions import (LGPException, LGPCommandException)
 
 from logilab.devtools.lgp.check import check_debsign
+from logilab.devtools.lgp.setupinfo import SetupInfo
+from logilab.devtools.lgp.clean import Cleaner
 
-def run(args):
-    """main function of lgp build command"""
-    builder = None
-    try :
-        builder = Builder(args)
-        builder.clean_repository()
-
-        # Stop to original pristine tarball creation if no distribution can be used
-        if not len(builder.distributions):
-            logging.warn("only original pristine tarball creation will be done")
-            builder.config.get_orig_source = True
-
-        # create the upstream tarball if necessary and move it to result directory
-        builder.make_orig_tarball()
-
-        while builder.distributions:
-            builder.prepare_source_archive()
-
-            # create a debian source package
-            builder.make_debian_source_package()
-
-            if builder.make_debian_binary_package():
-                # do post-treatments only for a successful binary build
-                if builder.packages and builder.config.post_treatments:
-                    run_post_treatments(builder, builder.current_distrib)
-
-            # forget distribution
-            builder.distributions = builder.distributions[1:]
-
-        # report files to the console
-        if builder.packages:
-            logging.info("recent files from build:\n* %s"
-                         % '\n* '.join(sorted(set(builder.packages))))
-    except KeyboardInterrupt:
-        logging.warning('lgp aborted by keyboard interrupt')
-    except LGPException, exc:
-        if hasattr(builder, "config") and builder.config.verbose:
-            import traceback
-            logging.critical(traceback.format_exc())
-        logging.critical(exc)
-        return exc.exitcode()
-    return builder.finalize()
 
 def run_post_treatments(builder, distrib):
     """ Run actions after package compiling """
+    # dpkg-scanpackages i386 /dev/null | gzip -9c > 386/Packages.gz
+    # dpkg-scanpackages amd64 /dev/null | gzip -9c > amd64/Packages.gz
+    # dpkg-scansources source /dev/null | gzip -9c > source/Sources.gz
     distdir = builder.get_distrib_dir()
-    old = os.getcwd()
-    try:
+    with os.chdir(osp.dirname(distdir)):
         try:
-            os.chdir(osp.dirname(distdir))
-            # dpkg-scanpackages i386 /dev/null | gzip -9c > 386/Packages.gz
-            # dpkg-scanpackages amd64 /dev/null | gzip -9c > amd64/Packages.gz
-            # dpkg-scansources source /dev/null | gzip -9c > source/Sources.gz
             cmd = "dpkg-scanpackages -m %s /dev/null 2>/dev/null | gzip -9c > %s/Packages.gz"
             os.system(cmd % (distrib, distrib))
         except Exception, err:
             logging.warning("cannot update Debian trivial repository for '%s'" % distdir)
         else:
             logging.debug("Debian trivial repository in '%s' updated." % distdir)
-    finally:
-        os.chdir(old)
 
 
+@LGP.register
 class Builder(SetupInfo):
-    """Lgp builder class
+    """Build a debian package.
 
-    Specific options are added. See lgp build --help
+    You can change options in /etc/lgp/lgprc inside the [LGP-BUILD] section
     """
-    name = "lgp-build"
-    options = (('result',
+    name = "build"
+    options = SetupInfo.options + [('result',
                 {'type': 'string',
                  'default' : '~/dists',
                  'dest' : "dist_dir",
@@ -123,71 +74,78 @@ class Builder(SetupInfo):
                  'default' : None,
                  'dest': 'orig_tarball',
                  'metavar' : "<tarball>",
-                 'help': "URI to orig.tar.gz file"
+                 'help': "URI to orig.tar.gz file",
+                 'group': 'Pristine'
                 }),
                ('suffix',
                 {'type': 'string',
                  'dest': 'suffix',
                  'metavar' : "<suffix>",
                  'help': "suffix to append to the Debian package. (default: current timestamp)\n"
-                         "Tip: prepend by '~' for pre-release and '+' for post-release"
+                         "Tip: prepend by '~' for pre-release and '+' for post-release",
+                 'group': 'Debian'
                 }),
                ('keep-tmpdir',
                 {'action': 'store_true',
                  'default': False,
                  'dest' : "keep_tmpdir",
-                 'help': "keep the temporary build directory"
-                }),
-               # should be a store_true action here
-               ('post-treatments',
-                {'type': 'string',
-                 'default': '',
-                 'dest' : "post_treatments",
-                 'help': "run embedded post-treatments: add trivial repository"
+                 'help': "keep the temporary build directory",
+                 'group': 'Debug'
                 }),
                ('deb-src',
                 {'action': 'store_true',
                  'default': False,
                  'dest' : "deb_src_only",
-                 'help': "obtain a debian source package without build"
+                 'help': "obtain a debian source package without build",
+                 'group': 'Debian'
                 }),
                ('get-orig-source',
                 {'action': 'store_true',
                  'default': False,
                  'dest' : "get_orig_source",
-                 'help': "create a reasonable upstream tarball"
+                 'help': "create a reasonable upstream tarball",
+                 'group': 'Pristine'
                 }),
-               # should be a store_true action here
                ('hooks',
                 {'type': 'string',
-                 'default': '',
+                 'default': '', # check if new HOOKS_DIR
                  'dest' : "hooks",
-                 'help': "run pbuilder hooks in '%s'" % HOOKS_DIR
+                 'help': "run pbuilder hooks in '%s'" % HOOKS_DIR,
+                 'group': 'Pbuilder'
                 }),
-               # should be a store_true action here
+               # use yes/no types here to configure globally
                ('sign',
-                {'type': 'string',
-                 'default': 'no',
+                {'type': 'yn',
+                 'default': False,
                  'short': 's',
                  'dest' : "sign",
-                 'help': "try to sign Debian package(s) just built"
+                 'help': "try to sign Debian package(s) just built",
+                 'group': 'Debian'
                 }),
-              ),
+               ('post-treatments',
+                {'type': 'yn',
+                 'default': False,
+                 'dest' : "post_treatments",
+                 'help': "run embedded post-treatments: add trivial repository",
+                 'group': 'Debian'
+                }),
+              ]
+	
+    # global build status
+    build_status = os.EX_OK
+	
+    # list of all temporary directories
+    _tmpdirs = []
+	
+    # hotlist of the recent generated package files
+    packages = []
 
-    def __init__(self, args):
-        # Retrieve upstream information
-        super(Builder, self).__init__(arguments=args, options=self.options, usage=__doc__)
+    def _prune_pkg_dir(self):
+        super(Builder, self)._prune_pkg_dir()
         if self.package_format == 'debian' and not osp.isdir('debian'):
-            raise LGPException("You are not in a valid project root directory. Lgp expects debian directory from here.")
-
-        # global build status
-        self.build_status = os.EX_OK
-
-        # list of all temporary directories
-        self._tmpdirs = []
-
-        # hotlist of the recent generated package files
-        self.packages = []
+            msg = ("You are not in a valid project root directory. "
+                   "Lgp expects a Debian directory here.")
+            raise LGPException(msg)
 
     def clean_tmpdirs(self):
         if not self.config.keep_tmpdir:
@@ -203,6 +161,43 @@ class Builder(SetupInfo):
             for t, c in contents:
                 logging.warn("temporary directory not deleted: %s (%s)"
                              % (t, ", ".join(c)))
+
+    def run(self, args):
+        Cleaner(None).run(args)
+        try :
+            # Stop to original pristine tarball creation if no distribution can be used
+            if not len(self.distributions):
+                logging.warn("only original pristine tarball creation will be done")
+                self.config.get_orig_source = True
+
+            # create the upstream tarball if necessary and move it to result directory
+            self.make_orig_tarball()
+
+            while self.distributions:
+                self.prepare_source_archive()
+
+                # create a debian source package
+                self.make_debian_source_package()
+
+                if self.make_debian_binary_package():
+                    # do post-treatments only for a successful binary build
+                    if self.packages and self.config.post_treatments:
+                        run_post_treatments(self, self.current_distrib)
+
+                # forget distribution
+                self.distributions = self.distributions[1:]
+
+            # report files to the console
+            if self.packages:
+                logging.info("recent files from build:\n* %s"
+                             % '\n* '.join(sorted(set(self.packages))))
+        except LGPException, exc:
+            # XXX refactor ? if getattr(self.config, "verbose"):
+            if hasattr(self, "config") and self.config.verbose:
+                import traceback
+                logging.critical(traceback.format_exc())
+            raise exc
+        return self.destroy_tmp_context()
 
     def make_debian_source_package(self):
         """create a debian source package
@@ -242,7 +237,7 @@ class Builder(SetupInfo):
         # move Debian source package files and exit if asked by command-line
         if self.config.deb_src_only:
             self.move_package_files([self.dscfile], verbose=self.config.deb_src_only)
-            self.finalize()
+            return self.destroy_tmp_context()
 
         # restore directory context
         os.chdir(self.config.pkg_dir)
@@ -295,7 +290,7 @@ class Builder(SetupInfo):
         tmplist = []
         for build in self.use_build_series():
             # change directory context at each binary build
-            tmplist.append(self.create_build_context())
+            tmplist.append(self.create_tmp_context())
 
             cmd = self._builder_command(build)
             # TODO manage handy --othermirror to use local mirror
@@ -500,3 +495,9 @@ class Builder(SetupInfo):
             # already exists
             pass
         return distrib_dir
+
+    def guess_environment(self):
+        # if no default value for distribution, use list from existing images
+        if self.config.distrib is None:
+            self.config.distrib = 'all'
+        super(Builder, self).guess_environment()

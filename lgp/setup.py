@@ -1,120 +1,65 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2003-2008 LOGILAB S.A. (Paris, FRANCE).
+#
+# Copyright (c) 2003-2011 LOGILAB S.A. (Paris, FRANCE).
 # http://www.logilab.fr/ -- mailto:contact@logilab.fr
-
+#
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
 # Foundation; either version 2 of the License, or (at your option) any later
 # version.
-
+#
 # This program is distributed in the hope that it will be useful, but WITHOUT
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 # FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-
+#
 # You should have received a copy of the GNU General Public License along with
 # this program; if not, write to the Free Software Foundation, Inc.,
 # 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-""" lgp setup [options]
-
-    Prepare the chrooted distribution
-"""
-__docformat__ = "restructuredtext en"
+from __future__ import print_function
 
 import os
 import sys
 import logging
+import glob
 from subprocess import check_call, CalledProcessError
 
+from logilab.devtools.lgp import (LGP, CONFIG_FILE, HOOKS_DIR)
 from logilab.devtools.lgp.setupinfo import SetupInfo
-from logilab.devtools.lgp.exceptions import LGPException
 from logilab.devtools.lgp.check import check_keyrings
-from logilab.devtools.lgp import CONFIG_FILE, HOOKS_DIR
 
 
-def run(args):
-    """ Main function of lgp setup command """
-    try :
-        setup = Setup(args)
-
-        if os.geteuid() != 0:
-            logging.warn('lgp setup should be run as root')
-        if setup.config.command == "create":
-            setup.logger = logging
-            check_keyrings(setup)
-        if setup.config.command in ("create", "update"):
-            setup.cmd += " --override-config"
-        elif setup.config.command == "clean":
-            logging.debug("cleans up directory specified by configuration BUILDPLACE and APTCACHE")
-        elif setup.config.command == "dumpconfig":
-            sys.stdout = sys.__stdout__
-
-        for arch in setup.architectures:
-            for distrib in setup.distributions:
-                image = setup.get_basetgz(distrib, arch, check=False)
-
-                # don't manage symbolic file in create and update command
-                if os.path.islink(image) and setup.config.command in ("create", "update"):
-                    logging.warning("skip symbolic link used for image: %s (-> %s)"
-                                    % (image, os.path.realpath(image)))
-                    continue
-
-                cmd = setup.cmd % (image, distrib, arch, setup.setarch_cmd, setup.sudo_cmd,
-                                   setup.builder_cmd, CONFIG_FILE, HOOKS_DIR)
-
-                # run setup command
-                logging.debug("run command: %s" % cmd)
-                logging.info(setup.config.command + " image '%s' for '%s/%s'"
-                             % (image, distrib, arch))
-                try:
-                    check_call(cmd, stdout=sys.stdout, shell=True,
-                               env={'DIST': distrib, 'ARCH': arch, 'IMAGE': image})
-                except CalledProcessError, err:
-                    # pbuilder dumpconfig command always returns exit code 1.
-                    # Fix to normal exit status
-                    if setup.config.command == "dumpconfig":
-                        continue
-                    logging.error('an error occured in setup process: %s' % cmd)
-
-    except NotImplementedError, exc:
-        logging.error(exc)
-        return 2
-    except LGPException, exc:
-        logging.critical(exc)
-        return exc.exitcode()
-
-
+@LGP.register
 class Setup(SetupInfo):
-    """ Environment setup checker class
+    """Set up and manage build images.
 
-    Specific options are added. See lgp setup --help
+    Available commands:
+        - list:        list actual images        (default)
+        - create:      create new image
+        - update:      update image
+        - clean:       clean pbuilder caches
+        - dumpconfig:  display pbuilder settings
+
+    Note: chrooted images will be used to isolate builds (pbuilder)
     """
-    name = "lgp-setup"
-
-    options = (('command',
+    name = "setup"
+    options = SetupInfo.options + [
+               ('command',
                 {'type': 'choice',
-                 'choices': ('create', 'update', 'dumpconfig', 'clean',),
+                 'choices': ('list', 'create', 'update', 'dumpconfig', 'clean'),
                  'dest': 'command',
-                 'default' : 'dumpconfig',
+                 'default' : 'list',
                  'short': 'c',
                  'metavar': "<command>",
                  'help': "command to run with pbuilder"
                 }),
-              ),
-
-    def __init__(self, args):
-        # Retrieve upstream information
-        super(Setup, self).__init__(arguments=args, options=self.options, usage=__doc__)
-        # TODO encapsulate builder logic into specific InternalBuilder class
-        self._pbuilder_cmd = "/usr/sbin/pbuilder %s" % self.config.command
-        self.cmd = "IMAGE=%s DIST=%s ARCH=%s %s %s %s --configfile %s --hookdir %s"
-
-    def get_basetgz(self, *args, **kwargs):
-        self.arch = args[1] # used in build_cmd property later
-        return super(Setup, self).get_basetgz(*args, **kwargs)
+              ]
+    arguments = "-c <command> -d <distrib> -a <arch>"
+    max_args = 0
+    cmd = "IMAGE=%s DIST=%s ARCH=%s %s %s %s --configfile %s --hookdir %s"
 
     @property
-    def builder_cmd(self):
-        return self._pbuilder_cmd
+    def pbuilder_cmd(self):
+        return "/usr/sbin/pbuilder %s" % self.config.command
 
     @property
     def setarch_cmd(self):
@@ -133,3 +78,69 @@ class Setup(SetupInfo):
             logging.debug('lgp setup should be run as root. sudo is used internally.')
             sudo_cmd = "/usr/bin/sudo -E"
         return sudo_cmd
+
+    def go_into_package_dir(self, arguments):
+        pass
+
+    def _set_package_format(self):
+        pass
+
+    def _prune_pkg_dir(self):
+        pass
+
+    def guess_environment(self):
+        # no default value for distribution but don't try to retrieve it
+        if self.config.distrib is None:
+            self.config.distrib = []
+        super(Setup, self).guess_environment()
+
+    def print_images_list(self):
+        logging.info("Base image directory: %s", self.config.basetgz)
+        images = sorted(os.path.basename(f) for f in
+                        glob.glob(os.path.join(self.config.basetgz,'*.tgz')))
+        if images:
+            print(*images, file=sys.__stdout__)
+        else:
+            logging.warn("No image found.")
+
+    def run(self, args):
+        if self.config.command == "list":
+            self.print_images_list()
+            return os.EX_OK
+        if self.config.command == "create":
+            self.logger = logging
+            check_keyrings(self)
+        if self.config.command in ("create", "update"):
+            self.cmd += " --override-config"
+        elif self.config.command == "clean":
+            logging.debug("cleans up directory specified by configuration BUILDPLACE and APTCACHE")
+        elif self.config.command == "dumpconfig":
+            sys.stdout = sys.__stdout__
+
+        for arch in self.architectures:
+            for distrib in self.distributions:
+                self.arch = arch # see setarch_cmd()
+
+                image = self.get_basetgz(distrib, arch, check=False)
+
+                # don't manage symbolic file in create and update command
+                if os.path.islink(image) and self.config.command in ("create", "update"):
+                    logging.warning("skip symbolic link used for image: %s (-> %s)"
+                                    % (image, os.path.realpath(image)))
+                    continue
+
+                cmd = self.cmd % (image, distrib, arch, self.setarch_cmd, self.sudo_cmd,
+                                  self.pbuilder_cmd, CONFIG_FILE, HOOKS_DIR)
+
+                logging.info(self.config.command + " image '%s' for '%s/%s'"
+                             % (image, distrib, arch))
+                logging.debug("run command: %s" % cmd)
+                try:
+                    check_call(cmd, stdout=sys.stdout, shell=True,
+                               env={'DIST': distrib, 'ARCH': arch, 'IMAGE': image})
+                except CalledProcessError, err:
+                    # Gotcha: pbuilder dumpconfig command always returns exit code 1.
+                    # Catch and continue for this command without error
+                    if self.config.command != "dumpconfig":
+                        logging.error('an error occured in setup process: %s' % cmd)
+
