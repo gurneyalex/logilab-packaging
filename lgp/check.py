@@ -50,7 +50,7 @@ CHECKS = {'debian'    : set(['debian_dir', 'debian_rules', 'debian_copying',
                              'debian_changelog', 'debian_homepage']),
           'default'   : set(['builder',  'bin', 'release_number']),
           'distutils' : set(['manifest_in', 'pydistutils',]),
-          'pkginfo'   : set(['debsign', 'package_info', 'announce',
+          'pkginfo'   : set(['debsign', 'package_info',
                              'pkginfo_copyright', 'tests_directory',
                              'readme', 'changelog']),
           'makefile'  : set(['makefile']),
@@ -470,12 +470,6 @@ def check_debian_homepage(checker):
             checker.logger.warn('rename "projects" to "project" in the "Homepage:" value in debian/control')
     else:
         checker.logger.warn('add a valid "Homepage:" field in debian/control')
-    return OK
-
-def check_announce(checker):
-    """check the announce.txt file """
-    if not (isfile('announce.txt') and isfile('NEWS')) :
-        checker.logger.debug('announce file not present (NEWS or announce.txt)')
     return OK
 
 def check_bin(checker):
