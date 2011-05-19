@@ -32,4 +32,4 @@ If you want allow local developpers (other than root) to be able to build packag
 
 Example of sudoers except:
 
-	ALL ALL= NOPASSWD:SETENV: /usr/sbin/pbuilder, /usr/sbin/piuparts
+	ALL ALL= NOPASSWD:SETENV: /usr/sbin/pbuilder

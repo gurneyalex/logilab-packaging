@@ -13,7 +13,7 @@ XS-Python-Version: current
 Package: logilab-packaging
 Architecture: all
 Suggests: logilab-doctools, pymacs, emacsen-common, cvs, debian-archive-keyring
-Recommends: piuparts, mercurial (>= 0.9.3), subversion, debinstall, diffstat
+Recommends: mercurial (>= 0.9.3), subversion, debinstall, diffstat
 Depends: ${python:Depends}, python-debian, lintian, pbuilder, devscripts, debhelper,
          python-vcslib, python-logilab-common, sudo, cdebootstrap
 Conflicts: devtools, simh
