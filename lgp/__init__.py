@@ -29,9 +29,7 @@ BUILD_LOG_EXT   = '.lgp-build'
 def run(args):
     parser = OptionParser()
     parser.usage = 'lgp COMMAND [options] <pkgdir> ...'
-    COMMANDS = [('prepare', 'logilab.devtools.lgp.preparedist',
-                 'process to prepare distrib'),
-                ('build', 'logilab.devtools.lgp.build',
+    COMMANDS = [('build', 'logilab.devtools.lgp.build',
                  'build debian and source packages'),
                 ('tag', 'logilab.devtools.lgp.tag',
                  'tag package repository'),
