@@ -1,5 +1,5 @@
 # Logilab lgp configuration file for pbuilder.
-# Copyright (c) 2003-2010 LOGILAB S.A. (Paris, FRANCE).
+# Copyright (c) 2003-2011 LOGILAB S.A. (Paris, FRANCE).
 # http://www.logilab.fr/ -- mailto:contact@logilab.fr
 
 # The file is a pre-configuration script for /etc/lgp/pbuilderrc
@@ -14,19 +14,14 @@ export TERM=linux
 export IGNOREEOF=1
 
 # You can use a proxy for local repositories (apt-cacher)
-#DEBIAN_MIRROR="xxx.xxx.xxx.xxx:3142/ftp.debian.org/"
-#UBUNTU_MIRROR="xxx.xxx.xxx.xxx:3142/fr.archive.ubuntu.com"
+#DEBIAN_MIRRORSITE="http://xxx.xxx.xxx.xxx:3142/ftp.debian.org/debian/"
+#UBUNTU_MIRRORSITE="http://xxx.xxx.xxx.xxx:3142/fr.archive.ubuntu.com/ubuntu/"
 
-# You can restrict here the list of valid images
-#DEBIAN_SUITES=("sid" "testing" "stable")
-#UBUNTU_SUITES=("karmic" "jaunty" "intrepid" "hardy" "gutsy" "feisty" "dapper" "lucid")
-
-# Provide a cache for APT (beware of diskspace)...
-#APTCACHE="/var/cache/pbuilder/aptcache/"
-#APTCACHEHARDLINK="yes"
-#
-# Another solution is to use tmpfs for buildplace ($BUILDPLACE)
+# 26. Using tmpfs for buildplace ($BUILDPLACE)
 # http://www.netfort.gr.jp/~dancer/software/pbuilder-doc/pbuilder-doc.html#tmpfsforpbuilder
-# «To improve speed of operation, it is possible to use tmpfs for pbuilder build
-# location. Mount tmpfs for $BUILDPLACE, and set:»
-#APTCACHEHARDLINK=no
+# To improve speed of operation, it is possible to use tmpfs for pbuilder build location.
+# Mount tmpfs to /var/cache/pbuilder/build, and set APTCACHEHARDLINK to no
+APTCACHEHARDLINK=no
+BUILDPLACE="/space/var/cache/pbuilder/${DIST}/dists/"
+
+

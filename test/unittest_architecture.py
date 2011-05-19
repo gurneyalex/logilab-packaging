@@ -10,6 +10,8 @@ class ArchitectureTC(TestCase):
     def test_default_architecture(self):
         archi = Popen(["dpkg", "--print-architecture"], stdout=PIPE).communicate()[0].split()
         self.assertEqual(get_architectures(), archi)
+        self.assertEqual(get_architectures(['all']), archi)
+        self.assertEqual(get_architectures(['current']), archi)
 
     def test_one_valid_architecture(self):
         archi = ['i386']
@@ -21,11 +23,13 @@ class ArchitectureTC(TestCase):
 
     def test_one_unvalid_architecture(self):
         archi = ['window$']
-        self.assertRaises(ArchitectureException, get_architectures, archi)
+        with self.assertRaises(ArchitectureException):
+            get_architectures(archi)
 
     def test_mixed_unvalid_architectures(self):
         archi = ['i386', 'openbsd-arm', 'hurd-i386', 'window$', 'sparc']
-        self.assertRaises(ArchitectureException, get_architectures, archi)
+        with self.assertRaises(ArchitectureException):
+            get_architectures(archi)
 
 
 if __name__  == '__main__':
