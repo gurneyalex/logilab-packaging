@@ -6,11 +6,7 @@ recursive-exclude logilab_devtools.egg-info *
 include bin/lgp
 include bin/changelog
 include bin/update_gettext
-include bin/pycoverage
-include bin/vcpull
-include bin/cvstatus
-include bin/cvslog
-include bin/hgstatus
+include bin/lsprofcalltree
 
 include elisp/*.el
 include elisp/startup
