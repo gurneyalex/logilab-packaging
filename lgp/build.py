@@ -21,6 +21,7 @@ import sys
 import shutil
 import logging
 import hashlib
+import errno
 from glob import glob
 import os.path as osp
 from subprocess import check_call, CalledProcessError, Popen
@@ -489,10 +490,14 @@ class Builder(SetupInfo):
         os.umask(0002)
         try:
             os.makedirs(distrib_dir, 0755)
-        except OSError:
-            # it's not a problem here to pass silently # when the directory
-            # already exists
-            pass
+        except OSError, exc:
+            # It's not a problem here to pass silently if the directory
+            # is really existing but fails otherwise
+            if not os.path.isdir(distrib_dir):
+                msg = "not mountable location in chroot: %s"
+                logging.warn(msg, distrib_dir)
+            if exc.errno != errno.EEXIST:
+                raise
         return distrib_dir
 
     def guess_environment(self):

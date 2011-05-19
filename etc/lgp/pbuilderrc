@@ -1,25 +1,20 @@
 # Logilab lgp configuration file for pbuilder.
-# Copyright (c) 2003-2010 LOGILAB S.A. (Paris, FRANCE).
+# Copyright (c) 2003-2011 LOGILAB S.A. (Paris, FRANCE).
 # http://www.logilab.fr/ -- mailto:contact@logilab.fr
 
 # The file in /usr/share/logilab-packaging/pbuilderrc is the default template.
 # /etc/lgp/pbuilderrc.local is the one meant for editing NOT this one.
 
-# The name of debootstrap command
-DEBOOTSTRAP="cdebootstrap"
-
-# Mirror sites to use in order to create chroot images
+# Mirror sites and related components to use in order to create chroot images
 DEBIAN_MIRRORSITE="http://cdn.debian.net/debian/"
 UBUNTU_MIRRORSITE="http://archive.ubuntu.com/ubuntu/"
-
-# (deprecated in favor of real URI as above)
-#DEBIAN_MIRROR="cdn.debian.net"
-#UBUNTU_MIRROR="archive.ubuntu.com"
 
 DEBIAN_COMPONENTS="main contrib non-free"
 UBUNTU_COMPONENTS="main restricted universe multiverse"
 
 # You can use valid sources.list files to add your personal repositories
+# Note: files matching *_SOURCESLIST.${DIST} in the same directory
+# can be used to override generic values
 DEBIAN_SOURCESLIST="/etc/lgp/sources.list.debian"
 UBUNTU_SOURCESLIST="/etc/lgp/sources.list.ubuntu"
 

@@ -26,7 +26,7 @@ from logilab.devtools.lgp.exceptions import LGPException
 
 
 LGP_CONFIG_FILE = '/etc/lgp/lgprc'
-LGP_SUITES      = '/etc/lgp/suites'
+LGP_SUITES      = '/usr/share/debootstrap/scripts/'
 CONFIG_FILE     = '/etc/lgp/pbuilderrc'
 HOOKS_DIR       = '/var/lib/logilab-packaging/hooks'
 SCRIPTS_DIR     = '/var/lib/logilab-packaging/scripts'

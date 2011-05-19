@@ -12,7 +12,6 @@ debian/tmp/usr/bin/update_gettext
 debian/tmp/usr/bin/changelog
 etc/lgp/pbuilderrc
 etc/lgp/lgprc
-etc/lgp/suites
 etc/lgp/scripts var/lib/logilab-packaging
 etc/lgp/hooks var/lib/logilab-packaging
 etc/lgp/pbuilderrc.sh var/lib/logilab-packaging
