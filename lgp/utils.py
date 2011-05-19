@@ -120,8 +120,8 @@ def get_architectures(archi=None, basetgz=None):
             archi = set(known_archi) & set(archi)
         for a in archi:
             if a not in known_archi:
-                msg = "architecture '%s' not found in '%s' (create it or unreference it)" % archi
-                raise ArchitectureException("%s" % a)
+                msg = "architecture '%s' not found in '%s' (create it or unreference it)"
+                raise ArchitectureException(msg % (a, basetgz))
     return archi
 
 def get_debian_architecture():
