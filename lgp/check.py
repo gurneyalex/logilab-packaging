@@ -25,9 +25,12 @@ import logging
 import itertools
 from subprocess import call
 from os.path import basename, join, exists, isdir, isfile
+from glob import glob
+import warnings
+import ConfigParser
 
 from logilab.devtools import BASE_EXCLUDE, templates
-from logilab.devtools.lgp import LGP, utils
+from logilab.devtools.lgp import LGP, LGP_CONFIG_FILE, utils
 from logilab.devtools.lgp.setupinfo import SetupInfo
 from logilab.devtools.lgp.exceptions import LGPException
 from logilab.devtools.lib.changelog import CHANGEFILE
@@ -287,8 +290,14 @@ def check_keyrings(checker):
 
 def check_debian_env(checker):
     """check usefull DEBFULLNAME and DEBEMAIL env variables"""
-    if not os.environ.get('DEBFULLNAME') or not os.environ.get('DEBEMAIL'):
-        checker.logger.warn('you had better define DEBFULLNAME and DEBEMAIL in your shell rc file')
+    email = os.environ.get('DEBEMAIL', os.environ.get('EMAIL', ""))
+    name  = os.environ.get('DEBFULLNAME', os.environ.get('NAME'))
+    if not email:
+        checker.logger.warn('to update changelog, please define DEBEMAIL or EMAIL environ variable')
+    # If DEBEMAIL or MAIL has the form "name <email>", then the maintainer
+    # name will also be taken from here if neither DEBFULLNAME nor NAME is set.
+    if not name and '<' not in email:
+        checker.logger.warn('to update changelog, please define DEBFULLNAME or NAME environ variable')
     return OK
 
 def check_pydistutils(checker):
@@ -304,13 +313,13 @@ def check_builder(checker):
     return OK
 
 def check_debian_dir(checker):
-    """check the debian directory"""
-    debian_dir = checker.get_debian_dir()
-    return isdir(debian_dir)
+    """check the debian directory and debian/control file"""
+    return isdir("debian") and isfile(join("debian","control"))
 
 def check_debian_rules(checker):
     """check the debian*/rules file (filemode should be "+x")"""
-    debian_dirs = [checker.get_debian_dir(), 'debian']
+    debian_dirs = glob("debian.*")
+    debian_dirs.append('debian')
     for debian_dir in debian_dirs:
         rules = join(debian_dir, 'rules')
         if isfile(rules):
@@ -338,47 +347,52 @@ def check_debian_source_value(checker):
 
 def check_debian_changelog(checker, debian_dir=None):
     """check debian changelog error cases"""
-    debian_dir = debian_dir or checker.get_debian_dir()
-    CHANGELOG = os.path.join(debian_dir, 'changelog')
-    if isfile(CHANGELOG):
-        # verify if changelog is closed
-        cmd = "sed -ne '/^ -- $/p' %s" % CHANGELOG
-        _, output = commands.getstatusoutput(cmd)
-        if output:
-            msg = "missing attribution trailer line. '%s' is not properly closed" % CHANGELOG
-            checker.logger.warn(msg)
-            return
-        # consider UNRELEASED as problematic only if not on first line
-        cmd = "sed -ne '2,${/UNRELEASED/p}' %s" % CHANGELOG
-        _, output = commands.getstatusoutput(cmd)
-        if output:
-            checker.logger.warn('UNRELEASED keyword found in debian changelog')
-        cmd = "sed -ne '/DISTRIBUTION/p' %s" % CHANGELOG
-        _, output = commands.getstatusoutput(cmd)
-        if output:
-            checker.logger.warn("some occurences of DISTRIBUTION found in %s" % CHANGELOG)
-        # check project name coherency
-        if checker.get_debian_name() != utils._parse_deb_project():
-            msg = "project name mismatch: debian/control says '%s' and debian/changelog says '%s'"
-            checker.logger.error(msg % (checker.get_debian_name(), utils._parse_deb_project()))
-        # check maintainer field
-        cmd = "dpkg-parsechangelog | grep '^Maintainer' | cut -d' ' -f2- | tr -d '\n'"
-        _, output = commands.getstatusoutput(cmd)
-        cmd = 'grep "%s" debian/control' % output
-        cmdstatus, _ = commands.getstatusoutput(cmd)
-        if cmdstatus:
-            checker.logger.warn("'%s' is not found in Uploaders field" % output)
-        # final check with Debian utility
-        cmd = "dpkg-parsechangelog >/dev/null"
-        _, output = commands.getstatusoutput(cmd)
-        if output:
-            checker.logger.error(output)
+    if debian_dir is None:
+        debian_dirs = glob("debian.*")
+        debian_dirs.append('debian')
     else:
-        if debian_dir == "debian":
-            checker.logger.error("no debian*/changelog file found")
-        else: # failback to debian/changelog
-            check_debian_changelog(checker, 'debian')
-
+        debian_dirs = [debian_dir]
+    for debian_dir in debian_dirs:
+        CHANGELOG = join(debian_dir, 'changelog')
+        if isfile(CHANGELOG):
+            # verify if changelog is closed
+            cmd = "sed -ne '/^ -- $/p' %s" % CHANGELOG
+            _, output = commands.getstatusoutput(cmd)
+            if output:
+                msg = "missing attribution trailer line. '%s' is not properly closed" % CHANGELOG
+                checker.logger.warn(msg)
+                return
+            # consider UNRELEASED as problematic only if not on first line
+            cmd = "sed -ne '2,${/UNRELEASED/p}' %s" % CHANGELOG
+            _, output = commands.getstatusoutput(cmd)
+            if output:
+                checker.logger.debug('UNRELEASED keyword found in debian changelog')
+            cmd = "sed -ne '/DISTRIBUTION/p' %s" % CHANGELOG
+            _, output = commands.getstatusoutput(cmd)
+            if output:
+                checker.logger.error("old DISTRIBUTION keyword found in %s" % CHANGELOG)
+            # check project name coherency
+            if checker.get_debian_name() != utils._parse_deb_project():
+                msg = "project name mismatch: debian/control says '%s' and debian/changelog says '%s'"
+                checker.logger.error(msg % (checker.get_debian_name(), utils._parse_deb_project()))
+            # check maintainer field
+            cmd = "dpkg-parsechangelog -l%s | grep '^Maintainer' | cut -d' ' -f2- | tr -d '\n'"
+            _, maintainer = commands.getstatusoutput(cmd % CHANGELOG)
+            for d in [debian_dir, "debian"]:
+                cmd = 'grep "%s" %s' % (maintainer, join(d, "control"))
+                cmdstatus, _ = commands.getstatusoutput(cmd)
+                if not cmdstatus: break
+            else:
+                checker.logger.warn("'%s' not found in Uploaders field"
+                                    % maintainer)
+            # final check with Debian utility
+            cmd = "dpkg-parsechangelog -l%s >/dev/null" % CHANGELOG
+            _, output = commands.getstatusoutput(cmd)
+            if output:
+                checker.logger.error(output)
+        else:
+            if debian_dir == "debian":
+                checker.logger.error("no debian*/changelog file found")
 
 def check_debian_maintainer(checker):
     """check Maintainer field in debian/control file"""
@@ -518,31 +532,33 @@ def check_manifest_in(checker):
 
 def check_debsign(checker):
     """check requirements (~/.devscripts or gpg-agent) to sign packages"""
-    import ConfigParser
-    from logilab.devtools.lgp import LGP_CONFIG_FILE
-
     config = ConfigParser.ConfigParser()
+    config_sign = "no"
     try:
         config.readfp(open(LGP_CONFIG_FILE))
+        msg = 'retrieve sign option value from %s: "sign=%s"'
+        if config.has_option("BUILD", "sign"):
+            config_sign = config.get("BUILD", "sign")
+            warnmsg = "Please, move 'sign=%s' option into new [DEBIAN] section"
+            warnings.warn(warnmsg % config_sign, DeprecationWarning)
+        if config.has_option("DEBIAN", "sign"):
+            config_sign = config.get("DEBIAN", "sign")
+        checker.logger.debug(msg % (LGP_CONFIG_FILE, config_sign))
     except IOError:
         return OK # no config file
 
-    if config.has_option("LGP-BUILD", "sign"):
-        enabled = config.get("LGP-BUILD", "sign")
-        # workaround for build command
-        if not hasattr(checker, 'logger'):
-            checker.logger = logging
-        checker.logger.debug('retrieve sign option value from %s: "sign=%s"'
-                             % (LGP_CONFIG_FILE, enabled))
+    enabled = config_sign[0].lower() == "y"
+    if getattr(checker.config, "sign", None):
+        enabled = True
 
-        if enabled == "yes":
-            if not os.path.exists(os.path.expanduser("~/.devscripts")):
-                msg = "please, export your DEBSIGN_KEYID in ~/.devscripts (read `debsign` manual)"
-                checker.logger.error(msg)
-                return NOK
-            if 'GPG_AGENT_INFO' not in os.environ:
-                checker.logger.error('enable your gpg-agent to sign packages automatically')
-                return NOK
+    if enabled:
+        if not os.path.exists(os.path.expanduser("~/.devscripts")):
+            msg = "please, export your DEBSIGN_KEYID in ~/.devscripts (read `debsign` manual)"
+            checker.logger.error(msg)
+            return NOK
+        if 'GPG_AGENT_INFO' not in os.environ:
+            checker.logger.error('enable your gpg-agent to sign packages automatically')
+            return NOK
     return OK
 
 def check_package_info(checker):

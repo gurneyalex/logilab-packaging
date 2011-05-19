@@ -57,7 +57,7 @@ def run_post_treatments(builder, distrib):
 class Builder(SetupInfo):
     """Build a debian package.
 
-    You can change options in /etc/lgp/lgprc inside the [LGP-BUILD] section
+    You can change options in /etc/lgp/lgprc inside the [BUILD] section
     """
     name = "build"
     options = SetupInfo.options + [('result',
