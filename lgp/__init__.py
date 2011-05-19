@@ -13,53 +13,57 @@
 #
 # You should have received a copy of the GNU General Public License along with
 # this program; if not, write to the Free Software Foundation, Inc.,
-# 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 import sys
-import os, os.path as osp
-from logilab.common.optparser import OptionParser
+import logging
+
+import logilab.common.clcommands as cli
+
+from logilab.devtools.__pkginfo__ import description, version
+from logilab.devtools.lgp.exceptions import LGPException
+
 
 LGP_CONFIG_FILE = '/etc/lgp/lgprc'
 LGP_SUITES      = '/etc/lgp/suites'
 CONFIG_FILE     = '/etc/lgp/pbuilderrc'
 HOOKS_DIR       = '/var/lib/logilab-packaging/hooks'
 SCRIPTS_DIR     = '/var/lib/logilab-packaging/scripts'
-BUILD_LOG_EXT   = '.lgp-build'
-
-def run(args):
-    parser = OptionParser()
-    parser.usage = 'lgp COMMAND [options] <pkgdir> ...'
-    COMMANDS = [('build', 'logilab.devtools.lgp.build',
-                 'build debian and source packages'),
-                ('tag', 'logilab.devtools.lgp.tag',
-                 'tag package repository'),
-                ('check', 'logilab.devtools.lgp.check',
-                 'check that package is ready to be built'),
-                ('script', 'logilab.devtools.lgp.script',
-                 'execute a script into a chrooted distribution'),
-                ('setup', 'logilab.devtools.lgp.setup',
-                 'prepare a chrooted distribution'),
-                ('login', 'logilab.devtools.lgp.login',
-                 'Log into a chrooted distribution'),
-                ('clean', 'logilab.devtools.lgp.clean',
-                 'clean repository'),
-                ('project', 'logilab.devtools.lgp.project',
-                 'print project information'),
-               ]
-
-    if len(sys.argv) <= 1:
-        return parser.usage
-    elif sys.argv[1] in ("build", "check", "clean", "template", "setup",
-                         "login", "tag", "project", "script"):
-        exec 'from logilab.devtools.lgp.%s import run' % sys.argv[1]
-        return run(args[1:])
-    else:
-        for item in COMMANDS:
-            parser.add_command(*item)
-        run_, options, args = parser.parse_command(sys.argv[1:])
-        pkgdir = osp.abspath(args and args[0] or os.getcwd())
-        return run_(pkgdir, options, args[1:])
+LOG_FORMAT = '%(levelname)1.1s:%(name)s: %(message)s'
 
 
-if __name__ == '__main__':
-    sys.exit(run(sys.argv[1:]))
+class LGPCommandLine(cli.CommandLine):
+
+    def run(self, args):
+        """main command line access point (from clcommands):
+        * instanciate logger
+        * handle global options (-h/--help, --version, --rc-file)
+        * check command
+        * change to project directory (XXX)
+        * run command
+
+        :returns: unix error code
+        """
+        # Instanciate the default logger configuration
+        # Note: not use lgc.logging_ext at the moment
+        # FIXME when using logging.conf
+        handlers = logging.getLogger().handlers
+        assert len(handlers)==0, 'Lgp cannot manage several handlers...'
+        logging.getLogger().name = self.pgm
+        console = logging.StreamHandler()
+        logging.getLogger().addHandler(console)
+        logging.getLogger().setLevel(logging.INFO)
+        console.setFormatter(logging.Formatter(LOG_FORMAT))
+        try:
+            super(LGPCommandLine, self).run(args)
+        except LGPException, exc:
+            logging.critical(exc)
+            sys.exit(exc.exitcode())
+
+
+LGP = LGPCommandLine('lgp', doc=description, rcfile=LGP_CONFIG_FILE,
+                     version=version)
+
+
+__all__ = ['LGP', 'clean', 'build', 'check', 'project', 'tag', 'setup',
+           'login', 'script']

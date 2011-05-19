@@ -12,7 +12,7 @@ basetgz=/var/cache/lgp/buildd
 
 # Lgp builder config
 # Specific options are added. See lgp build --help
-[LGP-BUILD]
+[BUILD]
 
 # use an alternate setup file with Lgp expected arguments (see documentation)
 #setup-file=setup.mk
@@ -35,7 +35,7 @@ result=~/dists
 # Lgp checker config
 # Specific options are added. See lgp check --help or lgp check --list for an
 # explanation of the available checkers
-[LGP-CHECK]
+[CHECK]
 
 # force the inclusion of other check functions
 #include=
@@ -48,19 +48,20 @@ result=~/dists
 
 
 
-# Lgp tagger class
-# Substitution variables are: $project, $version, $debian_version, $debian_revision, $distrib and $arch
-# Specific options are added. See lgp tag --help
-[LGP-TAG]
+[TAG]
+# A basic template system can be used in configuration
+# (please refer to the documentation for this usage)
+# Some tag templates are already provided by Lgp:
+# $project, $version, $debian_version, $debian_revision, $distrib, $arch
 
-# tag format examples
+# Definition of some extra templates
 upstream=$project-version-$version
 debian=$project-debian-version-$debian_version
 debian_revision=debrevision-$debian_revision
 
-# Logilab policy
-logilab=upstream, debian
+# Use template from Logilab policy
+logilab=$upstream, $debian
 
-# list of tag templates to apply by default
-# '$version' is used by default if not defined
-default=logilab
+# list of tag templates to apply
+# template=$version
+template=$logilab

@@ -44,4 +44,3 @@ scripts = [
     ]
 
 install_requires = ['logilab-common']
-
