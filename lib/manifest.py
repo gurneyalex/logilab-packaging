@@ -97,7 +97,6 @@ def get_manifest_files(dirname=os.getcwd(), junk_extensions=JUNK_EXTENSIONS,
         ignored += ('.coverage',
                     join(prefix, 'MANIFEST.in'), join(prefix, 'MANIFEST'),
                     join(prefix, 'dist'), join(prefix, 'build'),
-                    join(prefix, 'announce.txt'), join(prefix, 'announce_fr.txt'),
                     join(prefix, 'setup.cfg'),
                     join(prefix, 'doc/makefile'),
                     # no need to match README, automagically included by distutils
