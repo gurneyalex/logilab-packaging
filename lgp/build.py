@@ -369,7 +369,7 @@ class Builder(SetupInfo):
             logging.info('this build is arch-independent. Lgp will only build on '
                          'current architecture (%s)' % options['arch'])
         else:
-            for rank, arch in enumerate(self.architectures):
+            for rank, arch in enumerate(self.get_architectures()):
                 options = dict()
                 options['distrib'] = self.current_distrib
                 options['buildopts'] = _build_options(arch, rank)
