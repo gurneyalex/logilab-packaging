@@ -25,34 +25,34 @@ class DebianChangeLogTC(ChangeLogTC):
 
 class DebianVersionTC(TestCase):
     def test_simple(self):
-        v = DebianVersion('1.2.3-2')
+        v = Version('1.2.3-2')
         self.assertEqual(v.upstream_version, '1.2.3')
-        self.assertEqual(v.debian_version, '2')
+        self.assertEqual(v.debian_revision, '2')
         self.assertEqual(str(v), '1.2.3-2')
 
     def test_nmu(self):
-        v = DebianVersion('1.2.3-2.2')
+        v = Version('1.2.3-2.2')
         self.assertEqual(v.upstream_version, '1.2.3')
-        self.assertEqual(v.debian_version, '2.2')
-        self.assertEqual(v.epoch, "")
+        self.assertEqual(v.debian_revision, '2.2')
+        self.assertEqual(v.epoch, None)
 
         self.assertEqual(str(v), '1.2.3-2.2')
 
     def test_epoch(self):
-        v = DebianVersion('1:1.2.3-2')
+        v = Version('1:1.2.3-2')
         self.assertEqual(v.upstream_version, '1.2.3')
-        self.assertEqual(v.debian_version, '2')
+        self.assertEqual(v.debian_revision, '2')
         self.assertEqual(v.epoch, "1")
         self.assertEqual(str(v), '1:1.2.3-2')
 
     def test_comparison(self):
-        v1 = DebianVersion('1.2.3-1')
-        v2 = DebianVersion('1.2.3-1')
+        v1 = Version('1.2.3-1')
+        v2 = Version('1.2.3-1')
         self.assertTrue(v1 == v2)
-        v3 = DebianVersion('1.2.3-2')
+        v3 = Version('1.2.3-2')
         self.assertTrue(v1 < v3)
         self.assertTrue(v3 >= v1)
-        v4 = DebianVersion('1.2.3~rc1-1')
+        v4 = Version('1.2.3~rc1-1')
         self.assertTrue(v4 < v1)
 
 

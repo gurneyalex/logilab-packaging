@@ -17,6 +17,7 @@ import time
 from os.path import join, isfile, dirname, exists
 import subprocess
 from commands import getstatusoutput
+from debian.debian_support import Version
 
 from logilab.common.deprecation import deprecated
 from logilab.common.changelog import ChangeLog as BaseChangeLog, ChangeLogEntry
@@ -140,51 +141,12 @@ def debian_version(self):
     finally:
         os.chdir(cwd)
 
-class Version(object):
-    def __init__(self, versionstr):
-        self.value = versionstr
-    def __str__(self):
-        return self.value
-    def __compare(self, op, other):
-        if isinstance(other, Version):
-            status = subprocess.call(['dpkg', '--compare-versions', self.value, op, other.value])
-            return (status == 0)
-        return NotImplemented
-    
-    def __eq__(self, other):
-        return self.__compare('eq', other)
-    def __ne__(self, other):
-        return self.__compare('ne', other)
-    def __lt__(self, other):
-        return self.__compare('lt', other)
-    def __le__(self, other):
-        return self.__compare('le', other)
-    def __gt__(self, other):
-        return self.__compare('gt', other)
-    def __ge__(self, other):
-        return self.__compare('ge', other)
-
 ChangeLogEntry.version_class = Version
-
-class DebianVersion(Version):
-    """simple class to handle debian version number has a tuple while
-    correctly printing it as X.Y.Z-D
-    """
-    # XXX lots of things supported by 'real' debian versions are not supported
-    # see Debian Policy for the full gory details
-    def __init__(self, versionstr):
-        Version.__init__(self, versionstr)
-        if ':' in versionstr:
-            self.epoch, versionstr = versionstr.split(':')
-        else:
-            self.epoch = ''
-        self.upstream_version, self.debian_version = versionstr.split('-')
-
 
 class DebianChangeLogEntry(ChangeLogEntry):
     """object representation of a debian/changelog entry
     """
-    version_class = DebianVersion
+    version_class = Version
     def write(self, stream=sys.stdout):
         """write the entry to file """
         # pylint: disable-msg=E1101
@@ -222,7 +184,7 @@ class DebianChangeLog(ChangeLog):
             else:
                 debian_version = 1
         entry.date = today
-        entry.version = DebianVersion(version)
+        entry.version = Version(version)
 
     def format_title(self):
         return ''
