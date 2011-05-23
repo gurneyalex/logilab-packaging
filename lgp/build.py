@@ -29,8 +29,7 @@ from debian import deb822
 
 from logilab.common.shellutils import cp
 
-from logilab.devtools.lgp import (LGP, CONFIG_FILE, HOOKS_DIR,
-                                  BUILD_LOG_EXT, utils)
+from logilab.devtools.lgp import LGP, CONFIG_FILE, HOOKS_DIR, utils
 from logilab.devtools.lgp.exceptions import (LGPException, LGPCommandException)
 
 from logilab.devtools.lgp.check import check_debsign
@@ -328,7 +327,7 @@ class Builder(SetupInfo):
         # move Debian binary package(s) files
         for tmp in tmplist:
             changes = glob(osp.join(tmp, '*.changes'))
-            buildlog = glob(osp.join(tmp, '*' + BUILD_LOG_EXT))
+            buildlog = glob(osp.join(tmp, '*.log'))
             self.move_package_files(changes + buildlog)
 
         self.build_status += build_status
@@ -467,7 +466,7 @@ class Builder(SetupInfo):
                 if self.config.get_orig_source:
                     logging.info('a new original source archive (tarball) '
                                  'is available: %s' % copied_filename)
-            if filename.endswith(BUILD_LOG_EXT):
+            if filename.endswith('.log'):
                 logging.info("a build logfile is available: %s" % copied_filename)
             if filename.endswith('.changes'):
                 logging.info("Debian changes file: %s" % copied_filename)
