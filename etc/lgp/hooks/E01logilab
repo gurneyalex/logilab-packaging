@@ -5,4 +5,4 @@
 set +e
 
 apt-get install -y --force-yes wget >/dev/null 2>&1
-wget -q http://ftp.logilab.org/dists/logilab-dists-key.asc  -O - | apt-key add -
+wget -q http://download.logilab.org/logilab-dists-key.asc  -O - | apt-key add -

@@ -15,4 +15,4 @@ deb http://security.ubuntu.com/ubuntu ${DIST}-security main restricted
 deb http://archive.ubuntu.com/ubuntu ${DIST}-updates main restricted
 
 # Logilab repository (http://www.logilab.org/card/LogilabDebianRepository)
-#deb http://ftp.logilab.org/dists ${DIST}/
+#deb http://download.logilab.org/dists ${DIST}/
