@@ -34,7 +34,7 @@ class Tagger(SetupInfo):
     (please refer to the documentation for this usage)
     Some tag templates are already provided by Lgp:
 
-      $project, $version, $debian_version, $debian_revision, $distrib, $arch
+      $project, $version, $debian_version, $debian_revision, $distrib
     """
     name = "tag"
     arguments = "[-f | --force] [-t | --template <tag template>] [project directory]"
@@ -63,7 +63,6 @@ class Tagger(SetupInfo):
                              debian_version=self.debian_version,
                              debian_revision=self.debian_revision,
                              distrib=self.distrib,
-                             arch=self.archi,
                              project=self.project)
 
         command = self.vcs_agent.tag(self.config.pkg_dir, tag,
@@ -89,7 +88,6 @@ class Tagger(SetupInfo):
 
         # poor cleaning for having unique string
         self.distrib = '+'.join(self.distributions)
-        self.archi   = '+'.join(self.architectures)
 
         config = ConfigParser.ConfigParser()
         if osp.isfile(LGP_CONFIG_FILE):

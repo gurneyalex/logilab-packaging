@@ -73,7 +73,7 @@ class Script(SetupInfo):
         if len(self.arguments)==0:
             sys.exit()
 
-        for arch in self.architectures:
+        for arch in self.get_architectures():
             for distrib in self.distributions:
                 for command in commands:
                     image = self.get_basetgz(distrib, arch)

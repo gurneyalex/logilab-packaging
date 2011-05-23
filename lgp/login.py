@@ -66,7 +66,7 @@ class Login(SetupInfo):
         super(Login, self).guess_environment()
 
     def run(self, args):
-        for arch in self.architectures:
+        for arch in self.get_architectures():
             for distrib in self.distributions:
                 image = self.get_basetgz(distrib, arch)
 

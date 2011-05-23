@@ -117,7 +117,7 @@ class Setup(SetupInfo):
         elif self.config.command == "dumpconfig":
             sys.stdout = sys.__stdout__
 
-        for arch in self.architectures:
+        for arch in self.get_architectures():
             for distrib in self.distributions:
                 self.arch = arch # see setarch_cmd()
 

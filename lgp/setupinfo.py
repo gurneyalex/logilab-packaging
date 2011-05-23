@@ -237,12 +237,9 @@ class SetupInfo(clcommands.Command):
             logging.warn('lgp replaces "all" with "current" architecture value for this command')
 
         # Define mandatory attributes for lgp commands
-        self.architectures = utils.get_architectures(self.config.archi,
-                                                     self.config.basetgz)
         self.distributions = utils.get_distributions(self.config.distrib,
                                                      self.config.basetgz)
         logging.debug("guessing distribution(s): %s" % ', '.join(self.distributions))
-        logging.debug("guessing architecture(s): %s" % ', '.join(self.architectures))
 
     def _set_package_format(self):
         """set the package format to be able to run COMMANDS
@@ -358,7 +355,9 @@ class SetupInfo(clcommands.Command):
 
         return debiandir
 
-    get_architectures = staticmethod(utils.get_architectures)
+    def get_architectures(self, archi=None, basetgz=None):
+        return utils.get_architectures(archi or self.config.archi, basetgz or self.config.basetgz)
+
     get_debian_name = staticmethod(utils.get_debian_name)
 
     @utils.cached

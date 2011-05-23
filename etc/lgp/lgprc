@@ -52,7 +52,7 @@ result=~/dists
 # A basic template system can be used in configuration
 # (please refer to the documentation for this usage)
 # Some tag templates are already provided by Lgp:
-# $project, $version, $debian_version, $debian_revision, $distrib, $arch
+# $project, $version, $debian_version, $debian_revision, $distrib
 
 # Definition of some extra templates
 upstream=$project-version-$version

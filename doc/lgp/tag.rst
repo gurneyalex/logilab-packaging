@@ -11,7 +11,6 @@ Lgp will be able to substitute some string format when tagging:
 - $debian_revision : current increment of the Debian version
 - $debian_version : full Debian version (upstream version + $debian_revision)
 - $distrib : Debian-compatible distribution name
-- $arch : Debian-compatible architecture
 
 Example
 '''''''
