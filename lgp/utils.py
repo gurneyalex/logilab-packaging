@@ -72,7 +72,7 @@ def guess_debian_architecture():
         logging.debug('retrieve architecture field value from debian/control: %s'
                       % ','.join(archi))
     except LGPException:
-        logging.debug('no debian/changelog available. will use "current" architecture')
+        logging.debug('no debian/control available. will use "current" architecture')
         archi = ["current"]
     return archi
 
@@ -81,7 +81,7 @@ def get_architectures(archi=None, basetgz=None):
 
         "all" keyword can be confusing about the targeted architectures.
         Consider using the "any" keyword to force the build on all
-        architectures or let lgp finds the value in debian/changelog by
+        architectures or let lgp find the value in debian/control by
         itself in doubt.
 
         lgp replaces "all" with "current" architecture value
@@ -127,7 +127,7 @@ def get_architectures(archi=None, basetgz=None):
 def get_debian_architecture():
     """get debian architecture(s) to use in build
 
-    The information is found in debian/control withe the 'Architecture:' field
+    The information is found in debian/control with the 'Architecture:' field
     """
     try:
         control = osp.join('debian', 'control')
