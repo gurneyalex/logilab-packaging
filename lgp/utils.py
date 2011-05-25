@@ -1,5 +1,5 @@
 # Copyright (c) 2003 Sylvain Thenault (thenault@gmail.com)
-# Copyright (c) 2003-2008 Logilab (devel@logilab.fr)
+# Copyright (c) 2003-2011 Logilab (devel@logilab.fr)
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
