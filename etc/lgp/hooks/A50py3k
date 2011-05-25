@@ -1,7 +1,0 @@
-#!/bin/bash
-
-if [ "${DIST}" = "py3k" ]; then
-	/tmp/hooks/F95experimental
-	/tmp/hooks/F99apt
-	/tmp/hooks/F99python3.2
-fi

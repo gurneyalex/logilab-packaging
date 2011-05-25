@@ -1,9 +1,0 @@
-#!/bin/bash
-
-. /tmp/hooks/lgp.functions
-
-if [ "${DIST}" = "py3k" ]; then
-	echo >> /etc/apt/sources.list
-	print_hook "Adding a new /etc/apt/sources.list entry for 'experimental'..."
-	echo "deb http://ftp.debian.org/debian experimental main" >> /etc/apt/sources.list
-fi
