@@ -7,14 +7,6 @@ Base
 -  le fichier `__pkginfo__.py`_
 
 
-Utilitaires CVS
----------------
-
-- cvslog_
-
-- cvstatus_
-
-
 Gestion des paquets
 -------------------
 
@@ -27,9 +19,6 @@ How-to
 - `packaging how-to`_
 
 .. _`__pkginfo__.py`: pkginfo_variables.html
-
-.. _cvslog: cvslog.html
-.. _cvstatus: cvstatus.html
 
 .. _changelog: changelog.html
 
