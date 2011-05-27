@@ -15,7 +15,7 @@ Vcs-Browser: http://hg.logilab.org/logilab/devtools
 
 Package: logilab-packaging
 Architecture: all
-Suggests: logilab-doctools, pymacs, emacsen-common, cvs, debian-archive-keyring
+Suggests: logilab-doctools, pymacs, emacsen-common, debian-archive-keyring
 Recommends: mercurial (>= 0.9.3), subversion, debinstall, diffstat
 Depends: ${python:Depends}, python-debian, lintian, pbuilder, devscripts, debhelper,
          python-logilab-common, sudo, cdebootstrap, python-apt
