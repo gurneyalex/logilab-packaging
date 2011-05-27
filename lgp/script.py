@@ -59,19 +59,21 @@ class Script(SetupInfo):
 
     def run(self, args):
 
-        #  command, = glob.glob(os.path.join(SCRIPTS_DIR, self.config.command))
-        if len(self.arguments)==0:
+        if not self.config.command and len(args)==0:
             commands = dict(self.options)['command']['choices']
             logging.info('available command(s): %s', commands)
-        else:
-            commands = [c for c in glob.glob(os.path.join(SCRIPTS_DIR, self.config.command))
-                        if os.path.basename(c)==self.config.command]
+            sys.exit()
+
+        if not self.config.command:
+            self.config.command = args[0]
+            args = args[1:]
+
+        commands = [c for c in glob.glob(os.path.join(SCRIPTS_DIR, self.config.command))
+                    if os.path.basename(c)==self.config.command]
 
         if not commands:
             raise LGPException("command '%s' not found. Please check commands in %s"
                                % (self.config.command, SCRIPTS_DIR))
-        if len(self.arguments)==0:
-            sys.exit()
 
         for arch in self.get_architectures():
             for distrib in self.distributions:
@@ -80,10 +82,10 @@ class Script(SetupInfo):
 
                     cmd = self.cmd % (image, distrib, arch, self.setarch_cmd, self.sudo_cmd,
                                       self.pbuilder_cmd, CONFIG_FILE, HOOKS_DIR, command,
-                                      ' '.join(self.arguments))
+                                      ' '.join(args))
 
                     logging.info("execute script '%s' with arguments: %s",
-                                 command, ' '.join(self.arguments))
+                                 command, ' '.join(args))
                     logging.debug("run command: %s", cmd)
                     try:
                         check_call(cmd, stdout=sys.stdout, shell=True,
