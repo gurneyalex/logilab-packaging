@@ -40,22 +40,6 @@ from logilab.devtools.lgp.setupinfo import SetupInfo
 from logilab.devtools.lgp.clean import Cleaner
 
 
-def run_post_treatments(builder, distrib):
-    """ Run actions after package compiling """
-    # dpkg-scanpackages i386 /dev/null | gzip -9c > 386/Packages.gz
-    # dpkg-scanpackages amd64 /dev/null | gzip -9c > amd64/Packages.gz
-    # dpkg-scansources source /dev/null | gzip -9c > source/Sources.gz
-    distdir = builder.get_distrib_dir()
-    with os.chdir(osp.dirname(distdir)):
-        try:
-            cmd = "dpkg-scanpackages -m %s /dev/null 2>/dev/null | gzip -9c > %s/Packages.gz"
-            os.system(cmd % (distrib, distrib))
-        except Exception, err:
-            logging.warning("cannot update Debian trivial repository for '%s'" % distdir)
-        else:
-            logging.debug("Debian trivial repository in '%s' updated." % distdir)
-
-
 @LGP.register
 class Builder(SetupInfo):
     """Build a debian package.
@@ -132,13 +116,13 @@ class Builder(SetupInfo):
                  'group': 'Debian'
                 }),
               ]
-	
+
     # global build status
     build_status = os.EX_OK
-	
+
     # list of all temporary directories
     _tmpdirs = []
-	
+
     # hotlist of the recent generated package files
     packages = []
 
@@ -180,7 +164,7 @@ class Builder(SetupInfo):
                     if self.make_debian_binary_package():
                         # do post-treatments only for a successful binary build
                         if self.packages and self.config.post_treatments:
-                            run_post_treatments(self, self.current_distrib)
+                            self.run_post_treatments()
 
                     # forget distribution
                     self.distributions = self.distributions[1:]
@@ -587,3 +571,21 @@ class Builder(SetupInfo):
         if self.config.distrib is None:
             self.config.distrib = 'all'
         super(Builder, self).guess_environment()
+
+    def run_post_treatments(self):
+        """ Run actions after package compiling """
+        # dpkg-scanpackages i386 /dev/null | gzip -9c > 386/Packages.gz
+        # dpkg-scanpackages amd64 /dev/null | gzip -9c > amd64/Packages.gz
+        # dpkg-scansources source /dev/null | gzip -9c > source/Sources.gz
+        resultdir = self.get_distrib_dir()
+        packages_file = osp.join(resultdir, "Packages.gz")
+        try:
+            cmd = "cd %s && dpkg-scanpackages -m %s /dev/null 2>/dev/null | gzip -9c > %s"
+            os.system(cmd % (osp.dirname(resultdir), self.current_distrib,
+                             packages_file))
+        except Exception, err:
+            self.logger.warning("cannot update Debian trivial repository for '%s'"
+                                % resultdir)
+        else:
+            self.logger.debug("Debian trivial repository in '%s' updated."
+                              % packages_file)
