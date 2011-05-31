@@ -501,6 +501,13 @@ class Builder(SetupInfo):
         return distrib_dir
 
     def guess_environment(self):
+        # normalize pathnames given in parameters
+        self.config.orig_tarball = self._normpath(self.config.orig_tarball)
+
+        if self.config.orig_tarball:
+            self.logger.info('use original source archive (tarball): %s',
+                             self.config.orig_tarball)
+
         # if no default value for distribution, use list from existing images
         if self.config.distrib is None:
             self.config.distrib = 'all'
