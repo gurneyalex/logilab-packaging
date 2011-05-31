@@ -21,6 +21,9 @@ import sys
 import time
 import os.path as osp
 from subprocess import Popen, PIPE
+from contextlib import contextmanager
+import shutil
+import tempfile
 import logging
 
 from debian.deb822 import Deb822
@@ -256,4 +259,25 @@ def _parse_deb_project(changelog='debian/changelog'):
     clog.parse_changelog(open(changelog))
     return clog.package
 
+@contextmanager
+def tempdir(keep_tmpdir=False):
+    """create new build temporary context
+
+    Catches exceptions in the context-managed block to take the keep_tmpdir
+    parameter into account at the exit point.
+    The exception will be reraised in this case.
+
+    See also tempfile.TemporaryDirectory in python >= 3.2
+    """
+    tmpdir = tempfile.mkdtemp()
+    logging.debug('using new build directory... (%s)', tmpdir)
+    try:
+        yield tmpdir
+    except Exception, exc:
+        raise
+    finally:
+        if not keep_tmpdir:
+            shutil.rmtree(tmpdir)
+        else:
+            logging.warn("build directory not deleted: %s", tmpdir)
 
