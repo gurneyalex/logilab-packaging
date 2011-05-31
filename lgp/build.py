@@ -24,6 +24,7 @@ import hashlib
 import errno
 from glob import glob
 import os.path as osp
+import urllib
 from subprocess import check_call, CalledProcessError, Popen
 
 from debian import deb822
@@ -32,6 +33,7 @@ from logilab.common.shellutils import cp
 
 from logilab.devtools.lgp import LGP, CONFIG_FILE, HOOKS_DIR, utils
 from logilab.devtools.lgp.exceptions import (LGPException, LGPCommandException)
+from logilab.devtools.lgp.utils import tempdir
 
 from logilab.devtools.lgp.check import check_debsign
 from logilab.devtools.lgp.setupinfo import SetupInfo
@@ -164,40 +166,113 @@ class Builder(SetupInfo):
 
     def run(self, args):
         Cleaner(None).run(args)
-        try :
-            # Stop to original pristine tarball creation if no distribution can be used
-            if not len(self.distributions):
-                logging.warn("only original pristine tarball creation will be done")
-                self.config.get_orig_source = True
+        # create the upstream tarball if necessary and move it to result directory
+        with tempdir(self.config.keep_tmpdir) as tmpdir:
+            self.make_orig_tarball(tmpdir)
 
-            # create the upstream tarball if necessary and move it to result directory
-            self.make_orig_tarball()
+            try:
+                while self.distributions:
+                    self.prepare_source_archive()
 
-            while self.distributions:
-                self.prepare_source_archive()
+                    # create a debian source package
+                    self.make_debian_source_package()
 
-                # create a debian source package
-                self.make_debian_source_package()
+                    if self.make_debian_binary_package():
+                        # do post-treatments only for a successful binary build
+                        if self.packages and self.config.post_treatments:
+                            run_post_treatments(self, self.current_distrib)
 
-                if self.make_debian_binary_package():
-                    # do post-treatments only for a successful binary build
-                    if self.packages and self.config.post_treatments:
-                        run_post_treatments(self, self.current_distrib)
+                    # forget distribution
+                    self.distributions = self.distributions[1:]
 
-                # forget distribution
-                self.distributions = self.distributions[1:]
+                # report files to the console
+                if self.packages:
+                    logging.info("recent files from build:\n* %s"
+                                 % '\n* '.join(sorted(set(self.packages))))
+            except LGPException, exc:
+                # XXX refactor ? if getattr(self.config, "verbose"):
+                if hasattr(self, "config") and self.config.verbose:
+                    import traceback
+                    logging.critical(traceback.format_exc())
+                raise exc
+            return self.build_status
 
-            # report files to the console
-            if self.packages:
-                logging.info("recent files from build:\n* %s"
-                             % '\n* '.join(sorted(set(self.packages))))
-        except LGPException, exc:
-            # XXX refactor ? if getattr(self.config, "verbose"):
-            if hasattr(self, "config") and self.config.verbose:
-                import traceback
-                logging.critical(traceback.format_exc())
-            raise exc
-        return self.destroy_tmp_context()
+    def make_orig_tarball(self, tmpdir=None):
+        """make upstream pristine tarballs (Debian way)
+
+        Start by calling uscan.
+        If not possible, failback to a local creation
+
+        A call to move_package_files() will reset instance variable
+        config.orig_tarball to its new name for later reuse
+
+        See:
+        http://www.debian.org/doc/debian-policy/ch-source.html
+        http://hg.logilab.org/<upstream_name>/archive/<upstream_version>.tar.gz
+        """
+        self._check_version_mismatch()
+
+        fileparts = (self.get_upstream_name(), self.get_upstream_version())
+        tarball = '%s_%s.orig.tar.gz' % fileparts
+        upstream_tarball = '%s-%s.tar.gz' % fileparts
+
+        # run uscan to download the source tarball by looking at debian/watch
+        if self.config.orig_tarball is None and not self.is_initial_debian_revision():
+            logging.info('trying to retrieve pristine tarball remotely...')
+            try:
+                cmd = ["uscan", "--noconf", "--download-current-version"]
+                check_call(cmd, stderr=file(os.devnull, "w"))
+                assert osp.isfile(tarball)
+                self.config.orig_tarball = osp.abspath(tarball)
+            except CalledProcessError, err:
+                logging.warn("run '%s' without success" % ' '.join(cmd))
+
+        if self.config.orig_tarball is None:
+            # Make a coherence check about the pristine tarball
+            if not self.is_initial_debian_revision():
+                debian_revision = self.get_debian_version().rsplit('-', 1)[1]
+                logging.error("Debian source archive (pristine tarball) is required when you "
+                              "don't build the first revision of a debian package "
+                              "(use '--orig-tarball' option)")
+                logging.info("If you haven't the original tarball version, you could run: "
+                             "'apt-get source --tar-only %s'"
+                             % self.get_debian_name())
+                raise LGPException('unable to build upstream tarball of %s package '
+                                   'for Debian revision "%s"'
+                                   % (self.get_debian_name(), debian_revision))
+            try:
+                self._run_command("sdist", dist_dir=tmpdir)
+            except CalledProcessError, err:
+                logging.error("creation of the source archive failed")
+                logging.error("check if the version '%s' is really tagged in"\
+                                  " your repository" % self.get_upstream_version())
+                raise LGPCommandException("source distribution wasn't properly built", err)
+            self.config.orig_tarball = osp.join(tmpdir, upstream_tarball)
+            msg = "create new Debian source archive (pristine tarball) from working directory: %s"
+        else:
+            msg = "retrieve original Debian source archive (pristine tarball): %s"
+        logging.info(msg % osp.basename(self.config.orig_tarball))
+
+        if not os.path.basename(self.config.orig_tarball).startswith(self.get_upstream_name()):
+            msg = "pristine tarball filename doesn't start with upstream name '%s'. really suspect..."
+            logging.error(msg % self.get_upstream_name())
+
+        tarball = osp.join(tmpdir, tarball)
+        try:
+            urllib.urlretrieve(self.config.orig_tarball, tarball) # auto-renaming here
+            self.config.orig_tarball = tarball
+        except IOError, err:
+            logging.critical("the provided original source archive (tarball) "
+                             "can't be retrieved from given location: %s"
+                             % self.config.orig_tarball)
+            raise LGPException(err)
+        assert osp.isfile(tarball), 'Debian source archive (pristine tarball) not found'
+
+        # move pristine tarball and exit if asked by command-line
+        if self.config.get_orig_source:
+            self.move_package_files([self.config.orig_tarball],
+                                    verbose=self.config.get_orig_source)
+        return self.config.orig_tarball
 
     def make_debian_source_package(self):
         """create a debian source package
