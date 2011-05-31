@@ -45,7 +45,7 @@ COMMANDS = {
             "file": './$setup dist-gzip -e DIST_DIR=$dist_dir',
             "Distribution": 'python setup.py -q sdist -d $dist_dir',
             "PackageInfo": 'python setup.py -q sdist -d $dist_dir',
-            "debian": "fakeroot debian/rules get-orig-source",
+            "debian": "uscan --noconf --download-current-version --destdir $dist_dir",
         },
         "clean" : {
             "file": './$setup clean',
@@ -412,7 +412,7 @@ class SetupInfo(clcommands.Command):
     def make_orig_tarball(self):
         """make upstream pristine tarballs (Debian way)
 
-        Start by calling the optional get-orig-source from debian/rules
+        Start by calling uscan.
         If not possible, failback to a local creation
 
         A call to move_package_files() will reset instance variable
@@ -420,7 +420,6 @@ class SetupInfo(clcommands.Command):
 
         See:
         http://www.debian.org/doc/debian-policy/ch-source.html
-        http://wiki.debian.org/SandroTosi/Svn_get-orig-source
         http://hg.logilab.org/<upstream_name>/archive/<upstream_version>.tar.gz
         """
         self._check_version_mismatch()
@@ -432,11 +431,11 @@ class SetupInfo(clcommands.Command):
         tarball = '%s_%s.orig.tar.gz' % fileparts
         upstream_tarball = '%s-%s.tar.gz' % fileparts
 
-        # run optional debian/rules get-orig-source target to retrieve pristine tarball
+        # run uscan to download the source tarball by looking at debian/watch
         if self.config.orig_tarball is None and not self.is_initial_debian_revision():
             logging.info('trying to retrieve pristine tarball remotely...')
             try:
-                cmd = ["fakeroot", "debian/rules", "get-orig-source"]
+                cmd = ["uscan", "--noconf", "--download-current-version"]
                 check_call(cmd, stderr=file(os.devnull, "w"))
                 assert osp.isfile(tarball)
                 self.config.orig_tarball = osp.abspath(tarball)
