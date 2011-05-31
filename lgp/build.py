@@ -165,7 +165,7 @@ class Builder(SetupInfo):
                              % (t, ", ".join(c)))
 
     def run(self, args):
-        Cleaner(None).run(args)
+        Cleaner(config=self.config).run(args)
         # create the upstream tarball if necessary and move it to result directory
         with tempdir(self.config.keep_tmpdir) as tmpdir:
             self.make_orig_tarball(tmpdir)
