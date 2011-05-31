@@ -47,7 +47,8 @@ class Builder(SetupInfo):
     You can change options in /etc/lgp/lgprc inside the [BUILD] section
     """
     name = "build"
-    options = SetupInfo.options + [('result',
+    options = SetupInfo.options + [
+               ('result',
                 {'type': 'string',
                  'default' : '~/dists',
                  'dest' : "dist_dir",
@@ -156,8 +157,6 @@ class Builder(SetupInfo):
 
             try:
                 while self.distributions:
-                    self.prepare_source_archive()
-
                     # create a debian source package
                     self.make_debian_source_package()
 
@@ -272,6 +271,8 @@ class Builder(SetupInfo):
         :param:
             origpath: path to orig.tar.gz tarball
         """
+        self.prepare_source_archive()
+
         arguments = ""
         format = utils.guess_debian_source_format()
         logging.info("Debian source package format: %s" % format)
