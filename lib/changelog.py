@@ -108,17 +108,6 @@ class ChangeLog(BaseChangeLog):
         entry.date = today
         entry.version = version
 
-    def update(self, create=None):
-        """update the change log by extracting infos from cvs
-
-        FIXME: use vcs_agent.log_info to extract log info
-        """
-        entry = self.get_entry(create=create)
-        tag = ('version-%s' % self.get_latest_revision()).replace('.', '_')
-        stream = os.popen('cvslog -- -- -r%s::' % tag)
-        for line in stream.readlines():
-            entry.add_message(line)
-
 
 # debian change log ###########################################################
 
