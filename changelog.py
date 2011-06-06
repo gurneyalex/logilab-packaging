@@ -50,9 +50,6 @@ COMMAND COMMANDS_ARGS
   add <message>
     add a message to the current entry
     
-  update
-    update the change log by fectching log entries from cvs
-
   close
     close the current entry (version is read from the package
     __pkginfo__.py file)
@@ -99,9 +96,6 @@ def run(args):
         chlg.extract(arg)
     elif args[0] == 'lastrev':
         print chlg.get_latest_revision()
-    elif args[0] == 'update':
-        chlg.update(create)
-        chlg.save()
     elif args[0] == 'add':
         assert args[1]
         chlg.add(' '.join(args[1:]), create)
