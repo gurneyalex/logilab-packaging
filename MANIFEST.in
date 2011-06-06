@@ -16,22 +16,6 @@ include doc/*.txt
 include doc/makefile
 
 recursive-include templates *.txt *.py 
-include templates/compat
-include templates/control
-include templates/copyright
-include templates/debhelper
-include templates/elisp.emacsen-install
-include templates/elisp.emacsen-remove
-include templates/python.postinst
-include templates/python.prerm
-include templates/rules
-include templates/sgml.postinst
-include templates/sgml.prerm
-include templates/watch
-include templates/zope.config
-include templates/zope.postinst
-include templates/zope.prerm
-include templates/zope.templates
 
 recursive-include test/data *
 
