@@ -156,18 +156,13 @@ class Builder(SetupInfo):
             self.make_orig_tarball(tmpdir)
 
             try:
-                while self.distributions:
+                for distrib in  self.distributions:
                     # create a debian source package
-                    self.make_debian_source_package()
-
-                    if self.make_debian_binary_package():
+                    self.make_debian_source_package(distrib)
+                    if self.make_debian_binary_package(distrib):
                         # do post-treatments only for a successful binary build
                         if self.packages and self.config.post_treatments:
-                            self.run_post_treatments()
-
-                    # forget distribution
-                    self.distributions = self.distributions[1:]
-
+                            self.run_post_treatments(distrib)
                 # report files to the console
                 if self.packages:
                     logging.info("recent files from build:\n* %s"
@@ -257,7 +252,7 @@ class Builder(SetupInfo):
                                     verbose=self.config.get_orig_source)
         return self.config.orig_tarball
 
-    def make_debian_source_package(self):
+    def make_debian_source_package(self, current_distrib, tmpdir='.'):
         """create a debian source package
 
         This function must be called inside an unpacked source
@@ -271,15 +266,16 @@ class Builder(SetupInfo):
         :param:
             origpath: path to orig.tar.gz tarball
         """
-        self.prepare_source_archive()
+        self.prepare_source_archive(tmpdir, current_distrib)
 
         arguments = ""
         format = utils.guess_debian_source_format()
-        logging.info("Debian source package format: %s" % format)
-        # change directory to build source package
-        os.chdir(self._tmpdir)
+        os.chdir(tmpdir)
         if format == "1.0":
             arguments+='--no-copy'
+
+        logging.info("Debian source package (format: %s) for '%s'" % (format, current_distrib))
+        # change directory to build source package
         try:
             cmd = 'dpkg-source %s -b %s' % (arguments, self.origpath)
             logging.debug("running dpkg-source command: %s ..." % cmd)
@@ -287,16 +283,16 @@ class Builder(SetupInfo):
         except CalledProcessError, err:
             msg = "cannot build valid dsc file with command %s" % cmd
             raise LGPCommandException(msg, err)
+        dscfile = osp.abspath(glob('*.dsc').pop())
+        assert osp.isfile(dscfile)
 
-        # define dscfile ressource
-        self.dscfile = glob(os.path.join(self._tmpdir, '*.dsc')).pop()
-        assert osp.isfile(self.dscfile)
         msg = "create Debian source package files (.dsc, .diff.gz): %s"
-        logging.info(msg % osp.basename(self.dscfile))
+        logging.info(msg % osp.basename(dscfile))
 
         # move Debian source package files and exit if asked by command-line
         if self.config.deb_src_only:
-            self.move_package_files([self.dscfile], verbose=self.config.deb_src_only)
+            resultdir = self.get_distrib_dir(current_distrib)
+            self.move_package_files([self.dscfile], resultdir, verbose=self.config.deb_src_only)
             return self.destroy_tmp_context()
 
         # restore directory context
@@ -334,7 +330,7 @@ class Builder(SetupInfo):
             cmd = debuilder.split()
         return cmd
 
-    def make_debian_binary_package(self):
+    def make_debian_binary_package(self, distrib):
         """create debian binary package(s)
 
         virtualize/parallelize the binary package build process
@@ -348,7 +344,9 @@ class Builder(SetupInfo):
         stdout = stdout[self.config.verbose >= 2] # i.e. -vv* in command line
         joblist = []
         tmplist = []
-        for build in self.use_build_series():
+        resultdir = self.get_distrib_dir(distrib)
+
+        for build in self.use_build_series(distrib):
             # change directory context at each binary build
             tmplist.append(self.create_tmp_context())
 
@@ -389,12 +387,12 @@ class Builder(SetupInfo):
         for tmp in tmplist:
             changes = glob(osp.join(tmp, '*.changes'))
             buildlog = glob(osp.join(tmp, '*.log'))
-            self.move_package_files(changes + buildlog)
+            self.move_package_files(changes + buildlog, resultdir)
 
         self.build_status += build_status
         return build_status == os.EX_OK
 
-    def use_build_series(self):
+    def use_build_series(self, distrib):
         """create a series of binary build command
 
         Architecture is checked against the debian/control to detect
@@ -403,8 +401,6 @@ class Builder(SetupInfo):
         You have the possiblity to add some dpkg-buildpackage options with the
         DEBBUILDOPTS environment variable.
         """
-        assert self.current_distrib
-
         def _build_options(arch=None, rank=0):
             optline = list()
             #optline.append('-b')
@@ -421,7 +417,7 @@ class Builder(SetupInfo):
         series = []
         if utils.is_architecture_independent():
             options = dict()
-            options['distrib'] = self.current_distrib
+            options['distrib'] = distrib
             options['buildopts'] = _build_options()
             options['arch'] = self.get_architectures(['current'])[0]
             options['image'] = self.get_basetgz(options['distrib'],
@@ -432,7 +428,7 @@ class Builder(SetupInfo):
         else:
             for rank, arch in enumerate(self.get_architectures()):
                 options = dict()
-                options['distrib'] = self.current_distrib
+                options['distrib'] = distrib
                 options['buildopts'] = _build_options(arch, rank)
                 options['arch'] = arch
                 options['image'] = self.get_basetgz(options['distrib'],
@@ -440,7 +436,7 @@ class Builder(SetupInfo):
                 series.append(options)
         return series
 
-    def move_package_files(self, filelist, verbose=True):
+    def move_package_files(self, filelist, resultdir, verbose=True):
         """move package files from the temporary build area to the result directory
 
         we define here the self.packages variable used by post-treatment
@@ -506,8 +502,7 @@ class Builder(SetupInfo):
             fullpath = filelist.pop()
             path, filename = osp.split(fullpath)
             assert os.path.isfile(fullpath), "%s not found!" % fullpath
-            copied_filename = os.path.join(self.get_distrib_dir(),
-                                           osp.basename(filename))
+            copied_filename = os.path.join(resultdir, osp.basename(filename))
 
             if filename.endswith(('.changes', '.dsc')):
                 contents = deb822.Deb822(file(fullpath))
@@ -540,12 +535,12 @@ class Builder(SetupInfo):
             assert osp.exists(copied_filename)
             self.packages.append(copied_filename)
 
-    def get_distrib_dir(self):
+    def get_distrib_dir(self, distrib):
         """get the dynamic target release directory"""
         distrib_dir = os.path.normpath(os.path.expanduser(self.config.dist_dir))
         # special case when current directory is used to put result files ("-r .")
         if distrib_dir not in ['.', '..']:
-            distrib_dir = os.path.join(distrib_dir, self.current_distrib)
+            distrib_dir = os.path.join(distrib_dir, distrib)
         # check if distribution directory exists, create it if necessary
         os.umask(0002)
         try:
@@ -582,7 +577,7 @@ class Builder(SetupInfo):
         packages_file = osp.join(resultdir, "Packages.gz")
         try:
             cmd = "cd %s && dpkg-scanpackages -m %s /dev/null 2>/dev/null | gzip -9c > %s"
-            os.system(cmd % (osp.dirname(resultdir), self.current_distrib,
+            os.system(cmd % (osp.dirname(resultdir), distrib,
                              packages_file))
         except Exception, err:
             self.logger.warning("cannot update Debian trivial repository for '%s'"

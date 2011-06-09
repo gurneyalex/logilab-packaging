@@ -270,15 +270,6 @@ class SetupInfo(clcommands.Command):
                 shutil.rmtree(spurious)
 
     @property
-    def current_distrib(self):
-        # workaround: we set current distrib immediately to be able to copy
-        # pristine tarball in a valid location
-        try:
-            return self.distributions[0]
-        except IndexError:
-            return ""
-
-    @property
     def package_format(self):
         return self.config._package.__class__.__name__
 
@@ -306,7 +297,7 @@ class SetupInfo(clcommands.Command):
                                       % cmdline, process)
         return pipe
 
-    def get_debian_dir(self):
+    def get_debian_dir(self, distrib):
         """get the dynamic debian directory for the configuration override
 
         The convention is :
@@ -318,23 +309,20 @@ class SetupInfo(clcommands.Command):
         """
         # TODO Check the X-Vcs-* to fetch remote Debian configuration files
         debiandir = 'debian' # default debian config location
+        override_dir = osp.join(debiandir, distrib)
 
-        if self.current_distrib:
-            override_dir = osp.join(debiandir, self.current_distrib)
+        # Use new directory scheme with separate Debian repository in head
+        # developper can create an overlay for the debian directory
+        old_override_dir = '%s.%s' % (debiandir, distrib)
+        if osp.isdir(osp.join(self.config.pkg_dir, old_override_dir)):
+            #logging.warn("new distribution overlay system available: you "
+            #             "can use '%s' subdirectory instead of '%s' and "
+            #             "merge the files"
+            #             % (override_dir, old_override_dir))
+            debiandir = old_override_dir
 
-            # Use new directory scheme with separate Debian repository in head
-            # developper can create an overlay for the debian directory
-            old_override_dir = '%s.%s' % (debiandir, self.current_distrib)
-            if osp.isdir(osp.join(self.config.pkg_dir, old_override_dir)):
-                #logging.warn("new distribution overlay system available: you "
-                #             "can use '%s' subdirectory instead of '%s' and "
-                #             "merge the files"
-                #             % (override_dir, old_override_dir))
-                debiandir = old_override_dir
-
-            if osp.isdir(osp.join(self.config.pkg_dir, override_dir)):
-                debiandir = override_dir
-
+        if osp.isdir(osp.join(self.config.pkg_dir, override_dir)):
+            debiandir = override_dir
         return debiandir
 
     def get_architectures(self, archi=None, basetgz=None):
@@ -390,25 +378,22 @@ class SetupInfo(clcommands.Command):
             msg %= (upstream_version, debian_upstream_version)
             raise LGPException(msg)
 
-    def prepare_source_archive(self):
+    def prepare_source_archive(self, tmpdir, current_distrib):
         """prepare and extract the upstream tarball
 
         FIXME replace by TarFile Object
         """
-        # change directory context at each build
-        self.create_tmp_context()
-
         # Mandatory to be compatible with format 1.0
         logging.debug("copy pristine tarball to prepare Debian source package diff")
-        cp(self.config.orig_tarball, self._tmpdir)
+        cp(self.config.orig_tarball, tmpdir)
         # TODO obtain current format version
         # os.path.exists(osp.join(self.origpath, "debian/source/format")
 
         logging.debug("extracting original source archive for %s distribution in %s"
-                      % (self.current_distrib or "default", self._tmpdir))
+                      % (current_distrib or "default", tmpdir))
         try:
             cmd = 'tar --atime-preserve --preserve-permissions --preserve-order -xzf %s -C %s'\
-                  % (self.config.orig_tarball, self._tmpdir)
+                  % (self.config.orig_tarball, tmpdir)
             check_call(cmd.split(), stdout=sys.stdout)
         except CalledProcessError, err:
             raise LGPCommandException('an error occured while extracting the '
@@ -417,8 +402,8 @@ class SetupInfo(clcommands.Command):
         # Find the right orig path in tarball
         # It can be different of the standard <upstream-name>-<upstream-version>
         # if pristine tarball was retrieve remotely (vcs frontend for example)
-        self.origpath = [d for d in os.listdir(self._tmpdir)
-                         if osp.isdir(osp.join(self._tmpdir,d))][0]
+        self.origpath = [d for d in os.listdir(tmpdir)
+                         if osp.isdir(osp.join(tmpdir,d))][0]
 
         format = "%s-%s" % (self.get_upstream_name(), self.get_upstream_version())
         if self.origpath != format:
@@ -428,12 +413,12 @@ class SetupInfo(clcommands.Command):
         # directory containing the debianized source tree
         # (i.e. with a debian sub-directory and maybe changes to the original files)
         # origpath is depending of the upstream convention
-        self.origpath = osp.join(self._tmpdir, self.origpath)
+        self.origpath = osp.join(tmpdir, self.origpath)
 
         # support of the multi-distribution
-        return self.manage_current_distribution()
+        return self.manage_current_distribution(current_distrib)
 
-    def manage_current_distribution(self):
+    def manage_current_distribution(self, distrib):
         """manage debian files depending of the current distrib from options
 
         We copy debian_dir directory into tmp build depending of the target distribution
@@ -452,7 +437,7 @@ class SetupInfo(clcommands.Command):
         except IOError, err:
             raise LGPException(err)
 
-        debian_dir = self.get_debian_dir()
+        debian_dir = self.get_debian_dir(distrib)
         if debian_dir != "debian":
             logging.info("overriding files from '%s' directory..." % debian_dir)
             # don't forget the final slash!
@@ -462,9 +447,9 @@ class SetupInfo(clcommands.Command):
         # substitute distribution string in file only if line not starting by
         # spaces (simple heuristic to prevent other changes in content)
         # FIXME use "from debian.changelog import Changelog" instead
-        if self.current_distrib:
+        if distrib:
             cmd = ['sed', '-i', '/^[[:alpha:]]/s/\([[:alpha:]]\+\);/%s;/'
-                   % self.current_distrib, osp.join(self.origpath, 'debian', 'changelog')]
+                   % distrib, osp.join(self.origpath, 'debian', 'changelog')]
             try:
                 check_call(cmd, stdout=sys.stdout)
             except CalledProcessError, err:
