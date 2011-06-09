@@ -110,9 +110,6 @@ class SetupInfo(clcommands.Command):
                      'help': "dump lgp configuration (debugging purpose)",
                      'group': 'Debug'
                     }),
-                   ('version',
-                    {'help': "output version information and exit",
-                    }),
                    # Internal lgp structures
                    ('_package',
                     {'hide': True,
