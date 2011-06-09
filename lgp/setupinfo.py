@@ -99,14 +99,6 @@ class SetupInfo(clcommands.Command):
                  'help': "specifies the location of base.tgz used by pbuilder",
                  'group': 'Pbuilder',
                 }),
-               ('builder-flavour',
-                {'default': "pbuilder",
-                 'dest': "builder_flavour",
-                 'help': ("choose build method: pbuilder, debuild, fakeroot "
-                          "or user-defined (default: pbuilder)"),
-                 'group': 'Expert',
-                 'hide': True,
-                }),
               ]
 
     def __init__(self, logger=None, config=None):
