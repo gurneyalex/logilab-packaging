@@ -29,7 +29,7 @@ from glob import glob
 import warnings
 import ConfigParser
 
-from logilab.devtools import BASE_EXCLUDE, templates
+from logilab.devtools import BASE_EXCLUDE, __path__
 from logilab.devtools.lgp import LGP, LGP_CONFIG_FILE, utils
 from logilab.devtools.lgp.setupinfo import SetupInfo
 from logilab.devtools.lgp.exceptions import LGPException
@@ -99,7 +99,7 @@ def _check_template(checker, filename, templatename):
     if not exists(filename):
         checker.logger.warn('%s missing' % filename)
         return NOK
-    template = open(join(templates.__path__[0], templatename)).read()
+    template = open(join(__path__[0], 'templates', templatename)).read()
     template = REV_LINE.sub('', template)
     actual = open(filename).read()
     actual = REV_LINE.sub('', actual)
