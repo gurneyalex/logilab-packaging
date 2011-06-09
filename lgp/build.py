@@ -261,7 +261,6 @@ class Builder(SetupInfo):
         os.chdir(tmpdir)
         if format == "1.0":
             arguments+='--no-copy'
-
         self.logger.info("Debian source package (format: %s) for '%s'" % (format, current_distrib))
         # change directory to build source package
         try:
@@ -273,18 +272,16 @@ class Builder(SetupInfo):
             raise LGPCommandException(msg, err)
         dscfile = osp.abspath(glob('*.dsc').pop())
         assert osp.isfile(dscfile)
-
         msg = "create Debian source package files (.dsc, .diff.gz): %s"
         self.logger.info(msg % osp.basename(dscfile))
-
         # move Debian source package files and exit if asked by command-line
         if self.config.deb_src_only:
             resultdir = self.get_distrib_dir(current_distrib)
             self.move_package_files([self.dscfile], resultdir, verbose=self.config.deb_src_only)
             return self.destroy_tmp_context()
-
         # restore directory context
         os.chdir(self.config.pkg_dir)
+        return dscfile
 
     def _builder_command(self, build_vars):
         # TODO Manage DEB_BUILD_OPTIONS

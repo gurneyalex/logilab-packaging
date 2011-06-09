@@ -26,8 +26,8 @@ class BuildTC(TestCase):
             tgz = builder.make_orig_tarball(tmpdir)
             self.assertTrue(os.path.exists(tgz))
             with tempdir(False) as tmpdir2:
-                builder.make_debian_source_package('sid', tmpdir=tmpdir2)
-                self.assertTrue(os.path.exists(os.path.join(tmpdir2, 'test_1-1.dsc')))
+                dscfile = builder.make_debian_source_package('sid', tmpdir=tmpdir2)
+                self.assertTrue(os.path.exists(dscfile))
 
     def test_make_tarball_rev2(self):
         os.chdir(os.path.join(os.path.dirname(__file__), 'data/packages/next'))
