@@ -111,15 +111,6 @@ class SetupInfo(clcommands.Command):
                      'group': 'Debug'
                     }),
                    # Internal lgp structures
-                   ('_package',
-                    {'hide': True,
-                    }),
-                   ('pkg_dir',
-                    {'type': 'string',
-                     'hide': True,
-                     'dest': "pkg_dir",
-                     'metavar' : "<root of the debian project directory>",
-                    }),
                    ('setup-file',
                     {'type': 'string',
                      'dest': 'setup_file',
@@ -157,6 +148,8 @@ class SetupInfo(clcommands.Command):
         super(SetupInfo, self).__init__(logger)
         if config:
             self.config._update(vars(config), mode="careful")
+        self.config.pkg_dir = None
+        self.config._package = None
         self._set_package_format()
 
     def main_run(self, arguments, rcfile):
