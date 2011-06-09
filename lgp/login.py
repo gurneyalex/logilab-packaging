@@ -39,9 +39,8 @@ class Login(SetupInfo):
                  'help': "mount compilation results directory"
                })
               ]
-    cmd = ("IMAGE=%s DIST=%s ARCH=%s %s %s --configfile %s "
-           "--hookdir %s --bindmounts %s --othermirror %s "
-           "--override-config")
+    cmd = ("%s %s --configfile %s  --hookdir %s --bindmounts %s"
+           "--othermirror %s  --override-config")
     pbuilder_cmd = "/usr/sbin/pbuilder %s" % name
     sudo_cmd = "/usr/bin/sudo -E"
 
@@ -54,9 +53,8 @@ class Login(SetupInfo):
     def _prune_pkg_dir(self):
         pass
 
-    @property
-    def other_mirror(self):
-        dirname, basename = os.path.split(self.get_distrib_dir())
+    def other_mirror(self, resultdir):
+        dirname, basename = os.path.split(self.get_distrib_dir(resultdir))
         return "'deb file://%s %s/'" % (dirname, basename)
 
     def guess_environment(self):
@@ -70,9 +68,10 @@ class Login(SetupInfo):
             for distrib in self.distributions:
                 image = self.get_basetgz(distrib, arch)
 
-                cmd = self.cmd % (image, distrib, arch, self.sudo_cmd,
-                                  self.pbuilder_cmd, CONFIG_FILE, HOOKS_DIR,
-                                  self.get_distrib_dir(), self.other_mirror)
+                resultdir = self.get_distrib_dir(distrib)
+                other_mirror = self.other_mirror(resultdir)
+                cmd = self.cmd % (self.sudo_cmd, self.pbuilder_cmd, CONFIG_FILE,
+                                  HOOKS_DIR, resultdir, other_mirror)
 
                 logging.info("login into '%s/%s' image" % (distrib, arch))
                 logging.debug("run command: %s", cmd)
@@ -80,7 +79,7 @@ class Login(SetupInfo):
                     check_call(cmd, shell=True,
                                env={'DIST': distrib, 'ARCH': arch, 'IMAGE': image,
                                     'DISPLAY': os.environ.get('DISPLAY', ""),
-                                    'OTHERMIRROR': self.other_mirror})
+                                    'OTHERMIRROR': other_mirror})
                 except CalledProcessError, err:
                     logging.warn("returned non-zero exit status %s",
                                  err.returncode)
