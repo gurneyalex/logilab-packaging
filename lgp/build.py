@@ -85,13 +85,6 @@ class Builder(SetupInfo):
                  'help': "obtain a debian source package without build",
                  'group': 'Debian'
                 }),
-               ('get-orig-source',
-                {'action': 'store_true',
-                 'default': False,
-                 'dest' : "get_orig_source",
-                 'help': "create a reasonable upstream tarball",
-                 'group': 'Pristine'
-                }),
                ('hooks',
                 {'type': 'string',
                  'default': '', # check if new HOOKS_DIR
@@ -245,10 +238,6 @@ class Builder(SetupInfo):
             raise LGPException(err)
         assert osp.isfile(tarball), 'Debian source archive (pristine tarball) not found'
 
-        # move pristine tarball and exit if asked by command-line
-        if self.config.get_orig_source:
-            self.move_package_files([self.config.orig_tarball],
-                                    verbose=self.config.get_orig_source)
         return self.config.orig_tarball
 
     def make_debian_source_package(self, current_distrib, tmpdir='.'):
@@ -517,10 +506,6 @@ class Builder(SetupInfo):
                     self.logger.info("Debian source control file: %s"
                                      % copied_filename)
                     _sign_file(fullpath)
-            if filename.endswith('.orig.tar.gz'):
-                if self.config.get_orig_source:
-                    self.logger.info('a new original source archive (tarball) '
-                                     'is available: %s' % copied_filename)
             if filename.endswith('.log'):
                 self.logger.info("a build logfile is available: %s" % copied_filename)
             if filename.endswith('.changes'):
