@@ -19,6 +19,7 @@ class BuildTC(TestCase):
     def test_make_tarball_rev1(self):
         os.chdir(os.path.join(os.path.dirname(__file__), 'data/packages/first'))
         builder = build.Builder()
+        builder._set_package_format()
 
         with tempdir(False) as tmpdir:
             tgz = builder.make_orig_tarball(tmpdir)
@@ -27,6 +28,7 @@ class BuildTC(TestCase):
     def test_make_tarball_rev2(self):
         os.chdir(os.path.join(os.path.dirname(__file__), 'data/packages/next'))
         builder = build.Builder()
+        builder._set_package_format()
 
         with self.assertRaises(LGPException):
             with tempdir(False) as tmpdir:

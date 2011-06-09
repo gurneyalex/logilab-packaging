@@ -150,8 +150,6 @@ class SetupInfo(clcommands.Command):
         if config:
             self.config._update(vars(config), mode="careful")
         self.config.pkg_dir = None
-        self.config._package = None
-        self._set_package_format()
 
     def main_run(self, arguments, rcfile):
         # Load the global settings for lgp
@@ -184,7 +182,6 @@ class SetupInfo(clcommands.Command):
 
         self.check_args(arguments)
         self.go_into_package_dir(arguments)
-        # we set the package for the main object and in __init__
         self._set_package_format()
         self.guess_environment()
         # Some package formats expect a clean state with no troubling file
@@ -240,24 +237,24 @@ class SetupInfo(clcommands.Command):
             # Logilab's specific format
             # FIXME Format is buggy if setup_file was set to 'setup.py'
             from logilab.devtools.lib import TextReporter
-            self._package = PackageInfo(reporter=TextReporter(file(os.devnull, "w+")),
-                                        directory=self.config.pkg_dir)
+            self.config._package = PackageInfo(reporter=TextReporter(file(os.devnull, "w+")),
+                                               directory=self.config.pkg_dir)
             assert osp.isfile('setup.py'), "setup.py is still mandatory"
         # other script can be used if compatible with the expected targets in COMMANDS
         elif osp.isfile(setup_file):
             if osp.basename(setup_file) == 'setup.py':
                 # case for python project (distutils, setuptools)
-                self._package = run_setup(setup_file, None, stop_after="init")
+                self.config._package = run_setup(setup_file, None, stop_after="init")
             else:
                 # generic case: the setup file should only honor targets as:
                 # sdist, project, version, clean (see COMMANDS)
-                self._package = file(setup_file)
+                self.config._package = file(setup_file)
                 if not os.stat(setup_file).st_mode & stat.S_IEXEC:
                     raise LGPException('setup file %s has no execute permission'
                                        % setup_file)
         else:
             class debian(object): pass
-            self._package = debian()
+            self.config._package = debian()
         logging.debug("use setup package class format: %s" % self.package_format)
 
     def _prune_pkg_dir(self):
@@ -283,7 +280,7 @@ class SetupInfo(clcommands.Command):
 
     @property
     def package_format(self):
-        return self._package.__class__.__name__
+        return self.config._package.__class__.__name__
 
     def _run_command(self, cmd, **args):
         """run an internal declared command as new subprocess"""
