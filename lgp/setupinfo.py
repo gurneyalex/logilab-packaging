@@ -154,7 +154,8 @@ class SetupInfo(clcommands.Command):
                      'group': 'Logging',
                     }),
                   ]
-        self.options.extend(options) # merge parent options
+        # merge parent options without modifying the class attribute
+        self.options = self.options + options
         logger = logging.getLogger(self.name)
         super(SetupInfo, self).__init__(logger)
         if config:
