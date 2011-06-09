@@ -201,19 +201,6 @@ def guess_debian_source_format():
     except:
         return "1.0"
 
-def cached(func):
-    """run a function only once and return always the same cache
-
-       This decorator is used to reduce the overheads due to many system calls
-    """
-    def decorated(*args, **kwargs):
-        try:
-            return decorated._once_result
-        except AttributeError:
-            decorated._once_result = func(*args, **kwargs)
-            return decorated._once_result
-    return decorated
-
 def wait_jobs(joblist, print_dots=True):
     t0 = time.time()
     status = 0
