@@ -35,6 +35,7 @@ from logilab.common import clcommands
 from logilab.common.logging_ext import ColorFormatter
 from logilab.common.shellutils import cp
 from logilab.common.fileutils import export
+from logilab.common.decorators import cached
 
 from logilab.devtools.lib.pkginfo import PackageInfo
 from logilab.devtools.lgp import LOG_FORMAT, utils
@@ -344,7 +345,7 @@ class SetupInfo(clcommands.Command):
 
     get_debian_name = staticmethod(utils.get_debian_name)
 
-    @utils.cached
+    @cached
     def get_debian_version(self):
         """get upstream and debian versions depending of the last changelog entry found in Debian changelog
         """
@@ -367,11 +368,11 @@ class SetupInfo(clcommands.Command):
             debian_revision = "0"
         return debian_revision in ['0', '1'] # or debian_revision.startswith(('0+', '1+')):
 
-    @utils.cached
+    @cached
     def get_upstream_name(self):
         return self._run_command('project')
 
-    @utils.cached
+    @cached
     def get_upstream_version(self):
         version = self._run_command('version')
         if '-' in version and self.package_format == 'debian':
