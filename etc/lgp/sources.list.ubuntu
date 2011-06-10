@@ -14,5 +14,5 @@
 deb http://security.ubuntu.com/ubuntu ${DIST}-security main restricted
 deb http://archive.ubuntu.com/ubuntu ${DIST}-updates main restricted
 
-# Logilab repository (http://www.logilab.org/card/LogilabDebianRepository)
-#deb http://download.logilab.org/dists ${DIST}/
+# Logilab acceptance repository (http://www.logilab.org/card/LogilabDebianRepository)
+#deb http://download.logilab.org/acceptance ${DIST}/
