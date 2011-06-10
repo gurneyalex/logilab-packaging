@@ -66,5 +66,4 @@ LGP = LGPCommandLine('lgp', doc=description, rcfile=LGP_CONFIG_FILE,
                      version=version)
 
 
-__all__ = ['LGP', 'clean', 'build', 'check', 'tag', 'setup',
-           'login', 'script']
+__all__ = ['LGP', 'clean', 'build', 'check', 'tag', 'setup', 'shell']
