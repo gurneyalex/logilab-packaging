@@ -63,7 +63,7 @@ class LGPCommandLine(cli.CommandLine):
 
 
 LGP = LGPCommandLine('lgp', doc=description, rcfile=LGP_CONFIG_FILE,
-                     version=version)
+                     version=version, logthreshold=logging.INFO)
 
 
 __all__ = ['LGP', 'clean', 'build', 'check', 'tag', 'setup', 'shell']
