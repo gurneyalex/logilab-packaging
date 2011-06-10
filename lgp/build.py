@@ -149,12 +149,13 @@ class Builder(SetupInfo):
 
             try:
                 for distrib in  self.distributions:
-                    # create a debian source package
-                    self.make_debian_source_package(distrib)
-                    if self.make_debian_binary_package(distrib):
-                        # do post-treatments only for a successful binary build
-                        if self.packages and self.config.post_treatments:
-                            self.run_post_treatments(distrib)
+                    with tempdir(self.config.keep_tmpdir) as dsc_tmpdir:
+                        # create a debian source package
+                        dscfile = self.make_debian_source_package(distrib, dsc_tmpdir)
+                        if self.make_debian_binary_package(distrib, dscfile):
+                            # do post-treatments only for a successful binary build
+                            if self.packages and self.config.post_treatments:
+                                self.run_post_treatments(distrib)
                 # report files to the console
                 if self.packages:
                     self.logger.info("recent files from build:\n* %s"
@@ -283,13 +284,13 @@ class Builder(SetupInfo):
         os.chdir(self.config.pkg_dir)
         return dscfile
 
-    def _builder_command(self, build_vars):
+    def _builder_command(self, build_vars, dscfile):
         # TODO Manage DEB_BUILD_OPTIONS
         # http://www.debian.org/doc/debian-policy/ch-source.html
         debuilder = os.environ.get('DEBUILDER', 'pbuilder')
         self.logger.debug("package builder flavour: '%s'" % debuilder)
         if debuilder == 'pbuilder':
-            assert osp.isfile(self.dscfile)
+            assert osp.isfile(dscfile)
             # TODO encapsulate builder logic into specific InternalBuilder class
             cmd = ['sudo', 'IMAGE=%(image)s' % build_vars,
                    'DIST=%(distrib)s' % build_vars,
@@ -303,7 +304,7 @@ class Builder(SetupInfo):
                 cmd.extend(['--debbuildopts', "%(buildopts)s" % build_vars])
             if self.config.hooks != "no":
                 cmd.extend(['--hookdir', HOOKS_DIR])
-            cmd.append(self.dscfile)
+            cmd.append(dscfile)
         elif debuilder == 'debuild':
             os.chdir(self.origpath)
             cmd = ['debuild', '--no-tgz-check', '--no-lintian',
@@ -315,7 +316,7 @@ class Builder(SetupInfo):
             cmd = debuilder.split()
         return cmd
 
-    def make_debian_binary_package(self, distrib):
+    def make_debian_binary_package(self, distrib, dscfile):
         """create debian binary package(s)
 
         virtualize/parallelize the binary package build process
@@ -335,7 +336,7 @@ class Builder(SetupInfo):
             # change directory context at each binary build
             tmplist.append(self.create_tmp_context())
 
-            cmd = self._builder_command(build)
+            cmd = self._builder_command(build, dscfile)
             # TODO manage handy --othermirror to use local mirror
             #cmd.append(['--othermirror', "deb file:///home/juj/dists %s/" % build['distrib']])
             self.logger.info("building binary debian package for '%s/%s' "
