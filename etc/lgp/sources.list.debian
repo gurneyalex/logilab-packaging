@@ -11,5 +11,5 @@
 # MIRRORSITE
 # Internally, lgp set OTHERMIRROR pbuilder variable
 
-# Logilab repository (http://www.logilab.org/card/LogilabDebianRepository)
-#deb http://download.logilab.org/dists ${DIST}/
+# Logilab acceptance repository (http://www.logilab.org/card/LogilabDebianRepository)
+#deb http://download.logilab.org/acceptance ${DIST}/
