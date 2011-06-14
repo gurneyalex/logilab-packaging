@@ -4,7 +4,8 @@ Priority: optional
 Maintainer: Logilab S.A. <contact@logilab.fr>
 Uploaders: Alexandre Fayolle <afayolle@debian.org>,
            Adrien Di Mascio <adrien.dimascio@logilab.fr>,
-           Julien Jehannet <julien.jehannet@logilab.fr>
+           Julien Jehannet <julien.jehannet@logilab.fr>,
+           Julien Cristau <jcristau@debian.org>
 Build-Depends: debhelper (>= 7.0), python-all-dev
 Build-Depends-Indep: python-support
 Standards-Version: 3.8.0
