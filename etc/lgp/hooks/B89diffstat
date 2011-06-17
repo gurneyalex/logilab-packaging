@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/sh -x
 
 # Debian specific diff statistics
 apt-get install -y --force-yes diffstat >/dev/null 2>&1
