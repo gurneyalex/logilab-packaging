@@ -1,8 +1,9 @@
 #!/usr/bin/python
 
 import os
+import tempfile
 
-from logilab.common.testlib import TestCase, unittest_main
+from logilab.common.testlib import TestCase, unittest_main, within_tempdir
 
 from logilab.devtools.lgp.utils import tempdir
 from logilab.devtools.lgp.exceptions import LGPException
@@ -37,6 +38,20 @@ class BuildTC(TestCase):
         with self.assertRaises(LGPException):
             with tempdir(False) as tmpdir:
                 builder.make_orig_tarball(tmpdir)
+
+
+class PostTreatmentTC(TestCase):
+
+    @within_tempdir
+    def test_post_treatments(self):
+        builder = build.Builder()
+        resultdir = tempfile.gettempdir()
+        builder.config.dist_dir = resultdir
+        package_file = os.path.join(resultdir, "lenny", "Packages.gz")
+        self.assertFalse(os.path.isfile(package_file))
+        builder.run_post_treatments("lenny")
+        self.assertTrue(os.path.isfile(package_file))
+
 
 if __name__ == '__main__':
     unittest_main()
