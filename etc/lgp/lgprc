@@ -14,21 +14,8 @@ basetgz=/var/cache/lgp/buildd
 # Specific options are added. See lgp build --help
 [BUILD]
 
-# use an alternate setup file with Lgp expected arguments (see documentation)
-#setup-file=setup.mk
-
 # where to put compilation results
 result=~/dists
-
-# try to sign Debian package(s) just built by lgp
-#sign=no
-
-# run pbuilder hooks series from '/var/lib/logilab-packaging/hooks'
-#hooks=no
-
-# run internal post-treatments:
-# - add trivial repository in `result` directory after build
-#post-treatments=no
 
 
 
@@ -65,3 +52,28 @@ logilab=$upstream, $debian
 # list of tag templates to apply
 # template=$version
 template=$logilab
+
+
+
+[DEBIAN]
+# try to sign Debian package(s) just built
+#sign=no
+
+# run embedded post-treatments: add trivial repository
+#post-treatments=no
+
+
+
+[EXPERT]
+# use an alternate setup file with Lgp expected targets
+#setup-file=
+
+
+
+[PBUILDER]
+# specifies the location of base.tgz used by pbuilder
+basetgz=/var/cache/lgp/buildd
+
+# run pbuilder hooks in '/var/lib/logilab-packaging/hooks'
+#hooks=
+
