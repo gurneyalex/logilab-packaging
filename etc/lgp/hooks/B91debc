@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/sh -x
 
 # raise an error if a file is missing
 set -e

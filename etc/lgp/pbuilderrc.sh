@@ -114,7 +114,6 @@ if mountpoint $BUILDPLACE >/dev/null; then
 else
 	: ${APTCACHEHARDLINK:="yes"}
 fi
-: ${BUILDPLACE:="/var/cache/pbuilder/build/${DIST}/dists/"}
 
 # BINDMOUNTS is a space separated list of things to mount inside the chroot.
 BINDMOUNTS="${BINDMOUNTS} /sys /dev"
@@ -148,10 +147,8 @@ PKGNAME_LOGFILE=yes
 # No debconf interaction with user by default
 export DEBIAN_FRONTEND=${DEBIAN_FRONTEND:="noninteractive"}
 
-# Set the PATH I am going to use inside pbuilder
+# Set PATH used inside pbuilder image
 #export PATH="/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/X11R6/bin"
-# Set informative prompt
-#export PS1="(lgp) ${DIST}/${ARCH} \$ "
 # SHELL variable is used inside pbuilder by commands like 'su'; and they need sane values
 export SHELL="/bin/sh"
 export TERM=linux
