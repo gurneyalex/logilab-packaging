@@ -550,12 +550,12 @@ class Builder(SetupInfo):
             self.config.distrib = 'all'
         super(Builder, self).guess_environment()
 
-    def run_post_treatments(self):
+    def run_post_treatments(self, distrib):
         """ Run actions after package compiling """
         # dpkg-scanpackages i386 /dev/null | gzip -9c > 386/Packages.gz
         # dpkg-scanpackages amd64 /dev/null | gzip -9c > amd64/Packages.gz
         # dpkg-scansources source /dev/null | gzip -9c > source/Sources.gz
-        resultdir = self.get_distrib_dir()
+        resultdir = self.get_distrib_dir(distrib)
         packages_file = osp.join(resultdir, "Packages.gz")
         try:
             cmd = "cd %s && dpkg-scanpackages -m %s /dev/null 2>/dev/null | gzip -9c > %s"
