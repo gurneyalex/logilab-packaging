@@ -26,8 +26,6 @@ import itertools
 import subprocess
 from os.path import basename, join, exists, isdir, isfile
 from glob import glob
-import warnings
-import ConfigParser
 
 from logilab.devtools import BASE_EXCLUDE, __path__
 from logilab.devtools.lgp import LGP, LGP_CONFIG_FILE, utils
@@ -532,33 +530,16 @@ def check_manifest_in(checker):
 
 def check_debsign(checker):
     """check requirements (~/.devscripts or gpg-agent) to sign packages"""
-    config = ConfigParser.ConfigParser()
-    config_sign = "no"
-    try:
-        config.readfp(open(LGP_CONFIG_FILE))
-        msg = 'retrieve sign option value from %s: "sign=%s"'
-        if config.has_option("BUILD", "sign"):
-            config_sign = config.get("BUILD", "sign")
-            warnmsg = "Please, move 'sign=%s' option into new [DEBIAN] section"
-            warnings.warn(warnmsg % config_sign, DeprecationWarning)
-        if config.has_option("DEBIAN", "sign"):
-            config_sign = config.get("DEBIAN", "sign")
-        checker.logger.debug(msg % (LGP_CONFIG_FILE, config_sign))
-    except IOError:
-        return OK # no config file
+    if not getattr(checker.config, 'sign', True):
+        return OK
 
-    enabled = config_sign[0].lower() == "y"
-    if getattr(checker.config, "sign", None):
-        enabled = True
-
-    if enabled:
-        if not os.path.exists(os.path.expanduser("~/.devscripts")):
-            msg = "please, export your DEBSIGN_KEYID in ~/.devscripts (read `debsign` manual)"
-            checker.logger.error(msg)
-            return NOK
-        if 'GPG_AGENT_INFO' not in os.environ:
-            checker.logger.error('enable your gpg-agent to sign packages automatically')
-            return NOK
+    if not os.path.exists(os.path.expanduser("~/.devscripts")):
+        msg = "please, export your DEBSIGN_KEYID in ~/.devscripts (read `debsign` manual)"
+        checker.logger.error(msg)
+        return NOK
+    if 'GPG_AGENT_INFO' not in os.environ:
+        checker.logger.error('enable your gpg-agent to sign packages automatically')
+        return NOK
     return OK
 
 def check_package_info(checker):
