@@ -23,7 +23,7 @@ import sys
 import commands
 import logging
 import itertools
-from subprocess import call
+import subprocess
 from os.path import basename, join, exists, isdir, isfile
 from glob import glob
 import warnings
@@ -449,7 +449,7 @@ def check_makefile(checker):
     if status:
         for cmd in ['%s project', '%s version']:
             cmd %= setup_file
-            if call(cmd.split()):
+            if subprocess.call(cmd.split()):
                 checker.logger.error("%s not a valid command" % cmd)
             status = NOK
     return status
@@ -565,7 +565,7 @@ def check_package_info(checker):
     """check package information"""
     status = OK
     if hasattr(checker, "_package") and checker.package_format == "PackageInfo":
-        if call(['python', '__pkginfo__.py']):
+        if subprocess.call(['python', '__pkginfo__.py']):
             checker.logger.warn('command "python __pkginfo__.py" returns errors')
     else:
         return status
@@ -586,6 +586,14 @@ def check_package_info(checker):
 def check_pkginfo_copyright(checker):
     """check copyright header"""
     cmd = 'grep -EHnori "copyright.*[[:digit:]]{4}-.* LOGILAB S.A." * | grep -v $(date +%Y)'
-    if not call(cmd, shell=True):
+    grep = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    (out, err) = grep.communicate()
+    if out:
+        checker.logger.warn(out.strip())
         checker.logger.warn('check copyright header of these previous files')
+    if err:
+        checker.logger.warn(err.strip())
+    if grep.wait() >= 2:
+        checker.logger.error('grep failed with exit status %d' % grep.wait())
+        return NOK
     return OK
