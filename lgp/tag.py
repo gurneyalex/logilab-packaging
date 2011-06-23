@@ -105,8 +105,8 @@ class Tagger(SetupInfo):
                         new_tags = config.get("TAG", tag.lstrip('$')).split(',')
                         # XXX white-spaces are stripped later but will be printed here
                         if new_tags:
-                            self.logger.info("template '%s' expanded to: '%s'"
-                                             % (tag, ", ".join(new_tags)))
+                            self.logger.debug("template '%s' expanded to: '%s'"
+                                              % (tag, ", ".join(new_tags)))
                             tags.extend(new_tags)
                             self.logger.debug("pending templates:\n* %s" % "\n* ".join(tags))
                             continue
