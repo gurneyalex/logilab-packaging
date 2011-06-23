@@ -45,16 +45,6 @@ class LGPCommandLine(cli.CommandLine):
 
         :returns: unix error code
         """
-        # Instanciate the default logger configuration
-        # Note: not use lgc.logging_ext at the moment
-        # FIXME when using logging.conf
-        handlers = logging.getLogger().handlers
-        assert len(handlers)==0, 'Lgp cannot manage several handlers...'
-        logging.getLogger().name = self.pgm
-        console = logging.StreamHandler()
-        logging.getLogger().addHandler(console)
-        logging.getLogger().setLevel(logging.INFO)
-        console.setFormatter(logging.Formatter(LOG_FORMAT))
         try:
             super(LGPCommandLine, self).run(args)
         except LGPException, exc:
