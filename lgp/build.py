@@ -98,6 +98,7 @@ class Builder(SetupInfo):
                  'default': False,
                  'short': 's',
                  'dest' : "sign",
+                 'metavar' : '<yes|no>',
                  'help': "try to sign Debian package(s) just built",
                  'group': 'Debian'
                 }),
@@ -436,7 +437,7 @@ class Builder(SetupInfo):
         assert isinstance(filelist, list), "must be a list to be able to extend"
 
         def _sign_file(filename):
-            if self.config.sign and self.config.sign.lower() == "yes":
+            if self.config.sign:
                 check_debsign(self)
                 try:
                     check_call(["debsign", filename], stdout=sys.stdout)
