@@ -228,7 +228,7 @@ class Checker(SetupInfo):
                           % [f.__name__ for f in checklist])
         for func in self.checklist:
             loggername = func.__name__
-            loggername = loggername.replace('_', ':', 1)
+            loggername = loggername.replace('_', '.', 1)
             self.logger = logging.getLogger(loggername)
 
             result = func(self)
