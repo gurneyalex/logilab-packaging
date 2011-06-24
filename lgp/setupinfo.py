@@ -23,7 +23,6 @@ import stat
 import os.path as osp
 import logging
 import time
-import urllib
 import tempfile
 from string import Template
 from distutils.core import run_setup
@@ -493,14 +492,14 @@ class SetupInfo(clcommands.Command):
 
     def _normpath(self, path):
         """helper method to normalize filepath arguments before
-        changing current directorty (will return absolute paths)
+        changing current directory (will return absolute paths)
 
         XXX could be coded directly by option checker (optparse)
         """
         if path:
             assert self.old_current_directory
             path = osp.abspath(osp.join(self.old_current_directory,
-                                          osp.expanduser(path)))
+                                        osp.expanduser(path)))
             if not osp.exists(path):
                 msg = "file given in command line cannot be found:\n\t%s"
                 raise LGPException(msg % path)
