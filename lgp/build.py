@@ -196,8 +196,8 @@ class Builder(SetupInfo):
             try:
                 cmd = ["uscan", "--noconf", "--download-current-version"]
                 check_call(cmd, stderr=file(os.devnull, "w"))
-                assert osp.isfile(tarball)
-                self.config.orig_tarball = osp.abspath(tarball)
+                assert osp.isfile(osp.join('..', tarball))
+                self.config.orig_tarball = osp.abspath(osp.join('..', tarball))
             except CalledProcessError, err:
                 self.logger.warn("run '%s' without success" % ' '.join(cmd))
 
