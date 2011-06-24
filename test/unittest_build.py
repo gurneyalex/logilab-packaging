@@ -9,6 +9,8 @@ from logilab.devtools.lgp.utils import tempdir
 from logilab.devtools.lgp.exceptions import LGPException
 from logilab.devtools.lgp import build
 
+from logilab.devtools.lgp.check import check_debsign
+
 class BuildTC(TestCase):
 
     def setUp(self):
@@ -52,6 +54,16 @@ class PostTreatmentTC(TestCase):
         builder.run_post_treatments("lenny")
         self.assertTrue(os.path.isfile(package_file))
 
+class SignTC(TestCase):
+    def test_check_sign(self):
+        builder = build.Builder()
+        builder.load_command_line_configuration(['--sign=no'])
+        self.assertFalse(builder.config.sign)
+        builder.load_command_line_configuration(['--sign=yes'])
+        self.assertTrue(builder.config.sign)
+        if 'GPG_AGENT_INFO' in os.environ:
+            del os.environ['GPG_AGENT_INFO']
+        self.assertTrue(check_debsign(builder) == 0)
 
 if __name__ == '__main__':
     unittest_main()
