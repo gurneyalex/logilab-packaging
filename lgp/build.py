@@ -167,6 +167,8 @@ class Builder(SetupInfo):
                     import traceback
                     self.logger.critical(traceback.format_exc())
                 raise exc
+            finally:
+                self.destroy_tmp_context()
             return self.build_status
 
     def make_orig_tarball(self, tmpdir=None):
