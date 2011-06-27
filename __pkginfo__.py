@@ -17,7 +17,7 @@
 
 modname = 'devtools'
 distname = 'logilab-devtools'
-numversion = (0, 18, 0)
+numversion = (0, 18, 1)
 version = '.'.join([str(num) for num in numversion])
 
 license = 'GPL'
@@ -31,9 +31,12 @@ mailinglist = "mailto://python-projects@lists.logilab.org"
 
 subpackage_of = 'logilab'
 
-from os.path import join
+from os.path import join, isdir
 
 include_dirs = ['templates', join('test', 'data')]
+
+if isdir('narval'):
+    data_files = [[join('var', 'lib', 'narval', 'plugins'), [join('narval', 'lgp.py')]]]
 
 scripts = [
     # logilab-packaging
