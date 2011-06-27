@@ -215,7 +215,7 @@ class SetupInfo(clcommands.Command):
             self.logger.warn('the "all" keyword can be confusing about the '
                              'targeted architectures. Consider using the "any" keyword '
                              'to force the build on all architectures or let lgp finds '
-                             'the value in debian/changelog by itself in doubt.')
+                             'the value in debian/control by itself in doubt.')
             self.logger.warn('lgp replaces the "all" architecture value by "current" in the build')
 
         # Define mandatory attributes for lgp commands
@@ -266,7 +266,7 @@ class SetupInfo(clcommands.Command):
             spurious = "%s-%s" % (self.get_upstream_name(), self.get_upstream_version())
             if os.path.isdir(spurious):
                 import shutil
-                self.logger.warn("remove spurious temporarly directory '%s' built by distutils" % spurious)
+                self.logger.warn("remove spurious temporary directory '%s' built by distutils" % spurious)
                 shutil.rmtree(spurious)
 
     @property
