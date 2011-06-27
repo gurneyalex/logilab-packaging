@@ -43,25 +43,25 @@ from logilab.devtools.lgp.exceptions import LGPException, LGPCommandException
 
 COMMANDS = {
         "sdist" : {
-            "file": './$setup dist-gzip -e DIST_DIR=$dist_dir',
+            "file": '$setup dist-gzip -e DIST_DIR=$dist_dir',
             "Distribution": 'python setup.py -q sdist -d $dist_dir',
             "PackageInfo": 'python setup.py -q sdist -d $dist_dir',
             "debian": "uscan --noconf --download-current-version --destdir $dist_dir",
         },
         "clean" : {
-            "file": './$setup clean',
+            "file": '$setup clean',
             "Distribution": 'python setup.py clean --all',
             "PackageInfo": 'python setup.py clean --all',
             "debian": "fakeroot debian/rules clean",
         },
         "version" : {
-            "file": './$setup version',
+            "file": '$setup version',
             "Distribution": 'python setup.py --version',
             "PackageInfo": 'python setup.py --version',
             "debian": utils._parse_deb_version,
         },
         "project" : {
-            "file": './$setup project',
+            "file": '$setup project',
             "Distribution": 'python setup.py --name',
             "PackageInfo": 'python setup.py --name',
             "debian": utils._parse_deb_project,
