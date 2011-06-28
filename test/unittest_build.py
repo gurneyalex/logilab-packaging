@@ -1,15 +1,17 @@
 #!/usr/bin/python
 
-import os
+import os, os.path as osp
 import tempfile
+import tarfile
 
 from logilab.common.testlib import TestCase, unittest_main, within_tempdir
 
 from logilab.devtools.lgp.utils import tempdir
-from logilab.devtools.lgp.exceptions import LGPException
+from logilab.devtools.lgp.exceptions import LGPCommandException
 from logilab.devtools.lgp import build
 
 from logilab.devtools.lgp.check import check_debsign
+
 
 class BuildTC(TestCase):
 
@@ -20,26 +22,53 @@ class BuildTC(TestCase):
         os.chdir(self.cwd)
 
     def test_make_tarball_rev1(self):
-        os.chdir(os.path.join(os.path.dirname(__file__), 'data/packages/first'))
+        project_dir = self.datapath('packages/first')
         builder = build.Builder()
-        builder.go_into_package_dir(None)
+        builder.go_into_package_dir([project_dir])
         builder._set_package_format()
 
         with tempdir(False) as tmpdir:
             tgz = builder.make_orig_tarball(tmpdir)
-            self.assertTrue(os.path.exists(tgz))
+            self.assertTrue(osp.exists(tgz))
             with tempdir(False) as tmpdir2:
                 dscfile = builder.make_debian_source_package('sid', tmpdir=tmpdir2)
-                self.assertTrue(os.path.exists(dscfile))
+                self.assertTrue(osp.exists(dscfile))
 
     def test_make_tarball_rev2(self):
-        os.chdir(os.path.join(os.path.dirname(__file__), 'data/packages/next'))
+        project_dir = self.datapath('packages/next')
         builder = build.Builder()
+        builder.go_into_package_dir([project_dir])
         builder._set_package_format()
 
-        with self.assertRaises(LGPException):
+        with self.assertRaises(LGPCommandException):
             with tempdir(False) as tmpdir:
                 builder.make_orig_tarball(tmpdir)
+
+    def test_make_tarball_with_orig(self):
+        project_dir = self.datapath('packages/first')
+        builder = build.Builder()
+        builder.go_into_package_dir([project_dir])
+        builder._set_package_format()
+
+        with tempdir(False) as tmpdir:
+            tgz1 = builder.make_orig_tarball(tmpdir)
+            self.assertTrue(osp.exists(tgz1))
+
+            project_dir = self.datapath('packages/next')
+            builder = build.Builder()
+            builder.go_into_package_dir([project_dir])
+            builder._set_package_format()
+            builder.config.orig_tarball = tgz1
+
+            with tempdir(False) as tmpdir:
+                tgz2 = builder.make_orig_tarball(tmpdir)
+                self.assertFalse(os.system('diff -b %s %s' % (tgz1, tgz2)))
+                self.assertEqual(osp.basename(tgz1), osp.basename(tgz2))
+                tar1 = tarfile.open(tgz1, "r:gz")
+                tar2 = tarfile.open(tgz2, "r:gz")
+
+        self.assertSequenceEqual([(to.name,to.size) for to in tar1.getmembers()],
+                                 [(to.name,to.size) for to in tar2.getmembers()])
 
 
 class PostTreatmentTC(TestCase):
@@ -49,10 +78,11 @@ class PostTreatmentTC(TestCase):
         builder = build.Builder()
         resultdir = tempfile.gettempdir()
         builder.config.dist_dir = resultdir
-        package_file = os.path.join(resultdir, "lenny", "Packages.gz")
-        self.assertFalse(os.path.isfile(package_file))
+        package_file = osp.join(resultdir, "lenny", "Packages.gz")
+        self.assertFalse(osp.isfile(package_file))
         builder.run_post_treatments("lenny")
-        self.assertTrue(os.path.isfile(package_file))
+        self.assertTrue(osp.isfile(package_file))
+
 
 class SignTC(TestCase):
     def test_check_sign(self):
@@ -64,6 +94,7 @@ class SignTC(TestCase):
         if 'GPG_AGENT_INFO' in os.environ:
             del os.environ['GPG_AGENT_INFO']
         self.assertTrue(check_debsign(builder) == 0)
+
 
 if __name__ == '__main__':
     unittest_main()
