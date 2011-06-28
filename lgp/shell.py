@@ -38,11 +38,18 @@ class Shell(SetupInfo):
                  'short': 'c',
                  'metavar': '<command>',
                  'help': 'script to run in pbuilder'
-                }
-               ),
-              ]
+                }),
+               ('result',
+                {'type': 'string',
+                 'default' : '~/dists',
+                 'dest' : "dist_dir",
+                 'short': 'r',
+                 'metavar': "<directory>",
+                 'help': "mount compilation results directory"
+                })
+    ]
     arguments = "[options] [<script> [args...]]"
-    cmd = "%s %s --configfile %s --hookdir %s %s"
+    cmd = "%s %s --configfile %s --hookdir %s --bindmounts %s --othermirror %s --override-config %s"
     pbuilder_cmd = "/usr/sbin/pbuilder %s"
     sudo_cmd = "/usr/bin/sudo -E"
 
@@ -54,6 +61,10 @@ class Shell(SetupInfo):
 
     def _prune_pkg_dir(self):
         pass
+
+    def other_mirror(self, resultdir):
+        dirname, basename = os.path.split(self.get_distrib_dir(resultdir))
+        return "'deb file://%s %s/'" % (dirname, basename)
 
     def run(self, args):
         if not self.config.command and len(args) == 0:
@@ -74,9 +85,11 @@ class Shell(SetupInfo):
         for arch in self.get_architectures():
             for distrib in self.distributions:
                 image = self.get_basetgz(distrib, arch)
+                resultdir = self.get_distrib_dir(distrib)
+                other_mirror = self.other_mirror(resultdir)
 
                 cmd = self.cmd % (self.sudo_cmd, (self.pbuilder_cmd % command), CONFIG_FILE, HOOKS_DIR,
-                                  script + ' '.join(args))
+                                  resultdir, other_mirror, script + ' '.join(args))
 
                 if command == "login":
                     msg = "run shell in %s/%s image" % (distrib, arch)
