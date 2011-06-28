@@ -522,26 +522,6 @@ class Builder(SetupInfo):
             assert osp.exists(copied_filename)
             self.packages.append(copied_filename)
 
-    def get_distrib_dir(self, distrib):
-        """get the dynamic target release directory"""
-        distrib_dir = os.path.normpath(os.path.expanduser(self.config.dist_dir))
-        # special case when current directory is used to put result files ("-r .")
-        if distrib_dir not in ['.', '..']:
-            distrib_dir = os.path.join(distrib_dir, distrib)
-        # check if distribution directory exists, create it if necessary
-        os.umask(0002)
-        try:
-            os.makedirs(distrib_dir, 0755)
-        except OSError, exc:
-            # It's not a problem here to pass silently if the directory
-            # is really existing but fails otherwise
-            if not os.path.isdir(distrib_dir):
-                msg = "not mountable location in chroot: %s"
-                self.logger.warn(msg, distrib_dir)
-            if exc.errno != errno.EEXIST:
-                raise
-        return distrib_dir
-
     def guess_environment(self):
         # normalize pathnames given in parameters
         self.config.orig_tarball = self._normpath(self.config.orig_tarball)
