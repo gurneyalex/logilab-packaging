@@ -171,55 +171,63 @@ class Builder(SetupInfo):
                 self.destroy_tmp_context()
             return self.build_status
 
-    def make_orig_tarball(self, tmpdir=None):
+    def make_orig_tarball(self, tmpdir="."):
         """make upstream pristine tarballs (Debian way)
 
-        Start by calling uscan.
-        If not possible, failback to a local creation
+        Create the tarball from working directory for the initial revision.
+        For later ones call uscan to download the source tarball by looking at
+        debian/watch (if the tarball wasn't passed on the command line).
 
-        A call to move_package_files() will reset instance variable
-        config.orig_tarball to its new name for later reuse
+        Finally copy pristine tarball with expected Debian filename convention.
 
-        See:
-        http://www.debian.org/doc/debian-policy/ch-source.html
-        http://hg.logilab.org/<upstream_name>/archive/<upstream_version>.tar.gz
+        This method is responsible for setting config.orig_tarball to its right
+        location.
+
+        .. see::
+            http://www.debian.org/doc/debian-policy/ch-source.html
         """
         self._check_version_mismatch()
+        if self.config.orig_tarball and self.is_initial_debian_revision():
+            self.logger.error("you are passing a pristine tarball in command "
+                              "line for an initial Debian revision")
 
         fileparts = (self.get_upstream_name(), self.get_upstream_version())
+        # note: tarball format can be guaranteed by uscan's repack option
         tarball = '%s_%s.orig.tar.gz' % fileparts
         upstream_tarball = '%s-%s.tar.gz' % fileparts
 
         # run uscan to download the source tarball by looking at debian/watch
         if self.config.orig_tarball is None and not self.is_initial_debian_revision():
-            self.logger.info('trying to retrieve pristine tarball remotely...')
+            self.logger.info('running uscan to download the source tarball by '
+                             'looking at debian/watch')
             try:
-                cmd = ["uscan", "--noconf", "--download-current-version"]
-                check_call(cmd, stderr=file(os.devnull, "w"))
-                assert osp.isfile(osp.join('..', tarball))
-                self.config.orig_tarball = osp.abspath(osp.join('..', tarball))
+                cmd = ["uscan", "--noconf", "--download-current-version",
+                       "--rename", "--destdir", tmpdir]
+                check_call(cmd)
+                assert osp.isfile(osp.join(tmpdir, tarball))
+                self.config.orig_tarball = osp.abspath(osp.join(tmpdir, tarball))
             except CalledProcessError, err:
                 self.logger.warn("run '%s' without success" % ' '.join(cmd))
 
         if self.config.orig_tarball is None:
             # Make a coherence check about the pristine tarball
             if not self.is_initial_debian_revision():
+                debian_name     = self.get_debian_name()
                 debian_revision = self.get_debian_version().rsplit('-', 1)[1]
                 self.logger.error("Debian source archive (pristine tarball) is required when you "
                                   "don't build the first revision of a debian package "
                                   "(use '--orig-tarball' option)")
                 self.logger.info("If you haven't the original tarball version, you could run: "
-                                 "'apt-get source --tar-only %s'"
-                                 % self.get_debian_name())
+                                 "'apt-get source --tar-only %s'" % debian_name)
                 raise LGPException('unable to build upstream tarball of %s package '
                                    'for Debian revision "%s"'
-                                   % (self.get_debian_name(), debian_revision))
+                                   % (debian_name, debian_revision))
             try:
                 self._run_command("sdist", dist_dir=tmpdir)
             except CalledProcessError, err:
                 self.logger.error("creation of the source archive failed")
-                self.logger.error("check if the version '%s' is really tagged in"\
-                                  " your repository" % self.get_upstream_version())
+                self.logger.error("check if the version '%s' is really tagged in "
+                                  "your repository" % self.get_upstream_version())
                 raise LGPCommandException("source distribution wasn't properly built", err)
             self.config.orig_tarball = osp.join(tmpdir, upstream_tarball)
             msg = "create new Debian source archive (pristine tarball) from working directory: %s"
