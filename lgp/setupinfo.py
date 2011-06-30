@@ -146,9 +146,10 @@ class SetupInfo(clcommands.Command):
         self.options = self.options + options
         logger = logging.getLogger(self.name)
         super(SetupInfo, self).__init__(logger)
+        self.config.pkg_dir = None
+        self.config._package = None
         if config:
             self.config._update(vars(config), mode="careful")
-        self.config.pkg_dir = None
 
     def main_run(self, arguments, rcfile):
         # Load the global settings for lgp
