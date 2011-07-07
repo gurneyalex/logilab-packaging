@@ -14,7 +14,6 @@ STEP_DEBIANPKG = 3
 
 from logilab.devtools.lgp import *
 
-@input('projectenv', 'getattr(elmt, "__regid__", None) == "ProjectEnvironment"')
 @apycot.apycotaction('lgp.check', 'CHECKEDOUT in elmt.done_steps')
 def act_lgp_check(inputs):
     test = inputs['apycot']
@@ -26,7 +25,6 @@ def act_lgp_check(inputs):
         os.chdir(cwd)
     return {}
 
-@input('projectenv', 'getattr(elmt, "__regid__", None) == "ProjectEnvironment"')
 @output('changes-files', 'isinstance(elmt, FilePath)', 'elmt.type == "debian.changes"', list=True)
 @apycot.apycotaction('lgp.build', 'CHECKEDOUT in elmt.done_steps')
 def act_lgp_build(inputs):
