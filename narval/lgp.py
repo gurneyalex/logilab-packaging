@@ -85,15 +85,14 @@ class LgpBuildChecker(BaseChecker):
             'help': ('comma-separated list of distributions to build against'),
         },
         'lgp_sign': {
-            'type': 'yn',
             'help': ('whether to sign packages'),
-            'default': False,
+            'default': 'no'
         },
     }
 
     def do_check(self, test):
         dist = self.options.get('lgp_build_distrib') or 'all'
-        sign = self.options.get('lgp_sign') and 'yes' or 'no'
+        sign = self.options.get('lgp_sign')
         cwd = os.getcwd()
         os.chdir(test.project_path())
         try:
