@@ -91,7 +91,7 @@ class LgpBuildChecker(BaseChecker):
     }
 
     def do_check(self, test):
-        dist = self.options.get('lgp_build_distrib') or 'all'
+        dist = self.options.get('lgp_build_distrib') or ['all']
         sign = self.options.get('lgp_sign')
         cwd = os.getcwd()
         os.chdir(test.project_path())
