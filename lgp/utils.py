@@ -243,8 +243,11 @@ def _parse_deb_version(changelog='debian/changelog'):
 
 def _parse_deb_project(changelog='debian/changelog'):
     clog = Changelog()
-    clog.parse_changelog(open(changelog))
-    return clog.package
+    try:
+        clog.parse_changelog(open(changelog))
+        return clog.package
+    except ChangelogParseError:
+        raise LGPException("Malformed Debian changelog '%s'" % changelog)
 
 @contextmanager
 def tempdir(keep_tmpdir=False):
