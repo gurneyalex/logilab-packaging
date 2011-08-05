@@ -16,14 +16,13 @@ is_pure_debian() {
 	return $?
 }
 
-merge_other_mirrors() {
-	MIRRORS_FILE=$1
-	if [ -f $MIRRORS_FILE.$DIST ]; then
-		eval "NEW_MIRRORS=\"$(grep -v '^#\|^$' $MIRRORS_FILE.$DIST | tr '\n' '|')\""
-	elif [ -f $MIRRORS_FILE ]; then
-		eval "NEW_MIRRORS=\"$(grep -v '^#\|^$' $MIRRORS_FILE | tr '\n' '|')\""
+merge_lgp_sources_list() {
+	SOURCESLIST=$1
+	if [ -f $SOURCESLIST.$DIST ]; then
+		sed "s/\${DIST}/${DIST}/g" $SOURCESLIST.$DIST
+	elif [ -f $SOURCESLIST ]; then
+		sed "s/\${DIST}/${DIST}/g" $SOURCESLIST
 	fi
-	echo "$NEW_MIRRORS"
 }
 
 DEBOOTSTRAP=${DEBOOTSTRAP:-"debootstrap"}
@@ -54,12 +53,12 @@ esac
 if is_pure_debian $DIST; then
 	MIRRORSITE=${DEBIAN_MIRRORSITE}
 	COMPONENTS=${DEBIAN_COMPONENTS}
-	OTHERMIRROR="$OTHERMIRROR|$(merge_other_mirrors $DEBIAN_SOURCESLIST)"
+	export LGP_OTHERMIRRORS="$(merge_lgp_sources_list $DEBIAN_SOURCESLIST)"
 else
 	MIRRORSITE=${UBUNTU_MIRRORSITE}
 	COMPONENTS=${UBUNTU_COMPONENTS}
-	OTHERMIRROR="$OTHERMIRROR|$(merge_other_mirrors $UBUNTU_SOURCESLIST)"
 	DEBOOTSTRAPOPTS=("${DEBOOTSTRAPOPTS[@]}" "--keyring=/usr/share/keyrings/ubuntu-archive-keyring.gpg")
+	export LGP_OTHERMIRRORS="$(merge_lgp_sources_list $UBUNTU_SOURCESLIST)"
 fi
 
 # Note: don't use DISTRIBUTION directly
