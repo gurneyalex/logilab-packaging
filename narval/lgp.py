@@ -84,17 +84,22 @@ class LgpBuildChecker(BaseChecker):
             'type': 'csv',
             'help': ('comma-separated list of distributions to build against'),
         },
+        'lgp_sign': {
+            'help': ('whether to sign packages'),
+            'default': 'no'
+        },
     }
 
     def do_check(self, test):
-        dist = self.options.get('lgp_build_distrib') or 'all'
+        dist = self.options.get('lgp_build_distrib') or ['all']
+        sign = self.options.get('lgp_sign')
         cwd = os.getcwd()
         os.chdir(test.project_path())
         try:
                 handler = LgpLogHandler(self.writer)
                 cmd = LGP.get_command(self.command)
                 cmd.logger.addHandler(handler)
-                exit_status = cmd.main_run(['-v', '-d', ','.join(dist), '-r', os.path.join(test.project_path(), '..')], LGP.rcfile)
+                exit_status = cmd.main_run(['-v', '-s', sign, '-d', ','.join(dist), '-r', os.path.join(test.project_path(), '..')], LGP.rcfile)
                 self.debian_changes = [FilePath(changes, type='debian.changes', distribution=os.path.basename(os.path.dirname(changes)))
                                        for changes in cmd.packages if changes.endswith('.changes')]
                 if exit_status:

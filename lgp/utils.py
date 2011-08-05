@@ -220,7 +220,7 @@ def wait_jobs(joblist, print_dots=True):
 def _parse_deb_distrib(changelog='debian/changelog'):
     clog = Changelog()
     try:
-        clog.parse_changelog(open(changelog))
+        clog.parse_changelog(open(changelog), max_blocks=1)
         return clog.distributions
     except IOError:
         raise DistributionException("Debian changelog '%s' cannot be found" % changelog)
@@ -234,7 +234,7 @@ def _parse_deb_archi(control='debian/control'):
 def _parse_deb_version(changelog='debian/changelog'):
     try:
         clog = Changelog()
-        clog.parse_changelog(open(changelog))
+        clog.parse_changelog(open(changelog), max_blocks=1)
         return clog.full_version
     except IOError:
         raise LGPException("Debian changelog '%s' cannot be found" % changelog)
@@ -243,8 +243,11 @@ def _parse_deb_version(changelog='debian/changelog'):
 
 def _parse_deb_project(changelog='debian/changelog'):
     clog = Changelog()
-    clog.parse_changelog(open(changelog))
-    return clog.package
+    try:
+        clog.parse_changelog(open(changelog), max_blocks=1)
+        return clog.package
+    except ChangelogParseError:
+        raise LGPException("Malformed Debian changelog '%s'" % changelog)
 
 @contextmanager
 def tempdir(keep_tmpdir=False):
