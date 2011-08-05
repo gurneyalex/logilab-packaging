@@ -1,15 +1,10 @@
 # Ubuntu sources.list template file
 #
-# You have to use the environment variable ${DIST} in this file instead of a
-# fixed codename
+# You have to use the environment variable {DIST} in this file instead of a
+# fixed codename to permit distribution name substitution
 #
-# CAUTION! Be sure the repository exists before creating pbuilder images
-#
-# The deb lines here are the ones that will appear at the top of the
-# sources.list inside the chroot, so this is the place to list your local
-# mirror sites; apt will then use them in preference to the ones listed in
-# MIRRORSITE
-# Internally, lgp set OTHERMIRROR pbuilder variable
+# Content of this file will be aggregated to /etc/apt/sources.list.d/lgp.list
+# in chroot
 
 deb http://security.ubuntu.com/ubuntu ${DIST}-security main restricted
 deb http://archive.ubuntu.com/ubuntu ${DIST}-updates main restricted
