@@ -49,7 +49,7 @@ class Shell(SetupInfo):
                 })
     ]
     arguments = "[options] [<script> [args...]]"
-    cmd = "%s %s --configfile %s --hookdir %s --bindmounts %s --othermirror %s --override-config %s"
+    cmd = "%s %s --configfile %s --hookdir %s --bindmounts %s --othermirror %s --override-config %s %s"
     pbuilder_cmd = "/usr/sbin/pbuilder %s"
     sudo_cmd = "/usr/bin/sudo -E"
 
@@ -89,7 +89,7 @@ class Shell(SetupInfo):
                 other_mirror = self.other_mirror(resultdir)
 
                 cmd = self.cmd % (self.sudo_cmd, (self.pbuilder_cmd % command), CONFIG_FILE, HOOKS_DIR,
-                                  resultdir, other_mirror, script + ' '.join(args))
+                                  resultdir, other_mirror, script, ' '.join(args))
 
                 if command == "login":
                     msg = "run shell in %s/%s image" % (distrib, arch)
