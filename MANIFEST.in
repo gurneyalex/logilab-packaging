@@ -1,0 +1,32 @@
+exclude .hgignore
+recursive-exclude debian *
+recursive-exclude debian.hardy *
+recursive-exclude logilab_devtools.egg-info *
+
+include bin/lgp
+include bin/changelog
+include bin/update_gettext
+include bin/lsprofcalltree
+
+include elisp/*.el
+include elisp/startup
+
+include doc/*.xml
+include doc/*.txt
+include doc/makefile
+
+recursive-include templates *.txt *.py 
+
+recursive-include test/data *
+
+include README
+include INSTALL
+include COPYING
+include ChangeLog
+include logging.conf
+include doc/*.html
+
+include man/*.1
+recursive-include etc *
+
+include narval/lgp.py

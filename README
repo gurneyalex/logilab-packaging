@@ -1,0 +1,14 @@
+Logilab's development tools
+===========================
+
+Set of tools which aims to help the developpement process, including :
+
+  * tools to check and build source and/or Debian packages
+  * standard for zope and Python packages
+
+Set of elisp goodies including :
+
+  * an emacs mode for pycover files
+  * an emacs mode for ChangeLog files
+  * a small set of emacs shortcuts used at logilab
+

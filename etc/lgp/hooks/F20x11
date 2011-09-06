@@ -1,0 +1,5 @@
+#!/bin/sh
+
+if [ -f "$RESULTDIR/.Xauthority" ]; then
+	export XAUTHORITY="$RESULTDIR/.Xauthority"
+fi
