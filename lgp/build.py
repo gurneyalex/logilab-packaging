@@ -403,6 +403,7 @@ class Builder(SetupInfo):
                 optline.append('-a%s' % arch)
             if os.environ.get('DEBBUILDOPTS'):
                 optline.append(os.environ.get('DEBBUILDOPTS'))
+            optline.append('--changes-option=-DDistribution=%s' % distrib)
             return ' '.join(optline)
 
         series = []

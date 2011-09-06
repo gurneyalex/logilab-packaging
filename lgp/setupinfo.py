@@ -445,17 +445,6 @@ class SetupInfo(clcommands.Command):
             export(osp.join(self.config.pkg_dir, debian_dir), osp.join(self.origpath, 'debian/'),
                    verbose=self.config.verbose)
 
-        # substitute distribution string in file only if line not starting by
-        # spaces (simple heuristic to prevent other changes in content)
-        # FIXME use "from debian.changelog import Changelog" instead
-        if distrib:
-            cmd = ['sed', '-i', '/^[[:alpha:]]/s/\([[:alpha:]]\+\);/%s;/'
-                   % distrib, osp.join(self.origpath, 'debian', 'changelog')]
-            try:
-                check_call(cmd, stdout=sys.stdout)
-            except CalledProcessError, err:
-                raise LGPCommandException("bad substitution for distribution field", err)
-
         # substitute version string in appending timestamp and suffix
         # append suffix string (or timestamp if suffix is empty) to debian revision
         # FIXME use "from debian.changelog import Changelog" instead
