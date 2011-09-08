@@ -191,6 +191,16 @@ class SetupInfo(clcommands.Command):
         self.run(arguments)
         return os.EX_OK
 
+    def check_args(self, args):
+        super(SetupInfo, self).check_args(args)
+        # just a warning issuing for possibly confused configuration
+        if self.config.archi and 'all' in self.config.archi:
+            self.logger.warn('the "all" keyword can be confusing about the '
+                             'targeted architectures. Consider using the "any" keyword '
+                             'to force the build on all architectures or let lgp finds '
+                             'the value in debian/control by itself in doubt.')
+            self.logger.warn('lgp replaces the "all" architecture value by "current" in the build')
+
     def go_into_package_dir(self, arguments):
         """go into package directory
 
@@ -211,18 +221,11 @@ class SetupInfo(clcommands.Command):
             self.config.pkg_dir = self.old_current_directory
 
     def guess_environment(self):
-        # just a warning issuing for possibly confused configuration
-        if self.config.archi and 'all' in self.config.archi:
-            self.logger.warn('the "all" keyword can be confusing about the '
-                             'targeted architectures. Consider using the "any" keyword '
-                             'to force the build on all architectures or let lgp finds '
-                             'the value in debian/control by itself in doubt.')
-            self.logger.warn('lgp replaces the "all" architecture value by "current" in the build')
-
-        # Define mandatory attributes for lgp commands
+        # define mandatory attributes for lgp commands
         self.distributions = utils.get_distributions(self.config.distrib,
                                                      self.config.basetgz)
-        self.logger.debug("guessing distribution(s): %s" % ', '.join(self.distributions))
+        self.logger.debug("guessing distribution(s): %s"
+                          % ', '.join(self.distributions))
 
     def _set_package_format(self):
         """set the package format to be able to run COMMANDS

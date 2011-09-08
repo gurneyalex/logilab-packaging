@@ -22,7 +22,7 @@ import sys
 import glob
 from subprocess import check_call, CalledProcessError
 
-from logilab.devtools.lgp import (LGP, CONFIG_FILE, HOOKS_DIR)
+from logilab.devtools.lgp import (LGP, CONFIG_FILE, HOOKS_DIR, utils)
 from logilab.devtools.lgp.setupinfo import SetupInfo
 from logilab.devtools.lgp.check import check_keyrings
 
@@ -91,7 +91,13 @@ class Setup(SetupInfo):
         # no default value for distribution but don't try to retrieve it
         if self.config.distrib is None:
             self.config.distrib = []
-        super(Setup, self).guess_environment()
+        # retrieve distribution known by debootstrap
+        creation = self.config.command == "create"
+        self.distributions = utils.get_distributions(self.config.distrib,
+                                                     self.config.basetgz,
+                                                     creation=creation)
+        self.logger.debug("guessing debootstrap distributions: %s"
+                          % ', '.join(self.distributions))
 
     def print_images_list(self):
         self.logger.info("Base image directory: %s", self.config.basetgz)
