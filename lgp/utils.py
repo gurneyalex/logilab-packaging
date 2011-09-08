@@ -147,12 +147,17 @@ def get_debian_architecture():
     except IOError, err:
         raise LGPException('a Debian control file should exist in "%s"' % control)
 
-def get_distributions(distrib=None, basetgz=None, suites=LGP_SUITES):
+def get_distributions(distrib=None, basetgz=None, suites=LGP_SUITES, creation=False):
     """ensure that the target distributions exist or return all the valid distributions
+
+    The valid distributions are either :
+
+    1. those debootstrap knows about for creating new lgp images
+    2. or the ones for which an lgp image already exists in `basetgz` directory
 
     param distrib: specified distrib
                    'all' to retrieved created distributions on filesystem
-                   'None' to detect available images by cdebootstrap
+                   'None' to detect available images by debootstrap
     param basetgz: location of the pbuilder images
     """
     if distrib == "changelog":
@@ -168,10 +173,15 @@ def get_distributions(distrib=None, basetgz=None, suites=LGP_SUITES):
                    for f in glob.glob(osp.join(basetgz,'*.tgz'))]
     elif distrib:
         mapped = ()
-        # special setup case (all distribution names are available)
-        if (len(sys.argv)>1 and sys.argv[1] in ["setup"]):
+        # 1. we are getting for distributions that debootstrap can manage
+        if creation:
             distributions = get_distributions(basetgz=basetgz, suites=suites)
-        # generic case: we retrieve distributions based on filesystem
+            missing = [d for d in distrib if d not in distributions]
+            if missing:
+                msg = ("debootstrap creation script for distribution '%s' "
+                       "not found in '%s'" % (",".join(missing), basetgz))
+                raise DistributionException(msg)
+        # 2. we retrieve distributions based on filesystem
         else:
             distributions = get_distributions('all', basetgz, suites)
         # check input distrib parameter and filter if really known
