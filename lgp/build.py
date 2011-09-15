@@ -411,12 +411,12 @@ class Builder(SetupInfo):
             options = dict()
             options['distrib'] = distrib
             options['buildopts'] = _build_options()
-            options['arch'] = self.get_architectures(['current'])[0]
+            options['arch'] = (self.config.archi or self.get_architectures(['current']))[0]
             options['image'] = self.get_basetgz(options['distrib'],
                                                 options['arch'])
             series.append(options)
             self.logger.info('this build is arch-independent. Lgp will only build on '
-                             'current architecture (%s)' % options['arch'])
+                             'architecture %s' % options['arch'])
         else:
             for rank, arch in enumerate(self.get_architectures()):
                 options = dict()
