@@ -427,8 +427,6 @@ class SetupInfo(clcommands.Command):
         If a file should not be included, touch an empty file in the overlay
         directory.
 
-        The distribution value will always be rewritten in final changelog.
-
         This is specific to Logilab (debian directory is in project directory)
         """
         try:
@@ -447,16 +445,14 @@ class SetupInfo(clcommands.Command):
 
         # substitute version string in appending timestamp and suffix
         # append suffix string (or timestamp if suffix is empty) to debian revision
-        # FIXME use "from debian.changelog import Changelog" instead
         if self.config.suffix is not None:
+            from debian.changelog import Changelog
             suffix = self.config.suffix or '+%s' % int(time.time())
-            self.logger.debug("suffix '%s' added to package names" % suffix)
-            cmd = ['sed', '-i', '1s/(\(.*\))/(\\1%s)/' % suffix,
-                   osp.join(self.origpath, 'debian', 'changelog')]
-            try:
-                check_call(cmd, stdout=sys.stdout)
-            except CalledProcessError, err:
-                raise LGPCommandException("bad substitution for version field", err)
+            self.logger.debug("suffix '%s' added to package version" % suffix)
+            debchangelog = osp.join(self.origpath, 'debian', 'changelog')
+            changelog = Changelog(open(debchangelog))
+            changelog.version = str(changelog.version) + suffix
+            changelog.write_to_open_file(open(debchangelog, 'w'))
 
         return self.origpath
 
