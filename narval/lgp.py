@@ -86,20 +86,28 @@ class LgpBuildChecker(BaseChecker):
         },
         'lgp_sign': {
             'help': ('whether to sign packages'),
-            'default': 'no'
+            'default': 'no',
+        },
+        'lgp_suffix': {
+            'help': ('append vcs revision to the package version'),
         },
     }
 
     def do_check(self, test):
         dist = self.options.get('lgp_build_distrib') or ['all']
         sign = self.options.get('lgp_sign')
+        suffix = self.options.get('lgp_suffix')
         cwd = os.getcwd()
         os.chdir(test.project_path())
+        repo = test.apycot_repository()
         try:
                 handler = LgpLogHandler(self.writer)
                 cmd = LGP.get_command(self.command)
                 cmd.logger.addHandler(handler)
-                exit_status = cmd.main_run(['-v', '-s', sign, '-d', ','.join(dist), '-r', os.path.join(test.project_path(), '..')], LGP.rcfile)
+                args = ['-v', '-s', sign, '-d', ','.join(dist), '-r', os.path.join(test.project_path(), '..')]
+                if suffix:
+                    args += ['--suffix', '~rev' + repo.revision()]
+                exit_status = cmd.main_run(args, LGP.rcfile)
                 self.debian_changes = [FilePath(changes, type='debian.changes', distribution=os.path.basename(os.path.dirname(changes)))
                                        for changes in cmd.packages if changes.endswith('.changes')]
                 if exit_status:
