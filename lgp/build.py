@@ -66,7 +66,7 @@ class Builder(SetupInfo):
                 {'type': 'string',
                  'dest': 'suffix',
                  'metavar' : "<suffix>",
-                 'help': "suffix to append to the Debian package. (default: current timestamp)\n"
+                 'help': "suffix to append to the Debian package version. (default: current timestamp)\n"
                          "Tip: prepend by '~' for pre-release and '+' for post-release",
                  'group': 'Debian'
                 }),
