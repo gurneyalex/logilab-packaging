@@ -109,8 +109,12 @@ APTCACHE="/var/cache/pbuilder/${DIST}/aptcache/"
 # http://www.netfort.gr.jp/~dancer/software/pbuilder-doc/pbuilder-doc.html#tmpfsforpbuilder
 # To improve speed of operation, it is possible to use tmpfs for pbuilder build location.
 # Mount tmpfs to /var/cache/pbuilder/build, and set APTCACHEHARDLINK to no
-: ${APTCACHEHARDLINK:="yes"}
-: ${BUILDPLACE:="/var/cache/pbuilder/${DIST}/dists/"}
+if mountpoint $BUILDPLACE >/dev/null; then
+	APTCACHEHARDLINK="no"
+else
+	: ${APTCACHEHARDLINK:="yes"}
+fi
+: ${BUILDPLACE:="/var/cache/pbuilder/build/${DIST}/dists/"}
 
 # BINDMOUNTS is a space separated list of things to mount inside the chroot.
 BINDMOUNTS="${BINDMOUNTS} /sys /dev"
