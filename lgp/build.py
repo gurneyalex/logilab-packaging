@@ -403,7 +403,8 @@ class Builder(SetupInfo):
                 optline.append('-a%s' % arch)
             if os.environ.get('DEBBUILDOPTS'):
                 optline.append(os.environ.get('DEBBUILDOPTS'))
-            optline.append('--changes-option=-DDistribution=%s' % distrib)
+            # XXX not supported by lenny's dpkg (added in 1.15.6)
+            #optline.append('--changes-option=-DDistribution=%s' % distrib)
             return ' '.join(optline)
 
         series = []

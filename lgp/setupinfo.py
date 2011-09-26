@@ -443,16 +443,18 @@ class SetupInfo(clcommands.Command):
             export(osp.join(self.config.pkg_dir, debian_dir), osp.join(self.origpath, 'debian/'),
                    verbose=self.config.verbose)
 
-        # substitute version string in appending timestamp and suffix
+        from debian.changelog import Changelog
+        debchangelog = osp.join(self.origpath, 'debian', 'changelog')
+        changelog = Changelog(open(debchangelog))
+        # substitute distribution string in changelog
+        if distrib:
+            changelog.distributions = distrib
         # append suffix string (or timestamp if suffix is empty) to debian revision
         if self.config.suffix is not None:
-            from debian.changelog import Changelog
             suffix = self.config.suffix or '+%s' % int(time.time())
             self.logger.debug("suffix '%s' added to package version" % suffix)
-            debchangelog = osp.join(self.origpath, 'debian', 'changelog')
-            changelog = Changelog(open(debchangelog))
             changelog.version = str(changelog.version) + suffix
-            changelog.write_to_open_file(open(debchangelog, 'w'))
+        changelog.write_to_open_file(open(debchangelog, 'w'))
 
         return self.origpath
 
