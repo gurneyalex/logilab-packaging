@@ -109,8 +109,11 @@ APTCACHE="/var/cache/pbuilder/${DIST}/aptcache/"
 # http://www.netfort.gr.jp/~dancer/software/pbuilder-doc/pbuilder-doc.html#tmpfsforpbuilder
 # To improve speed of operation, it is possible to use tmpfs for pbuilder build location.
 # Mount tmpfs to /var/cache/pbuilder/build, and set APTCACHEHARDLINK to no
-: ${APTCACHEHARDLINK:="yes"}
-: ${BUILDPLACE:="/var/cache/pbuilder/${DIST}/dists/"}
+if mountpoint $BUILDPLACE >/dev/null; then
+	APTCACHEHARDLINK="no"
+else
+	: ${APTCACHEHARDLINK:="yes"}
+fi
 
 # BINDMOUNTS is a space separated list of things to mount inside the chroot.
 BINDMOUNTS="${BINDMOUNTS} /sys /dev"
@@ -144,10 +147,8 @@ PKGNAME_LOGFILE=yes
 # No debconf interaction with user by default
 export DEBIAN_FRONTEND=${DEBIAN_FRONTEND:="noninteractive"}
 
-# Set the PATH I am going to use inside pbuilder
+# Set PATH used inside pbuilder image
 #export PATH="/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/X11R6/bin"
-# Set informative prompt
-#export PS1="(lgp) ${DIST}/${ARCH} \$ "
 # SHELL variable is used inside pbuilder by commands like 'su'; and they need sane values
 export SHELL="/bin/sh"
 export TERM=linux

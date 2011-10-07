@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/sh -x
 
 # run lintian on generated changes files
 apt-get install -y --force-yes lintian >/dev/null 2>&1

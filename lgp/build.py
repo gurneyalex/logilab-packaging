@@ -66,7 +66,7 @@ class Builder(SetupInfo):
                 {'type': 'string',
                  'dest': 'suffix',
                  'metavar' : "<suffix>",
-                 'help': "suffix to append to the Debian package. (default: current timestamp)\n"
+                 'help': "suffix to append to the Debian package version. (default: current timestamp)\n"
                          "Tip: prepend by '~' for pre-release and '+' for post-release",
                  'group': 'Debian'
                 }),
@@ -403,6 +403,8 @@ class Builder(SetupInfo):
                 optline.append('-a%s' % arch)
             if os.environ.get('DEBBUILDOPTS'):
                 optline.append(os.environ.get('DEBBUILDOPTS'))
+            # XXX not supported by lenny's dpkg (added in 1.15.6)
+            #optline.append('--changes-option=-DDistribution=%s' % distrib)
             return ' '.join(optline)
 
         series = []
@@ -410,12 +412,12 @@ class Builder(SetupInfo):
             options = dict()
             options['distrib'] = distrib
             options['buildopts'] = _build_options()
-            options['arch'] = self.get_architectures(['current'])[0]
+            options['arch'] = (self.config.archi or self.get_architectures(['current']))[0]
             options['image'] = self.get_basetgz(options['distrib'],
                                                 options['arch'])
             series.append(options)
             self.logger.info('this build is arch-independent. Lgp will only build on '
-                             'current architecture (%s)' % options['arch'])
+                             'architecture %s' % options['arch'])
         else:
             for rank, arch in enumerate(self.get_architectures()):
                 options = dict()
