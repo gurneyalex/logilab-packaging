@@ -191,6 +191,16 @@ class SetupInfo(clcommands.Command):
         self.run(arguments)
         return os.EX_OK
 
+    def check_args(self, args):
+        super(SetupInfo, self).check_args(args)
+        # just a warning issuing for possibly confused configuration
+        if self.config.archi and 'all' in self.config.archi:
+            self.logger.warn('the "all" keyword can be confusing about the '
+                             'targeted architectures. Consider using the "any" keyword '
+                             'to force the build on all architectures or let lgp finds '
+                             'the value in debian/control by itself in doubt.')
+            self.logger.warn('lgp replaces the "all" architecture value by "current" in the build')
+
     def go_into_package_dir(self, arguments):
         """go into package directory
 
@@ -211,18 +221,11 @@ class SetupInfo(clcommands.Command):
             self.config.pkg_dir = self.old_current_directory
 
     def guess_environment(self):
-        # just a warning issuing for possibly confused configuration
-        if self.config.archi and 'all' in self.config.archi:
-            self.logger.warn('the "all" keyword can be confusing about the '
-                             'targeted architectures. Consider using the "any" keyword '
-                             'to force the build on all architectures or let lgp finds '
-                             'the value in debian/control by itself in doubt.')
-            self.logger.warn('lgp replaces the "all" architecture value by "current" in the build')
-
-        # Define mandatory attributes for lgp commands
+        # define mandatory attributes for lgp commands
         self.distributions = utils.get_distributions(self.config.distrib,
                                                      self.config.basetgz)
-        self.logger.debug("guessing distribution(s): %s" % ', '.join(self.distributions))
+        self.logger.debug("guessing distribution(s): %s"
+                          % ', '.join(self.distributions))
 
     def _set_package_format(self):
         """set the package format to be able to run COMMANDS
@@ -427,8 +430,6 @@ class SetupInfo(clcommands.Command):
         If a file should not be included, touch an empty file in the overlay
         directory.
 
-        The distribution value will always be rewritten in final changelog.
-
         This is specific to Logilab (debian directory is in project directory)
         """
         try:
@@ -445,29 +446,18 @@ class SetupInfo(clcommands.Command):
             export(osp.join(self.config.pkg_dir, debian_dir), osp.join(self.origpath, 'debian/'),
                    verbose=self.config.verbose)
 
-        # substitute distribution string in file only if line not starting by
-        # spaces (simple heuristic to prevent other changes in content)
-        # FIXME use "from debian.changelog import Changelog" instead
+        from debian.changelog import Changelog
+        debchangelog = osp.join(self.origpath, 'debian', 'changelog')
+        changelog = Changelog(open(debchangelog))
+        # substitute distribution string in changelog
         if distrib:
-            cmd = ['sed', '-i', '/^[[:alpha:]]/s/\([[:alpha:]]\+\);/%s;/'
-                   % distrib, osp.join(self.origpath, 'debian', 'changelog')]
-            try:
-                check_call(cmd, stdout=sys.stdout)
-            except CalledProcessError, err:
-                raise LGPCommandException("bad substitution for distribution field", err)
-
-        # substitute version string in appending timestamp and suffix
+            changelog.distributions = distrib
         # append suffix string (or timestamp if suffix is empty) to debian revision
-        # FIXME use "from debian.changelog import Changelog" instead
         if self.config.suffix is not None:
             suffix = self.config.suffix or '+%s' % int(time.time())
-            self.logger.debug("suffix '%s' added to package names" % suffix)
-            cmd = ['sed', '-i', '1s/(\(.*\))/(\\1%s)/' % suffix,
-                   osp.join(self.origpath, 'debian', 'changelog')]
-            try:
-                check_call(cmd, stdout=sys.stdout)
-            except CalledProcessError, err:
-                raise LGPCommandException("bad substitution for version field", err)
+            self.logger.debug("suffix '%s' added to package version" % suffix)
+            changelog.version = str(changelog.version) + suffix
+        changelog.write_to_open_file(open(debchangelog, 'w'))
 
         return self.origpath
 

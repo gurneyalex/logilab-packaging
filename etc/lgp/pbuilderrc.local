@@ -20,8 +20,6 @@ export IGNOREEOF=1
 # 26. Using tmpfs for buildplace ($BUILDPLACE)
 # http://www.netfort.gr.jp/~dancer/software/pbuilder-doc/pbuilder-doc.html#tmpfsforpbuilder
 # To improve speed of operation, it is possible to use tmpfs for pbuilder build location.
-# Mount tmpfs to /var/cache/pbuilder/build, and set APTCACHEHARDLINK to no
-APTCACHEHARDLINK=no
-BUILDPLACE="/space/var/cache/pbuilder/${DIST}/dists/"
-
-
+# Mount tmpfs to /var/cache/pbuilder/build ($BUILDPLACE)
+# Lgp will automatically detect the mountpoint and set APTCACHEHARDLINK to no
+BUILDPLACE="/opt/var/cache/pbuilder/build/
