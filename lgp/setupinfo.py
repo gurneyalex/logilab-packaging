@@ -167,13 +167,14 @@ class SetupInfo(clcommands.Command):
         # Set verbose level and output streams
         if self.config.verbose:
             logging.getLogger().setLevel(logging.DEBUG)
-        elif self.config.quiet:
-            logging.getLogger().setLevel(logging.WARN)
         else:
             # Redirect subprocesses stdout output only in case of verbose mode
             # We always allow subprocesses to print on the stderr (more convenient)
             sys.stdout = open(os.devnull,"w")
             #sys.stderr = open(os.devnull,"w")
+        if self.config.quiet:
+            loglevel = logging.ERROR if (self.config.quiet >= 2) else logging.WARN
+            logging.getLogger().setLevel(loglevel)
         if self.isatty and not getattr(self.config, "no_color", None):
             # FIXME when using logging.conf
             handlers = logging.getLogger().handlers
