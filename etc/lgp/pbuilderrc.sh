@@ -12,7 +12,7 @@
 is_pure_debian() {
 	DEBSCRIPT="/usr/share/debootstrap/scripts/$1"
 	test -f $DEBSCRIPT
-	test "$(basename $(realpath $DEBSCRIPT))" = "sid"
+	test "$(basename $(readlink -f $DEBSCRIPT))" = "sid"
 	return $?
 }
 
