@@ -106,7 +106,7 @@ class LgpBuildChecker(BaseChecker):
                 cmd.logger.addHandler(handler)
                 args = ['-v', '-s', sign, '-d', ','.join(dist), '-r', os.path.join(test.project_path(), '..')]
                 if suffix:
-                    args += ['--suffix', '~rev' + repo.revision()]
+                    args += ['--suffix', '~rev%s' % repo.revision()]
                 exit_status = cmd.main_run(args, LGP.rcfile)
                 self.debian_changes = [FilePath(changes, type='debian.changes', distribution=os.path.basename(os.path.dirname(changes)))
                                        for changes in cmd.packages if changes.endswith('.changes')]
