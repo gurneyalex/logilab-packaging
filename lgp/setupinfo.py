@@ -452,7 +452,8 @@ class SetupInfo(clcommands.Command):
         changelog = Changelog(open(debchangelog))
         # substitute distribution string in changelog
         if distrib:
-            changelog.distributions = distrib
+            # squeeze python-debian doesn't handle unicode well, see Debian bug#561805
+            changelog.distributions = str(distrib)
         # append suffix string (or timestamp if suffix is empty) to debian revision
         if self.config.suffix is not None:
             suffix = self.config.suffix or '+%s' % int(time.time())
