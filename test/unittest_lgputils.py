@@ -1,3 +1,5 @@
+from __future__ import with_statement
+
 import os
 from os.path import exists
 from unittest2 import main, TestCase
