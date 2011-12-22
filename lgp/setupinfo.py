@@ -167,13 +167,14 @@ class SetupInfo(clcommands.Command):
         # Set verbose level and output streams
         if self.config.verbose:
             logging.getLogger().setLevel(logging.DEBUG)
-        elif self.config.quiet:
-            logging.getLogger().setLevel(logging.WARN)
         else:
             # Redirect subprocesses stdout output only in case of verbose mode
             # We always allow subprocesses to print on the stderr (more convenient)
             sys.stdout = open(os.devnull,"w")
             #sys.stderr = open(os.devnull,"w")
+        if self.config.quiet:
+            loglevel = logging.ERROR if (self.config.quiet >= 2) else logging.WARN
+            logging.getLogger().setLevel(loglevel)
         if self.isatty and not getattr(self.config, "no_color", None):
             # FIXME when using logging.conf
             handlers = logging.getLogger().handlers
@@ -451,7 +452,8 @@ class SetupInfo(clcommands.Command):
         changelog = Changelog(open(debchangelog))
         # substitute distribution string in changelog
         if distrib:
-            changelog.distributions = distrib
+            # squeeze python-debian doesn't handle unicode well, see Debian bug#561805
+            changelog.distributions = str(distrib)
         # append suffix string (or timestamp if suffix is empty) to debian revision
         if self.config.suffix is not None:
             suffix = self.config.suffix or '+%s' % int(time.time())

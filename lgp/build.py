@@ -187,8 +187,8 @@ class Builder(SetupInfo):
         """
         self._check_version_mismatch()
         if self.config.orig_tarball and self.is_initial_debian_revision():
-            self.logger.error("you are passing a pristine tarball in command "
-                              "line for an initial Debian revision")
+            self.logger.warn("you are passing a pristine tarball in command "
+                             "line for an initial Debian revision")
 
         fileparts = (self.get_upstream_name(), self.get_upstream_version())
         # note: tarball format can be guaranteed by uscan's repack option

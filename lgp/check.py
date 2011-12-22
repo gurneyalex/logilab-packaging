@@ -538,7 +538,7 @@ def check_debsign(checker):
         checker.logger.error(msg)
         return NOK
     if 'GPG_AGENT_INFO' not in os.environ:
-        checker.logger.error('enable your gpg-agent to sign packages automatically')
+        checker.logger.warning('enable your gpg-agent to sign packages automatically')
         return NOK
     return OK
 
