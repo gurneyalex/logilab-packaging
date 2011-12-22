@@ -1,3 +1,5 @@
+from __future__ import with_statement
+
 from subprocess import Popen, PIPE
 
 from logilab.common.testlib import TestCase, unittest_main
