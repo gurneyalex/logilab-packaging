@@ -143,6 +143,7 @@ class Builder(SetupInfo):
 
     def run(self, args):
         Cleaner(config=self.config).run(args)
+        os.umask(002)
         # create the upstream tarball if necessary and move it to result directory
         with tempdir(self.config.keep_tmpdir) as tmpdir:
             self.make_orig_tarball(tmpdir)
