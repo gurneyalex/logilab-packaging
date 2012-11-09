@@ -42,29 +42,29 @@ from logilab.devtools.lgp import LOG_FORMAT, utils
 from logilab.devtools.lgp.exceptions import LGPException, LGPCommandException
 
 COMMANDS = {
-        "sdist" : {
-            "file": '$setup dist-gzip -e DIST_DIR=$dist_dir',
-            "Distribution": 'python setup.py -q sdist -d $dist_dir',
-            "PackageInfo": 'python setup.py -q sdist -d $dist_dir',
-            "debian": "uscan --noconf --download-current-version --destdir $dist_dir",
+        'file': {
+            "sdist": '$setup dist-gzip -e DIST_DIR=$dist_dir',
+            "clean": '$setup clean',
+            "version": '$setup version',
+            "project": '$setup project',
         },
-        "clean" : {
-            "file": '$setup clean',
-            "Distribution": 'python setup.py clean --all',
-            "PackageInfo": 'python setup.py clean --all',
-            "debian": "fakeroot debian/rules clean",
+        'Distribution': {
+            "sdist": 'python setup.py -q sdist -d $dist_dir',
+            "clean": 'python setup.py clean --all',
+            "version": 'python setup.py --version',
+            "project": 'python setup.py --name',
         },
-        "version" : {
-            "file": '$setup version',
-            "Distribution": 'python setup.py --version',
-            "PackageInfo": 'python setup.py --version',
-            "debian": utils._parse_deb_version,
+        'PackageInfo': {
+            "sdist": 'python setup.py -q sdist -d $dist_dir',
+            "clean": 'python setup.py clean --all',
+            "version": 'python setup.py --version',
+            "project": 'python setup.py --name',
         },
-        "project" : {
-            "file": '$setup project',
-            "Distribution": 'python setup.py --name',
-            "PackageInfo": 'python setup.py --name',
-            "debian": utils._parse_deb_project,
+        'debian': {
+            "sdist": "uscan --noconf --download-current-version --destdir $dist_dir",
+            "clean": "fakeroot debian/rules clean",
+            "version": utils._parse_deb_version,
+            "project": utils._parse_deb_project,
         },
 }
 
@@ -283,7 +283,7 @@ class SetupInfo(clcommands.Command):
         if isinstance(cmd, list):
             cmdline = ' '.join(cmd)
         else:
-            cmd = COMMANDS[cmd][self.package_format]
+            cmd = COMMANDS[self.package_format][cmd]
             if callable(cmd):
                 try:
                     return cmd()
