@@ -132,6 +132,11 @@ class Builder(SetupInfo):
     # hotlist of the recent generated package files
     packages = []
 
+    def check_args(self, args):
+        super(Builder, self).check_args(args)
+        if self.config.specfile is not None:
+            self.config.rpm = True
+
     def _prune_pkg_dir(self):
         super(Builder, self)._prune_pkg_dir()
         if self.package_format == 'debian' and not osp.isdir('debian'):
