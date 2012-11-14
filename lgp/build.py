@@ -48,18 +48,31 @@ class Builder(SetupInfo):
     options = SetupInfo.options + [
                ('result',
                 {'type': 'string',
-                 'default' : '~/dists',
-                 'dest' : "dist_dir",
+                 'default': '~/dists',
+                 'dest': "dist_dir",
                  'short': 'r',
                  'metavar': "<directory>",
-                 'help': "where to put compilation results"
+                 'help': "where to put compilation results",
+                }),
+               ('rpm',
+                {'action': 'store_true',
+                 'dest': 'rpm',
+                 'help': 'build a rpm package instead of deb',
                 }),
                ('orig-tarball',
                 {'type': 'string',
-                 'default' : None,
+                 'default': None,
                  'dest': 'orig_tarball',
-                 'metavar' : "<tarball>",
+                 'metavar': "<tarball>",
                  'help': "URI to orig.tar.gz file",
+                 'group': 'Pristine'
+                }),
+               ('spec',
+                {'type':'string',
+                 'default':None,
+                 'dest':'specfile',
+                 'metavar': "<specfile>",
+                 'help': "URI to .spec file",
                  'group': 'Pristine'
                 }),
                ('suffix',
@@ -147,16 +160,19 @@ class Builder(SetupInfo):
         # create the upstream tarball if necessary and move it to result directory
         with tempdir(self.config.keep_tmpdir) as tmpdir:
             self.make_orig_tarball(tmpdir)
-
             try:
                 for distrib in  self.distributions:
-                    with tempdir(self.config.keep_tmpdir) as dsc_tmpdir:
-                        # create a debian source package
-                        dscfile = self.make_debian_source_package(distrib, dsc_tmpdir)
-                        if self.make_debian_binary_package(distrib, dscfile):
-                            # do post-treatments only for a successful binary build
-                            if self.packages and self.config.post_treatments:
-                                self.run_post_treatments(distrib)
+                    with tempdir(self.config.keep_tmpdir) as src_tmpdir:
+                        if self.config.rpm:
+                            srpm = self.make_rpm_source_package(distrib, src_tmpdir)
+                            self.make_rpm_binary_package(distrib, srpm)
+                        else:
+                            # create a debian source package
+                            dscfile = self.make_debian_source_package(distrib, src_tmpdir)
+                            if self.make_debian_binary_package(distrib, dscfile):
+                                # do post-treatments only for a successful binary build
+                                if self.packages and self.config.post_treatments:
+                                    self.run_post_treatments(distrib)
                 # report files to the console
                 if self.packages:
                     self.logger.info("recent files from build:\n* %s"
@@ -178,7 +194,7 @@ class Builder(SetupInfo):
         For later ones call uscan to download the source tarball by looking at
         debian/watch (if the tarball wasn't passed on the command line).
 
-        Finally copy pristine tarball with expected Debian filename convention.
+        Finally copy pristine tarball with expected upstream filename convention.
 
         This method is responsible for setting config.orig_tarball to its right
         location.
@@ -187,38 +203,44 @@ class Builder(SetupInfo):
             http://www.debian.org/doc/debian-policy/ch-source.html
         """
         self._check_version_mismatch()
-        if self.config.orig_tarball and self.is_initial_debian_revision():
+        is_initial_debian_revision = self.is_initial_debian_revision()
+        tarball = self.config.orig_tarball
+
+        if tarball and is_initial_debian_revision:
             self.logger.warn("you are passing a pristine tarball in command "
                              "line for an initial Debian revision")
 
-        fileparts = (self.get_upstream_name(), self.get_upstream_version())
+        upstream_name = self.get_upstream_name()
+        fileparts = (upstream_name, self.get_upstream_version())
         # note: tarball format can be guaranteed by uscan's repack option
-        tarball = '%s_%s.orig.tar.gz' % fileparts
+        debian_tarball = '%s_%s.orig.tar.gz' % fileparts
         upstream_tarball = '%s-%s.tar.gz' % fileparts
 
         # run uscan to download the source tarball by looking at debian/watch
-        if self.config.orig_tarball is None and not self.is_initial_debian_revision():
+        if tarball is None and not is_initial_debian_revision:
             self.logger.info('running uscan to download the source tarball by '
                              'looking at debian/watch')
             try:
                 check_call(["uscan", "--noconf", "--download-current-version",
-                            "--rename", "--destdir", tmpdir])
+                            "--no-symlink", "--destdir", tmpdir])
             except CalledProcessError, err:
-                debian_name     = self.get_debian_name()
+                debian_name = self.get_debian_name()
                 debian_revision = self.get_debian_version().rsplit('-', 1)[1]
-                self.logger.error("Debian source archive (pristine tarball) is required when you "
-                                  "don't build the first revision of a debian package "
+                self.logger.error("Debian source archive (pristine tarball) is"\
+                                  " required when you don't build the first "\
+                                  " revision of a debian package "\
                                   "(use '--orig-tarball' option)")
-                self.logger.info("If you haven't the original tarball version, you could run: "
+                self.logger.info("If you haven't the original tarball version,"
+                                 " you could run: "
                                  "'apt-get source --tar-only %s'" % debian_name)
                 msg = ('unable to build upstream tarball of %s package for '
                        'Debian revision "%s"' % (debian_name, debian_revision))
                 raise LGPCommandException(msg, err)
             else:
-                self.config.orig_tarball = tarball
+                tarball = upstream_tarball
 
         # create new pristine tarball from working directory if initial revision
-        if self.config.orig_tarball is None and self.is_initial_debian_revision():
+        elif tarball is None and is_initial_debian_revision:
             self.logger.info("create pristine tarball from working directory")
             try:
                 self._run_command("sdist", dist_dir=tmpdir)
@@ -228,24 +250,75 @@ class Builder(SetupInfo):
                                   "your repository" % self.get_upstream_version())
                 raise LGPCommandException("source distribution wasn't properly built", err)
             else:
-                self.config.orig_tarball = osp.join(tmpdir, upstream_tarball)
+                tarball = osp.join(tmpdir, upstream_tarball)
 
-        if not os.path.basename(self.config.orig_tarball).startswith(self.get_upstream_name()):
-            msg = "pristine tarball filename doesn't start with upstream name '%s'. really suspect..."
-            self.logger.error(msg % self.get_upstream_name())
+        # Sanity check
+        if not osp.basename(tarball).startswith(upstream_name):
+            msg = "pristine tarball filename doesn't start with "\
+                  "upstream name '%s'. really suspect..."
+            self.logger.error(msg % upstream_name)
 
-        # copy pristine tarball with the expected Debian filename convention
-        tarball = osp.abspath(osp.join(tmpdir, tarball))
+        # Make a copy of tarball ('path/to/xxx-version.tar.gz')...
+        # ... with the debian name convention 'path/to/xxx_version.orig.tar.gz'
+        debian_tarball = osp.abspath(osp.join(tmpdir, debian_tarball))
         try:
-            if not osp.exists(tarball):
-                shutil.copy(self.config.orig_tarball, tarball)
+            if not osp.exists(debian_tarball):
+                shutil.copy(tarball, debian_tarball)
         except EnvironmentError, err:
-            self.logger.critical("pristine tarball can't be copied from given location: %s"
-                                 % self.config.orig_tarball)
+            msg = "pristine tarball can't be copied from given location: %s"
+            self.logger.critical(msg % tarball)
             raise LGPException(err)
-        else:
-            self.config.orig_tarball = tarball
-        return self.config.orig_tarball
+        #
+        self._upstream_tarball = tarball
+        self._debian_tarball = debian_tarball
+        return tarball
+
+    def make_rpm_source_package(self, distrib, tmpdir):
+        """create a srpm"""
+        specfile = self.config.specfile
+        if specfile is None:
+            specfiles = glob('*.spec')
+            try:
+                specfile, = specfiles
+            except ValueError:
+                if not specfiles:
+                    self.logger.error("unable to find the '.spec' file")
+                else:
+                    self.logger.error("more than one spec file found")
+                self.logger.error("please use the '--specfile' option")
+                raise LGPCommandException("cannot build source distribution", "")
+        specfile = osp.abspath(specfile)
+
+        # change directory to build source package
+        os.chdir(tmpdir)
+        try:
+            cmd = ["sudo", "mock", "--buildsrpm",
+                   "--spec", specfile,
+                   "--resultdir", os.getcwd(),
+                   "-r", distrib,
+                   "--sources", osp.dirname(self._upstream_tarball)]
+            self.logger.debug("running mock command: %s ..." % " ".join(cmd))
+            check_call(cmd, stdout=sys.stdout)
+        except CalledProcessError, err:
+            msg = "cannot build valid srpm file with command %s" % cmd
+            raise LGPCommandException(msg, err)
+        srpms = glob(osp.join(os.getcwd(), '*.src.rpm'))
+        try:
+            srpm, = srpms
+        except ValueError:
+            raise LGPCommandException("couldn't find the SRPM")
+        return srpm
+
+    def make_rpm_binary_package(self, distrib, srpm):
+        cmd = ["sudo", "mock", "-r", distrib,
+               "--result", self.get_distrib_dir(distrib),
+               "--rebuild", srpm]
+        try:
+            self.logger.debug("running mock command: %s ..." % " ".join(cmd))
+            check_call(cmd, stdout=sys.stdout)
+        except CalledProcessError, err:
+            msg = "cannot build valid rpm file with command %s" % cmd
+            raise LGPCommandException(msg, err)
 
     def make_debian_source_package(self, current_distrib, tmpdir='.'):
         """create a debian source package
@@ -263,28 +336,32 @@ class Builder(SetupInfo):
         """
         self.prepare_source_archive(tmpdir, current_distrib)
 
-        arguments = ""
+        cmd = ['dpkg-source']
         format = utils.guess_debian_source_format()
-        os.chdir(tmpdir)
         if format == "1.0":
-            arguments+='--no-copy'
-        self.logger.info("Debian source package (format: %s) for '%s'" % (format, current_distrib))
+            cmd.append('--no-copy')
+        info_msg = "Debian source package (format: %s) for '%s'"
+        self.logger.info(info_msg % (format, current_distrib))
         # change directory to build source package
+        os.chdir(tmpdir)
         try:
-            cmd = 'dpkg-source %s -b %s' % (arguments, self.origpath)
-            self.logger.debug("running dpkg-source command: %s ..." % cmd)
-            check_call(cmd.split(), stdout=sys.stdout)
+            cmd += ["-b", self.origpath]
+            self.logger.debug("running dpkg-source command: %s ..."
+                              % " ".join(cmd))
+            check_call(cmd, stdout=sys.stdout)
         except CalledProcessError, err:
             msg = "cannot build valid dsc file with command %s" % cmd
             raise LGPCommandException(msg, err)
+
         dscfile = osp.abspath(glob('*.dsc').pop())
         assert osp.isfile(dscfile)
-        msg = "create Debian source package files (.dsc, .diff.gz): %s"
-        self.logger.info(msg % osp.basename(dscfile))
+        info_msg = "create Debian source package files (.dsc, .diff.gz): %s"
+        self.logger.info(info_msg % osp.basename(dscfile))
         # move Debian source package files and exit if asked by command-line
         if self.config.deb_src_only:
             resultdir = self.get_distrib_dir(current_distrib)
-            self.move_package_files([self.dscfile], resultdir, verbose=self.config.deb_src_only)
+            self.move_package_files([self.dscfile], resultdir,
+                                    verbose=self.config.deb_src_only)
             return self.destroy_tmp_context()
         # restore directory context
         os.chdir(self.config.pkg_dir)
@@ -408,6 +485,7 @@ class Builder(SetupInfo):
             #optline.append('--changes-option=-DDistribution=%s' % distrib)
             return ' '.join(optline)
 
+        #TODO : some cleanup: define options as {'distrib':distrib,...} then update
         series = []
         if utils.is_architecture_independent():
             options = dict()
@@ -449,19 +527,22 @@ class Builder(SetupInfo):
                 try:
                     check_call(["debsign", filename], stdout=sys.stdout)
                 except CalledProcessError, err:
-                    self.logger.error("lgp cannot debsign '%s' automatically" % filename)
+                    self.logger.error("lgp cannot debsign '%s' automatically"
+                                      % filename)
                     self.logger.error("You have to run manually: debsign %s"
                                       % copied_filename)
 
         def _check_file(filename):
-            if os.path.isfile(filename):
+            if osp.isfile(filename):
                 hash1 = hashlib.md5(open(fullpath).read()).hexdigest()
                 hash2 = hashlib.md5(open(filename).read()).hexdigest()
                 if hash1 == hash2:
                     self.logger.debug("overwrite same file file '%s'" % filename)
                 else:
-                    self.logger.warn("theses files shouldn't be different:\n- %s (%s)\n- %s (%s)"
-                                     % (fullpath, hash1, filename, hash2))
+                    msg = "theses files shouldn't be different:\n"\
+                          "- %s (%s)\n"\
+                          "- %s (%s)"
+                    self.logger.warn(msg % (fullpath, hash1, filename, hash2))
                     os.system('diff -u %s %s' % (fullpath, filename))
                     raise LGPException("bad md5 sums of source archives (tarball)")
 
@@ -484,8 +565,9 @@ class Builder(SetupInfo):
                 if not pristine and entry.endswith(ext):
                     pristine = entry
             if pristine is None and self.is_initial_debian_revision():
-                self.logger.error("no pristine tarball found for initial Debian revision (searched: %s)"
-                                  % (entry, ext))
+                msg = "no pristine tarball found for initial Debian revision"\
+                      " (searched: %s)"
+                self.logger.error(msg % (entry, ext))
             orig = pristine.rsplit('.', 2)[0].endswith(".orig")
             if not diff and not orig:
                 msg = ("native package detected. Read `man dpkg-source` "
@@ -494,9 +576,10 @@ class Builder(SetupInfo):
 
         while filelist:
             fullpath = filelist.pop()
-            path, filename = osp.split(fullpath)
-            assert os.path.isfile(fullpath), "%s not found!" % fullpath
-            copied_filename = os.path.join(resultdir, osp.basename(filename))
+            if not osp.isfile(fullpath):
+                raise IOError("%s not found!" % fullpath)
+            (path, filename) = osp.split(fullpath)
+            copied_filename = osp.join(resultdir, osp.basename(filename))
 
             if filename.endswith(('.changes', '.dsc')):
                 contents = deb822.Deb822(file(fullpath))
@@ -526,10 +609,10 @@ class Builder(SetupInfo):
             self.packages.append(copied_filename)
 
     def guess_environment(self):
-        # normalize pathnames given in parameters
-        self.config.orig_tarball = self._normpath(self.config.orig_tarball)
-
-        if self.config.orig_tarball:
+        orig_tarball = self.config.orig_tarball
+        if orig_tarball:
+            # normalize pathnames given in parameters
+            self.config.orig_tarball = self._normpath(orig_tarball)
             self.logger.info('use original source archive (tarball): %s',
                              self.config.orig_tarball)
 

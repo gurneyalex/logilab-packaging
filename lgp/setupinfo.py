@@ -170,7 +170,7 @@ class SetupInfo(clcommands.Command):
         else:
             # Redirect subprocesses stdout output only in case of verbose mode
             # We always allow subprocesses to print on the stderr (more convenient)
-            sys.stdout = open(os.devnull,"w")
+            sys.stdout = open(os.devnull, "w")
             #sys.stderr = open(os.devnull,"w")
         if self.config.quiet:
             loglevel = logging.ERROR if (self.config.quiet >= 2) else logging.WARN
@@ -178,7 +178,7 @@ class SetupInfo(clcommands.Command):
         if self.isatty and not getattr(self.config, "no_color", None):
             # FIXME when using logging.conf
             handlers = logging.getLogger().handlers
-            assert len(handlers)==1, "Lgp cannot manage several handlers..."
+            assert len(handlers) == 1, "Lgp cannot manage several handlers..."
             console = logging.getLogger().handlers[0]
             console.setFormatter(ColorFormatter(LOG_FORMAT))
 
@@ -231,10 +231,10 @@ class SetupInfo(clcommands.Command):
     def _set_package_format(self):
         """set the package format to be able to run COMMANDS
 
-        setup_file must not be redefine since we can call this
+        setup_file must not be redefined since we can call this
         method several times
         """
-        setup_file = self.config.setup_file = self._normpath(self.config.setup_file)
+        setup_file = self._normpath(self.config.setup_file)
         if setup_file:
             self.logger.info('use specific setup file: %s', setup_file)
 
@@ -249,7 +249,8 @@ class SetupInfo(clcommands.Command):
         elif osp.isfile(setup_file):
             if osp.basename(setup_file) == 'setup.py':
                 # case for python project (distutils, setuptools)
-                self.config._package = run_setup(setup_file, None, stop_after="init")
+                self.config._package = run_setup(setup_file, None,
+                                                 stop_after="init")
             else:
                 # generic case: the setup file should only honor targets as:
                 # sdist, project, version, clean (see COMMANDS)
@@ -258,8 +259,12 @@ class SetupInfo(clcommands.Command):
                     raise LGPException('setup file %s has no execute permission'
                                        % setup_file)
         else:
-            class debian(object): pass
-            self.config._package = debian()
+            if self.config.rpm:
+                class rpm(object): pass
+                self.config._package = rpm()
+            else:
+                class debian(object): pass
+                self.config._package = debian()
         self.logger.debug("use setup package class format: %s" % self.package_format)
 
     def _prune_pkg_dir(self):
@@ -390,16 +395,17 @@ class SetupInfo(clcommands.Command):
         """
         # Mandatory to be compatible with format 1.0
         self.logger.debug("copy pristine tarball to prepare Debian source package diff")
-        cp(self.config.orig_tarball, tmpdir)
+        cp(self._debian_tarball, tmpdir)
         # TODO obtain current format version
         # os.path.exists(osp.join(self.origpath, "debian/source/format")
 
         self.logger.debug("extracting original source archive for %s distribution in %s"
                           % (current_distrib or "default", tmpdir))
         try:
-            cmd = 'tar --atime-preserve --preserve-permissions --preserve-order -xzf %s -C %s'\
-                  % (self.config.orig_tarball, tmpdir)
-            check_call(cmd.split(), stdout=sys.stdout)
+            cmd = ["tar", "--atime-preserve", "--preserve-permissions",
+                   "--preserve-order", "-xzf", self._debian_tarball,
+                   "-C", tmpdir]
+            check_call(cmd, stdout=sys.stdout)
         except CalledProcessError, err:
             raise LGPCommandException('an error occured while extracting the '
                                       'upstream tarball', err)
@@ -408,12 +414,13 @@ class SetupInfo(clcommands.Command):
         # It can be different of the standard <upstream-name>-<upstream-version>
         # if pristine tarball was retrieve remotely (vcs frontend for example)
         self.origpath = [d for d in os.listdir(tmpdir)
-                         if osp.isdir(osp.join(tmpdir,d))][0]
+                         if osp.isdir(osp.join(tmpdir, d))][0]
 
         format = "%s-%s" % (self.get_upstream_name(), self.get_upstream_version())
         if self.origpath != format:
-            self.logger.warn("source directory of original source archive (pristine tarball) "
-                             "has not the expected format (%s): %s" % (format, self.origpath))
+            msg = "source directory of original source archive"\
+                  " (pristine tarball) has not the expected format (%s): %s"
+            self.logger.warn(msg % (format, self.origpath))
 
         # directory containing the debianized source tree
         # (i.e. with a debian sub-directory and maybe changes to the original files)
@@ -435,8 +442,9 @@ class SetupInfo(clcommands.Command):
         """
         try:
             # don't forget the final slash!
-            export(osp.join(self.config.pkg_dir, 'debian'), osp.join(self.origpath, 'debian/'),
-                   verbose=self.config.verbose == 2)
+            export(osp.join(self.config.pkg_dir, 'debian'),
+                   osp.join(self.origpath, 'debian/'),
+                   verbose=(self.config.verbose == 2))
         except IOError, err:
             raise LGPException(err)
 
@@ -444,7 +452,8 @@ class SetupInfo(clcommands.Command):
         if debian_dir != "debian":
             self.logger.info("overriding files from '%s' directory..." % debian_dir)
             # don't forget the final slash!
-            export(osp.join(self.config.pkg_dir, debian_dir), osp.join(self.origpath, 'debian/'),
+            export(osp.join(self.config.pkg_dir, debian_dir),
+                   osp.join(self.origpath, 'debian/'),
                    verbose=self.config.verbose)
 
         from debian.changelog import Changelog
@@ -466,7 +475,8 @@ class SetupInfo(clcommands.Command):
     def get_basetgz(self, distrib, arch, check=True):
         basetgz = osp.join(self.config.basetgz, "%s-%s.tgz" % (distrib, arch))
         if check and not osp.exists(basetgz):
-            raise LGPException("lgp image '%s' not found. Please create it with lgp setup" % basetgz)
+            msg = "lgp image '%s' not found. Please create it with lgp setup"
+            raise LGPException(msg % basetgz)
         return basetgz
 
     def create_tmp_context(self, suffix=""):
@@ -475,7 +485,7 @@ class SetupInfo(clcommands.Command):
         Each context (directory for now) will be cleaned at the end of the build
         process by the destroy_tmp_context method"""
         self._tmpdir = tempfile.mkdtemp(suffix)
-        self.logger.debug('changing build context... (%s)' % self._tmpdir )
+        self.logger.debug('changing build context... (%s)' % self._tmpdir)
         self._tmpdirs.append(self._tmpdir)
         return self._tmpdir
 
