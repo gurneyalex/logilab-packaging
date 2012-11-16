@@ -78,6 +78,7 @@ class PostTreatmentTC(TestCase):
     @within_tempdir
     def test_post_treatments(self):
         builder = build.Builder()
+        builder.go_into_package_dir([])
         resultdir = tempfile.gettempdir()
         builder.config.dist_dir = resultdir
         package_file = osp.join(resultdir, "lenny", "Packages.gz")
