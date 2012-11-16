@@ -501,9 +501,9 @@ class SetupInfo(clcommands.Command):
 
     def get_distrib_dir(self, distrib):
         """get the dynamic target release directory"""
-        distrib_dir = os.path.normpath(os.path.expanduser(self.config.dist_dir))
+        distrib_dir = self._normpath(self.config.dist_dir)
         # special case when current directory is used to put result files ("-r .")
-        if distrib_dir not in ['.', '..']:
+        if self.config.dist_dir not in ['.', '..']:
             distrib_dir = os.path.join(distrib_dir, distrib)
         # check if distribution directory exists, create it if necessary
         os.umask(0002)
