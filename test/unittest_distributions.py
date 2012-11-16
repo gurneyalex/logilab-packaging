@@ -40,13 +40,6 @@ class DistributionTC(TestCase):
         self.assertItemsEqual(get_distributions("all", self.basetgz, suites=self.suites),
                               self.defined)
 
-    def test_one_unvalid_distribution(self):
-        distrib = ['unknown']
-        self.assertRaises(DistributionException, get_distributions, distrib,
-                         basetgz=self.basetgz)
-        distrib = self.defined + distrib
-        self.assertRaises(DistributionException, get_distributions, distrib, self.basetgz)
-
 
 if __name__  == '__main__':
     unittest_main()

@@ -101,7 +101,7 @@ def get_architectures(archi=None, basetgz=None):
     known_archi = Popen(["dpkg-architecture", "-L"], stdout=PIPE).communicate()[0].split()
 
     # try to guess targeted architectures
-    if archi is None or len(archi)==0:
+    if archi is None or len(archi) == 0:
         archi = guess_debian_architecture()
 
     # "all" means architecture-independent. so we can replace by "current"
@@ -118,7 +118,7 @@ def get_architectures(archi=None, basetgz=None):
                                      % basetgz)
             try:
                 archi = [osp.basename(f).split('-', 1)[1].split('.')[0]
-                         for f in glob.glob(osp.join(basetgz,'*.tgz'))]
+                         for f in glob.glob(osp.join(basetgz, '*.tgz'))]
             except IndexError:
                 raise SetupException("there is no available chroot images in default location '%s'"
                                      "\nPlease run 'lgp setup -c create'"
@@ -164,39 +164,13 @@ def get_distributions(distrib=None, basetgz=None, suites=LGP_SUITES, creation=Fa
         distrib = guess_debian_distribution()
     elif distrib is None:
         distrib = [osp.basename(f).split('.', 1)[0]
-                   for f in glob.glob(osp.join(suites,'*'))]
+                   for f in glob.glob(osp.join(suites, '*'))]
     elif 'all' in distrib or len(distrib) == 0:
         # this case fixes unittest_distributions.py when basetgz is None
         if basetgz is None:
             return get_distributions(basetgz=basetgz, suites=suites)
         distrib = [osp.basename(f).split('-', 1)[0]
-                   for f in glob.glob(osp.join(basetgz,'*.tgz'))]
-    elif distrib:
-        mapped = ()
-        # 1. we are getting for distributions that debootstrap can manage
-        if creation:
-            distributions = get_distributions(basetgz=basetgz, suites=suites)
-            missing = [d for d in distrib if d not in distributions]
-            if missing:
-                msg = ("debootstrap creation script for distribution '%s' "
-                       "not found in '%s'" % (",".join(missing), basetgz))
-                raise DistributionException(msg)
-        # 2. we retrieve distributions based on filesystem
-        else:
-            distributions = get_distributions('all', basetgz, suites)
-        # check input distrib parameter and filter if really known
-        for t in distrib:
-            if t not in distributions:
-                # Allow some lgp commands to be run outside a project repository
-                if (len(sys.argv)>1 and sys.argv[1] == "check"):
-                    logging.debug("'%s' image not found in '%s'" % (t, basetgz))
-                    logging.debug("act as if 'unstable' image was existing in filesystem")
-                    return ('unstable',)
-                msg = "distribution '%s' image not found in '%s' (create it or unreference it)" % (t, basetgz)
-                raise DistributionException(msg)
-            else:
-                mapped += (t,)
-        distrib = mapped
+                   for f in glob.glob(osp.join(basetgz, '*.tgz'))]
     return tuple(set(distrib))
 
 def guess_debian_source_format():
