@@ -23,7 +23,6 @@ import os
 import stat
 import os.path as osp
 import logging
-import time
 import tempfile
 from string import Template
 from distutils.core import run_setup
@@ -34,7 +33,6 @@ from subprocess import check_call, CalledProcessError
 from logilab.common import clcommands
 from logilab.common.logging_ext import ColorFormatter
 from logilab.common.shellutils import cp
-from logilab.common.fileutils import export
 from logilab.common.decorators import cached
 
 from logilab.devtools.lib.pkginfo import PackageInfo
@@ -387,90 +385,6 @@ class SetupInfo(clcommands.Command):
             msg = "version mismatch: upstream says '%s' and debian/changelog says '%s'"
             msg %= (upstream_version, debian_upstream_version)
             raise LGPException(msg)
-
-    def prepare_source_archive(self, tmpdir, current_distrib):
-        """prepare and extract the upstream tarball
-
-        FIXME replace by TarFile Object
-        """
-        # Mandatory to be compatible with format 1.0
-        self.logger.debug("copy pristine tarball to prepare Debian source package diff")
-        cp(self._debian_tarball, tmpdir)
-        # TODO obtain current format version
-        # os.path.exists(osp.join(self.origpath, "debian/source/format")
-
-        self.logger.debug("extracting original source archive for %s distribution in %s"
-                          % (current_distrib or "default", tmpdir))
-        try:
-            cmd = ["tar", "--atime-preserve", "--preserve-permissions",
-                   "--preserve-order", "-xzf", self._debian_tarball,
-                   "-C", tmpdir]
-            check_call(cmd, stdout=sys.stdout)
-        except CalledProcessError, err:
-            raise LGPCommandException('an error occured while extracting the '
-                                      'upstream tarball', err)
-
-        # Find the right orig path in tarball
-        # It can be different of the standard <upstream-name>-<upstream-version>
-        # if pristine tarball was retrieve remotely (vcs frontend for example)
-        self.origpath = [d for d in os.listdir(tmpdir)
-                         if osp.isdir(osp.join(tmpdir, d))][0]
-
-        format = "%s-%s" % (self.get_upstream_name(), self.get_upstream_version())
-        if self.origpath != format:
-            msg = "source directory of original source archive"\
-                  " (pristine tarball) has not the expected format (%s): %s"
-            self.logger.warn(msg % (format, self.origpath))
-
-        # directory containing the debianized source tree
-        # (i.e. with a debian sub-directory and maybe changes to the original files)
-        # origpath is depending of the upstream convention
-        self.origpath = osp.join(tmpdir, self.origpath)
-
-        # support of the multi-distribution
-        return self.manage_current_distribution(current_distrib)
-
-    def manage_current_distribution(self, distrib):
-        """manage debian files depending of the current distrib from options
-
-        We copy debian_dir directory into tmp build depending of the target distribution
-        in all cases, we copy the debian directory of the default version (unstable)
-        If a file should not be included, touch an empty file in the overlay
-        directory.
-
-        This is specific to Logilab (debian directory is in project directory)
-        """
-        try:
-            # don't forget the final slash!
-            export(osp.join(self.config.pkg_dir, 'debian'),
-                   osp.join(self.origpath, 'debian/'),
-                   verbose=(self.config.verbose == 2))
-        except IOError, err:
-            raise LGPException(err)
-
-        debian_dir = self.get_debian_dir(distrib)
-        if debian_dir != "debian":
-            self.logger.info("overriding files from '%s' directory..." % debian_dir)
-            # don't forget the final slash!
-            export(osp.join(self.config.pkg_dir, debian_dir),
-                   osp.join(self.origpath, 'debian/'),
-                   verbose=self.config.verbose)
-
-        from debian.changelog import Changelog
-        debchangelog = osp.join(self.origpath, 'debian', 'changelog')
-        changelog = Changelog(open(debchangelog))
-        # substitute distribution string in changelog
-        if distrib:
-            # squeeze python-debian doesn't handle unicode well, see Debian bug#561805
-            changelog.distributions = str(distrib)
-        # append suffix string (or timestamp if suffix is empty) to debian revision
-        if self.config.suffix is not None:
-            suffix = self.config.suffix or '+%s' % int(time.time())
-            self.logger.debug("suffix '%s' added to package version" % suffix)
-            changelog.version = str(changelog.version) + suffix
-        changelog.write_to_open_file(open(debchangelog, 'w'))
-
-        return self.origpath
 
     def get_basetgz(self, distrib, arch, check=True):
         basetgz = osp.join(self.config.basetgz, "%s-%s.tgz" % (distrib, arch))
