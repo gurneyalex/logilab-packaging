@@ -23,7 +23,6 @@ import os
 import stat
 import os.path as osp
 import logging
-import tempfile
 from string import Template
 from distutils.core import run_setup
 #from pkg_resources import FileMetadata
@@ -392,21 +391,6 @@ class SetupInfo(clcommands.Command):
             msg = "lgp image '%s' not found. Please create it with lgp setup"
             raise LGPException(msg % basetgz)
         return basetgz
-
-    def create_tmp_context(self, suffix=""):
-        """create new build temporary context
-
-        Each context (directory for now) will be cleaned at the end of the build
-        process by the destroy_tmp_context method"""
-        self._tmpdir = tempfile.mkdtemp(suffix)
-        self.logger.debug('changing build context... (%s)' % self._tmpdir)
-        self._tmpdirs.append(self._tmpdir)
-        return self._tmpdir
-
-    def destroy_tmp_context(self):
-        """clean all temporary build context and returns exit code"""
-        self.clean_tmpdirs()
-        return self.build_status
 
     def _normpath(self, path):
         """helper method to normalize filepath arguments before

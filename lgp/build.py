@@ -22,6 +22,7 @@ import shutil
 import hashlib
 import errno
 import time
+import tempfile
 from glob import glob
 import os.path as osp
 from subprocess import check_call, CalledProcessError, Popen
@@ -160,6 +161,21 @@ class Builder(SetupInfo):
             for t, c in contents:
                 self.logger.warn("temporary directory not deleted: %s (%s)"
                                  % (t, ", ".join(c)))
+
+    def create_tmp_context(self, suffix=""):
+        """create new build temporary context
+
+        Each context (directory for now) will be cleaned at the end of the build
+        process by the destroy_tmp_context method"""
+        self._tmpdir = tempfile.mkdtemp(suffix)
+        self.logger.debug('changing build context... (%s)' % self._tmpdir)
+        self._tmpdirs.append(self._tmpdir)
+        return self._tmpdir
+
+    def destroy_tmp_context(self):
+        """clean all temporary build context and returns exit code"""
+        self.clean_tmpdirs()
+        return self.build_status
 
     def run(self, args):
         Cleaner(config=self.config).run(args)
