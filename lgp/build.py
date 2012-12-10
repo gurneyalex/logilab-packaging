@@ -383,7 +383,7 @@ class Builder(SetupInfo):
         # move Debian source package files and exit if asked by command-line
         if self.config.deb_src_only:
             resultdir = self.get_distrib_dir(current_distrib)
-            self.move_package_files([self.dscfile], resultdir,
+            self.move_package_files([dscfile], resultdir,
                                     verbose=self.config.deb_src_only)
             return self.destroy_tmp_context()
         # restore directory context
