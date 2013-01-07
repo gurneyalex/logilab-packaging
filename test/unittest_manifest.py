@@ -38,18 +38,18 @@ class ReadManifestInFunctionTest(TestCase):
                                           dirname=join(dirname(__file__),'data/')),
                          ['good_file.xml', 'bin/tool.bat'])
 
-class GetManifestFilesFunctionTest(TestCase):
+# class GetManifestFilesFunctionTest(TestCase):
 
-    def test_known_values(self):
-        self.skipTest('manifest "prune" command ignored (#2888)')
-        # https://www.logilab.net/elo/ticket/2888
-        detected = get_manifest_files(dirname=join(dirname(__file__),'data/'))
-        detected.sort()
-        self.assertEqual(detected,
-                         ['ChangeLog',
-                          'bad_file.rst', 'bad_file.xml', 'bin/tool',
-                          'bin/tool.bat', 'good_file.rst', 'good_file.xml',
-                          'warning_rest.txt'])
+#     def test_known_values(self):
+#         self.skipTest('manifest "prune" command ignored (#2888)')
+#         # https://www.logilab.net/elo/ticket/2888
+#         detected = get_manifest_files(dirname=join(dirname(__file__),'data/'))
+#         detected.sort()
+#         self.assertEqual(detected,
+#                          ['ChangeLog',
+#                           'bad_file.rst', 'bad_file.xml', 'bin/tool',
+#                           'bin/tool.bat', 'good_file.rst', 'good_file.xml',
+#                           'warning_rest.txt'])
 
 if __name__ == '__main__':
     unittest_main()
