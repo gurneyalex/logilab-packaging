@@ -22,10 +22,6 @@ class DistributionTC(TestCase):
     def test_default_distribution(self):
         self.assertItemsEqual(get_distributions(suites=self.suites), self.known)
 
-    def test_distribution_from_changelog(self):
-        self.skipTest('not implemented')
-        self.assertItemsEqual(get_distributions('changelog'), ['unstable'], suites=self.suites)
-
     def test_valid_distribution(self):
         for distrib in self.defined:
             self.assertEqual(get_distributions([distrib,], self.basetgz, suites=self.suites),
