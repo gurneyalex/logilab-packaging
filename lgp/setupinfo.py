@@ -146,6 +146,7 @@ class SetupInfo(clcommands.Command):
         super(SetupInfo, self).__init__(logger)
         self.config.pkg_dir = None
         self.config._package = None
+        self.old_current_directory = '.'
         if config:
             self.config._update(vars(config), mode="careful")
 
@@ -201,9 +202,6 @@ class SetupInfo(clcommands.Command):
 
     def go_into_package_dir(self, arguments):
         """go into package directory
-
-        .. note::
-            current directory wil be saved in `old_current_directory`
         """
         self.old_current_directory = os.getcwd() # use for relative filename in parameters
         if arguments:
