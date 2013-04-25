@@ -1,3 +1,9 @@
+logilab-devtools (0.21.1-1) unstable; urgency=low
+
+  * new upstream version
+
+ -- David Douard <david.douard@logilab.fr>  Thu, 25 Apr 2013 12:12:18 +0200
+
 logilab-devtools (0.21.0-1) unstable; urgency=low
 
   * new upstream release

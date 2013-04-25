@@ -17,7 +17,7 @@
 
 modname = 'devtools'
 distname = 'logilab-devtools'
-numversion = (0, 21, 0)
+numversion = (0, 21, 1)
 version = '.'.join([str(num) for num in numversion])
 
 license = 'GPL'
@@ -26,7 +26,6 @@ author_email = "contact@logilab.fr"
 
 description = "set of development tools used at Logilab"
 web = "http://www.logilab.org/project/logilab-devtools"
-ftp = "ftp://ftp.logilab.org/pub/devtools"
 mailinglist = "mailto://python-projects@lists.logilab.org"
 
 subpackage_of = 'logilab'
