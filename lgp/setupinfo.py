@@ -290,7 +290,8 @@ class SetupInfo(clcommands.Command):
                 except IOError, err:
                     raise LGPException(err)
             cmdline = Template(cmd)
-            cmdline = cmdline.substitute(setup=self.config.setup_file, **args)
+            setup_file = self._normpath(self.config.setup_file)
+            cmdline = cmdline.substitute(setup=setup_file, **args)
         self.logger.debug('run subprocess command: %s' % cmdline)
         if args:
             self.logger.debug('command substitutions: %s' % args)
