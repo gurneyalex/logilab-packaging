@@ -311,7 +311,7 @@ class Builder(SetupInfo):
                 else:
                     self.logger.error("more than one spec file found")
                 self.logger.error("please use the '--specfile' option")
-                raise LGPCommandException("cannot build source distribution", "")
+                raise LGPException("cannot build source distribution")
         specfile = osp.abspath(specfile)
 
         # change directory to build source package
@@ -331,7 +331,7 @@ class Builder(SetupInfo):
         try:
             srpm, = srpms
         except ValueError:
-            raise LGPCommandException("couldn't find the SRPM")
+            raise LGPException("couldn't find the SRPM")
         return srpm
 
     def make_rpm_binary_package(self, distrib, srpm):
