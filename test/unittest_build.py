@@ -83,7 +83,7 @@ class PostTreatmentTC(TestCase):
         builder.config.dist_dir = resultdir
         package_file = osp.join(resultdir, "lenny", "Packages.gz")
         self.assertFalse(osp.isfile(package_file))
-        builder.run_post_treatments("lenny")
+        builder.run_deb_post_treatments("lenny")
         self.assertTrue(osp.isfile(package_file))
 
 

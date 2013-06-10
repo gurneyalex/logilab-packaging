@@ -189,13 +189,15 @@ class Builder(SetupInfo):
                         if self.config.rpm or distrib.startswith(('fedora', 'epel')):
                             srpm = self.make_rpm_source_package(distrib, src_tmpdir)
                             self.make_rpm_binary_package(distrib, srpm)
+                            if self.config.post_treatments:
+                                self.run_rpm_post_treatments(distrib)
                         else:
                             # create a debian source package
                             dscfile = self.make_debian_source_package(distrib, src_tmpdir)
                             if self.make_debian_binary_package(distrib, dscfile):
                                 # do post-treatments only for a successful binary build
                                 if self.packages and self.config.post_treatments:
-                                    self.run_post_treatments(distrib)
+                                    self.run_deb_post_treatments(distrib)
                 # report files to the console
                 if self.packages:
                     self.logger.info("recent files from build:\n* %s"
@@ -644,7 +646,7 @@ class Builder(SetupInfo):
             self.config.distrib = 'all'
         super(Builder, self).guess_environment()
 
-    def run_post_treatments(self, distrib):
+    def run_deb_post_treatments(self, distrib):
         """ Run actions after package compiling """
         # dpkg-scanpackages i386 /dev/null | gzip -9c > 386/Packages.gz
         # dpkg-scanpackages amd64 /dev/null | gzip -9c > amd64/Packages.gz
@@ -661,6 +663,13 @@ class Builder(SetupInfo):
         else:
             self.logger.debug("Debian trivial repository in '%s' updated."
                               % packages_file)
+
+    def run_rpm_post_treatments(self, distrib):
+        resultdir = self.get_distrib_dir(distrib)
+        try:
+            check_call(['createrepo', '--update', '.'], cwd=resultdir)
+        except CalledProcessError, err:
+            self.logger.warning('cannot update rpm repository for %s', resultdir)
 
     def prepare_source_archive(self, tmpdir, current_distrib):
         """prepare and extract the upstream tarball
