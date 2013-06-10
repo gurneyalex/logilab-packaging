@@ -663,7 +663,7 @@ class Builder(SetupInfo):
         resultdir = self.get_distrib_dir(distrib)
         try:
             check_call(['createrepo', '--update', '.'], cwd=resultdir)
-        except CalledProcessError, err:
+        except (CalledProcessError, OSError):
             self.logger.warning('cannot update rpm repository for %s', resultdir)
 
     def prepare_source_archive(self, tmpdir, current_distrib):
