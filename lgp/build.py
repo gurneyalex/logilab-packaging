@@ -186,7 +186,7 @@ class Builder(SetupInfo):
             try:
                 for distrib in  self.distributions:
                     with tempdir(self.config.keep_tmpdir) as src_tmpdir:
-                        if self.config.rpm:
+                        if self.config.rpm or distrib.startswith(('fedora', 'epel')):
                             srpm = self.make_rpm_source_package(distrib, src_tmpdir)
                             self.make_rpm_binary_package(distrib, srpm)
                         else:
