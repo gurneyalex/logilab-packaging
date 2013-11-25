@@ -257,7 +257,7 @@ class Builder(SetupInfo):
                        'Debian revision "%s"' % (debian_name, debian_revision))
                 raise LGPCommandException(msg, err)
             else:
-                tarball = upstream_tarball
+                tarball = osp.join(tmpdir, upstream_tarball)
 
         # create new pristine tarball from working directory if initial revision
         elif tarball is None and is_initial_debian_revision:
