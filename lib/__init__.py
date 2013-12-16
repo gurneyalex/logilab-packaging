@@ -45,10 +45,12 @@ SEVERITIES_COLORS = {
     }
 
 class TextReporter:
-    """ report messages and layouts in plain text
+    """report messages and layouts in plain text
     """
 
-    def __init__(self, output=sys.stdout, color=False):
+    def __init__(self, output=None, color=False):
+        if output is None:
+            output = sys.stdout
         self.out = output
         self.reset()
         self.term_color = color
