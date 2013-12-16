@@ -79,6 +79,11 @@ class SetupInfo(clcommands.Command):
                  "for the value found in debian/changelog",
                  'group': 'Default',
                 }),
+               ('rpm',
+                {'action': 'store_true',
+                 'dest': 'rpm',
+                 'help': 'build a rpm package instead of deb',
+                }),
                ('arch',
                 {'type': 'csv',
                  'dest': 'archi',
@@ -146,6 +151,7 @@ class SetupInfo(clcommands.Command):
         super(SetupInfo, self).__init__(logger)
         self.config.pkg_dir = None
         self.config._package = None
+        self.old_current_directory = '.'
         if config:
             self.config._update(vars(config), mode="careful")
 
@@ -201,9 +207,6 @@ class SetupInfo(clcommands.Command):
 
     def go_into_package_dir(self, arguments):
         """go into package directory
-
-        .. note::
-            current directory wil be saved in `old_current_directory`
         """
         self.old_current_directory = os.getcwd() # use for relative filename in parameters
         if arguments:
@@ -292,7 +295,8 @@ class SetupInfo(clcommands.Command):
                 except IOError, err:
                     raise LGPException(err)
             cmdline = Template(cmd)
-            cmdline = cmdline.substitute(setup=self.config.setup_file, **args)
+            setup_file = self._normpath(self.config.setup_file)
+            cmdline = cmdline.substitute(setup=setup_file, **args)
         self.logger.debug('run subprocess command: %s' % cmdline)
         if args:
             self.logger.debug('command substitutions: %s' % args)

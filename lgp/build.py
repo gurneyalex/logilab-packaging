@@ -57,11 +57,6 @@ class Builder(SetupInfo):
                  'metavar': "<directory>",
                  'help': "where to put compilation results",
                 }),
-               ('rpm',
-                {'action': 'store_true',
-                 'dest': 'rpm',
-                 'help': 'build a rpm package instead of deb',
-                }),
                ('orig-tarball',
                 {'type': 'string',
                  'default': None,
@@ -186,16 +181,18 @@ class Builder(SetupInfo):
             try:
                 for distrib in  self.distributions:
                     with tempdir(self.config.keep_tmpdir) as src_tmpdir:
-                        if self.config.rpm:
+                        if self.config.rpm or distrib.startswith(('fedora', 'epel')):
                             srpm = self.make_rpm_source_package(distrib, src_tmpdir)
                             self.make_rpm_binary_package(distrib, srpm)
+                            if self.config.post_treatments:
+                                self.run_rpm_post_treatments(distrib)
                         else:
                             # create a debian source package
                             dscfile = self.make_debian_source_package(distrib, src_tmpdir)
                             if self.make_debian_binary_package(distrib, dscfile):
                                 # do post-treatments only for a successful binary build
                                 if self.packages and self.config.post_treatments:
-                                    self.run_post_treatments(distrib)
+                                    self.run_deb_post_treatments(distrib)
                 # report files to the console
                 if self.packages:
                     self.logger.info("recent files from build:\n* %s"
@@ -260,7 +257,7 @@ class Builder(SetupInfo):
                        'Debian revision "%s"' % (debian_name, debian_revision))
                 raise LGPCommandException(msg, err)
             else:
-                tarball = upstream_tarball
+                tarball = osp.join(tmpdir, upstream_tarball)
 
         # create new pristine tarball from working directory if initial revision
         elif tarball is None and is_initial_debian_revision:
@@ -309,7 +306,7 @@ class Builder(SetupInfo):
                 else:
                     self.logger.error("more than one spec file found")
                 self.logger.error("please use the '--specfile' option")
-                raise LGPCommandException("cannot build source distribution", "")
+                raise LGPException("cannot build source distribution")
         specfile = osp.abspath(specfile)
 
         # change directory to build source package
@@ -329,7 +326,7 @@ class Builder(SetupInfo):
         try:
             srpm, = srpms
         except ValueError:
-            raise LGPCommandException("couldn't find the SRPM")
+            raise LGPException("couldn't find the SRPM")
         return srpm
 
     def make_rpm_binary_package(self, distrib, srpm):
@@ -644,7 +641,7 @@ class Builder(SetupInfo):
             self.config.distrib = 'all'
         super(Builder, self).guess_environment()
 
-    def run_post_treatments(self, distrib):
+    def run_deb_post_treatments(self, distrib):
         """ Run actions after package compiling """
         # dpkg-scanpackages i386 /dev/null | gzip -9c > 386/Packages.gz
         # dpkg-scanpackages amd64 /dev/null | gzip -9c > amd64/Packages.gz
@@ -661,6 +658,13 @@ class Builder(SetupInfo):
         else:
             self.logger.debug("Debian trivial repository in '%s' updated."
                               % packages_file)
+
+    def run_rpm_post_treatments(self, distrib):
+        resultdir = self.get_distrib_dir(distrib)
+        try:
+            check_call(['createrepo', '--update', '.'], cwd=resultdir)
+        except (CalledProcessError, OSError):
+            self.logger.warning('cannot update rpm repository for %s', resultdir)
 
     def prepare_source_archive(self, tmpdir, current_distrib):
         """prepare and extract the upstream tarball
