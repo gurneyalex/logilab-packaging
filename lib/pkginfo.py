@@ -96,10 +96,9 @@ def pkginfo_save(pkginfo, modifs):
         for line in open(pkginfo, 'r'):
             key = line.split('=')[0].strip()
             # FIXME: multilines value
-            if modifs.has_key(key):
-                if modifs[key] is not None:
-                    stream.write('%s = %r\n' % (key, modifs[key]))
-                del modifs[key]
+            val = modifs.pop(key, None)
+            if val is not None:
+                stream.write('%s = %r\n' % (key, val))
             else:
                 stream.write(line)
         # add missing  values
@@ -513,18 +512,18 @@ class PackageInfo:
                 try:
                     value = getattr(info_module, opt_name)
                     self.setattr(opt_name, value)
-                    if opt_def.has_key('deprecated') and opt_def.has_key('help'):
+                    if 'deprecated' in opt_def and 'help' in opt_def:
                         msg = "deprecated attribute '%s' (%s: %s)"
                         msg = msg  % (opt_name, cat, opt_def['help'])
                         config_module = imod + '.py'
                         self.reporter.warning(config_module, None, msg)
                 except AttributeError:
-                    if opt_def.has_key('default'):
+                    if 'default' in opt_def:
                         value = opt_def.get('default')
                         if callable(value):
                             value = value(self)
                         self.setattr(opt_name, value)
-                    if opt_def.has_key('required') and opt_def['required']:
+                    if opt_def.get('required'):
                         msg = "missing required attribute '%s' (%s: %s)"
                         msg = msg  % (opt_name, cat, opt_def['help'])
                         config_module = imod + '.py'
