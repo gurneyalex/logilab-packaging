@@ -227,8 +227,15 @@ class Builder(SetupInfo):
         .. see::
             http://www.debian.org/doc/debian-policy/ch-source.html
         """
-        self._check_version_mismatch()
-        is_initial_debian_revision = self.is_initial_debian_revision()
+        has_debian_dir = osp.isdir('debian')
+        if has_debian_dir:
+            # _check_version_mismatch() is 100% Debian-specific
+            self._check_version_mismatch()
+            is_initial_debian_revision = self.is_initial_debian_revision()
+        else:
+            # always rebuild the source/orig tarball if debian/ is missing,
+            # skip uscan altogether
+            is_initial_debian_revision = True
         tarball = self.config.orig_tarball
 
         if tarball and is_initial_debian_revision:
@@ -237,8 +244,9 @@ class Builder(SetupInfo):
 
         upstream_name = self.get_upstream_name()
         fileparts = (upstream_name, self.get_upstream_version())
-        # note: tarball format can be guaranteed by uscan's repack option
-        debian_tarball = '%s_%s.orig.tar.gz' % fileparts
+        if has_debian_dir:
+            # note: tarball format can be guaranteed by uscan's repack option
+            debian_tarball = '%s_%s.orig.tar.gz' % fileparts
         upstream_tarball = '%s-%s.tar.gz' % fileparts
 
         # run uscan to download the source tarball by looking at debian/watch
@@ -285,17 +293,18 @@ class Builder(SetupInfo):
 
         # Make a copy of tarball ('path/to/xxx-version.tar.gz')...
         # ... with the debian name convention 'path/to/xxx_version.orig.tar.gz'
-        debian_tarball = osp.abspath(osp.join(tmpdir, debian_tarball))
-        try:
-            if not osp.exists(debian_tarball):
-                shutil.copy(tarball, debian_tarball)
-        except EnvironmentError, err:
-            msg = "pristine tarball can't be copied from given location: %s"
-            self.logger.critical(msg % tarball)
-            raise LGPException(err)
+        if has_debian_dir:
+            debian_tarball = osp.abspath(osp.join(tmpdir, debian_tarball))
+            try:
+                if not osp.exists(debian_tarball):
+                    shutil.copy(tarball, debian_tarball)
+            except EnvironmentError, err:
+                msg = "pristine tarball can't be copied from given location: %s"
+                self.logger.critical(msg % tarball)
+                raise LGPException(err)
+            self._debian_tarball = debian_tarball
         #
         self._upstream_tarball = tarball
-        self._debian_tarball = debian_tarball
         return tarball
 
     def make_rpm_source_package(self, distrib, tmpdir):
