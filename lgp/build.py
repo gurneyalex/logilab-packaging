@@ -184,6 +184,11 @@ class Builder(SetupInfo):
                         if self.config.rpm or distrib.startswith(('fedora', 'epel')):
                             srpm = self.make_rpm_source_package(distrib, src_tmpdir)
                             self.make_rpm_binary_package(distrib, srpm)
+                            # move logs and rpms to distdir
+                            rpms = glob(osp.join(src_tmpdir, '*.rpm'))
+                            buildlog = glob(osp.join(src_tmpdir, '*.log'))
+                            self.move_package_files(rpms + buildlog, self.get_distrib_dir(distrib))
+                            #
                             if self.config.post_treatments:
                                 self.run_rpm_post_treatments(distrib)
                         else:
@@ -310,6 +315,7 @@ class Builder(SetupInfo):
         specfile = osp.abspath(specfile)
 
         # change directory to build source package
+        # note: call os.chdir() HERE is needed in make_rpm_binary_package() below
         os.chdir(tmpdir)
         try:
             cmd = ["sudo", "mock", "--buildsrpm",
@@ -331,7 +337,7 @@ class Builder(SetupInfo):
 
     def make_rpm_binary_package(self, distrib, srpm):
         cmd = ["sudo", "mock", "-r", distrib,
-               "--result", self.get_distrib_dir(distrib),
+               "--resultdir", os.getcwd(), # os.chdir() is called above
                "--rebuild", srpm]
         try:
             self.logger.debug("running mock command: %s ..." % " ".join(cmd))
