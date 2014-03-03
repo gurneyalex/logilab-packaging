@@ -1,3 +1,9 @@
+logilab-devtools (0.22.1-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Florent Cayré <florent.cayre@logilab.fr>  Mon, 03 Mar 2014 10:22:16 +0100
+
 logilab-devtools (0.22.0-1) unstable; urgency=low
 
   * New upstream release.
