@@ -21,6 +21,7 @@ import errno
 import sys
 import os
 import stat
+from glob import glob
 import os.path as osp
 import logging
 from string import Template
@@ -379,14 +380,23 @@ class SetupInfo(clcommands.Command):
         versions = self.get_debian_version().rsplit('-', 1)
         return versions
 
-    def _check_version_mismatch(self):
+    def _check_debian_version_mismatch(self):
         upstream_version = self.get_upstream_version()
-        #debian_upstream_version = self.get_versions()[0]
         debian_upstream_version = self.get_debian_version().rsplit('-', 1)[0]
         assert debian_upstream_version == self.get_versions()[0], "get_versions() failed"
         if upstream_version != debian_upstream_version:
             msg = "version mismatch: upstream says '%s' and debian/changelog says '%s'"
             msg %= (upstream_version, debian_upstream_version)
+            raise LGPException(msg)
+
+    def _check_rpm_version_mismatch(self, specfile):
+        upstream_version = self.get_upstream_version()
+        rpm_upstream_version = utils.parse_rpm_version(specfile)
+        self.logger.debug('retrieve rpm version from %s: %s' %
+                          (specfile, rpm_upstream_version))
+        if upstream_version != rpm_upstream_version:
+            msg = "version mismatch: upstream says '%s' and spec file says '%s'"
+            msg %= (upstream_version, rpm_upstream_version)
             raise LGPException(msg)
 
     def get_basetgz(self, distrib, arch, check=True):
