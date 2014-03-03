@@ -228,9 +228,20 @@ class Builder(SetupInfo):
             http://www.debian.org/doc/debian-policy/ch-source.html
         """
         has_debian_dir = osp.isdir('debian')
+        # Ugly code, does the job for the moment
+        specfile = self.config.specfile
+        if specfile is None:
+            specfiles = glob('*.spec')
+            try:
+                specfile, = specfiles
+            except ValueError:
+                pass
         if has_debian_dir:
-            # _check_version_mismatch() is 100% Debian-specific
-            self._check_version_mismatch()
+            self._check_debian_version_mismatch()
+        if specfile is not None:
+            self._check_rpm_version_mismatch(specfile)
+
+        if has_debian_dir:
             is_initial_debian_revision = self.is_initial_debian_revision()
         else:
             # always rebuild the source/orig tarball if debian/ is missing,
@@ -319,7 +330,7 @@ class Builder(SetupInfo):
                     self.logger.error("unable to find the '.spec' file")
                 else:
                     self.logger.error("more than one spec file found")
-                self.logger.error("please use the '--specfile' option")
+                self.logger.error("please use the '--spec' option")
                 raise LGPException("cannot build source distribution")
         specfile = osp.abspath(specfile)
 
