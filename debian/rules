@@ -14,7 +14,7 @@ export DH_VERBOSE=1
 build: build-stamp
 build-stamp: 
 	dh_testdir
-	python setup.py -q build
+	NO_SETUPTOOLS=1 python setup.py -q build
 	touch build-stamp
 
 clean: 
@@ -32,9 +32,8 @@ install: build $(basename $(wildcard debian/*.in))
 	dh_testroot
 	dh_clean
 	dh_installdirs
-
 	# prefix = debian/tmp/logilab-packaging/ ?
-	python setup.py install --no-compile --prefix=debian/tmp/usr
+	NO_SETUPTOOLS=1 python setup.py install --no-compile --prefix=debian/tmp/usr
 
 	dh_install -vi
 
