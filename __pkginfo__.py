@@ -17,7 +17,7 @@
 
 modname = 'devtools'
 distname = 'logilab-devtools'
-numversion = (0, 22, 0)
+numversion = (0, 22, 1)
 version = '.'.join([str(num) for num in numversion])
 
 license = 'GPL'
