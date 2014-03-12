@@ -29,11 +29,6 @@ import logging
 from debian.deb822 import Deb822
 from debian.changelog import Changelog, ChangelogParseError
 
-try:
-    import rpm
-except ImportError:
-    rpm = None
-
 from logilab.devtools.lgp import LGP_SUITES
 from logilab.devtools.lgp.exceptions import (ArchitectureException,
                                              DistributionException,
@@ -237,16 +232,6 @@ def _parse_deb_project(changelog='debian/changelog'):
         return clog.package
     except ChangelogParseError:
         raise LGPException("Malformed Debian changelog '%s'" % changelog)
-
-def parse_rpm_version(specfile):
-    if rpm is None:
-        raise LGPException('rpm unsupported: missing rpm python module')
-    try:
-        spec = rpm.spec(specfile)
-        return spec.sourceHeader['version']
-    except rpm.error:
-        raise LGPException('python-rpm specfile error: '
-                           'cannot determine version')
 
 @contextmanager
 def tempdir(keep_tmpdir=False):
