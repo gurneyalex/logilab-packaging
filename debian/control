@@ -39,15 +39,6 @@ Description: emacs lisp code for logilab development tools
   * an emacs mode for ChangeLog files
   * a small set of emacs shortcuts used at logilab
 
-Package: logilab-dev-environment
-Architecture: all
-Depends: ${misc:Depends}, python-all-dev, python-all-dbg, emacs, python-ropemacs, logilab-packaging, pycoverage, logilab-elisp, build-essential, pylint, mercurial, subversion, debinstall, hgview, meld, rcs, commit-tool
-Recommends: vim-python | gvim
-Description: Minimum set of packages for development at Logilab
- This metapackage ensures Python and pylint are available, as well as
- Emacs, Logilab's packaging tools and the version control tools used
- at Logilab (mercurial and subversion).
-
 Package: narval-lgp
 Architecture: all
 Depends: ${misc:Depends}, ${python:Depends}, cubicweb-apycot, narval-apycot, logilab-packaging (= ${source:Version})
