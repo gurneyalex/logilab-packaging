@@ -22,9 +22,9 @@ import sys
 import glob
 from subprocess import check_call, CalledProcessError
 
-from logilab.devtools.lgp import (LGP, CONFIG_FILE, HOOKS_DIR, utils)
-from logilab.devtools.lgp.setupinfo import SetupInfo
-from logilab.devtools.lgp.check import check_keyrings
+from logilab.packaging.lgp import (LGP, CONFIG_FILE, HOOKS_DIR, utils)
+from logilab.packaging.lgp.setupinfo import SetupInfo
+from logilab.packaging.lgp.check import check_keyrings
 
 
 @LGP.register

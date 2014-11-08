@@ -1,8 +1,8 @@
 import os.path
 
 from logilab.common.testlib import TestCase, unittest_main
-from logilab.devtools.lgp.utils import get_distributions
-from logilab.devtools.lgp.exceptions import DistributionException
+from logilab.packaging.lgp.utils import get_distributions
+from logilab.packaging.lgp.exceptions import DistributionException
 
 
 

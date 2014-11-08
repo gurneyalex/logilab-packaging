@@ -1,47 +1,32 @@
-Source: logilab-devtools
+Source: logilab-packaging
 Section: python
 Priority: optional
 Maintainer: Logilab S.A. <contact@logilab.fr>
-Uploaders: Alexandre Fayolle <afayolle@debian.org>,
-           Adrien Di Mascio <adrien.dimascio@logilab.fr>,
-           Sylvain Thenault <sylvain.thenault@logilab.fr>,
-           Julien Jehannet <julien.jehannet@logilab.fr>,
+Uploaders: David Douard <david.douard@logilab.fr>,
            Julien Cristau <jcristau@debian.org>
-Build-Depends: debhelper (>= 7.0), python-all
-Build-Depends-Indep: python-support
-Standards-Version: 3.8.0
+Standards-Version: 3.9.4
+Build-Depends: debhelper (>= 7), python-all, python-support
 XS-Python-Version: >= 2.6
-Homepage: http://www.logilab.org/project/logilab-devtools
-Vcs-hg: http://hg.logilab.org/logilab/devtools
-Vcs-Browser: http://hg.logilab.org/logilab/devtools
+Homepage: http://www.logilab.org/project/logilab-packaging
+Vcs-hg: http://hg.logilab.org/logilab/packaging
+Vcs-Browser: http://hg.logilab.org/logilab/packaging
 
-Package: logilab-packaging
+Package: python-logilab-packaging
 Architecture: all
-Suggests: logilab-doctools, pymacs, emacsen-common, debian-archive-keyring
-Recommends: mercurial (>= 0.9.3), subversion, debinstall, diffstat
-Depends: ${misc:Depends}, ${python:Depends}, python, python-debian, lintian, pbuilder, devscripts, debhelper,
-         python-logilab-common, sudo, cdebootstrap, python-apt
-Conflicts: devtools, simh, python-vcslib
-Replaces: devtools, python-vcslib
-Description: set of development tools used at Logilab
- Set of tools which aims to help the developpement process, including :
-  * tools to check and build source and/or Debian packages
-  * standard for zope and Python packages
+Recommends: mercurial (>= 0.9.3), debinstall, diffstat
+Depends: ${misc:Depends},
+	 ${python:Depends},
+	 python-debian,
+	 lintian,
+	 pbuilder,
+	 devscripts,
+	 debhelper,
+         python-logilab-common,
+	 sudo,
+	 debootstrap,
+	 python-apt,
+Conflicts: devtools, simh, python-vcslib, logilab-devtools (<0.23)
+Replaces: devtools, python-vcslib, logilab-devtools
+Description: helper tools used at Logilab to build Debian packages
+ .
 
-Package: logilab-elisp
-Architecture: all
-Depends: ${misc:Depends}, emacsen-common
-Conflicts: devtools
-Replaces: devtools
-Description: emacs lisp code for logilab development tools
- Set of elisp goodies including :
-  * an emacs mode for pycover files
-  * an emacs mode for ChangeLog files
-  * a small set of emacs shortcuts used at logilab
-
-Package: narval-lgp
-Architecture: all
-Depends: ${misc:Depends}, ${python:Depends}, cubicweb-apycot, narval-apycot, logilab-packaging (= ${source:Version})
-Description: lgp extensions for apycot
- This package provides a set of actions to run lgp check and build from
- Narval/Apycot.

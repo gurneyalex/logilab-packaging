@@ -1,4 +1,4 @@
-# Copyright (c) 2003-2013 LOGILAB S.A. (Paris, FRANCE).
+# Copyright (c) 2003-2014 LOGILAB S.A. (Paris, FRANCE).
 # http://www.logilab.fr/ -- mailto:contact@logilab.fr
 
 # This program is free software; you can redistribute it and/or modify it under
@@ -13,19 +13,19 @@
 # You should have received a copy of the GNU General Public License along with
 # this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA.
-"""logilab.devtools packaging information"""
+"""logilab.packaging packaging information"""
 
-modname = 'devtools'
-distname = 'logilab-devtools'
-numversion = (0, 22, 2)
+modname = 'packaging'
+distname = 'logilab-packaging'
+numversion = (1, 0, 0)
 version = '.'.join([str(num) for num in numversion])
 
 license = 'GPL'
 author = "Logilab"
 author_email = "contact@logilab.fr"
 
-description = "set of development tools used at Logilab"
-web = "http://www.logilab.org/project/logilab-devtools"
+description = "tools used at Logilab to create debian packages"
+web = "http://www.logilab.org/project/logilab-packaging"
 mailinglist = "mailto://python-projects@lists.logilab.org"
 
 subpackage_of = 'logilab'
@@ -34,15 +34,9 @@ from os.path import join, isdir
 
 include_dirs = ['templates', join('test', 'data')]
 
-if isdir('narval'):
-    data_files = [[join('var', 'lib', 'narval', 'plugins'), [join('narval', 'lgp.py')]]]
-
 scripts = [
-    # logilab-packaging
     'bin/changelog',
-    'bin/update_gettext',
     'bin/lgp',
-    'bin/lsprofcalltree',
     ]
 
 install_requires = ['logilab-common']

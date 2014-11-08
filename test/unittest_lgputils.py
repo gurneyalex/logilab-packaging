@@ -4,7 +4,7 @@ import os
 from os.path import exists
 from unittest2 import main, TestCase
 
-from logilab.devtools.lgp import utils
+from logilab.packaging.lgp import utils
 
 class UtilsTC(TestCase):
     def test_tempdir_utility(self):

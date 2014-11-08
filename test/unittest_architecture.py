@@ -3,8 +3,8 @@ from __future__ import with_statement
 from subprocess import Popen, PIPE
 
 from logilab.common.testlib import TestCase, unittest_main
-from logilab.devtools.lgp.utils import get_architectures
-from logilab.devtools.lgp.exceptions import ArchitectureException
+from logilab.packaging.lgp.utils import get_architectures
+from logilab.packaging.lgp.exceptions import ArchitectureException
 
 
 class ArchitectureTC(TestCase):
@@ -23,12 +23,12 @@ class ArchitectureTC(TestCase):
         archi = ['i386', 'amd64', 'openbsd-i386']
         self.assertEqual(get_architectures(archi), archi)
 
-    def test_one_unvalid_architecture(self):
+    def test_one_invalid_architecture(self):
         archi = ['window$']
         with self.assertRaises(ArchitectureException):
             get_architectures(archi)
 
-    def test_mixed_unvalid_architectures(self):
+    def test_mixed_invalid_architectures(self):
         archi = ['i386', 'openbsd-arm', 'hurd-i386', 'window$', 'sparc']
         with self.assertRaises(ArchitectureException):
             get_architectures(archi)

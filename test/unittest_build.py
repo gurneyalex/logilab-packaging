@@ -8,11 +8,11 @@ import tarfile
 
 from logilab.common.testlib import TestCase, unittest_main, within_tempdir
 
-from logilab.devtools.lgp.utils import tempdir
-from logilab.devtools.lgp.exceptions import LGPCommandException
-from logilab.devtools.lgp import build
+from logilab.packaging.lgp.utils import tempdir
+from logilab.packaging.lgp.exceptions import LGPCommandException
+from logilab.packaging.lgp import build
 
-from logilab.devtools.lgp.check import check_debsign
+from logilab.packaging.lgp.check import check_debsign
 
 
 class BuildTC(TestCase):
