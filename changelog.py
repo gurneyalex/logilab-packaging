@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# Copyright (c) 2003-2008 LOGILAB S.A. (Paris, FRANCE).
+# Copyright (c) 2003-2014 LOGILAB S.A. (Paris, FRANCE).
 # http://www.logilab.fr/ -- mailto:contact@logilab.fr
 #
 # This program is free software; you can redistribute it and/or modify it under
@@ -20,7 +20,7 @@
 import sys
 import getopt
 
-from logilab.devtools.lib import changelog
+from logilab.packaging.lib import changelog
 
 
 USAGE = """
@@ -34,27 +34,27 @@ OPTIONS:
   --file <change log file>
     change log file to consider
   --new
-    create a new entry if no current entry found 
+    create a new entry if no current entry found
   --debian
     act on a debian change log (debian/changelog) instead of an upstream
     changelog (ChangeLog)
-   
+
 COMMAND COMMANDS_ARGS
   extract [release]
     extract messages for a given release. If no release is given, get
     messages for the latest entry.
-    
+
   lastrev
     retreive the latest version released
-    
+
   add <message>
     add a message to the current entry
-    
+
   close
     close the current entry (version is read from the package
     __pkginfo__.py file)
 """
-    
+
 def run(args):
     """main"""
     # read option
@@ -87,7 +87,7 @@ def run(args):
         if chlogfile is None:
             chlogfile = changelog.find_ChangeLog(pkg_dir)
         chlg = changelog.ChangeLog(chlogfile)
-    
+
     if args[0] == 'extract':
         if len(args) == 2:
             arg = args[1]

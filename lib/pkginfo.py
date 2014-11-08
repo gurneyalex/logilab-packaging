@@ -1,5 +1,5 @@
 # Copyright (c) 2003 Sylvain Thenault (thenault@gmail.com)
-# Copyright (c) 2003-2010 Logilab (contact@logilab.fr)
+# Copyright (c) 2003-2014 Logilab (contact@logilab.fr)
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -32,10 +32,10 @@ from logilab.common.fileutils import lines, ensure_fs_mode
 from logilab.common.shellutils import find
 from logilab.common.deprecation import deprecated
 
-import logilab.devtools
-from logilab.devtools.lib import TextReporter
-from logilab.devtools.lib.utils import SGMLCatalog, get_scripts, glob_match
-from logilab.devtools import BASE_EXCLUDE
+import logilab.packaging
+from logilab.packaging.lib import TextReporter
+from logilab.packaging.lib.utils import SGMLCatalog, get_scripts, glob_match
+from logilab.packaging import BASE_EXCLUDE
 
 try:
     from scriptfoundry.snakespell import iSpell
@@ -52,7 +52,7 @@ except:
         """
         return []
 
-TEMPLATE_DIR = join(logilab.devtools.__path__[0], 'templates')
+TEMPLATE_DIR = join(logilab.packaging.__path__[0], 'templates')
 
 STD_DOCS = ('README', 'README.txt', 'ChangeLog',
             'TODO', 'TODO.txt',

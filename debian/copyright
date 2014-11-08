@@ -1,6 +1,7 @@
-This package was debianized by Sylvain Thenault <sylvain.thenault@logilab.fr>  Sat, 13 Apr 2002 19:05:23 +0200.
+This package was originally debianized by Sylvain Thenault <sylvain.thenault@logilab.fr>  
+Sat, 13 Apr 2002 19:05:23 +0200.
 
-It was downloaded from ftp://ftp.logilab.org/pub/devtools
+It was downloaded from https://pypi.python.org/pypi/l/logilab-packaging/
 
 Upstream Author: 
 
@@ -8,7 +9,7 @@ Upstream Author:
 
 Copyright:
 
-Copyright (c) 2003-2008 LOGILAB S.A. (Paris, FRANCE).
+Copyright (c) 2003-2014 LOGILAB S.A. (Paris, FRANCE).
 http://www.logilab.fr/ -- mailto:contact@logilab.fr
 
 This program is free software; you can redistribute it and/or modify it under
@@ -26,8 +27,3 @@ this program; if not, write to the Free Software Foundation, Inc.,
 
 On Debian systems, the complete text of the GNU General Public License
 may be found in '/usr/share/common-licenses/GPL'.
-
-For lsprofcalltree.py:
-
-Copyright  David Allouche, Jp Calderone & Itamar Shtull-Trauring, Johan Dahlin
-

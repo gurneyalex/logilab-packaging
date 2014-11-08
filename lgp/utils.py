@@ -29,11 +29,11 @@ import logging
 from debian.deb822 import Deb822
 from debian.changelog import Changelog, ChangelogParseError
 
-from logilab.devtools.lgp import LGP_SUITES
-from logilab.devtools.lgp.exceptions import (ArchitectureException,
-                                             DistributionException,
-                                             SetupException,
-                                             LGPException)
+from logilab.packaging.lgp import LGP_SUITES
+from logilab.packaging.lgp.exceptions import (ArchitectureException,
+                                              DistributionException,
+                                              SetupException,
+                                              LGPException)
 
 
 def get_debian_name():

@@ -21,9 +21,9 @@ import ConfigParser
 from string import Template
 from subprocess import check_call
 
-from logilab.devtools.lgp import LGP, LGP_CONFIG_FILE
-from logilab.devtools.lgp.setupinfo import SetupInfo
-from logilab.devtools.lgp.exceptions import LGPException
+from logilab.packaging.lgp import LGP, LGP_CONFIG_FILE
+from logilab.packaging.lgp.setupinfo import SetupInfo
+from logilab.packaging.lgp.exceptions import LGPException
 
 
 @LGP.register

@@ -1,22 +1,22 @@
 #!/usr/bin/env python
 # pylint: disable=W0404,W0622,W0704,W0613,W0152
-# copyright 2003-2010 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+# copyright 2003-2014 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 # contact http://www.logilab.fr/ -- mailto:contact@logilab.fr
 #
-# This file is part of logilab-devtools.
+# This file is part of logilab-packaging.
 #
-# logilab-devtools is free software: you can redistribute it and/or modify it under
+# logilab-packaging is free software: you can redistribute it and/or modify it under
 # the terms of the GNU Lesser General Public License as published by the Free
 # Software Foundation, either version 2.1 of the License, or (at your option) any
 # later version.
 #
-# logilab-devtools is distributed in the hope that it will be useful, but WITHOUT
+# logilab-packaging is distributed in the hope that it will be useful, but WITHOUT
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 # FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License for more
 # details.
 #
 # You should have received a copy of the GNU Lesser General Public License along
-# with logilab-devtools.  If not, see <http://www.gnu.org/licenses/>.
+# with logilab-packaging.  If not, see <http://www.gnu.org/licenses/>.
 """Generic Setup script, takes package info from __pkginfo__.py file.
 """
 __docformat__ = "restructuredtext en"
@@ -52,6 +52,7 @@ include_dirs = getattr(__pkginfo__, 'include_dirs', [])
 ext_modules = getattr(__pkginfo__, 'ext_modules', None)
 install_requires = getattr(__pkginfo__, 'install_requires', None)
 dependency_links = getattr(__pkginfo__, 'dependency_links', [])
+py_modules = getattr(__pkginfo__, 'py_modules', [])
 
 STD_BLACKLIST = ('CVS', '.svn', '.hg', 'debian', 'dist', 'build')
 
@@ -193,6 +194,7 @@ def install(**kwargs):
                  scripts = ensure_scripts(scripts),
                  data_files = data_files,
                  ext_modules = ext_modules,
+                 py_modules=py_modules,
                  cmdclass = {'install_lib': MyInstallLib},
                  **kwargs
                  )

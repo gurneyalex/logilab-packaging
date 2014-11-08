@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 # Copyright (c) 2003 Sylvain Thénault (thenault@gmail.com)
-# Copyright (c) 2003-2008 LOGILAB S.A. (Paris, FRANCE).
+# Copyright (c) 2003-2014 LOGILAB S.A. (Paris, FRANCE).
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -25,7 +25,7 @@ from distutils.text_file import TextFile
 from distutils.errors import DistutilsTemplateError
 import distutils
 
-from logilab.devtools import BASE_EXCLUDE
+from logilab.packaging import BASE_EXCLUDE
 
 JUNK_EXTENSIONS = ('~', '.pyc', '.pyo', '.fo', '.o', '.so', '.swp', '.orig')
 

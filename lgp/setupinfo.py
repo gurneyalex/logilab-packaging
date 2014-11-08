@@ -34,9 +34,9 @@ from logilab.common.logging_ext import ColorFormatter
 from logilab.common.shellutils import cp
 from logilab.common.decorators import cached
 
-from logilab.devtools.lib.pkginfo import PackageInfo
-from logilab.devtools.lgp import LOG_FORMAT, utils
-from logilab.devtools.lgp.exceptions import LGPException, LGPCommandException
+from logilab.packaging.lib.pkginfo import PackageInfo
+from logilab.packaging.lgp import LOG_FORMAT, utils
+from logilab.packaging.lgp.exceptions import LGPException, LGPCommandException
 
 COMMANDS = {
         'file': {
@@ -241,7 +241,7 @@ class SetupInfo(clcommands.Command):
         if osp.isfile('__pkginfo__.py') and not setup_file:
             # Logilab's specific format
             # FIXME Format is buggy if setup_file was set to 'setup.py'
-            from logilab.devtools.lib import TextReporter
+            from logilab.packaging.lib import TextReporter
             self.config._package = PackageInfo(reporter=TextReporter(file(os.devnull, "w+")),
                                                directory=self.config.pkg_dir)
             assert osp.isfile('setup.py'), "setup.py is still mandatory"

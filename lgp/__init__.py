@@ -21,8 +21,8 @@ import logging
 
 import logilab.common.clcommands as cli
 
-from logilab.devtools.__pkginfo__ import description, version
-from logilab.devtools.lgp.exceptions import LGPException
+from logilab.packaging.__pkginfo__ import description, version
+from logilab.packaging.lgp.exceptions import LGPException
 
 
 LGP_CONFIG_FILE = '/etc/lgp/lgprc'

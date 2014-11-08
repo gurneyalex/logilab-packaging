@@ -1,5 +1,8 @@
-ChangeLog for logilab.devtools
-==============================
+ChangeLog for logilab.packaging
+===============================
+
+2014-11-07  --  1.0.0
+    * extracted lgp from logilab.devtools to create logilab.packaging
 
 2011-10-07  --  0.19.0
     * I'm starving, FEED ME

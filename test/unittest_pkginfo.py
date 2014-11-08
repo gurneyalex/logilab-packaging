@@ -1,6 +1,6 @@
 import os
 from logilab.common.testlib import TestCase, unittest_main
-from logilab.devtools.lib import pkginfo, TextReporter
+from logilab.packaging.lib import pkginfo, TextReporter
 
 
 class DefaultFunctionsTC(TestCase):
@@ -18,9 +18,9 @@ class DefaultFunctionsTC(TestCase):
 class PkgInfoProject(TestCase):
 
     def test_pkginfo_project_itself(self):
-        import logilab.devtools
+        import logilab.packaging
         self.assertEqual(pkginfo.check_info_module(TextReporter(),
-                                                    os.path.dirname(logilab.devtools.__file__)),
+                                                    os.path.dirname(logilab.packaging.__file__)),
                                                     1)
 
 
