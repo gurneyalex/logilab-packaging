@@ -1,8 +1,5 @@
-etc/lgp/pbuilderrc
-etc/lgp/lgprc
-etc/lgp/scripts var/lib/logilab-packaging
-etc/lgp/hooks var/lib/logilab-packaging
-etc/lgp/pbuilderrc.sh var/lib/logilab-packaging
-etc/lgp/pbuilderrc.local usr/share/doc/logilab-packaging/examples
-etc/lgp/sources.list.debian usr/share/doc/logilab-packaging/examples
-etc/lgp/sources.list.ubuntu usr/share/doc/logilab-packaging/examples
+usr/bin/changelog
+usr/lib/python*/*/logilab/packaging/__init__.py
+usr/lib/python*/*/logilab/packaging/__pkginfo__.py
+usr/lib/python*/*/logilab/packaging/lib
+usr/lib/python*/*/logilab/packaging/templates

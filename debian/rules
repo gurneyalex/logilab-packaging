@@ -31,14 +31,9 @@ install: build
 	dh_testroot
 	dh_clean -k
 	dh_installdirs
-	NO_SETUPTOOLS=1 python setup.py -q install --no-compile --prefix=debian/python-logilab-packaging/usr/
-	# remove sub-package __init__ file (created in postinst)
-	rm debian/python-logilab-packaging/usr/lib/python*/site-packages/logilab/__init__.py
-	# remove test directory (installed in in the doc directory)
-	rm -rf debian/python-logilab-packaging/usr/lib/python*/site-packages/logilab/packaging/test
-	# install tests
-	(cd test && find . -type f -not \( -path '*/CVS/*' -or -name '*.pyc' \) -exec install -D --mode=644 {} ../debian/python-logilab-packaging/usr/share/doc/python-logilab-packaging/test/{} \;)
-
+	NO_SETUPTOOLS=1 python setup.py -q install --no-compile --prefix=debian/tmp/usr/
+	# install tests in docs directory
+	(cd test && find . -type f -not \( -path '*/CVS/*' -or -name '*.pyc' \) -exec install -D --mode=644 {} ../debian/tmp/usr/share/doc/python-logilab-packaging/test/{} \;)
 
 # Build architecture-independent files here.
 binary-indep: build install

@@ -13,6 +13,18 @@ Vcs-Browser: http://hg.logilab.org/logilab/packaging
 
 Package: python-logilab-packaging
 Architecture: all
+Depends: ${misc:Depends},
+	 ${python:Depends},
+	 python-debian,
+         python-logilab-common,
+	 python-apt,
+Conflicts: devtools, simh, python-vcslib, logilab-devtools (<0.23)
+Replaces: devtools, python-vcslib, logilab-devtools
+Description: python modules used at Logilab to ease Debian packaging
+ .
+
+Package: logilab-lgp
+Architecture: all
 Recommends: mercurial (>= 0.9.3), debinstall, diffstat
 Depends: ${misc:Depends},
 	 ${python:Depends},
@@ -25,8 +37,9 @@ Depends: ${misc:Depends},
 	 sudo,
 	 debootstrap,
 	 python-apt,
+	 python-logilab-packaging
 Conflicts: devtools, simh, python-vcslib, logilab-devtools (<0.23)
 Replaces: devtools, python-vcslib, logilab-devtools
-Description: helper tools used at Logilab to build Debian packages
+Description: pbuilder-based tool used at Logilab to build Debian packages
  .
 
