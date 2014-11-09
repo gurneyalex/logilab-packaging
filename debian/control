@@ -38,6 +38,7 @@ Depends: ${misc:Depends},
 	 debootstrap,
 	 python-apt,
 	 python-logilab-packaging
+Suggests: mock
 Conflicts: devtools, simh, python-vcslib, logilab-devtools (<0.23)
 Replaces: devtools, python-vcslib, logilab-devtools
 Description: pbuilder-based tool used at Logilab to build Debian packages
