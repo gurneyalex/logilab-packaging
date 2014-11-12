@@ -35,7 +35,6 @@ from os.path import join, isdir
 include_dirs = ['templates', join('test', 'data')]
 
 scripts = [
-    'bin/changelog',
     'bin/lgp',
     ]
 

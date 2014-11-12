@@ -1,4 +1,3 @@
-usr/bin/changelog
 usr/lib/python*/*/logilab/packaging/__init__.py
 usr/lib/python*/*/logilab/packaging/__pkginfo__.py
 usr/lib/python*/*/logilab/packaging/lib
