@@ -18,8 +18,6 @@ Depends: ${misc:Depends},
 	 python-debian,
          python-logilab-common,
 	 python-apt,
-Conflicts: devtools, simh, python-vcslib, logilab-devtools (<0.23)
-Replaces: devtools, python-vcslib, logilab-devtools
 Description: python modules used at Logilab to ease Debian packaging
  .
 
@@ -33,14 +31,14 @@ Depends: ${misc:Depends},
 	 pbuilder,
 	 devscripts,
 	 debhelper,
-         python-logilab-common,
+	 python-logilab-common,
 	 sudo,
 	 debootstrap,
 	 python-apt,
 	 python-logilab-packaging
 Suggests: mock
-Conflicts: devtools, simh, python-vcslib, logilab-devtools (<0.23)
-Replaces: devtools, python-vcslib, logilab-devtools
+Breaks: python-logilab-devtools (<< 0.23)
+Replaces: python-logilab-devtools (<< 0.23)
 Description: pbuilder-based tool used at Logilab to build Debian packages
  .
 
