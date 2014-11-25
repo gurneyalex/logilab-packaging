@@ -1,14 +1,51 @@
-Logilab's development tools
-===========================
+Logilab's packaging tools
+=========================
 
-Set of tools which aims to help the developpement process, including :
+Set of tools which aims to help the packaging of Python projects for Debian
+(with a rough support for rpm packages).
 
-  * tools to check and build source and/or Debian packages
-  * standard for zope and Python packages
+lgp is mainly a wrapper around puilder that ease the creation of chroot-based
+environment in which lgp can build debian packages targeting several Debian or
+Ubuntu distributions.
 
-Set of elisp goodies including :
+The main commands provided by lgp are:
 
-  * an emacs mode for pycover files
-  * an emacs mode for ChangeLog files
-  * a small set of emacs shortcuts used at logilab
+- `lgp build` Build a debian package
+- `lgp check` Check project in the current working directory
+- `lgp clean` Clean the project directory
+- `lgp setup` Set up and manage build images
+- `lgp shell` Run a script or interactive shell in a chrooted distribution
+
+
+Quickstart
+----------
+
+Note: lgp uses pbuilder, so it is a good idea to have de local proxy for debian
+      and ubuntu repositories (eg. apt-cache or similar).
+
+First you have to create the base archive for a targeted distribution:
+
+  ~# lgp setup -c create -d wheezy -a amd64
+  ~# lgp setup -c create -d trusty -a i386
+
+Note: on wheezy, debootstrap has limited knowledge of recent Ubuntu
+      distributions. If you want to build a chroot for an yet-unknown
+      Ubuntu distribution, you must add them in
+      /usr/share/debootstrap/scripts/
+
+      Simply add symlinks with the distrib codename to gutsy, like:
+
+  ~# ln -s gutsy /usr/share/debootstrap/scripts/trusty
+
+Ensure the destination directory for your built packages exists (~/dists by default):
+
+  $ mkdir ~/dists
+
+Then you can try to build a package from its sources directory:
+
+  $ hg clone http://hg.logilab.org/master/logilab/common
+  $ cd common
+  $ lgp build -d wheezy
+
+See doc/packaging_howto.txt for more informations on how to use lgp.
 
