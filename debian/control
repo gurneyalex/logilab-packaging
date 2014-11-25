@@ -5,8 +5,8 @@ Maintainer: Logilab S.A. <contact@logilab.fr>
 Uploaders: David Douard <david.douard@logilab.fr>,
            Julien Cristau <jcristau@debian.org>
 Standards-Version: 3.9.4
-Build-Depends: debhelper (>= 9), python-all, python-support
-XS-Python-Version: >= 2.6
+Build-Depends: debhelper (>= 9), python-all (>= 2.6.5)
+X-Python-Version: >= 2.6
 Homepage: http://www.logilab.org/project/logilab-packaging
 Vcs-hg: http://hg.logilab.org/logilab/packaging
 Vcs-Browser: http://hg.logilab.org/logilab/packaging
