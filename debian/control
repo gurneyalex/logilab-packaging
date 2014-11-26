@@ -20,6 +20,8 @@ Depends: ${misc:Depends},
 	 python-apt,
 Description: python modules used at Logilab to ease Debian packaging
  .
+ This package contains utility python modules for manipulate packaging files 
+ (manifest, pkginfo, etc.), used by logilab-lgp  
 
 Package: logilab-lgp
 Architecture: all
@@ -41,4 +43,10 @@ Breaks: python-logilab-devtools (<< 0.23)
 Replaces: python-logilab-devtools (<< 0.23)
 Description: pbuilder-based tool used at Logilab to build Debian packages
  .
+ Set of tools which aims to help the packaging of Python projects for Debian
+ (with a rough support for rpm packages).
+ .
+ lgp is mainly a wrapper around puilder that ease the creation of chroot-based
+ environment in which lgp can build debian packages targeting several Debian or
+ Ubuntu distributions.
 
