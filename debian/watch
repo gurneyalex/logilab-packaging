@@ -1,2 +1,3 @@
 version=3
-https://pypi.python.org/pypi/l/logilab-packaging logilab-packaging-(.*)\.tar\.gz
+opts=downloadurlmangle=s/#.*//,filenamemangle=s|.*/([^/]*)#.*|$1| \
+https://pypi.python.org/simple/logilab-packaging ../../packages/source/l/logilab-packaging/logilab-packaging-(.*)\.tar\.gz#.*
