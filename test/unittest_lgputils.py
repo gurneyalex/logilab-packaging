@@ -2,7 +2,10 @@ from __future__ import with_statement
 
 import os
 from os.path import exists
-from unittest2 import main, TestCase
+try:
+    from unittest2 import main, TestCase
+except ImportError:
+    from unittest import main, TestCase
 
 from logilab.packaging.lgp import utils
 
