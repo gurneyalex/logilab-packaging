@@ -39,8 +39,14 @@ Depends: ${misc:Depends},
 	 python-apt,
 	 python-logilab-packaging
 Suggests: mock
-Breaks: python-logilab-devtools (<< 0.23)
-Replaces: python-logilab-devtools (<< 0.23)
+Breaks: python-logilab-devtools (<< 0.23),
+Conflicts:
+ logilab-packaging,
+Replaces:
+ python-logilab-devtools (<< 0.23),
+ logilab-packaging,
+Provides:
+ logilab-packaging,
 Description: pbuilder-based tool used at Logilab to build Debian packages
  .
  Set of tools which aims to help the packaging of Python projects for Debian
