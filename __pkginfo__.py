@@ -38,4 +38,5 @@ scripts = [
     'bin/lgp',
     ]
 
-install_requires = ['logilab-common']
+# python-debian needs chardet but doesn't seem to declare the dependency
+install_requires = ['logilab-common', 'python-debian', 'chardet']
