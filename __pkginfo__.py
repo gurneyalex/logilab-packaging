@@ -17,7 +17,7 @@
 
 modname = 'packaging'
 distname = 'logilab-packaging'
-numversion = (1, 0, 0)
+numversion = (1, 1, 0)
 version = '.'.join([str(num) for num in numversion])
 
 license = 'GPL'
