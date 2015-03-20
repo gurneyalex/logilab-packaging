@@ -322,6 +322,18 @@ class Builder(SetupInfo):
                 self.logger.error("please use the '--specfile' option")
                 raise LGPException("cannot build source distribution")
         specfile = osp.abspath(specfile)
+        if self.config.suffix is not None:
+            # patch the spec file to inject the ~revision in the version
+            suffix = self.config.suffix or '+%s' % int(time.time())
+            with tempfile.NamedTemporaryFile() as out:
+                for line in open(specfile):
+                    if line.lower().startswith('release:'):
+                        line = line.strip() + suffix + '\n'
+                    out.write(line)
+                out.flush()
+                shutil.move(out.name, specfile)
+                out.delete = False
+                os.chmod(specfile, 0o644)
 
         # change directory to build source package
         # note: call os.chdir() HERE is needed in make_rpm_binary_package() below
