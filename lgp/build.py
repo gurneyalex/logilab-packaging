@@ -182,7 +182,11 @@ class Builder(SetupInfo):
                 for distrib in  self.distributions:
                     with tempdir(self.config.keep_tmpdir) as src_tmpdir:
                         if self.config.rpm or distrib.startswith(('fedora', 'epel')):
-                            srpm = self.make_rpm_source_package(distrib, src_tmpdir)
+                            specfile = self.get_rpm_specfile()
+                            if specfile is None:
+                                # do not crash if a project does not (yet) provide a .spec file
+                                continue
+                            srpm = self.make_rpm_source_package(specfile, distrib, src_tmpdir)
                             self.make_rpm_binary_package(distrib, srpm)
                             # move logs and rpms to distdir
                             rpms = glob(osp.join(src_tmpdir, '*.rpm'))
@@ -307,21 +311,27 @@ class Builder(SetupInfo):
         self._upstream_tarball = tarball
         return tarball
 
-    def make_rpm_source_package(self, distrib, tmpdir):
-        """create a srpm"""
+    def get_rpm_specfile(self):
         specfile = self.config.specfile
         if specfile is None:
             specfiles = glob('*.spec')
             try:
                 specfile, = specfiles
+
             except ValueError:
                 if not specfiles:
-                    self.logger.error("unable to find the '.spec' file")
+                    self.logger.warning("unable to find the '.spec' file")
                 else:
-                    self.logger.error("more than one spec file found")
-                self.logger.error("please use the '--specfile' option")
-                raise LGPException("cannot build source distribution")
-        specfile = osp.abspath(specfile)
+                    self.logger.warning("more than one spec file found")
+                self.logger.warning("please use the '--specfile' option")
+                return None
+        return osp.abspath(specfile)
+
+    def make_rpm_source_package(self, specfile, distrib, tmpdir):
+        """create a srpm"""
+        if specfile is None:
+            self.logger.error("specfile not found, please use the '--specfile' option")
+            raise LGPException("cannot build source distribution")
         if self.config.suffix is not None:
             # patch the spec file to inject the ~revision in the version
             suffix = self.config.suffix or '+%s' % int(time.time())
