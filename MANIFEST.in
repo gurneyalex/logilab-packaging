@@ -2,6 +2,7 @@ exclude .hgignore
 recursive-exclude debian *
 
 include bin/lgp
+include __pkginfo__.py
 
 include doc/*.txt
 include doc/makefile

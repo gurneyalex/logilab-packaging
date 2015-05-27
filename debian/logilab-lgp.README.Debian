@@ -20,7 +20,7 @@ For example, you can override:
 - DEBIAN_SOURCESLIST / UBUNTU_SOURCESLIST or DEBIAN_OTHERMIRROR / UBUNTU_OTHERMIRROR
   dynamic sources.list (using $DIST variable) or use the standard pbuilder format (with pipes)
 
-A `/usr/share/doc/logilab-packaging/examples/pbuilderrc.local` file is provided as an example.
+A `/usr/share/doc/logilab-lgp/examples/pbuilderrc.local` file is provided as an example.
 
 To use lgp, you need valid pbuilder images. Please run the following command after package installation:
 
@@ -28,8 +28,10 @@ To use lgp, you need valid pbuilder images. Please run the following command aft
 
 Grant users
 -----------
-If you want allow local developpers (other than root) to be able to build packages, you have to add sudo privileges for pbuilder command and DIST environment variable.
+If you want allow local developers (other than root) to be able to build
+packages, you have to add sudo privileges for pbuilder command and DIST
+environment variable.
 
-Example of sudoers except:
+Example of sudoers excerpt:
 
 	ALL ALL= NOPASSWD:SETENV: /usr/sbin/pbuilder
