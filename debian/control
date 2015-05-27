@@ -8,37 +8,41 @@ Standards-Version: 3.9.4
 Build-Depends: debhelper (>= 9), python-all (>= 2.6.5)
 X-Python-Version: >= 2.6
 Homepage: http://www.logilab.org/project/logilab-packaging
-Vcs-hg: http://hg.logilab.org/logilab/packaging
+Vcs-Hg: http://hg.logilab.org/logilab/packaging
 Vcs-Browser: http://hg.logilab.org/logilab/packaging
 
-Package: python-logilab-packaging
+Package: python-lgp
 Architecture: all
-Depends: ${misc:Depends},
-	 ${python:Depends},
-	 python-debian,
-         python-logilab-common,
-	 python-apt,
+Depends:
+ ${misc:Depends},
+ ${python:Depends},
+ python-debian,
+ python-logilab-common,
+ python-apt,
 Description: python modules used at Logilab to ease Debian packaging
- .
- This package contains utility python modules for manipulate packaging files 
- (manifest, pkginfo, etc.), used by logilab-lgp  
+ This package contains utility python modules to manipulate packaging files 
+ (manifest, pkginfo, etc.), used by logilab-lgp.
 
 Package: logilab-lgp
 Architecture: all
-Recommends: mercurial (>= 0.9.3), debinstall, diffstat
-Depends: ${misc:Depends},
-	 ${python:Depends},
-	 python-debian,
-	 lintian,
-	 pbuilder,
-	 devscripts,
-	 debhelper,
-	 python-logilab-common,
-	 sudo,
-	 debootstrap,
-	 python-apt,
-	 python-logilab-packaging
-Suggests: mock
+Depends:
+ ${misc:Depends},
+ ${python:Depends},
+ python-debian,
+ lintian,
+ pbuilder,
+ devscripts,
+ debhelper,
+ python-logilab-common,
+ sudo,
+ debootstrap,
+ python-apt,
+ python-lgp,
+Suggests:
+ mock,
+ debinstall,
+ mercurial (>= 0.9.3),
+ diffstat,
 Breaks: python-logilab-devtools (<< 0.23),
 Conflicts:
  logilab-packaging,
@@ -55,4 +59,3 @@ Description: pbuilder-based tool used at Logilab to build Debian packages
  lgp is mainly a wrapper around puilder that ease the creation of chroot-based
  environment in which lgp can build debian packages targeting several Debian or
  Ubuntu distributions.
-

@@ -18,12 +18,21 @@
 
 import sys
 import logging
+import pkg_resources
 
 import logilab.common.clcommands as cli
 
-from logilab.packaging.__pkginfo__ import description, version
-from logilab.packaging.lgp.exceptions import LGPException
+from lgp.exceptions import LGPException
 
+pkg = pkg_resources.get_distribution('logilab-packaging')
+__version__ = version = pkg.version
+
+def _get_description(pkginfo):
+    # I know, right?
+    from email import message_from_string
+    msg = message_from_string(pkginfo)
+    return msg['Summary']
+description = _get_description(pkg.get_metadata('PKG-INFO'))
 
 LGP_CONFIG_FILE = '/etc/lgp/lgprc'
 LGP_SUITES      = '/usr/share/debootstrap/scripts/'
@@ -55,5 +64,6 @@ class LGPCommandLine(cli.CommandLine):
 LGP = LGPCommandLine('lgp', doc=description, rcfile=LGP_CONFIG_FILE,
                      version=version, logthreshold=logging.INFO)
 
+BASE_EXCLUDE = ('CVS', '.svn', '.hg', 'bzr', '.git')
 
-__all__ = ['LGP', 'clean', 'build', 'check', 'tag', 'setup', 'shell']
+__all__ = ['LGP', 'clean', 'build', 'check', 'tag', 'setup', 'shell', 'BASE_EXCLUDE']

@@ -32,10 +32,10 @@ from logilab.common.fileutils import lines, ensure_fs_mode
 from logilab.common.shellutils import find
 from logilab.common.deprecation import deprecated
 
-import logilab.packaging
-from logilab.packaging.lib import TextReporter
-from logilab.packaging.lib.utils import SGMLCatalog, get_scripts, glob_match
-from logilab.packaging import BASE_EXCLUDE
+import lgp
+from lgp.lib import TextReporter
+from lgp.lib.utils import SGMLCatalog, get_scripts, glob_match
+from lgp import BASE_EXCLUDE
 
 try:
     from scriptfoundry.snakespell import iSpell
@@ -51,8 +51,6 @@ except:
         """spell the given text and return a list of possibly misspelled words
         """
         return []
-
-TEMPLATE_DIR = join(logilab.packaging.__path__[0], 'templates')
 
 STD_DOCS = ('README', 'README.txt', 'ChangeLog',
             'TODO', 'TODO.txt',
@@ -451,13 +449,6 @@ class PackageInfo:
             setattr(self, 'version', '.'.join([str(word) for word in value]))
         elif name == 'version':
             setattr(self, 'numversion', value.split('.'))
-        elif name == 'license' and value is not None:
-            try:
-                self.setattr('license_text', get_license_text(value))
-            except KeyError:
-                msg = 'unknown license %s' % value
-                self.setattr('license_text', '')
-                self.reporter.warning(self.info_module, None, msg)
         elif name == 'short_desc':
             name = 'description'
         setattr(self, name, value)

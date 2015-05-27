@@ -28,15 +28,26 @@ description = "tools used at Logilab to create debian packages"
 web = "http://www.logilab.org/project/logilab-packaging"
 mailinglist = "mailto://python-projects@lists.logilab.org"
 
-subpackage_of = 'logilab'
-
-from os.path import join, isdir
-
-include_dirs = ['templates', join('test', 'data')]
-
 scripts = [
     'bin/lgp',
     ]
 
+from os.path import join, isdir, dirname
+from os import listdir
+
+if '__file__' in locals():
+    here = dirname(__file__)
+else:
+    here = '.'
+
+def listfiles(path):
+    return [join(here, path, x) for x in listdir(join(here, path))
+            if not isdir(join(here, path, x))]
+
+data_files = [('etc/lgp', listfiles('etc/lgp')),
+              ('etc/lgp/hooks', listfiles('etc/lgp/hooks')),
+              ('etc/lgp/scripts', listfiles('etc/lgp/scripts')),
+              ]
+
 # python-debian needs chardet but doesn't seem to declare the dependency
-install_requires = ['logilab-common', 'python-debian', 'chardet']
+install_requires = ['setuptools', 'logilab-common', 'python-debian', 'chardet']

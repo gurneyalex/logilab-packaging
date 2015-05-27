@@ -6,12 +6,10 @@ include bin/lgp
 include doc/*.txt
 include doc/makefile
 recursive-include doc *.rst
-recursive-include templates *.txt *.py
 
 recursive-include test/data *
 
 include README
-include INSTALL
 include COPYING
 include ChangeLog
 include logging.conf

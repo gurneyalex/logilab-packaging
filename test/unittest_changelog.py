@@ -3,7 +3,7 @@ from cStringIO import StringIO
 
 from logilab.common.testlib import TestCase, unittest_main
 
-from logilab.packaging.lib.changelog import *
+from lgp.lib.changelog import *
 
 
 class ChangeLogTC(TestCase):
