@@ -10,4 +10,3 @@ etc/lgp/sources.list.debian usr/share/doc/logilab-lgp/examples
 etc/lgp/sources.list.ubuntu usr/share/doc/logilab-lgp/examples
 
 usr/bin/lgp
-usr/lib/python*/*/logilab/packaging/lgp
