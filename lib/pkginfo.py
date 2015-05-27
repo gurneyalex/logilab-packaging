@@ -61,28 +61,6 @@ SPEC_FILES = ('MANIFEST.in', 'setup.py', 'setup.cfg',
               'AUTHORS', 'DEPENDS', 'RECOMMENDS', 'SUGGESTS') + STD_DOCS
 SPEC_DIRS = ('doc', 'docs', 'bin', 'dtd', 'elisp', 'examples', 'man', 'xsl')
 
-
-_LICENSES_FILE = {}
-_LICENSES_TEXT = {}
-
-def get_known_licenses():
-    """get identifier for licenses defined in a special resource directory"""
-    # FIXME load additional licences and their content from a directory (or a list of
-    # directory given by an environment variable
-    if _LICENSES_FILE:
-        result = _LICENSES_FILE.keys()
-    else:
-        result = []
-        licenses_dir = join(TEMPLATE_DIR, 'licenses')
-        for license_file in os.listdir(licenses_dir):
-            if license_file.endswith('.txt') and not license_file.startswith('full'):
-                assert os.path.isfile(os.path.join(licenses_dir, 'full_'+license_file)), "No full text available for %s"%license_file
-                license_id = license_file[:-4].upper()
-                result.append(license_id)
-                _LICENSES_FILE[license_id] = join(licenses_dir, license_file)
-    result.sort()
-    return result
-
 # write pkg info file #########################################################
 
 def pkginfo_save(pkginfo, modifs):
@@ -113,19 +91,6 @@ def pkginfo_save(pkginfo, modifs):
         raise
 
 # try to get correct / default values pkg info fields #########################
-
-def get_license_text(license_id):
-    """return the text of the license with the given identifier (gpl, zpl...)
-    """
-    license_id = license_id.upper()
-    try:
-        return _LICENSES_TEXT[license_id]
-    except KeyError:
-        if not _LICENSES_FILE:
-            get_known_licenses()
-        license_text = open(_LICENSES_FILE[license_id]).read()
-        _LICENSES_TEXT[license_id] = license_text
-        return license_text
 
 def get_default_scripts(pkginfo):
     """return a list of executable scripts"""
