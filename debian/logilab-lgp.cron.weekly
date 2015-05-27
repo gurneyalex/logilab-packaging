@@ -1,4 +1,8 @@
 #!/bin/sh
 
+if ! [ -x /usr/bin/lgp ]; then
+    exit 0
+fi
+
 # Clean caches
 /usr/bin/lgp setup -qq -c clean -d all -a any
