@@ -27,12 +27,12 @@ import subprocess
 from os.path import basename, join, exists, isdir, isfile
 from glob import glob
 
-from logilab.packaging import BASE_EXCLUDE, __path__
-from logilab.packaging.lgp import LGP, LGP_CONFIG_FILE, utils
-from logilab.packaging.lgp.setupinfo import SetupInfo
-from logilab.packaging.lgp.exceptions import LGPException
-from logilab.packaging.lib.changelog import CHANGEFILE
-from logilab.packaging.lib.manifest import (get_manifest_files, read_manifest_in,
+from lgp import BASE_EXCLUDE, __path__
+from lgp import LGP, LGP_CONFIG_FILE, utils
+from lgp.setupinfo import SetupInfo
+from lgp.exceptions import LGPException
+from lgp.lib.changelog import CHANGEFILE
+from lgp.lib.manifest import (get_manifest_files, read_manifest_in,
                                            match_extensions, JUNK_EXTENSIONS)
 
 
@@ -552,7 +552,7 @@ def check_package_info(checker):
         return status
 
     # check mandatory attributes defined by pkginfo policy
-    from logilab.packaging.lib.pkginfo import check_info_module
+    from lgp.lib.pkginfo import check_info_module
     class Reporter(object):
         def warning(self, path, line, msg):
             checker.logger.warn(msg)

@@ -29,8 +29,8 @@ import logging
 from debian.deb822 import Deb822
 from debian.changelog import Changelog, ChangelogParseError
 
-from logilab.packaging.lgp import LGP_SUITES
-from logilab.packaging.lgp.exceptions import (ArchitectureException,
+from lgp import LGP_SUITES
+from lgp.exceptions import (ArchitectureException,
                                               DistributionException,
                                               SetupException,
                                               LGPException)

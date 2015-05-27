@@ -7,7 +7,7 @@ try:
 except ImportError:
     from unittest import main, TestCase
 
-from logilab.packaging.lgp import utils
+from lgp import utils
 
 class UtilsTC(TestCase):
     def test_tempdir_utility(self):

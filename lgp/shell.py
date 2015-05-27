@@ -21,8 +21,8 @@ import sys
 import glob
 from subprocess import check_call, CalledProcessError
 
-from logilab.packaging.lgp import LGP, CONFIG_FILE, HOOKS_DIR, SCRIPTS_DIR
-from logilab.packaging.lgp.setupinfo import SetupInfo
+from lgp import LGP, CONFIG_FILE, HOOKS_DIR, SCRIPTS_DIR
+from lgp.setupinfo import SetupInfo
 
 @LGP.register
 class Shell(SetupInfo):

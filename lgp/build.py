@@ -32,13 +32,13 @@ from debian import deb822
 from logilab.common.shellutils import cp
 from logilab.common.fileutils import export
 
-from logilab.packaging.lgp import LGP, CONFIG_FILE, HOOKS_DIR, utils
-from logilab.packaging.lgp.exceptions import (LGPException, LGPCommandException)
-from logilab.packaging.lgp.utils import tempdir
+from lgp import LGP, CONFIG_FILE, HOOKS_DIR, utils
+from lgp.exceptions import (LGPException, LGPCommandException)
+from lgp.utils import tempdir
 
-from logilab.packaging.lgp.check import check_debsign
-from logilab.packaging.lgp.setupinfo import SetupInfo
-from logilab.packaging.lgp.clean import Cleaner
+from lgp.check import check_debsign
+from lgp.setupinfo import SetupInfo
+from lgp.clean import Cleaner
 
 
 @LGP.register
