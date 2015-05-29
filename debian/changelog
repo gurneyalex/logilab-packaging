@@ -2,7 +2,7 @@ logilab-packaging (1.1.0-1) unstable; urgency=medium
 
   * new upstream release
 
- -- Julien Cristau <julien.cristau@logilab.fr>  Fri, 20 Mar 2015 16:14:27 +0100
+ -- David Douard <david.douard@logilab.fr>  Fri, 29 May 2015 20:07:58 +0200
 
 logilab-packaging (1.0.0-2) unstable; urgency=medium
 
