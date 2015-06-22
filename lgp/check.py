@@ -402,10 +402,10 @@ def check_debian_maintainer(checker):
     return status
 
 def check_readme(checker):
-    """upstream README file is missing"""
-    if not isfile('README'):
-        checker.logger.warn(check_readme.__doc__)
-    return OK
+    """upstream README[.rst|.md|.txt] file is missing"""
+    if any([isfile('README%s' % ext) for ext in ('' '.txt', '.rst', '.md')]):
+        return OK
+    checker.logger.warn(check_readme.__doc__)
 
 def check_changelog(checker):
     """upstream ChangeLog file is missing"""
