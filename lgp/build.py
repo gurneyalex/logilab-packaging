@@ -353,6 +353,7 @@ class Builder(SetupInfo):
                    "--spec", specfile,
                    "--resultdir", os.getcwd(),
                    "-r", distrib,
+                   "--uniqueext", str(os.getpid()),
                    "--sources", osp.dirname(self._upstream_tarball)]
             self.logger.debug("running mock command: %s ..." % " ".join(cmd))
             check_call(cmd, stdout=sys.stdout)
@@ -369,6 +370,7 @@ class Builder(SetupInfo):
     def make_rpm_binary_package(self, distrib, srpm):
         cmd = ["sudo", "mock", "-r", distrib,
                "--resultdir", os.getcwd(), # os.chdir() is called above
+               "--uniqueext", str(os.getpid()),
                "--rebuild", srpm]
         try:
             self.logger.debug("running mock command: %s ..." % " ".join(cmd))
