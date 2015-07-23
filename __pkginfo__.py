@@ -1,4 +1,4 @@
-# Copyright (c) 2003-2014 LOGILAB S.A. (Paris, FRANCE).
+# Copyright (c) 2003-2015 LOGILAB S.A. (Paris, FRANCE).
 # http://www.logilab.fr/ -- mailto:contact@logilab.fr
 
 # This program is free software; you can redistribute it and/or modify it under
@@ -17,7 +17,7 @@
 
 modname = 'packaging'
 distname = 'logilab-packaging'
-numversion = (1, 1, 0)
+numversion = (1, 2, 0)
 version = '.'.join([str(num) for num in numversion])
 
 license = 'GPL'
