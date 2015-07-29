@@ -70,5 +70,5 @@ setup(
     install_requires=pkginfo['install_requires'],
     scripts=pkginfo['scripts'],
     data_files = pkginfo['data_files'],
-
+    namespace_packages=['logilab'],
 )

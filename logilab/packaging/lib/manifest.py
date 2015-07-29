@@ -25,7 +25,7 @@ from distutils.text_file import TextFile
 from distutils.errors import DistutilsTemplateError
 import distutils
 
-from lgp import BASE_EXCLUDE
+from logilab.packaging.lgp import BASE_EXCLUDE
 
 JUNK_EXTENSIONS = ('~', '.pyc', '.pyo', '.fo', '.o', '.so', '.swp', '.orig')
 

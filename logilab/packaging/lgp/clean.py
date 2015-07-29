@@ -18,8 +18,8 @@
 
 import os
 
-from lgp import LGP
-from lgp.setupinfo import SetupInfo
+from logilab.packaging.lgp import LGP
+from logilab.packaging.lgp.setupinfo import SetupInfo
 
 
 @LGP.register

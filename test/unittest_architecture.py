@@ -3,8 +3,8 @@ from __future__ import with_statement
 from subprocess import Popen, PIPE
 
 from logilab.common.testlib import TestCase, unittest_main
-from lgp.utils import get_architectures
-from lgp.exceptions import ArchitectureException
+from logilab.packaging.lgp.utils import get_architectures
+from logilab.packaging.lgp.exceptions import ArchitectureException
 
 
 class ArchitectureTC(TestCase):

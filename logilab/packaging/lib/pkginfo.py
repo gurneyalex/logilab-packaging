@@ -32,10 +32,10 @@ from logilab.common.fileutils import lines, ensure_fs_mode
 from logilab.common.shellutils import find
 from logilab.common.deprecation import deprecated
 
-import lgp
-from lgp.lib import TextReporter
-from lgp.lib.utils import SGMLCatalog, get_scripts, glob_match
-from lgp import BASE_EXCLUDE
+import logilab.packaging.lgp
+from logilab.packaging.lib import TextReporter
+from logilab.packaging.lib.utils import SGMLCatalog, get_scripts, glob_match
+from logilab.packaging.lgp import BASE_EXCLUDE
 
 try:
     from scriptfoundry.snakespell import iSpell

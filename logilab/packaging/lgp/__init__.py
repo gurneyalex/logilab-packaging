@@ -22,7 +22,7 @@ import pkg_resources
 
 import logilab.common.clcommands as cli
 
-from lgp.exceptions import LGPException
+from logilab.packaging.lgp.exceptions import LGPException
 
 pkg = pkg_resources.get_distribution('logilab-packaging')
 __version__ = version = pkg.version
