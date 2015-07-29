@@ -18,8 +18,8 @@ import sys
 from os.path import dirname, join
 from logilab.common.testlib import TestCase, unittest_main
 
-from lgp.lib.manifest import *
-from lgp.lib import TextReporter
+from logilab.packaging.lib.manifest import *
+from logilab.packaging.lib import TextReporter
 
 reporter = TextReporter()
 

@@ -21,7 +21,7 @@ import os
 import glob
 from os.path import basename, join, split, exists
 
-from lgp import BASE_EXCLUDE
+from logilab.packaging.lgp import BASE_EXCLUDE
 
 PUBLIC_RGX = re.compile('PUBLIC\s+"-//(?P<group>.*)//DTD (?P<pubid>.*)//(?P<lang>\w\w)(//XML)?"\s*"(?P<dtd>.*)"')
 

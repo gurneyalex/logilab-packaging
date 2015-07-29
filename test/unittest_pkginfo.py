@@ -1,6 +1,6 @@
 import os
 from logilab.common.testlib import TestCase, unittest_main
-from lgp.lib import pkginfo, TextReporter
+from logilab.packaging.lib import pkginfo, TextReporter
 
 class PkgInfoProject(TestCase):
 
