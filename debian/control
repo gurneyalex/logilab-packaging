@@ -15,7 +15,7 @@ Homepage: http://www.logilab.org/project/logilab-packaging
 Vcs-Hg: http://hg.logilab.org/logilab/packaging
 Vcs-Browser: http://hg.logilab.org/logilab/packaging
 
-Package: python-lgp
+Package: python-logilab-packaging
 Architecture: all
 Depends:
  ${misc:Depends},
@@ -23,6 +23,10 @@ Depends:
  python-debian,
  python-logilab-common,
  python-apt,
+Conflicts:
+ python-lgp,
+Replaces:
+ python-lgp,
 Description: python modules used at Logilab to ease Debian packaging
  This package contains utility python modules to manipulate packaging files 
  (manifest, pkginfo, etc.), used by logilab-lgp.
@@ -41,7 +45,7 @@ Depends:
  sudo,
  debootstrap,
  python-apt,
- python-lgp,
+ python-logilab-packaging,
 Suggests:
  mock,
  debinstall,
