@@ -180,6 +180,7 @@ class Builder(SetupInfo):
             self.make_orig_tarball(tmpdir)
             try:
                 for distrib in  self.distributions:
+                    self.logger.info('Attempting to build %s', distrib)
                     with tempdir(self.config.keep_tmpdir) as src_tmpdir:
                         if self.config.rpm or distrib.startswith(('fedora', 'epel')):
                             specfile = self.get_rpm_specfile()
