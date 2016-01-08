@@ -19,6 +19,7 @@
 import glob
 import sys
 import time
+import os
 import os.path as osp
 from subprocess import Popen, PIPE
 from contextlib import contextmanager
@@ -245,11 +246,15 @@ def tempdir(keep_tmpdir=False):
     """
     tmpdir = tempfile.mkdtemp()
     logging.debug('using new build directory... (%s)', tmpdir)
+    cwd = os.getcwd()
     try:
         yield tmpdir
     except Exception, exc:
         raise
     finally:
+        # ensure we pop to the dir we were (before entering the
+        # ctx), to prevent from sewing the branch we sit on...
+        os.chdir(cwd)
         if not keep_tmpdir:
             shutil.rmtree(tmpdir)
         else:
