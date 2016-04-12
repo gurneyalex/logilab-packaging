@@ -15,12 +15,12 @@
 # You should have received a copy of the GNU General Public License along with
 # this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA.
+from __future__ import print_function
 
 import os
 import stat
 import re
 import sys
-import commands
 import logging
 import itertools
 import subprocess
@@ -86,7 +86,7 @@ def _check_sh(checker, sh_file):
     if not is_executable(sh_file):
         make_executable(sh_file)
     cmd = '%s --help' % sh_file
-    cmdstatus, _ = commands.getstatusoutput(cmd)
+    cmdstatus = subprocess.check_status(cmd)
     if cmdstatus:
         checker.logger.error('%s returned status %s' % (cmd, cmdstatus))
         status = NOK
@@ -192,7 +192,7 @@ class Checker(SetupInfo):
         try:
             checks = CHECKS['default']
 
-            # we try to compile a coherent set of checks to apply
+            # we try to compile a consistent set of checks to apply
             if os.path.exists('setup.py'):
                 checks.update(CHECKS['distutils'])
             if os.path.exists('__pkginfo__.py'):
@@ -215,7 +215,7 @@ class Checker(SetupInfo):
                     if c in checks:
                         checks.remove(c)
             self.checklist = [globals()["check_%s" % name] for name in checks]
-        except KeyError, err:
+        except KeyError as err:
             msg = "check function or category %s was not found. Use lgp check --list"
             raise LGPException(msg % str(err))
         return self.checklist
@@ -242,22 +242,22 @@ class Checker(SetupInfo):
     # TODO dump with --help and drop the command-line option
     def list_checks(self):
         def title(msg):
-            print >> sys.stderr, "\n", msg, "\n", len(msg) * '='
+            print("\n", msg, "\n", len(msg) * '=', file=sys.stderr)
         all_checks = self.get_checklist(all=True)
         checks     = self.get_checklist()
         if len(checks)==0:
-            print >> sys.stderr, "No available check."
+            print("No available check.", file=sys.stderr)
         else:
-            print >> sys.stderr, "You can use check function names or categories with --set, --exclude or --include options"
+            print("You can use check function names or categories with --set, --exclude or --include options", file=sys.stderr)
             title("Current active checks")
             for check in checks:
-                print >> sys.stderr, "%-25s: %s" % (check.__name__[6:], check.__doc__)
+                print("%-25s: %s" % (check.__name__[6:], check.__doc__), file=sys.stderr)
             title("Available categories")
             for cat, values in CHECKS.items():
-                print >> sys.stderr, "%-10s: %s" % (cat, ", ".join(values))
+                print("%-10s: %s" % (cat, ", ".join(values)), file=sys.stderr)
             title("Inactive checks")
             for check in (set(all_checks) - set(checks)):
-                print >> sys.stderr, "%-25s: %s" % (check.__name__[6:], check.__doc__)
+                print("%-25s: %s" % (check.__name__[6:], check.__doc__), file=sys.stderr)
 
 
 
@@ -355,18 +355,18 @@ def check_debian_changelog(checker, debian_dir=None):
         if isfile(CHANGELOG):
             # verify if changelog is closed
             cmd = "sed -ne '/^ -- $/p' %s" % CHANGELOG
-            _, output = commands.getstatusoutput(cmd)
+            output = subprocess.check_output(cmd)
             if output:
                 msg = "missing attribution trailer line. '%s' is not properly closed" % CHANGELOG
                 checker.logger.warn(msg)
                 return
             # consider UNRELEASED as problematic only if not on first line
             cmd = "sed -ne '2,${/UNRELEASED/p}' %s" % CHANGELOG
-            _, output = commands.getstatusoutput(cmd)
+            output = subprocess.check_output(cmd)
             if output:
                 checker.logger.debug('UNRELEASED keyword found in debian changelog')
             cmd = "sed -ne '/DISTRIBUTION/p' %s" % CHANGELOG
-            _, output = commands.getstatusoutput(cmd)
+            output = subprocess.check_output(cmd)
             if output:
                 checker.logger.error("old DISTRIBUTION keyword found in %s" % CHANGELOG)
             # check project name coherency
@@ -375,17 +375,17 @@ def check_debian_changelog(checker, debian_dir=None):
                 checker.logger.error(msg % (checker.get_debian_name(), utils._parse_deb_project()))
             # check maintainer field
             cmd = "dpkg-parsechangelog -l%s | awk '/^Maintainer/ { $1 = \"\"; print }'"
-            _, maintainer = commands.getstatusoutput(cmd % CHANGELOG)
+            maintainer = subprocess.check_output(cmd % CHANGELOG)
             for d in [debian_dir, "debian"]:
                 cmd = 'grep "%s" %s' % (maintainer.strip(), join(d, "control"))
-                cmdstatus, _ = commands.getstatusoutput(cmd)
+                cmdstatus = subprocess.check_status(cmd)
                 if not cmdstatus: break
             else:
                 checker.logger.warn("'%s' not found in Uploaders field"
                                     % maintainer.strip())
             # final check with Debian utility
             cmd = "dpkg-parsechangelog -l%s >/dev/null" % CHANGELOG
-            _, output = commands.getstatusoutput(cmd)
+            output = subprocess.check_output(cmd)
             if output:
                 checker.logger.error(output)
         else:
@@ -396,7 +396,7 @@ def check_debian_maintainer(checker):
     """check Maintainer field in debian/control file"""
     status = OK
     cmd = "awk '/^Maintainer/ { $1 = \"\"; print}' debian/control"
-    cmdstatus, output = commands.getstatusoutput(cmd)
+    output = subprocess.check_output(cmd)
     if output.strip() != 'Logilab S.A. <contact@logilab.fr>':
         checker.logger.info("Maintainer value can be 'Logilab S.A. <contact@logilab.fr>'")
     return status
@@ -414,7 +414,7 @@ def check_changelog(checker):
         checker.logger.warn(check_changelog.__doc__)
     else:
         cmd = "grep -E '^[[:space:]]+--[[:space:]]+$' %s" % CHANGEFILE
-        status, _ = commands.getstatusoutput(cmd)
+        status = subprocess.check_status(cmd)
         if not status:
             checker.logger.warn("%s doesn't seem to be closed" % CHANGEFILE)
     return status
@@ -454,9 +454,9 @@ def check_makefile(checker):
 
 def check_debian_homepage(checker):
     """check the debian homepage field"""
-    status, _ = commands.getstatusoutput('grep ^Homepage debian/control')
+    status = subprocess.check_status('grep ^Homepage debian/control')
     if not status:
-        status, _ = commands.getstatusoutput('grep "Homepage: http://www.logilab.org/projects" debian/control')
+        status = subprocess.check_status('grep "Homepage: http://www.logilab.org/projects" debian/control')
         if not status:
             checker.logger.warn('rename "projects" to "project" in the "Homepage:" value in debian/control')
     else:
@@ -497,7 +497,7 @@ def check_release_number(checker):
     """check the versions coherence between upstream and debian/changelog"""
     try:
         checker._check_version_mismatch()
-    except LGPException, err:
+    except LGPException as err:
         checker.logger.critical(err)
     return OK
 

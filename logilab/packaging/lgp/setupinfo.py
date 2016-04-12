@@ -242,7 +242,7 @@ class SetupInfo(clcommands.Command):
             # Logilab's specific format
             # FIXME Format is buggy if setup_file was set to 'setup.py'
             from logilab.packaging.lib import TextReporter
-            self.config._package = PackageInfo(reporter=TextReporter(file(os.devnull, "w+")),
+            self.config._package = PackageInfo(reporter=TextReporter(open(os.devnull, "w+")),
                                                directory=self.config.pkg_dir)
             assert osp.isfile('setup.py'), "setup.py is still mandatory"
         # other script can be used if compatible with the expected targets in COMMANDS
@@ -254,7 +254,7 @@ class SetupInfo(clcommands.Command):
             else:
                 # generic case: the setup file should only honor targets as:
                 # sdist, project, version, clean (see COMMANDS)
-                self.config._package = file(setup_file)
+                self.config._package = open(setup_file)
                 if not os.stat(setup_file).st_mode & stat.S_IEXEC:
                     raise LGPException('setup file %s has no execute permission'
                                        % setup_file)
@@ -292,7 +292,7 @@ class SetupInfo(clcommands.Command):
             if callable(cmd):
                 try:
                     return cmd()
-                except IOError, err:
+                except IOError as err:
                     raise LGPException(err)
             cmdline = Template(cmd)
             setup_file = self._normpath(self.config.setup_file)
@@ -418,10 +418,10 @@ class SetupInfo(clcommands.Command):
         if self.config.dist_dir not in ['.', '..']:
             distrib_dir = os.path.join(distrib_dir, distrib)
         # check if distribution directory exists, create it if necessary
-        os.umask(0002)
+        os.umask(0o0002)
         try:
-            os.makedirs(distrib_dir, 0755)
-        except OSError, exc:
+            os.makedirs(distrib_dir, 0o0755)
+        except OSError as exc:
             # It's not a problem here to pass silently if the directory
             # is really existing but fails otherwise
             if not os.path.isdir(distrib_dir):

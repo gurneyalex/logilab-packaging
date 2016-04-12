@@ -16,7 +16,6 @@ import os
 import time
 from os.path import join, isfile, dirname, exists
 import subprocess
-from commands import getstatusoutput
 from debian.debian_support import Version
 
 from logilab.common.deprecation import deprecated
@@ -118,10 +117,7 @@ def debian_version(self):
     cwd = os.getcwd()
     os.chdir(self.base_directory)
     try:
-        status, output = getstatusoutput('dpkg-parsechangelog')
-        if status != 0:
-            msg = 'dpkg-parsechangelog exited with status %s' % status
-            raise Exception(msg)
+        output = subprocess.check_output('dpkg-parsechangelog')
         for line in output.split('\n'):
             line = line.strip()
             if line and line.startswith('Version:'):
@@ -140,13 +136,13 @@ class DebianChangeLogEntry(ChangeLogEntry):
         """write the entry to file """
         # pylint: disable-msg=E1101
         write = stream.write
-        write('%s (%s) %s; urgency=%s\n\n' % (self.package, self.version,
-                                              self.distrib, self.urgency))
+        write(u'%s (%s) %s; urgency=%s\n\n' % (self.package, self.version,
+                                               self.distrib, self.urgency))
         for msg, sub in self.messages:
-            write('  * %s' % ''.join(msg))
+            write(u'  * %s' % ''.join(msg))
             for sub_msg in sub:
-                write('     - %s' % join(sub_msg))
-        write(' -- %s  %s\n\n' % (self.author, self.date))
+                write(u'     - %s' % join(sub_msg))
+        write(u' -- %s  %s\n\n' % (self.author, self.date))
 
 
 class DebianChangeLog(ChangeLog):
@@ -176,7 +172,7 @@ class DebianChangeLog(ChangeLog):
         entry.version = Version(version)
 
     def format_title(self):
-        return ''
+        return u''
             
     def load(self):
         """ read a debian/changelog from file """

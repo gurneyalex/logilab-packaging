@@ -56,7 +56,7 @@ class LGPCommandLine(cli.CommandLine):
         """
         try:
             super(LGPCommandLine, self).run(args)
-        except LGPException, exc:
+        except LGPException as exc:
             logging.critical(exc)
             sys.exit(exc.exitcode())
 

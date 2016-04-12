@@ -16,15 +16,17 @@
 """handle package information contained in the __pkginfo__.py file and / or
 deduced from the package content.
 """
+from __future__ import print_function
 
 import os
 import re
 import tempfile
 import shutil
-from urllib2 import urlopen, HTTPError
+from six.moves.urllib.error import HTTPError
+from six.moves.urllib.request import urlopen
 from os.path import join, split, exists
 from imp import find_module, load_module
-from commands import getstatusoutput
+from subprocess import check_output
 from time import time, localtime
 from stat import S_IWRITE
 
@@ -46,7 +48,7 @@ try:
         spell.check(text)
         words = [mistake.getWord() for mistake in spell.getMistakes()]
         return [w for w in words if not w.lower() in ignore]
-except:
+except ImportError:
     def spell_check(text, dictionary=None, ignore=()):
         """spell the given text and return a list of possibly misspelled words
         """
@@ -84,7 +86,7 @@ def pkginfo_save(pkginfo, modifs):
         ensure_fs_mode(pkginfo, S_IWRITE)
         # FIXME: fix perms if necessary
         shutil.move(tmpfile, pkginfo)
-    except:
+    finally:
         os.remove(tmpfile)
         raise
 
@@ -539,10 +541,7 @@ class PackageInfo:
         cwd = os.getcwd()
         os.chdir(self.base_directory)
         try:
-            status, output = getstatusoutput('dpkg-parsechangelog')
-            if status != 0:
-                msg = 'dpkg-parsechangelog exited with status %s' % status
-                raise Exception(msg)
+            output = check_output('dpkg-parsechangelog')
             for line in output.split('\n'):
                 line = line.strip()
                 if line and line.startswith('Version:'):
@@ -567,10 +566,10 @@ def check_url(reporter, file, var, url):
         return
     try:
         urlopen(url)
-    except HTTPError, ex:
+    except HTTPError as ex:
         msg = '%s on %s=%r' % (ex, var, url)
         reporter.warning(file, None, msg)
-    except Exception, ex:
+    except Exception as ex:
         msg = '%s on %s=%r' % (ex, var, url)
         reporter.error(file, None, msg)
 
@@ -583,7 +582,7 @@ def check_info_module(reporter, dirname=None, info_module='__pkginfo__'):
         mp_file, mp_filename, mp_desc = find_module(info_module,
                                                     [dirname])
         module = load_module(info_module, mp_file, mp_filename, mp_desc)
-    except Exception, ex:
+    except Exception as ex:
         reporter.error(absfile, None, str(ex))
         return 0
 
