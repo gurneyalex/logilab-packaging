@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 from os.path import dirname, abspath
 from unittest import TestCase, main
 from logilab.packaging.lib import pkginfo, TextReporter

@@ -54,7 +54,7 @@ def read_manifest_in(reporter,
         if args:
             try:
                 msg %= args
-            except TypeError, ex:
+            except TypeError as ex:
                 raise TypeError(str((ex, msg, args)))
         #reporter.warning(absfile,None,msg)
     filelist.warn = warn

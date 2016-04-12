@@ -148,7 +148,7 @@ class Builder(SetupInfo):
                 for tmpdir in self._tmpdirs:
                     try:
                         shutil.rmtree(tmpdir)
-                    except OSError, exc:
+                    except OSError as exc:
                         self.logger.error("cannot remove '%s' (%s)"
                                           % (tmpdir, exc))
         else:
@@ -174,7 +174,7 @@ class Builder(SetupInfo):
 
     def run(self, args):
         Cleaner(config=self.config).run(args)
-        os.umask(002)
+        os.umask(0o002)
         # create the upstream tarball if necessary and move it to result directory
         with tempdir(self.config.keep_tmpdir) as tmpdir:
             self.make_orig_tarball(tmpdir)
@@ -207,7 +207,7 @@ class Builder(SetupInfo):
                 if self.packages:
                     self.logger.info("recent files from build:\n* %s"
                                      % '\n* '.join(sorted(set(self.packages))))
-            except LGPException, exc:
+            except LGPException as exc:
                 # XXX refactor ? if getattr(self.config, "verbose"):
                 if hasattr(self, "config") and self.config.verbose:
                     import traceback
@@ -261,7 +261,7 @@ class Builder(SetupInfo):
             try:
                 check_call(["uscan", "--noconf", "--download-current-version",
                             "--no-symlink", "--destdir", tmpdir])
-            except CalledProcessError, err:
+            except CalledProcessError as err:
                 debian_name = self.get_debian_name()
                 debian_revision = self.get_debian_version().rsplit('-', 1)[1]
                 self.logger.error("Debian source archive (pristine tarball) is"\
@@ -282,7 +282,7 @@ class Builder(SetupInfo):
             self.logger.info("create pristine tarball from working directory")
             try:
                 self._run_command("sdist", dist_dir=tmpdir)
-            except CalledProcessError, err:
+            except CalledProcessError as err:
                 self.logger.error("creation of the source archive failed")
                 self.logger.error("check if the version '%s' is really tagged in "
                                   "your repository" % self.get_upstream_version())
@@ -303,7 +303,7 @@ class Builder(SetupInfo):
             try:
                 if not osp.exists(debian_tarball):
                     shutil.copy(tarball, debian_tarball)
-            except EnvironmentError, err:
+            except EnvironmentError as err:
                 msg = "pristine tarball can't be copied from given location: %s"
                 self.logger.critical(msg % tarball)
                 raise LGPException(err)
@@ -358,7 +358,7 @@ class Builder(SetupInfo):
                    "--sources", osp.dirname(self._upstream_tarball)]
             self.logger.debug("running mock command: %s ..." % " ".join(cmd))
             check_call(cmd, stdout=sys.stdout)
-        except CalledProcessError, err:
+        except CalledProcessError as err:
             msg = "cannot build valid srpm file with command %s" % cmd
             raise LGPCommandException(msg, err)
         srpms = glob(osp.join(os.getcwd(), '*.src.rpm'))
@@ -376,7 +376,7 @@ class Builder(SetupInfo):
         try:
             self.logger.debug("running mock command: %s ..." % " ".join(cmd))
             check_call(cmd, stdout=sys.stdout)
-        except CalledProcessError, err:
+        except CalledProcessError as err:
             msg = "cannot build valid rpm file with command %s" % cmd
             raise LGPCommandException(msg, err)
 
@@ -409,7 +409,7 @@ class Builder(SetupInfo):
             self.logger.debug("running dpkg-source command: %s ..."
                               % " ".join(cmd))
             check_call(cmd, stdout=sys.stdout)
-        except CalledProcessError, err:
+        except CalledProcessError as err:
             msg = "cannot build valid dsc file with command %s" % cmd
             raise LGPCommandException(msg, err)
 
@@ -494,7 +494,7 @@ class Builder(SetupInfo):
                                           'ARCH':  build['arch'],
                                           'IMAGE': build['image']},
                                      stdout=stdout))
-            except Exception, err:
+            except Exception as err:
                 self.logger.critical(err)
                 self.logger.critical("build failure (%s/%s) for %s (%s)"
                                      % (build['distrib'],
@@ -586,7 +586,7 @@ class Builder(SetupInfo):
                 check_debsign(self)
                 try:
                     check_call(["debsign", filename], stdout=sys.stdout)
-                except CalledProcessError, err:
+                except CalledProcessError as err:
                     self.logger.error("lgp cannot debsign '%s' automatically"
                                       % filename)
                     self.logger.error("You have to run manually: debsign %s"
@@ -692,7 +692,7 @@ class Builder(SetupInfo):
             cmd = "cd %s && dpkg-scanpackages -m %s /dev/null 2>/dev/null | gzip -9c > %s"
             os.system(cmd % (osp.dirname(resultdir), distrib,
                              packages_file))
-        except Exception, err:
+        except Exception as err:
             self.logger.warning("cannot update Debian trivial repository for '%s'"
                                 % resultdir)
         else:
@@ -703,7 +703,7 @@ class Builder(SetupInfo):
         resultdir = self.get_distrib_dir(distrib)
         try:
             check_call(['createrepo', '--update', '.'], cwd=resultdir)
-        except (CalledProcessError, OSError):
+        except CalledProcessError as OSError:
             self.logger.warning('cannot update rpm repository for %s', resultdir)
 
     def prepare_source_archive(self, tmpdir, current_distrib):
@@ -724,7 +724,7 @@ class Builder(SetupInfo):
                    "--preserve-order", "-xzf", self._debian_tarball,
                    "-C", tmpdir]
             check_call(cmd, stdout=sys.stdout)
-        except CalledProcessError, err:
+        except CalledProcessError as err:
             raise LGPCommandException('an error occured while extracting the '
                                       'upstream tarball', err)
 
@@ -763,7 +763,7 @@ class Builder(SetupInfo):
             export(osp.join(self.config.pkg_dir, 'debian'),
                    osp.join(self.origpath, 'debian/'),
                    verbose=(self.config.verbose == 2))
-        except IOError, err:
+        except IOError as err:
             raise LGPException(err)
 
         debian_dir = self.get_debian_dir(distrib)

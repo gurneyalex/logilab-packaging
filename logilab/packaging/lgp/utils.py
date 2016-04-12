@@ -46,9 +46,9 @@ def get_debian_name():
         control = osp.join('debian', 'control')
         deb822 = Deb822(open(control), fields='Source')
         return deb822['Source']
-    except IOError, err:
+    except IOError as err:
         raise LGPException('a Debian control file should exist in "%s"' % control)
-    except KeyError, err:
+    except KeyError as err:
         raise LGPException("No 'Source' field in '%s'" % control)
 
 def guess_debian_distribution():
@@ -145,7 +145,7 @@ def get_debian_architecture():
                 if "source" in archi:
                     archi.pop('source')
                 return archi
-    except IOError, err:
+    except IOError as err:
         raise LGPException('a Debian control file should exist in "%s"' % control)
 
 def get_distributions(distrib=None, basetgz=None, suites=LGP_SUITES, creation=False):
@@ -249,7 +249,7 @@ def tempdir(keep_tmpdir=False):
     cwd = os.getcwd()
     try:
         yield tmpdir
-    except Exception, exc:
+    except Exception as exc:
         raise
     finally:
         # ensure we pop to the dir we were (before entering the

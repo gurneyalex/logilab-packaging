@@ -39,5 +39,5 @@ class Cleaner(SetupInfo):
             return
         try:
             self._run_command('clean')
-        except Exception, err:
+        except Exception as err:
             self.logger.warn(err)
