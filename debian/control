@@ -21,7 +21,7 @@ Depends:
  ${misc:Depends},
  ${python:Depends},
  python-debian,
- python-logilab-common,
+ python-logilab-common (>= 1.2.1),
  python-apt,
 Conflicts:
  python-lgp,
@@ -41,7 +41,7 @@ Depends:
  pbuilder,
  devscripts,
  debhelper,
- python-logilab-common,
+ python-logilab-common (>= 1.2.1),
  sudo,
  debootstrap,
  python-apt,
