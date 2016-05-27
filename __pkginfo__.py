@@ -50,4 +50,9 @@ data_files = [('etc/lgp', listfiles('etc/lgp')),
               ]
 
 # python-debian needs chardet but doesn't seem to declare the dependency
-install_requires = ['setuptools', 'logilab-common', 'python-debian', 'chardet']
+install_requires = [
+    'setuptools',
+    'logilab-common >= 1.2.1',
+    'python-debian',
+    'chardet',
+]
