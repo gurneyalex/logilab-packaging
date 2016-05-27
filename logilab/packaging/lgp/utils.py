@@ -99,7 +99,10 @@ def get_architectures(archi=None, basetgz=None):
         :return:
             list of architecture
     """
-    known_archi = Popen(["dpkg-architecture", "-L"], stdout=PIPE).communicate()[0].split()
+    known_archi = Popen(["dpkg-architecture", "-L"], stdout=PIPE).communicate()[0]
+    if sys.version_info >= (3,):
+        known_archi = known_archi.decode('utf-8')
+    known_archi = known_archi.split()
 
     # try to guess targeted architectures
     if archi is None or len(archi) == 0:
@@ -110,7 +113,10 @@ def get_architectures(archi=None, basetgz=None):
     if 'all' in archi:
         archi = ['current']
     if 'current' in archi:
-        archi = Popen(["dpkg", "--print-architecture"], stdout=PIPE).communicate()[0].split()
+        archi = Popen(["dpkg", "--print-architecture"], stdout=PIPE).communicate()[0]
+        if sys.version_info >= (3,):
+            archi = archi.decode('utf-8')
+        archi = archi.split()
     else:
         if 'any' in archi:
             if not osp.isdir(basetgz):

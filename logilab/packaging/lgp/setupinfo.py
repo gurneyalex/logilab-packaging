@@ -24,8 +24,8 @@ import stat
 import os.path as osp
 import logging
 from string import Template
+from six import string_types
 from distutils.core import run_setup
-#from pkg_resources import FileMetadata
 from subprocess import Popen, PIPE
 from subprocess import check_call, CalledProcessError
 
@@ -306,6 +306,8 @@ class SetupInfo(clcommands.Command):
             process.cmd = cmdline.split()
             raise LGPCommandException("lgp aborted by the '%s' command child process"
                                       % cmdline, process)
+        if not isinstance(pipe, string_types):
+            pipe = pipe.decode('utf-8')  # py3k
         return pipe
 
     def get_debian_dir(self, distrib):

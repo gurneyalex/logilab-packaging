@@ -1,5 +1,5 @@
 from __future__ import print_function
-
+import sys
 from subprocess import Popen, PIPE
 
 from logilab.common.testlib import TestCase, unittest_main
@@ -10,7 +10,10 @@ from logilab.packaging.lgp.exceptions import ArchitectureException
 class ArchitectureTC(TestCase):
 
     def test_default_architecture(self):
-        archi = Popen(["dpkg", "--print-architecture"], stdout=PIPE).communicate()[0].split()
+        archi = Popen(["dpkg", "--print-architecture"], stdout=PIPE).communicate()[0]
+        if sys.version_info >= (3,):
+            archi = archi.decode('utf-8')
+        archi = archi.split()
         self.assertEqual(get_architectures(), archi)
         self.assertEqual(get_architectures(['all']), archi)
         self.assertEqual(get_architectures(['current']), archi)
