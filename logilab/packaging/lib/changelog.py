@@ -27,6 +27,7 @@ CHANGEFILE = 'ChangeLog'
 class ChangeLogNotFound(Exception):
     """raised when we are unable to locate the change log"""
 
+
 def find_ChangeLog(base_dir=None):
     """try to find a ChangeLog file from a base directory"""
     if base_dir is None:
@@ -41,6 +42,7 @@ def find_ChangeLog(base_dir=None):
         base_dir = new_dir
     raise ChangeLogNotFound()
 
+
 def find_debian_changelog(base_dir=None):
     """try to find a debian changelog file from a base directory"""
     if base_dir is None:
@@ -54,6 +56,7 @@ def find_debian_changelog(base_dir=None):
             raise ChangeLogNotFound()
         base_dir = new_dir
     raise ChangeLogNotFound()
+
 
 def get_pkg_version(base_dir=None):
     """return the current package version"""
@@ -70,6 +73,7 @@ def get_pkg_version(base_dir=None):
         pass
     return Version(mod.version)
 
+
 # upstream change log #########################################################
 
 class ChangeLog(BaseChangeLog):
@@ -78,22 +82,22 @@ class ChangeLog(BaseChangeLog):
     add some methods to the base class useful for the changelog command line
     utility.
     """
-    
+
     def get_latest_revision(self):
         """return the latest revision found or 0.0.0"""
         for entry in self.entries:
             if entry.version:
                 return entry.version
-        return Version('0.0.0')    
+        return Version('0.0.0')
 
     def extract(self, version='', stream=sys.stdout):
         """extract messages for a given entry"""
         self.get_entry(version).write(stream)
 
     @staticmethod
-    def formatted_date():        
+    def formatted_date():
         return time.strftime('%Y-%m-%d', time.localtime(time.time()))
-        
+
     def close(self, base_dir, create=None):
         """close the opened change log entry"""
         version = get_pkg_version(base_dir)
@@ -128,10 +132,12 @@ def debian_version(self):
 
 ChangeLogEntry.version_class = Version
 
+
 class DebianChangeLogEntry(ChangeLogEntry):
     """object representation of a debian/changelog entry
     """
     version_class = Version
+
     def write(self, stream=sys.stdout):
         """write the entry to file """
         # pylint: disable-msg=E1101
@@ -147,13 +153,13 @@ class DebianChangeLogEntry(ChangeLogEntry):
 
 class DebianChangeLog(ChangeLog):
     """object representation of a whole debian/changelog file"""
-    
+
     entry_class = DebianChangeLogEntry
 
     @staticmethod
     def formatted_date():
         return time.strftime('%a, %d %b %Y %T %z', time.localtime(time.time()))
-    
+
     def close(self, base_dir, create=None):
         """close the opened change log entry"""
         version = get_pkg_version(base_dir)
@@ -173,7 +179,7 @@ class DebianChangeLog(ChangeLog):
 
     def format_title(self):
         return u''
-            
+
     def load(self):
         """ read a debian/changelog from file """
         try:
