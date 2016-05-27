@@ -1,5 +1,6 @@
 from os.path import join, dirname
 from io import StringIO
+import codecs
 
 from logilab.common.testlib import TestCase, unittest_main
 
@@ -14,8 +15,9 @@ class ChangeLogTC(TestCase):
         cl = self.cl_class(self.cl_file)
         out = StringIO()
         cl.write(out)
-        self.assertMultiLineEqual(open(self.cl_file).read(),
-                                  out.getvalue())
+        self.assertMultiLineEqual(
+            codecs.open(self.cl_file, encoding='utf-8').read(),
+            out.getvalue())
 
 
 class DebianChangeLogTC(ChangeLogTC):
@@ -56,5 +58,5 @@ class DebianVersionTC(TestCase):
         self.assertTrue(v4 < v1)
 
 
-if __name__  == '__main__':
+if __name__ == '__main__':
     unittest_main()
