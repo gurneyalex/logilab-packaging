@@ -17,6 +17,7 @@ import time
 from os.path import join, isfile, dirname, exists
 import subprocess
 from debian.debian_support import Version
+import codecs
 
 from logilab.common.deprecation import deprecated
 from logilab.common.changelog import ChangeLog as BaseChangeLog, ChangeLogEntry
@@ -183,23 +184,23 @@ class DebianChangeLog(ChangeLog):
     def load(self):
         """ read a debian/changelog from file """
         try:
-            stream = open(self.file)
+            stream = codecs.open(self.file, encoding='utf-8')
         except IOError:
             return
         last = None
-        for line in stream.readlines():
+        for line in stream:
             sline = line.strip()
-            if sline.startswith('-- '):
+            if sline.startswith(u'-- '):
                 try:
-                    author, date = sline[3:].split('>')
-                    author = author.strip() + '>'
+                    author, date = sline[3:].split(u'>')
+                    author = author.strip() + u'>'
                     date = date.strip()
                 except TypeError:
-                    author, date = '', ''
+                    author, date = u'', u''
                 last.date = date
                 last.author = author
                 last = None
-            elif 'urgency' in sline:
+            elif u'urgency' in sline:
                 pkg, version, distrib, urgency = sline.split()
                 version = version[1:-1]
                 urgency = urgency[8:]
@@ -208,7 +209,7 @@ class DebianChangeLog(ChangeLog):
                                         urgency=urgency, distrib=distrib)
                 self.add_entry(last)
             elif last:
-                if sline.startswith('* '):
+                if sline.startswith(u'* '):
                     last.add_message(line.lstrip()[1:].lstrip())
                 elif last.messages:
                     last.complete_latest_message(line)
