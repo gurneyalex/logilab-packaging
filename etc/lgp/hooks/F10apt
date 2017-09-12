@@ -18,3 +18,19 @@ DPkg::Pre-Install-Pkgs {
   "dpkg-preconfigure --apt --priority=low";
 };
 EOF
+
+cat > /etc/apt/preferences.d/default-lgp <<EOF
+
+Package: *
+Pin: release o=Debian,n=$DIST
+Pin-Priority: 980
+
+Package: *
+Pin: release n=$DIST-backports
+Pin-Priority: 990
+
+Package: *
+Pin: release a=acceptance
+Pin-Priority: 990
+
+EOF
